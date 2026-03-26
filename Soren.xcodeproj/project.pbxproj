@@ -1,0 +1,1019 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		05D1DFB2D7D17FCCDF5A8124 /* CalendarPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EB340E329D8BABE4656FEFF /* CalendarPlaceholderView.swift */; };
+		0B02B6F86D5888DF4761D60D /* LibraryPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759C37B3FCD48C89A97006CB /* LibraryPlaceholderView.swift */; };
+		1108E709671370BBDE1A14AF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A4181BB9ED2ED7AD9AE263B5 /* Assets.xcassets */; };
+		21D834D02FA95A3E4267078B /* SorenWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50A69B4F445210C888148449 /* SorenWidgetBundle.swift */; };
+		2766F5AA6FCE5D9026E483F3 /* HomePlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE4523F2EAB67907AF58C619 /* HomePlaceholderView.swift */; };
+		3925AE4BF9D05302A3D3131C /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA945694AA563A401CBA4141 /* RootView.swift */; };
+		4E83E248693B7874D49B7D18 /* SettingsPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF23AAFF7A62FB3E647A90A7 /* SettingsPlaceholderView.swift */; };
+		50C39ECEA025E0E6793551C1 /* SorenUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593F223EC1D8EC1482C3ABD5 /* SorenUITests.swift */; };
+		7707C4BFF9F47651CDDC2C3D /* SorenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6237A5CF21F39D3AD7CF791 /* SorenTests.swift */; };
+		944F384302428802BF50925E /* SorenWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0F163392822F2FF77B7587C /* SorenWidgets.swift */; };
+		A10B1C936B79172434FE8F3E /* SorenWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 20A03BEB8C0222E166300367 /* SorenWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AF6E1A157EDBACB100FEE1AC /* AnalyticsPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90762FBB5B6A43C011E02296 /* AnalyticsPlaceholderView.swift */; };
+		BC67F03FFAAF36667E671F79 /* AppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 704603302FD9C648B425E8B6 /* AppContainer.swift */; };
+		EE06586CF84598617481ACE1 /* SorenApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCEF5B74B2E1B0B2BC44B6B0 /* SorenApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		CD29CBA13E99225408C5E2CC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E0E34C732A798033B60447A5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 309559632A4FD3FA5E61B85C;
+			remoteInfo = Soren;
+		};
+		F31F7D277FC88197BF8607C7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E0E34C732A798033B60447A5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 309559632A4FD3FA5E61B85C;
+			remoteInfo = Soren;
+		};
+		F718E87876B600BBC277211E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E0E34C732A798033B60447A5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A83FAFCA0425E1DEC850BB9D;
+			remoteInfo = SorenWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A1F2271E5C88065037F8710C /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A10B1C936B79172434FE8F3E /* SorenWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		20A03BEB8C0222E166300367 /* SorenWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = SorenWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		50A69B4F445210C888148449 /* SorenWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SorenWidgetBundle.swift; sourceTree = "<group>"; };
+		593F223EC1D8EC1482C3ABD5 /* SorenUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SorenUITests.swift; sourceTree = "<group>"; };
+		5EB340E329D8BABE4656FEFF /* CalendarPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarPlaceholderView.swift; sourceTree = "<group>"; };
+		704603302FD9C648B425E8B6 /* AppContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainer.swift; sourceTree = "<group>"; };
+		759C37B3FCD48C89A97006CB /* LibraryPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryPlaceholderView.swift; sourceTree = "<group>"; };
+		90762FBB5B6A43C011E02296 /* AnalyticsPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsPlaceholderView.swift; sourceTree = "<group>"; };
+		A4181BB9ED2ED7AD9AE263B5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BE0FB55547E3EC178EADC11B /* SorenTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SorenTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BE4523F2EAB67907AF58C619 /* HomePlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePlaceholderView.swift; sourceTree = "<group>"; };
+		C6237A5CF21F39D3AD7CF791 /* SorenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SorenTests.swift; sourceTree = "<group>"; };
+		CA945694AA563A401CBA4141 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		E1BBC3EE63F2DC4F7A0ECAF6 /* SorenUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SorenUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E55A14CE84C8CD53BD4E3F1A /* Soren.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Soren.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		EF23AAFF7A62FB3E647A90A7 /* SettingsPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPlaceholderView.swift; sourceTree = "<group>"; };
+		F0F163392822F2FF77B7587C /* SorenWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SorenWidgets.swift; sourceTree = "<group>"; };
+		FCEF5B74B2E1B0B2BC44B6B0 /* SorenApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SorenApp.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		022B9D7CDCF848E6289A49ED /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		04FEFDFC23730E51B4778E32 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				022B9D7CDCF848E6289A49ED /* Components */,
+				EF23AAFF7A62FB3E647A90A7 /* SettingsPlaceholderView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		17F6B88947EC0B3C9C075383 /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		1A5771C9170702C9A6F52639 /* Export */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Export;
+			sourceTree = "<group>";
+		};
+		1D12315444FFF3BD043A2E5E /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
+		1DDF50E498DF8B3392EBA9F9 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				9D13511271AC24E3638DFCA6 /* AddItem */,
+				9F9A8685E1FDD7EEF1285E78 /* Alerts */,
+				DA378784F01CCD8F256EF109 /* Analytics */,
+				F7239AF483F895EE1F7E0DB3 /* Calendar */,
+				6785F1AF6E8ED0BF4CCC6258 /* Catalog */,
+				29467F1BD272595F6FE38605 /* Home */,
+				E1D127EA4014D5B6358F42C3 /* ItemDetails */,
+				C2322982153B02BCEC27C277 /* Library */,
+				8FCF95D483E9C4B3D5970F59 /* Onboarding */,
+				04FEFDFC23730E51B4778E32 /* Settings */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		29467F1BD272595F6FE38605 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				480403287A59878737DC097A /* Components */,
+				BE4523F2EAB67907AF58C619 /* HomePlaceholderView.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		2D570DD2507B8ECAD51A0A8E /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A4181BB9ED2ED7AD9AE263B5 /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		3B33EE4A414D806111AB114A /* Soren */ = {
+			isa = PBXGroup;
+			children = (
+				E0E2D241A543877A532EADAF /* App */,
+				F0DA7DCCC420B8F685A09ABC /* Core */,
+				DD40D73F0124157D5326162B /* Data */,
+				490E4E81C2AF4FC8C066439F /* Domain */,
+				1DDF50E498DF8B3392EBA9F9 /* Features */,
+				2D570DD2507B8ECAD51A0A8E /* Resources */,
+			);
+			path = Soren;
+			sourceTree = "<group>";
+		};
+		3EEE983D2014DFBA8A2C5154 /* SorenUITests */ = {
+			isa = PBXGroup;
+			children = (
+				593F223EC1D8EC1482C3ABD5 /* SorenUITests.swift */,
+			);
+			path = SorenUITests;
+			sourceTree = "<group>";
+		};
+		41CBDB8E31484E2F80148A25 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		432AAC70003325E60CD77D1A /* Repositories */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Repositories;
+			sourceTree = "<group>";
+		};
+		480403287A59878737DC097A /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		490E4E81C2AF4FC8C066439F /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				683E60EE50A4F7F3D3E40628 /* Entities */,
+				B2C4BE798A1559DEACB0A273 /* Enums */,
+				79A5D05ECD8743A0BF40BFCE /* Repositories */,
+				A6AF1B3AD8E7D94E895D7864 /* UseCases */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		5085C53C3D90273C643F0A85 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		5173C4897BCA07C8B1716879 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		51CC9476CF3E6878337E8051 /* Mappers */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Mappers;
+			sourceTree = "<group>";
+		};
+		5CBAE86E2CAA720D33AD0D08 /* Notifications */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Notifications;
+			sourceTree = "<group>";
+		};
+		5DFEC75BC9E47FDEF31E28D0 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E55A14CE84C8CD53BD4E3F1A /* Soren.app */,
+				BE0FB55547E3EC178EADC11B /* SorenTests.xctest */,
+				E1BBC3EE63F2DC4F7A0ECAF6 /* SorenUITests.xctest */,
+				20A03BEB8C0222E166300367 /* SorenWidgets.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		6785F1AF6E8ED0BF4CCC6258 /* Catalog */ = {
+			isa = PBXGroup;
+			children = (
+				5173C4897BCA07C8B1716879 /* Components */,
+			);
+			path = Catalog;
+			sourceTree = "<group>";
+		};
+		683E60EE50A4F7F3D3E40628 /* Entities */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Entities;
+			sourceTree = "<group>";
+		};
+		70890F58EA96BE430C7CFC2A /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		79A5D05ECD8743A0BF40BFCE /* Repositories */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Repositories;
+			sourceTree = "<group>";
+		};
+		8889B2CCD531F42B1147CC8E /* SorenWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				50A69B4F445210C888148449 /* SorenWidgetBundle.swift */,
+				F0F163392822F2FF77B7587C /* SorenWidgets.swift */,
+			);
+			path = SorenWidgets;
+			sourceTree = "<group>";
+		};
+		8FCF95D483E9C4B3D5970F59 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				70890F58EA96BE430C7CFC2A /* Components */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		9D13511271AC24E3638DFCA6 /* AddItem */ = {
+			isa = PBXGroup;
+			children = (
+				CE038D447B1547245797DB74 /* Components */,
+			);
+			path = AddItem;
+			sourceTree = "<group>";
+		};
+		9F9A8685E1FDD7EEF1285E78 /* Alerts */ = {
+			isa = PBXGroup;
+			children = (
+				E7065B516C39590C2CDAA89D /* Components */,
+			);
+			path = Alerts;
+			sourceTree = "<group>";
+		};
+		A1FEC478DA274FB42ABEBA3D /* SorenTests */ = {
+			isa = PBXGroup;
+			children = (
+				C6237A5CF21F39D3AD7CF791 /* SorenTests.swift */,
+			);
+			path = SorenTests;
+			sourceTree = "<group>";
+		};
+		A6AF1B3AD8E7D94E895D7864 /* UseCases */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = UseCases;
+			sourceTree = "<group>";
+		};
+		B2C4BE798A1559DEACB0A273 /* Enums */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Enums;
+			sourceTree = "<group>";
+		};
+		B767ACAAC82C5DF99DB86D1C /* SwiftData */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = SwiftData;
+			sourceTree = "<group>";
+		};
+		BCBD5E8B2795D4E357804D0A /* DesignSystem */ = {
+			isa = PBXGroup;
+			children = (
+				D485765DDD4667A06F7CFBBE /* Components */,
+				F6A706205E252982B96FF146 /* Motion */,
+				17F6B88947EC0B3C9C075383 /* Theme */,
+			);
+			path = DesignSystem;
+			sourceTree = "<group>";
+		};
+		C0A53EFAF878A253F618FD07 /* Catalog */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Catalog;
+			sourceTree = "<group>";
+		};
+		C2322982153B02BCEC27C277 /* Library */ = {
+			isa = PBXGroup;
+			children = (
+				41CBDB8E31484E2F80148A25 /* Components */,
+				759C37B3FCD48C89A97006CB /* LibraryPlaceholderView.swift */,
+			);
+			path = Library;
+			sourceTree = "<group>";
+		};
+		CAFE1BF80BE7162DA17C20E0 /* Formatters */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Formatters;
+			sourceTree = "<group>";
+		};
+		CE038D447B1547245797DB74 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		D485765DDD4667A06F7CFBBE /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		D60D0AC6A672B80FE8473535 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		DA378784F01CCD8F256EF109 /* Analytics */ = {
+			isa = PBXGroup;
+			children = (
+				5085C53C3D90273C643F0A85 /* Components */,
+				90762FBB5B6A43C011E02296 /* AnalyticsPlaceholderView.swift */,
+			);
+			path = Analytics;
+			sourceTree = "<group>";
+		};
+		DD40D73F0124157D5326162B /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				C0A53EFAF878A253F618FD07 /* Catalog */,
+				1A5771C9170702C9A6F52639 /* Export */,
+				51CC9476CF3E6878337E8051 /* Mappers */,
+				5CBAE86E2CAA720D33AD0D08 /* Notifications */,
+				432AAC70003325E60CD77D1A /* Repositories */,
+				B767ACAAC82C5DF99DB86D1C /* SwiftData */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		E0BCBA25E3733B23E1C13244 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		E0E2D241A543877A532EADAF /* App */ = {
+			isa = PBXGroup;
+			children = (
+				704603302FD9C648B425E8B6 /* AppContainer.swift */,
+				CA945694AA563A401CBA4141 /* RootView.swift */,
+				FCEF5B74B2E1B0B2BC44B6B0 /* SorenApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		E1D127EA4014D5B6358F42C3 /* ItemDetails */ = {
+			isa = PBXGroup;
+			children = (
+				D60D0AC6A672B80FE8473535 /* Components */,
+			);
+			path = ItemDetails;
+			sourceTree = "<group>";
+		};
+		E59027FB3AEABC66EC3502E2 = {
+			isa = PBXGroup;
+			children = (
+				3B33EE4A414D806111AB114A /* Soren */,
+				A1FEC478DA274FB42ABEBA3D /* SorenTests */,
+				3EEE983D2014DFBA8A2C5154 /* SorenUITests */,
+				8889B2CCD531F42B1147CC8E /* SorenWidgets */,
+				5DFEC75BC9E47FDEF31E28D0 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		E7065B516C39590C2CDAA89D /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		F0DA7DCCC420B8F685A09ABC /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				BCBD5E8B2795D4E357804D0A /* DesignSystem */,
+				1D12315444FFF3BD043A2E5E /* Extensions */,
+				CAFE1BF80BE7162DA17C20E0 /* Formatters */,
+				FA5CCA03ED157B9325436B29 /* Logging */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		F6A706205E252982B96FF146 /* Motion */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Motion;
+			sourceTree = "<group>";
+		};
+		F7239AF483F895EE1F7E0DB3 /* Calendar */ = {
+			isa = PBXGroup;
+			children = (
+				E0BCBA25E3733B23E1C13244 /* Components */,
+				5EB340E329D8BABE4656FEFF /* CalendarPlaceholderView.swift */,
+			);
+			path = Calendar;
+			sourceTree = "<group>";
+		};
+		FA5CCA03ED157B9325436B29 /* Logging */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Logging;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		139A4E9926A277AD5547311B /* SorenTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B0A18F1FE57FC73ED37EE8C0 /* Build configuration list for PBXNativeTarget "SorenTests" */;
+			buildPhases = (
+				7D28D8847D129C5C26E6BD15 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AB7C0C569FA623F4CAB9D04B /* PBXTargetDependency */,
+			);
+			name = SorenTests;
+			packageProductDependencies = (
+			);
+			productName = SorenTests;
+			productReference = BE0FB55547E3EC178EADC11B /* SorenTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		1FA91C9C23331C1F2B807C24 /* SorenUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 081C8E3656EC0EB8E8ADE622 /* Build configuration list for PBXNativeTarget "SorenUITests" */;
+			buildPhases = (
+				EE79BD27786AE8E9A342E03D /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				1760647763B6F3FDFE88D9DD /* PBXTargetDependency */,
+			);
+			name = SorenUITests;
+			packageProductDependencies = (
+			);
+			productName = SorenUITests;
+			productReference = E1BBC3EE63F2DC4F7A0ECAF6 /* SorenUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		309559632A4FD3FA5E61B85C /* Soren */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8CF9927F9DE89B7CE5167B73 /* Build configuration list for PBXNativeTarget "Soren" */;
+			buildPhases = (
+				39898E039E80DBC56B46F862 /* Sources */,
+				66F68FB77218D344F4F22F2E /* Resources */,
+				A1F2271E5C88065037F8710C /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E12D81CD8375325C92F18512 /* PBXTargetDependency */,
+			);
+			name = Soren;
+			packageProductDependencies = (
+			);
+			productName = Soren;
+			productReference = E55A14CE84C8CD53BD4E3F1A /* Soren.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A83FAFCA0425E1DEC850BB9D /* SorenWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 44E38C7E537E44CD3A0DCE92 /* Build configuration list for PBXNativeTarget "SorenWidgets" */;
+			buildPhases = (
+				4A5DD5CC4C5393DA774A4533 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SorenWidgets;
+			packageProductDependencies = (
+			);
+			productName = SorenWidgets;
+			productReference = 20A03BEB8C0222E166300367 /* SorenWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E0E34C732A798033B60447A5 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2630;
+				TargetAttributes = {
+					139A4E9926A277AD5547311B = {
+						DevelopmentTeam = "";
+					};
+					1FA91C9C23331C1F2B807C24 = {
+						DevelopmentTeam = "";
+						TestTargetID = 309559632A4FD3FA5E61B85C;
+					};
+					309559632A4FD3FA5E61B85C = {
+						DevelopmentTeam = "";
+					};
+					A83FAFCA0425E1DEC850BB9D = {
+						DevelopmentTeam = "";
+					};
+				};
+			};
+			buildConfigurationList = 8FE72A6CB40EED380B59977A /* Build configuration list for PBXProject "Soren" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = E59027FB3AEABC66EC3502E2;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 5DFEC75BC9E47FDEF31E28D0 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				309559632A4FD3FA5E61B85C /* Soren */,
+				139A4E9926A277AD5547311B /* SorenTests */,
+				1FA91C9C23331C1F2B807C24 /* SorenUITests */,
+				A83FAFCA0425E1DEC850BB9D /* SorenWidgets */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		66F68FB77218D344F4F22F2E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1108E709671370BBDE1A14AF /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		39898E039E80DBC56B46F862 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AF6E1A157EDBACB100FEE1AC /* AnalyticsPlaceholderView.swift in Sources */,
+				BC67F03FFAAF36667E671F79 /* AppContainer.swift in Sources */,
+				05D1DFB2D7D17FCCDF5A8124 /* CalendarPlaceholderView.swift in Sources */,
+				2766F5AA6FCE5D9026E483F3 /* HomePlaceholderView.swift in Sources */,
+				0B02B6F86D5888DF4761D60D /* LibraryPlaceholderView.swift in Sources */,
+				3925AE4BF9D05302A3D3131C /* RootView.swift in Sources */,
+				4E83E248693B7874D49B7D18 /* SettingsPlaceholderView.swift in Sources */,
+				EE06586CF84598617481ACE1 /* SorenApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4A5DD5CC4C5393DA774A4533 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				21D834D02FA95A3E4267078B /* SorenWidgetBundle.swift in Sources */,
+				944F384302428802BF50925E /* SorenWidgets.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7D28D8847D129C5C26E6BD15 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7707C4BFF9F47651CDDC2C3D /* SorenTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE79BD27786AE8E9A342E03D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				50C39ECEA025E0E6793551C1 /* SorenUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		1760647763B6F3FDFE88D9DD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 309559632A4FD3FA5E61B85C /* Soren */;
+			targetProxy = F31F7D277FC88197BF8607C7 /* PBXContainerItemProxy */;
+		};
+		AB7C0C569FA623F4CAB9D04B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 309559632A4FD3FA5E61B85C /* Soren */;
+			targetProxy = CD29CBA13E99225408C5E2CC /* PBXContainerItemProxy */;
+		};
+		E12D81CD8375325C92F18512 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A83FAFCA0425E1DEC850BB9D /* SorenWidgets */;
+			targetProxy = F718E87876B600BBC277211E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		47A3685F9787E5DBFCB118E6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		4BCA7F6A33440309A0873B01 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = SorenWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.alexey.soren.widgets;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		924BCEFC749F1B67E14A868B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = SorenWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.alexey.soren.widgets;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		9CB2379567014C0A6E68F80C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_KEY_CFBundleDisplayName = Soren;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.alexey.soren;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B14B48693231AFB5ADEE95F6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.alexey.soren.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Soren.app/Soren";
+			};
+			name = Debug;
+		};
+		CF09BC619FC3EFCB9D14FF60 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_KEY_CFBundleDisplayName = Soren;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.alexey.soren;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		D64566DFFC42AFF4B8277F51 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.alexey.soren.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Soren;
+			};
+			name = Release;
+		};
+		E3379799AA36BAB72884995E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		E8FD0CFC446531C9C8CB704F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.alexey.soren.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Soren.app/Soren";
+			};
+			name = Release;
+		};
+		F095FEEC57C8D847A436E167 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.alexey.soren.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Soren;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		081C8E3656EC0EB8E8ADE622 /* Build configuration list for PBXNativeTarget "SorenUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F095FEEC57C8D847A436E167 /* Debug */,
+				D64566DFFC42AFF4B8277F51 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		44E38C7E537E44CD3A0DCE92 /* Build configuration list for PBXNativeTarget "SorenWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				924BCEFC749F1B67E14A868B /* Debug */,
+				4BCA7F6A33440309A0873B01 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8CF9927F9DE89B7CE5167B73 /* Build configuration list for PBXNativeTarget "Soren" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9CB2379567014C0A6E68F80C /* Debug */,
+				CF09BC619FC3EFCB9D14FF60 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8FE72A6CB40EED380B59977A /* Build configuration list for PBXProject "Soren" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				47A3685F9787E5DBFCB118E6 /* Debug */,
+				E3379799AA36BAB72884995E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B0A18F1FE57FC73ED37EE8C0 /* Build configuration list for PBXNativeTarget "SorenTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B14B48693231AFB5ADEE95F6 /* Debug */,
+				E8FD0CFC446531C9C8CB704F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = E0E34C732A798033B60447A5 /* Project object */;
+}

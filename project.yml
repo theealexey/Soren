@@ -1,0 +1,121 @@
+name: Soren
+options:
+  bundleIdPrefix: com.alexey.soren
+  deploymentTarget:
+    iOS: "18.0"
+  xcodeVersion: "26.3"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+  groupSortPosition: top
+  defaultConfig: Debug
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+    DEVELOPMENT_TEAM: ""
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: 1
+    GENERATE_INFOPLIST_FILE: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+    ENABLE_PREVIEWS: YES
+
+configs:
+  Debug:
+    buildSettings:
+      DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+      SWIFT_OPTIMIZATION_LEVEL: -Onone
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+  Release:
+    buildSettings:
+      DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+      SWIFT_OPTIMIZATION_LEVEL: -O
+      SWIFT_COMPILATION_MODE: wholemodule
+
+targets:
+  Soren:
+    type: application
+    platform: iOS
+    sources:
+      - path: Soren
+        excludes:
+          - "**/.DS_Store"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.alexey.soren
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_CFBundleDisplayName: Soren
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    dependencies:
+      - target: SorenWidgets
+
+  SorenWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: SorenWidgets
+        excludes:
+          - "**/.DS_Store"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.alexey.soren.widgets
+        INFOPLIST_KEY_CFBundleDisplayName: SorenWidgets
+        INFOPLIST_KEY_NSHumanReadableCopyright: ""
+        GENERATE_INFOPLIST_FILE: YES
+        SKIP_INSTALL: YES
+
+  SorenTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: SorenTests
+        excludes:
+          - "**/.DS_Store"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.alexey.soren.tests
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: Soren
+
+  SorenUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: SorenUITests
+        excludes:
+          - "**/.DS_Store"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.alexey.soren.uitests
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: Soren
+
+schemes:
+  Soren:
+    build:
+      targets:
+        Soren: all
+        SorenWidgets: all
+        SorenTests: [test]
+        SorenUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - SorenTests
+        - SorenUITests
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
