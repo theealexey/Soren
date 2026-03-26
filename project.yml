@@ -52,8 +52,9 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: Soren
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
-    dependencies:
-      - target: SorenWidgets
+    # Widget dependency will be re-enabled in the widgets milestone
+    # dependencies:
+    #   - target: SorenWidgets
 
   SorenWidgets:
     type: app-extension
@@ -67,8 +68,10 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.alexey.soren.widgets
         INFOPLIST_KEY_CFBundleDisplayName: SorenWidgets
         INFOPLIST_KEY_NSHumanReadableCopyright: ""
+        INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier: com.apple.widgetkit-extension
         GENERATE_INFOPLIST_FILE: YES
         SKIP_INSTALL: YES
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
 
   SorenTests:
     type: bundle.unit-test

@@ -17,7 +17,6 @@
 		50C39ECEA025E0E6793551C1 /* SorenUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593F223EC1D8EC1482C3ABD5 /* SorenUITests.swift */; };
 		7707C4BFF9F47651CDDC2C3D /* SorenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6237A5CF21F39D3AD7CF791 /* SorenTests.swift */; };
 		944F384302428802BF50925E /* SorenWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0F163392822F2FF77B7587C /* SorenWidgets.swift */; };
-		A10B1C936B79172434FE8F3E /* SorenWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 20A03BEB8C0222E166300367 /* SorenWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AF6E1A157EDBACB100FEE1AC /* AnalyticsPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90762FBB5B6A43C011E02296 /* AnalyticsPlaceholderView.swift */; };
 		BC67F03FFAAF36667E671F79 /* AppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 704603302FD9C648B425E8B6 /* AppContainer.swift */; };
 		EE06586CF84598617481ACE1 /* SorenApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCEF5B74B2E1B0B2BC44B6B0 /* SorenApp.swift */; };
@@ -38,28 +37,7 @@
 			remoteGlobalIDString = 309559632A4FD3FA5E61B85C;
 			remoteInfo = Soren;
 		};
-		F718E87876B600BBC277211E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = E0E34C732A798033B60447A5 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = A83FAFCA0425E1DEC850BB9D;
-			remoteInfo = SorenWidgets;
-		};
 /* End PBXContainerItemProxy section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		A1F2271E5C88065037F8710C /* Embed Foundation Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
-			files = (
-				A10B1C936B79172434FE8F3E /* SorenWidgets.appex in Embed Foundation Extensions */,
-			);
-			name = "Embed Foundation Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		20A03BEB8C0222E166300367 /* SorenWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = SorenWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -534,12 +512,10 @@
 			buildPhases = (
 				39898E039E80DBC56B46F862 /* Sources */,
 				66F68FB77218D344F4F22F2E /* Resources */,
-				A1F2271E5C88065037F8710C /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				E12D81CD8375325C92F18512 /* PBXTargetDependency */,
 			);
 			name = Soren;
 			packageProductDependencies = (
@@ -676,11 +652,6 @@
 			target = 309559632A4FD3FA5E61B85C /* Soren */;
 			targetProxy = CD29CBA13E99225408C5E2CC /* PBXContainerItemProxy */;
 		};
-		E12D81CD8375325C92F18512 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = A83FAFCA0425E1DEC850BB9D /* SorenWidgets */;
-			targetProxy = F718E87876B600BBC277211E /* PBXContainerItemProxy */;
-		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -759,12 +730,9 @@
 			buildSettings = {
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = SorenWidgets;
+				INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.alexey.soren.widgets;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -777,12 +745,9 @@
 			buildSettings = {
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = SorenWidgets;
+				INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.alexey.soren.widgets;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
