@@ -12,6 +12,9 @@
 		05D1DFB2D7D17FCCDF5A8124 /* CalendarPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EB340E329D8BABE4656FEFF /* CalendarPlaceholderView.swift */; };
 		0941461856266EC88A29F01E /* Shadows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730D410421B54FB89BDF8AA /* Shadows.swift */; };
 		0B02B6F86D5888DF4761D60D /* LibraryPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759C37B3FCD48C89A97006CB /* LibraryPlaceholderView.swift */; };
+		61C58E6A2C64074DC5BC5AB7 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9554DCA5DA65697FB5974E4B /* LibraryView.swift */; };
+		AC116D2E95730D9198D0C171 /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BD73539E0B189825AEA0B2A /* LibraryViewModel.swift */; };
+		A2E6667309081A41197DEE9E /* GetLibraryItems.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F38A40EE534B5375782C896 /* GetLibraryItems.swift */; };
 		0B2E3988602DFFDC732E24E8 /* BillingCycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741C5159A29C5FE9FA23F568 /* BillingCycleTests.swift */; };
 		0D4F8587FDCFA17DC643A56F /* ComponentsPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D90AEE18CDF2F5F1B15EDF /* ComponentsPreview.swift */; };
 		0FF6F5DDD7EE7C32BE3B2F47 /* FlowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3720B5F5D991DB038E27DA0 /* FlowLayout.swift */; };
@@ -152,6 +155,9 @@
 		741C5159A29C5FE9FA23F568 /* BillingCycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillingCycleTests.swift; sourceTree = "<group>"; };
 		7594AC2BF9C18EA3752F7938 /* ProviderIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderIcon.swift; sourceTree = "<group>"; };
 		759C37B3FCD48C89A97006CB /* LibraryPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryPlaceholderView.swift; sourceTree = "<group>"; };
+		9554DCA5DA65697FB5974E4B /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		5BD73539E0B189825AEA0B2A /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
+		8F38A40EE534B5375782C896 /* GetLibraryItems.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetLibraryItems.swift; sourceTree = "<group>"; };
 		78657C07E384E7B1B6E5750D /* GetDashboardSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetDashboardSummary.swift; sourceTree = "<group>"; };
 		78D90AEE18CDF2F5F1B15EDF /* ComponentsPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComponentsPreview.swift; sourceTree = "<group>"; };
 		7960A2157878C5C39AE82756 /* AmountLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmountLabel.swift; sourceTree = "<group>"; };
@@ -512,6 +518,7 @@
 			isa = PBXGroup;
 			children = (
 				99ED11AD6BE786B0252959EE /* GetActiveTrials.swift */,
+				8F38A40EE534B5375782C896 /* GetLibraryItems.swift */,
 				78657C07E384E7B1B6E5750D /* GetDashboardSummary.swift */,
 				49A8FBEBDE686369CCE8778C /* GetUpcomingCharges.swift */,
 			);
@@ -575,6 +582,8 @@
 			children = (
 				41CBDB8E31484E2F80148A25 /* Components */,
 				759C37B3FCD48C89A97006CB /* LibraryPlaceholderView.swift */,
+				9554DCA5DA65697FB5974E4B /* LibraryView.swift */,
+				5BD73539E0B189825AEA0B2A /* LibraryViewModel.swift */,
 			);
 			path = Library;
 			sourceTree = "<group>";
@@ -890,6 +899,9 @@
 				0050A4D1600A744F59A20613 /* ItemStatus.swift in Sources */,
 				BFA6C1162A0E01994BDF61BA /* ItemType.swift in Sources */,
 				0B02B6F86D5888DF4761D60D /* LibraryPlaceholderView.swift in Sources */,
+				61C58E6A2C64074DC5BC5AB7 /* LibraryView.swift in Sources */,
+				AC116D2E95730D9198D0C171 /* LibraryViewModel.swift in Sources */,
+				A2E6667309081A41197DEE9E /* GetLibraryItems.swift in Sources */,
 				23F0694BDB7E4CC237816D88 /* Materials.swift in Sources */,
 				5968C0D9F8158A03E4378934 /* MotionTokens.swift in Sources */,
 				28A24336DA2E58C4068B93E0 /* PaymentMethod.swift in Sources */,

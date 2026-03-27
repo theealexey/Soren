@@ -1,0 +1,270 @@
+import SwiftUI
+
+// MARK: - Library View
+
+/// Full list of recurring items with search, status filters, and sorting.
+struct LibraryView: View {
+    @Environment(AppContainer.self) private var container
+    @State private var viewModel: LibraryViewModel?
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if let viewModel {
+                    libraryContent(viewModel)
+                } else {
+                    LoadingStateView()
+                }
+            }
+            .navigationTitle("Подписки")
+            .background(ColorTokens.background)
+            .task {
+                let vm = LibraryViewModel(repositories: container.repositories)
+                vm.load()
+                self.viewModel = vm
+            }
+        }
+    }
+
+    // MARK: - Content Router
+
+    @ViewBuilder
+    private func libraryContent(_ vm: LibraryViewModel) -> some View {
+        if vm.hasError {
+            ErrorStateView(
+                message: "Не удалось загрузить подписки"
+            ) {
+                vm.load()
+            }
+        } else if !vm.isLoaded {
+            LoadingStateView()
+        } else if vm.allItems.isEmpty {
+            emptyLibrary
+        } else {
+            populatedLibrary(vm)
+        }
+    }
+
+    // MARK: - Populated Library
+
+    private func populatedLibrary(_ vm: LibraryViewModel) -> some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: Spacing.md) {
+                filterChips(vm)
+
+                summaryBar(vm)
+
+                if vm.filteredItems.isEmpty {
+                    noResults(vm)
+                } else {
+                    itemsList(vm)
+                }
+            }
+            .padding(.vertical, Spacing.md)
+        }
+        .searchable(
+            text: Binding(
+                get: { vm.searchText },
+                set: { vm.searchText = $0 }
+            ),
+            prompt: "Поиск подписок"
+        )
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                sortMenu(vm)
+            }
+        }
+        .refreshable {
+            vm.load()
+        }
+    }
+
+    // MARK: - Filter Chips
+
+    private func filterChips(_ vm: LibraryViewModel) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: Spacing.xs) {
+                ForEach(LibraryViewModel.StatusFilter.allCases) { filter in
+                    let count = vm.filterCounts[filter] ?? 0
+                    let isSelected = vm.activeFilter == filter
+
+                    Button {
+                        withAnimation(MotionTokens.snappy) {
+                            vm.activeFilter = filter
+                        }
+                        HapticEngine.selection()
+                    } label: {
+                        HStack(spacing: Spacing.xxs) {
+                            if let icon = filter.icon {
+                                Image(systemName: icon)
+                                    .font(.system(size: 11, weight: .semibold))
+                            }
+
+                            Text(filter.title)
+                                .font(Typography.captionMedium)
+
+                            if count > 0 && filter != .all {
+                                Text("\(count)")
+                                    .font(Typography.footnote)
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(isSelected ? .white.opacity(0.8) : ColorTokens.textTertiary)
+                            }
+                        }
+                        .padding(.horizontal, Spacing.sm)
+                        .padding(.vertical, Spacing.xs)
+                        .foregroundStyle(isSelected ? .white : ColorTokens.textSecondary)
+                        .background(
+                            isSelected
+                                ? AnyShapeStyle(ColorTokens.accent)
+                                : AnyShapeStyle(ColorTokens.surfaceElevated),
+                            in: Capsule()
+                        )
+                        .overlay(
+                            Capsule()
+                                .strokeBorder(
+                                    isSelected ? .clear : ColorTokens.separator.opacity(0.5),
+                                    lineWidth: 0.5
+                                )
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, Spacing.lg)
+        }
+    }
+
+    // MARK: - Summary Bar
+
+    private func summaryBar(_ vm: LibraryViewModel) -> some View {
+        HStack {
+            Text("\(vm.filteredItems.count)")
+                .font(Typography.bodyMedium)
+                .foregroundStyle(ColorTokens.textPrimary)
+            + Text(" ")
+            + Text(pluralSubscription(vm.filteredItems.count))
+                .font(Typography.body)
+                .foregroundStyle(ColorTokens.textSecondary)
+
+            Spacer()
+
+            if vm.filteredMonthlyTotal > 0 {
+                AmountLabel(
+                    vm.filteredMonthlyTotal,
+                    currency: "RUB",
+                    size: .small,
+                    cycle: .monthly
+                )
+            }
+        }
+        .padding(.horizontal, Spacing.lg)
+    }
+
+    // MARK: - Items List
+
+    private func itemsList(_ vm: LibraryViewModel) -> some View {
+        PremiumCard {
+            VStack(spacing: 0) {
+                ForEach(Array(vm.filteredItems.enumerated()), id: \.element.id) { index, item in
+                    SorenListRow(
+                        title: item.title,
+                        subtitle: LibraryViewModel.subtitle(for: item),
+                        amount: item.amount,
+                        currency: item.currencyCode,
+                        cycle: LibraryViewModel.cycleLabel(for: item.billingCycle),
+                        iconName: item.category.systemIconName,
+                        iconColor: item.category.color,
+                        badge: LibraryViewModel.badge(for: item)
+                    )
+
+                    if index < vm.filteredItems.count - 1 {
+                        Divider()
+                            .padding(.leading, 52 + Spacing.sm)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, Spacing.lg)
+    }
+
+    // MARK: - Sort Menu
+
+    private func sortMenu(_ vm: LibraryViewModel) -> some View {
+        Menu {
+            ForEach(LibraryViewModel.SortOrder.allCases) { order in
+                Button {
+                    withAnimation(MotionTokens.smooth) {
+                        vm.sortOrder = order
+                    }
+                } label: {
+                    Label(order.title, systemImage: order.icon)
+                }
+                .disabled(vm.sortOrder == order)
+            }
+        } label: {
+            Image(systemName: "arrow.up.arrow.down")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(ColorTokens.accent)
+        }
+    }
+
+    // MARK: - No Results
+
+    private func noResults(_ vm: LibraryViewModel) -> some View {
+        VStack(spacing: Spacing.md) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 36, weight: .light))
+                .foregroundStyle(ColorTokens.textTertiary)
+
+            if !vm.searchText.isEmpty {
+                Text("Ничего не найдено по запросу «\(vm.searchText)»")
+                    .font(Typography.body)
+                    .foregroundStyle(ColorTokens.textSecondary)
+                    .multilineTextAlignment(.center)
+            } else {
+                Text("Нет подписок в категории «\(vm.activeFilter.title)»")
+                    .font(Typography.body)
+                    .foregroundStyle(ColorTokens.textSecondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .padding(Spacing.xxl)
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Empty Library
+
+    private var emptyLibrary: some View {
+        EmptyStateView(
+            icon: "list.bullet.rectangle",
+            title: "Нет подписок",
+            subtitle: "Добавьте подписки и сервисы, чтобы отслеживать расходы и не пропускать списания.",
+            actionTitle: "Добавить"
+        ) {
+            // Navigation to Add Item — wired in future session
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func pluralSubscription(_ count: Int) -> String {
+        let mod10 = count % 10
+        let mod100 = count % 100
+        if mod10 == 1 && mod100 != 11 { return "подписка" }
+        if (2...4).contains(mod10) && !(12...14).contains(mod100) { return "подписки" }
+        return "подписок"
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    LibraryView()
+        .environment(
+            AppContainer(
+                repositories: RepositoryContainer(
+                    context: try! SorenModelContainer.inMemory().mainContext
+                )
+            )
+        )
+}
