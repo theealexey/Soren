@@ -52,8 +52,12 @@ struct AmountLabel: View {
         ) ?? "\(amount)"
     }
 
+    /// Thread-safe formatter cache using nonisolated(unsafe) —
+    /// AmountLabel is a View (always on @MainActor), so this is safe in practice.
+    @MainActor
     private static var formatterCache: [String: NumberFormatter] = [:]
 
+    @MainActor
     private static func formatter(for currencyCode: String) -> NumberFormatter {
         if let cached = formatterCache[currencyCode] { return cached }
         let fmt = NumberFormatter()
@@ -61,8 +65,6 @@ struct AmountLabel: View {
         fmt.currencyCode = currencyCode
         fmt.minimumFractionDigits = 0
         fmt.maximumFractionDigits = 2
-        // Drop fractional part if it's .00
-        fmt.currencyDecimalSeparator = Locale.current.decimalSeparator
         formatterCache[currencyCode] = fmt
         return fmt
     }
@@ -112,9 +114,9 @@ extension AmountLabel {
 
         var label: String {
             switch self {
-            case .monthly: "/mo"
-            case .yearly: "/yr"
-            case .weekly: "/wk"
+            case .monthly: "/мес"
+            case .yearly: "/год"
+            case .weekly: "/нед"
             case .custom(let text): "/\(text)"
             }
         }

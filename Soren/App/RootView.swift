@@ -13,7 +13,7 @@ struct RootView: View {
                     .tag(tab)
             }
         }
-        .tint(.accentColor)
+        .tint(ColorTokens.accent)
     }
 }
 
@@ -30,32 +30,32 @@ enum AppTab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .home: "Home"
-        case .library: "Library"
-        case .calendar: "Calendar"
-        case .analytics: "Analytics"
-        case .settings: "Settings"
+        case .home:      "Главная"
+        case .library:   "Подписки"
+        case .calendar:  "Календарь"
+        case .analytics: "Аналитика"
+        case .settings:  "Настройки"
         }
     }
 
     var icon: String {
         switch self {
-        case .home: "house.fill"
-        case .library: "list.bullet"
-        case .calendar: "calendar"
+        case .home:      "house.fill"
+        case .library:   "list.bullet"
+        case .calendar:  "calendar"
         case .analytics: "chart.bar.fill"
-        case .settings: "gearshape.fill"
+        case .settings:  "gearshape.fill"
         }
     }
 
     @ViewBuilder
     var destination: some View {
         switch self {
-        case .home: HomePlaceholderView()
-        case .library: LibraryPlaceholderView()
-        case .calendar: CalendarPlaceholderView()
+        case .home:      HomePlaceholderView()
+        case .library:   LibraryPlaceholderView()
+        case .calendar:  CalendarPlaceholderView()
         case .analytics: AnalyticsPlaceholderView()
-        case .settings: SettingsPlaceholderView()
+        case .settings:  SettingsPlaceholderView()
         }
     }
 }

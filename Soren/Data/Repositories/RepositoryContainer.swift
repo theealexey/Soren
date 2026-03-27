@@ -4,37 +4,20 @@ import SwiftData
 // MARK: - Repository Container
 
 /// Single point of access for all repositories.
-/// Passed into the SwiftUI environment from the App entry point.
-///
-/// Usage:
-///     @Environment(RepositoryContainer.self) var repos
-///     let items = try await repos.recurringItems.fetchAll()
+/// Created once at app launch, immutable after init.
+/// Accessed through `AppContainer` which is injected into SwiftUI environment.
 @MainActor
-final class RepositoryContainer: ObservableObject {
+final class RepositoryContainer {
 
-    let recurringItems: any RecurringItemRepository
-    let paymentRecords: any PaymentRecordRepository
-    let paymentMethods: any PaymentMethodRepository
+    let recurringItems: SwiftDataRecurringItemRepository
+    let paymentRecords: SwiftDataPaymentRecordRepository
+    let paymentMethods: SwiftDataPaymentMethodRepository
 
     // MARK: - Init
 
-    init(
-        recurringItems: any RecurringItemRepository,
-        paymentRecords: any PaymentRecordRepository,
-        paymentMethods: any PaymentMethodRepository
-    ) {
-        self.recurringItems = recurringItems
-        self.paymentRecords = paymentRecords
-        self.paymentMethods = paymentMethods
-    }
-
-    // MARK: - Factory: Production
-
-    convenience init(context: ModelContext) {
-        self.init(
-            recurringItems: SwiftDataRecurringItemRepository(context: context),
-            paymentRecords: SwiftDataPaymentRecordRepository(context: context),
-            paymentMethods: SwiftDataPaymentMethodRepository(context: context)
-        )
+    init(context: ModelContext) {
+        self.recurringItems = SwiftDataRecurringItemRepository(context: context)
+        self.paymentRecords = SwiftDataPaymentRecordRepository(context: context)
+        self.paymentMethods = SwiftDataPaymentMethodRepository(context: context)
     }
 }

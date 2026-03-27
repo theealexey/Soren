@@ -1,7 +1,8 @@
 import Foundation
 
-protocol PaymentRecordRepository: Sendable {
-    func fetchAll(for itemID: UUID) async throws -> [PaymentRecord]
-    func save(_ record: PaymentRecord) async throws
-    func delete(id: UUID) async throws
+@MainActor
+protocol PaymentRecordRepository: AnyObject {
+    func fetchAll(for itemID: UUID) throws -> [PaymentRecord]
+    func save(_ record: PaymentRecord) throws
+    func delete(id: UUID) throws
 }

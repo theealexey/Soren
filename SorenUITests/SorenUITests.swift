@@ -10,11 +10,11 @@ final class SorenUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
-        // Verify tab bar exists with all 5 tabs
-        XCTAssertTrue(app.tabBars.buttons["Home"].exists)
-        XCTAssertTrue(app.tabBars.buttons["Library"].exists)
-        XCTAssertTrue(app.tabBars.buttons["Calendar"].exists)
-        XCTAssertTrue(app.tabBars.buttons["Analytics"].exists)
-        XCTAssertTrue(app.tabBars.buttons["Settings"].exists)
+        // Verify tab bar exists with all 5 tabs (Russian localization)
+        XCTAssertTrue(app.tabBars.buttons["Главная"].exists)
+        XCTAssertTrue(app.tabBars.buttons["Подписки"].exists)
+        XCTAssertTrue(app.tabBars.buttons["Календарь"].exists)
+        XCTAssertTrue(app.tabBars.buttons["Аналитика"].exists)
+        XCTAssertTrue(app.tabBars.buttons["Настройки"].exists)
     }
 }

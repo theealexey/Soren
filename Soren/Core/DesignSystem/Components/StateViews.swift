@@ -73,7 +73,7 @@ struct EmptyStateView: View {
 struct LoadingStateView: View {
     let message: String
 
-    init(_ message: String = "Loading...") {
+    init(_ message: String = "Загрузка...") {
         self.message = message
     }
 
@@ -99,7 +99,7 @@ struct ErrorStateView: View {
     let retryAction: (() -> Void)?
 
     init(
-        title: String = "Something went wrong",
+        title: String = "Что-то пошло не так",
         message: String,
         retryAction: (() -> Void)? = nil
     ) {
@@ -127,7 +127,7 @@ struct ErrorStateView: View {
 
             if let retryAction {
                 Button(action: retryAction) {
-                    Text("Retry")
+                    Text("Повторить")
                         .font(Typography.bodyMedium)
                         .foregroundStyle(.white)
                         .padding(.horizontal, Spacing.xl)

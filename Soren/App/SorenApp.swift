@@ -3,11 +3,16 @@ import SwiftData
 
 @main
 struct SorenApp: App {
-    let container: ModelContainer
+    private let container: ModelContainer
+    @State private var appContainer: AppContainer
 
     init() {
         do {
-            container = try SorenModelContainer.production()
+            let modelContainer = try SorenModelContainer.production()
+            self.container = modelContainer
+            self._appContainer = State(
+                initialValue: AppContainer(modelContext: modelContainer.mainContext)
+            )
         } catch {
             fatalError("Failed to initialize ModelContainer: \(error)")
         }
@@ -16,6 +21,7 @@ struct SorenApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                .environment(appContainer)
         }
         .modelContainer(container)
     }
