@@ -20,6 +20,7 @@
 		12701FBEF1E7897981F9D0DD /* ThemePreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 309532E5E620E13F6A2E6C91 /* ThemePreview.swift */; };
 		1388A547869A2A2BA95CC8D7 /* RecurringItemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D5A3EC78A790E61CAD07A89 /* RecurringItemTests.swift */; };
 		14FAD191C47CD95CDF6C6518 /* StateViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20EC791707151DB425DF4523 /* StateViews.swift */; };
+		1EEFBE6C428DB7F360810FAC /* GetActiveTrials.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99ED11AD6BE786B0252959EE /* GetActiveTrials.swift */; };
 		21D834D02FA95A3E4267078B /* SorenWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50A69B4F445210C888148449 /* SorenWidgetBundle.swift */; };
 		2310FE7B5B1B97190A18B413 /* SwiftDataPaymentRecordRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABF2C435F1328325A12FBB44 /* SwiftDataPaymentRecordRepository.swift */; };
 		23F0694BDB7E4CC237816D88 /* Materials.swift in Sources */ = {isa = PBXBuildFile; fileRef = F95FABB15A6F0EE1E4D13898 /* Materials.swift */; };
@@ -37,6 +38,7 @@
 		3E2C15DCA2F42CC6D125237B /* UsageStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08466B38DFF515E50A44F77D /* UsageStatus.swift */; };
 		40B9AED4D39EF8E91FE3ADAE /* PaymentMethodRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = E649AB3F110DA227AEAD1E55 /* PaymentMethodRepository.swift */; };
 		446776A4B4A8B61EACD9791E /* MotionTokenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B50D4B434DAA34DC9657942 /* MotionTokenTests.swift */; };
+		48C574F5FDC05128E84F81A0 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93AF16A9BA161AB845824A50 /* HomeViewModel.swift */; };
 		4D64A67C6D09B01C37CB27F9 /* AmountLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7960A2157878C5C39AE82756 /* AmountLabel.swift */; };
 		4E83E248693B7874D49B7D18 /* SettingsPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF23AAFF7A62FB3E647A90A7 /* SettingsPlaceholderView.swift */; };
 		50C39ECEA025E0E6793551C1 /* SorenUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593F223EC1D8EC1482C3ABD5 /* SorenUITests.swift */; };
@@ -73,10 +75,14 @@
 		C48971AE7A9316BBDD5F065C /* InMemoryProviderCatalogRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00327FFEEF7A9E012FB10737 /* InMemoryProviderCatalogRepository.swift */; };
 		C495539F7E533ACA7ABF6162 /* BillingCycleEncoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06BA485D3333CD7B7F8EF598 /* BillingCycleEncoderTests.swift */; };
 		C6190DB7C51FB64DB0E293B2 /* ProviderCatalogRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7705C464A405A91322BAAC4 /* ProviderCatalogRepository.swift */; };
+		C7D546820DB6FBAD4B931AF0 /* GetUpcomingCharges.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49A8FBEBDE686369CCE8778C /* GetUpcomingCharges.swift */; };
+		CAB6B1C2053F8DD928BE5B9D /* HomeViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 946AA7A82CD22CD520307B72 /* HomeViewModelTests.swift */; };
 		CD665C5489ADA78959BCE48F /* RepositoryContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B0E4355CE761328C61F5EE0 /* RepositoryContainer.swift */; };
 		CF06E51679C5374C5F5C0FB9 /* ProviderCatalog+Russia.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54D6DF4C5A91EEF6EEE2ECA8 /* ProviderCatalog+Russia.swift */; };
+		D1F1E6B9969E6BF56FBB94C4 /* GetDashboardSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78657C07E384E7B1B6E5750D /* GetDashboardSummary.swift */; };
 		D3FDAAE8713DC3970947E010 /* RecurringItemMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC765BF3D06C301257D5F0DD /* RecurringItemMapper.swift */; };
 		D93FA1641A7D3DF819A7E525 /* SDPaymentRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 059917135C045069A2443DCE /* SDPaymentRecord.swift */; };
+		DA1D3633A5FB697A69518640 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99F56C7B98AE8A936F6C1E6D /* HomeView.swift */; };
 		DB49E0177D4FD6870A3615B2 /* HapticEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0FCEDA034825514200F7242 /* HapticEngine.swift */; };
 		E01CF41ECC10C2676A49E5E3 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20E0A890641C92835FBE96BA /* Typography.swift */; };
 		E44AF6E3B1193D1539D9F6DF /* StatBlockTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D894AE57EE24BDE2C349DB /* StatBlockTests.swift */; };
@@ -132,6 +138,7 @@
 		37F60FF5906A163D8A9D885B /* PaymentMethodType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethodType.swift; sourceTree = "<group>"; };
 		3FD0B969C2EC4F06C1DD91AE /* PremiumCardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumCardTests.swift; sourceTree = "<group>"; };
 		43F33DA92ABD30F75DE8851C /* PaymentMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethod.swift; sourceTree = "<group>"; };
+		49A8FBEBDE686369CCE8778C /* GetUpcomingCharges.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetUpcomingCharges.swift; sourceTree = "<group>"; };
 		50A69B4F445210C888148449 /* SorenWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SorenWidgetBundle.swift; sourceTree = "<group>"; };
 		5110E3C6D5E26466595C387D /* SpacingTokenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacingTokenTests.swift; sourceTree = "<group>"; };
 		54D6DF4C5A91EEF6EEE2ECA8 /* ProviderCatalog+Russia.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProviderCatalog+Russia.swift"; sourceTree = "<group>"; };
@@ -145,6 +152,7 @@
 		741C5159A29C5FE9FA23F568 /* BillingCycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillingCycleTests.swift; sourceTree = "<group>"; };
 		7594AC2BF9C18EA3752F7938 /* ProviderIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderIcon.swift; sourceTree = "<group>"; };
 		759C37B3FCD48C89A97006CB /* LibraryPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryPlaceholderView.swift; sourceTree = "<group>"; };
+		78657C07E384E7B1B6E5750D /* GetDashboardSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetDashboardSummary.swift; sourceTree = "<group>"; };
 		78D90AEE18CDF2F5F1B15EDF /* ComponentsPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComponentsPreview.swift; sourceTree = "<group>"; };
 		7960A2157878C5C39AE82756 /* AmountLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmountLabel.swift; sourceTree = "<group>"; };
 		7F2D1730D9BADDD2F0A7C46A /* PaymentRecordRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentRecordRepository.swift; sourceTree = "<group>"; };
@@ -152,8 +160,12 @@
 		80918D4746AD2EF6165BD1F7 /* ReminderRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderRule.swift; sourceTree = "<group>"; };
 		90762FBB5B6A43C011E02296 /* AnalyticsPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsPlaceholderView.swift; sourceTree = "<group>"; };
 		931E5E8447CB6EBE61776031 /* SwiftDataPaymentMethodRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDataPaymentMethodRepository.swift; sourceTree = "<group>"; };
+		93AF16A9BA161AB845824A50 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
+		946AA7A82CD22CD520307B72 /* HomeViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModelTests.swift; sourceTree = "<group>"; };
 		948A56E413765945A9D3956F /* AmountLabelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmountLabelTests.swift; sourceTree = "<group>"; };
 		96C23F0287FFE6BD2405D175 /* ProviderCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderCatalog.swift; sourceTree = "<group>"; };
+		99ED11AD6BE786B0252959EE /* GetActiveTrials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetActiveTrials.swift; sourceTree = "<group>"; };
+		99F56C7B98AE8A936F6C1E6D /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		A241AE4DF892153A82322147 /* ItemType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemType.swift; sourceTree = "<group>"; };
 		A24F4A666D09CE7D6B730480 /* PaymentMethodMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethodMapper.swift; sourceTree = "<group>"; };
 		A4181BB9ED2ED7AD9AE263B5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -176,7 +188,7 @@
 		DECB5DA0FE20F6A22F9B861C /* ProviderCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderCatalogTests.swift; sourceTree = "<group>"; };
 		E0AB930C23ECEE675A98629F /* RecurringItemMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringItemMapperTests.swift; sourceTree = "<group>"; };
 		E1BBC3EE63F2DC4F7A0ECAF6 /* SorenUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SorenUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		E55A14CE84C8CD53BD4E3F1A /* Soren.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Soren.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E55A14CE84C8CD53BD4E3F1A /* Soren.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Soren.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E649AB3F110DA227AEAD1E55 /* PaymentMethodRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethodRepository.swift; sourceTree = "<group>"; };
 		E95E33778D21F29F937EC9AC /* ItemStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemStatus.swift; sourceTree = "<group>"; };
 		EAC69E24F7112B4A8F468D2D /* ProviderTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderTemplate.swift; sourceTree = "<group>"; };
@@ -206,6 +218,14 @@
 				EF23AAFF7A62FB3E647A90A7 /* SettingsPlaceholderView.swift */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		09ACBB7418D470400A75E2EA /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				946AA7A82CD22CD520307B72 /* HomeViewModelTests.swift */,
+			);
+			path = Features;
 			sourceTree = "<group>";
 		};
 		1037CFE29E90D5795DEBD8A5 /* DesignSystem */ = {
@@ -281,6 +301,8 @@
 			children = (
 				480403287A59878737DC097A /* Components */,
 				BE4523F2EAB67907AF58C619 /* HomePlaceholderView.swift */,
+				99F56C7B98AE8A936F6C1E6D /* HomeView.swift */,
+				93AF16A9BA161AB845824A50 /* HomeViewModel.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -480,6 +502,7 @@
 				B21F63BB631A5473F1152311 /* Data */,
 				1037CFE29E90D5795DEBD8A5 /* DesignSystem */,
 				291DDE33C9885407D5BBDECC /* Domain */,
+				09ACBB7418D470400A75E2EA /* Features */,
 				C6237A5CF21F39D3AD7CF791 /* SorenTests.swift */,
 			);
 			path = SorenTests;
@@ -488,6 +511,9 @@
 		A6AF1B3AD8E7D94E895D7864 /* UseCases */ = {
 			isa = PBXGroup;
 			children = (
+				99ED11AD6BE786B0252959EE /* GetActiveTrials.swift */,
+				78657C07E384E7B1B6E5750D /* GetDashboardSummary.swift */,
+				49A8FBEBDE686369CCE8778C /* GetUpcomingCharges.swift */,
 			);
 			path = UseCases;
 			sourceTree = "<group>";
@@ -842,6 +868,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				4D64A67C6D09B01C37CB27F9 /* AmountLabel.swift in Sources */,
+				1EEFBE6C428DB7F360810FAC /* GetActiveTrials.swift in Sources */,
+				C7D546820DB6FBAD4B931AF0 /* GetUpcomingCharges.swift in Sources */,
+				D1F1E6B9969E6BF56FBB94C4 /* GetDashboardSummary.swift in Sources */,
+				48C574F5FDC05128E84F81A0 /* HomeViewModel.swift in Sources */,
+				DA1D3633A5FB697A69518640 /* HomeView.swift in Sources */,
 				AF6E1A157EDBACB100FEE1AC /* AnalyticsPlaceholderView.swift in Sources */,
 				BC67F03FFAAF36667E671F79 /* AppContainer.swift in Sources */,
 				747917FE51A83E20934C9492 /* BillingCycle.swift in Sources */,
@@ -918,6 +949,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E9CBF6DF558DD865FFA2D11C /* AmountLabelTests.swift in Sources */,
+				CAB6B1C2053F8DD928BE5B9D /* HomeViewModelTests.swift in Sources */,
 				C495539F7E533ACA7ABF6162 /* BillingCycleEncoderTests.swift in Sources */,
 				0B2E3988602DFFDC732E24E8 /* BillingCycleTests.swift in Sources */,
 				FA9135CE43C789E1B16B94B3 /* InsightCardTests.swift in Sources */,
@@ -1036,7 +1068,11 @@
 				INFOPLIST_KEY_CFBundleDisplayName = SorenWidgets;
 				INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.alexey.soren.widgets;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -1051,7 +1087,11 @@
 				INFOPLIST_KEY_CFBundleDisplayName = SorenWidgets;
 				INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.alexey.soren.widgets;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -1077,6 +1117,9 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.alexey.soren;
 				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -1116,6 +1159,9 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.alexey.soren;
 				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;

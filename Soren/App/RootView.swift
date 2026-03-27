@@ -51,7 +51,7 @@ enum AppTab: String, CaseIterable, Identifiable {
     @ViewBuilder
     var destination: some View {
         switch self {
-        case .home:      HomePlaceholderView()
+        case .home:      HomeView()
         case .library:   LibraryPlaceholderView()
         case .calendar:  CalendarPlaceholderView()
         case .analytics: AnalyticsPlaceholderView()

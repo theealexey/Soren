@@ -106,7 +106,7 @@ extension AmountLabel {
 // MARK: - Cycle Label
 
 extension AmountLabel {
-    enum CycleLabel {
+    enum CycleLabel: Equatable {
         case monthly
         case yearly
         case weekly

@@ -62,19 +62,19 @@ struct AmountLabelTests {
 
     // MARK: - Cycle labels
 
-    @Test("Monthly cycle label is /mo")
+    @Test("Monthly cycle label is /мес")
     func monthlyCycle() {
-        #expect(AmountLabel.CycleLabel.monthly.label == "/mo")
+        #expect(AmountLabel.CycleLabel.monthly.label == "/мес")
     }
 
-    @Test("Yearly cycle label is /yr")
+    @Test("Yearly cycle label is /год")
     func yearlyCycle() {
-        #expect(AmountLabel.CycleLabel.yearly.label == "/yr")
+        #expect(AmountLabel.CycleLabel.yearly.label == "/год")
     }
 
-    @Test("Weekly cycle label is /wk")
+    @Test("Weekly cycle label is /нед")
     func weeklyCycle() {
-        #expect(AmountLabel.CycleLabel.weekly.label == "/wk")
+        #expect(AmountLabel.CycleLabel.weekly.label == "/нед")
     }
 
     @Test("Custom cycle label preserves text")

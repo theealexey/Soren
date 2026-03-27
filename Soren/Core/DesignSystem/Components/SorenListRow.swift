@@ -93,7 +93,7 @@ struct SorenListRow: View {
 // MARK: - Badge
 
 extension SorenListRow {
-    enum Badge {
+    enum Badge: Equatable {
         case trial
         case dueSoon
         case failed
