@@ -2,10 +2,10 @@ import Foundation
 
 enum PaymentRecordMapper {
 
-    static func toDomain(_ sd: SDPaymentRecord, itemID: UUID) -> PaymentRecord {
+    static func toDomain(_ sd: SDPaymentRecord) -> PaymentRecord {
         PaymentRecord(
             id: sd.id,
-            recurringItemID: itemID,
+            recurringItemID: sd.itemID,
             amount: sd.amountValue,
             currencyCode: sd.currencyCode,
             paymentDate: sd.paymentDate,
@@ -18,6 +18,7 @@ enum PaymentRecordMapper {
     static func toSD(_ domain: PaymentRecord) -> SDPaymentRecord {
         SDPaymentRecord(
             id: domain.id,
+            itemID: domain.recurringItemID,
             amountValue: domain.amount,
             currencyCode: domain.currencyCode,
             paymentDate: domain.paymentDate,

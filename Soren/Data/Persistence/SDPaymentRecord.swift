@@ -6,6 +6,7 @@ import Foundation
 final class SDPaymentRecord {
 
     @Attribute(.unique) var id: UUID
+    var itemID: UUID            // denormalized for fast predicate filtering
     var amountValue: Decimal
     var currencyCode: String
     var paymentDate: Date
@@ -21,6 +22,7 @@ final class SDPaymentRecord {
 
     init(
         id: UUID,
+        itemID: UUID,
         amountValue: Decimal,
         currencyCode: String,
         paymentDate: Date,
@@ -29,6 +31,7 @@ final class SDPaymentRecord {
         note: String
     ) {
         self.id = id
+        self.itemID = itemID
         self.amountValue = amountValue
         self.currencyCode = currencyCode
         self.paymentDate = paymentDate
