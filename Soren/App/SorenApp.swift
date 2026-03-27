@@ -7,13 +7,7 @@ struct SorenApp: App {
 
     init() {
         do {
-            let schema = Schema([])
-            let config = ModelConfiguration(
-                "Soren",
-                schema: schema,
-                isStoredInMemoryOnly: false
-            )
-            container = try ModelContainer(for: schema, configurations: [config])
+            container = try SorenModelContainer.production()
         } catch {
             fatalError("Failed to initialize ModelContainer: \(error)")
         }
