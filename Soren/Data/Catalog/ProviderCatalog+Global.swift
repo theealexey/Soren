@@ -213,6 +213,35 @@ extension ProviderCatalog {
               category: .food, itemType: .membership, suggestedCurrencyCode: "USD", region: .global,
               tags: ["delivery"]),
 
+        // MARK: Creators & Donations
+        .init(id: "patreon", displayName: "Patreon", aliases: ["патреон"],
+              category: .creators, itemType: .membership, suggestedCurrencyCode: "USD", region: .global,
+              tags: ["creators", "donations"]),
+
+        .init(id: "twitch_sub", displayName: "Twitch Subscriptions", aliases: ["твич", "twitch"],
+              category: .creators, suggestedCurrencyCode: "USD", region: .global,
+              tags: ["creators", "streaming"]),
+
+        .init(id: "youtube_membership", displayName: "YouTube Memberships", aliases: ["ютуб мемберство"],
+              category: .creators, suggestedCurrencyCode: "USD", region: .global,
+              tags: ["creators", "youtube"]),
+
+        .init(id: "ko_fi", displayName: "Ko-fi", aliases: ["кофи"],
+              category: .creators, itemType: .membership, suggestedCurrencyCode: "USD", region: .global,
+              tags: ["creators", "donations"]),
+
+        .init(id: "buy_me_a_coffee", displayName: "Buy Me a Coffee", aliases: ["бай ми э кофе", "bmac"],
+              category: .creators, itemType: .membership, suggestedCurrencyCode: "USD", region: .global,
+              tags: ["creators", "donations"]),
+
+        .init(id: "substack", displayName: "Substack", aliases: ["сабстак"],
+              category: .creators, itemType: .membership, suggestedCurrencyCode: "USD", region: .global,
+              tags: ["creators", "newsletter"]),
+
+        .init(id: "onlyfans", displayName: "OnlyFans", aliases: ["онлифанс"],
+              category: .creators, suggestedCurrencyCode: "USD", region: .global,
+              tags: ["creators"]),
+
         // MARK: Apple Bundles
         .init(id: "apple_one", displayName: "Apple One", aliases: ["эпл ван"],
               category: .cloud, itemType: .ecosystemBundle, suggestedCurrencyCode: "USD", region: .global,

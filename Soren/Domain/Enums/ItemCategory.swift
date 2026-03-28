@@ -18,6 +18,7 @@ enum ItemCategory: String, Codable, CaseIterable, Sendable {
     case vpn
     case food
     case education
+    case creators
     case other
 }
 
@@ -39,6 +40,7 @@ extension ItemCategory {
         case .vpn:          "VPN и безопасность"
         case .food:         "Еда и доставка"
         case .education:    "Образование"
+        case .creators:     "Креаторы и донаты"
         case .other:        "Другое"
         }
     }

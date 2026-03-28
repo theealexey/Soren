@@ -245,6 +245,28 @@ extension ProviderCatalog {
               tags: ["delivery"]),
 
         // ────────────────────────────────────────
+        // MARK: Креаторы и донаты
+        // ────────────────────────────────────────
+
+        .init(id: "boosty", displayName: "Boosty",
+              aliases: ["бусти"],
+              category: .creators, itemType: .membership,
+              suggestedCurrencyCode: "RUB", region: .russia,
+              tags: ["creators", "donations"]),
+
+        .init(id: "donationalerts", displayName: "DonationAlerts",
+              aliases: ["донейшн алертс", "da"],
+              category: .creators, itemType: .membership,
+              suggestedCurrencyCode: "RUB", region: .russia,
+              tags: ["creators", "donations"]),
+
+        .init(id: "sponsr", displayName: "Sponsr",
+              aliases: ["спонср"],
+              category: .creators, itemType: .membership,
+              suggestedCurrencyCode: "RUB", region: .russia,
+              tags: ["creators", "donations"]),
+
+        // ────────────────────────────────────────
         // MARK: Игры
         // ────────────────────────────────────────
 

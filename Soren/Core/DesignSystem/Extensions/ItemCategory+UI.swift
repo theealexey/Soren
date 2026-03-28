@@ -24,6 +24,7 @@ extension ItemCategory {
         case .vpn:          "lock.shield.fill"
         case .food:         "fork.knife"
         case .education:    "graduationcap.fill"
+        case .creators:     "person.2.fill"
         case .other:        "ellipsis.circle.fill"
         }
     }
@@ -46,6 +47,7 @@ extension ItemCategory {
         case .vpn:          ColorTokens.categoryProductivity
         case .food:         ColorTokens.categoryShopping
         case .education:    ColorTokens.categoryAI
+        case .creators:     ColorTokens.accent
         case .other:        ColorTokens.textTertiary
         }
     }
