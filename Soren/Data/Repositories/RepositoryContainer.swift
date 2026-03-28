@@ -9,9 +9,9 @@ import SwiftData
 @MainActor
 final class RepositoryContainer {
 
-    let recurringItems: SwiftDataRecurringItemRepository
-    let paymentRecords: SwiftDataPaymentRecordRepository
-    let paymentMethods: SwiftDataPaymentMethodRepository
+    let recurringItems: any RecurringItemRepository
+    let paymentRecords: any PaymentRecordRepository
+    let paymentMethods: any PaymentMethodRepository
 
     // MARK: - Init
 

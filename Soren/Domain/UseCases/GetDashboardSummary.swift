@@ -28,9 +28,9 @@ struct DashboardSummary: Equatable, Sendable {
 @MainActor
 struct GetDashboardSummary {
 
-    private let repository: SwiftDataRecurringItemRepository
+    private let repository: any RecurringItemRepository
 
-    init(repository: SwiftDataRecurringItemRepository) {
+    init(repository: any RecurringItemRepository) {
         self.repository = repository
     }
 

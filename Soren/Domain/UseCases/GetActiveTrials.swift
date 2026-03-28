@@ -7,9 +7,9 @@ import Foundation
 @MainActor
 struct GetActiveTrials {
 
-    private let repository: SwiftDataRecurringItemRepository
+    private let repository: any RecurringItemRepository
 
-    init(repository: SwiftDataRecurringItemRepository) {
+    init(repository: any RecurringItemRepository) {
         self.repository = repository
     }
 
