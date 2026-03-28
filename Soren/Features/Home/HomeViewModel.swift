@@ -1,4 +1,4 @@
-import Foundation
+import SwiftUI
 
 // MARK: - Home View Model
 
@@ -13,6 +13,7 @@ final class HomeViewModel {
     private(set) var summary: DashboardSummary = .empty
     private(set) var upcomingCharges: [RecurringItem] = []
     private(set) var activeTrials: [RecurringItem] = []
+    private(set) var defaultCurrency: String = UserPreferences.default.defaultCurrencyCode
     private(set) var error: Error?
     private(set) var isLoaded = false
 
@@ -23,32 +24,38 @@ final class HomeViewModel {
     private let getDashboardSummary: GetDashboardSummary
     private let getUpcomingCharges: GetUpcomingCharges
     private let getActiveTrials: GetActiveTrials
+    private let preferences: UserPreferencesRepository
 
     // MARK: - Init
 
     init(
         getDashboardSummary: GetDashboardSummary,
         getUpcomingCharges: GetUpcomingCharges,
-        getActiveTrials: GetActiveTrials
+        getActiveTrials: GetActiveTrials,
+        preferences: UserPreferencesRepository = UserPreferencesRepository()
     ) {
         self.getDashboardSummary = getDashboardSummary
         self.getUpcomingCharges = getUpcomingCharges
         self.getActiveTrials = getActiveTrials
+        self.preferences = preferences
     }
 
     /// Convenience init from RepositoryContainer.
-    init(repositories: RepositoryContainer) {
+    init(repositories: RepositoryContainer, preferences: UserPreferencesRepository = UserPreferencesRepository()) {
         let repo = repositories.recurringItems
         self.getDashboardSummary = GetDashboardSummary(repository: repo)
         self.getUpcomingCharges = GetUpcomingCharges(repository: repo)
         self.getActiveTrials = GetActiveTrials(repository: repo)
+        self.preferences = preferences
     }
 
     // MARK: - Actions
 
-    func load() {
+    func load(forceReload: Bool = false) {
+        guard !isLoaded || forceReload else { return }
         error = nil
         do {
+            defaultCurrency = preferences.load().defaultCurrencyCode
             summary = try getDashboardSummary.execute()
             upcomingCharges = try getUpcomingCharges.execute()
             activeTrials = try getActiveTrials.execute()
@@ -105,5 +112,69 @@ extension HomeViewModel {
         if daysLeft <= 0 { return "Пробный период заканчивается сегодня" }
         if daysLeft == 1 { return "Остался 1 день" }
         return "Осталось \(daysLeft) дн."
+    }
+
+    /// Determines trial urgency severity for insight cards.
+    static func trialSeverity(for item: RecurringItem) -> InsightCard.Severity {
+        guard let days = item.daysUntilTrialEnd else { return .info }
+        if days <= 1 { return .critical }
+        if days <= 3 { return .warning }
+        return .info
+    }
+
+    /// Russian pluralization for "пробный период" count label.
+    static func pluralTrial(_ count: Int) -> String {
+        let mod10 = count % 10
+        let mod100 = count % 100
+        if mod10 == 1 && mod100 != 11 { return "пробный" }
+        return "пробных"
+    }
+}
+
+// MARK: - Insights
+
+extension HomeViewModel {
+
+    struct InsightData {
+        let icon: String
+        let title: String
+        let subtitle: String?
+        let severity: InsightCard.Severity
+    }
+
+    var insights: [InsightData] {
+        var result: [InsightData] = []
+
+        let overdueCount = upcomingCharges.filter { $0.daysUntilNextCharge < 0 }.count
+        if overdueCount > 0 {
+            result.append(InsightData(
+                icon: "exclamationmark.triangle.fill",
+                title: "\(overdueCount) просроченных списаний",
+                subtitle: "Проверьте способы оплаты",
+                severity: .critical
+            ))
+        }
+
+        let weekTotal = upcomingCharges.reduce(Decimal.zero) { $0 + $1.amount }
+        if weekTotal > 0 && upcomingCharges.count >= 2 {
+            result.append(InsightData(
+                icon: "calendar.badge.clock",
+                title: "\(upcomingCharges.count) списаний на этой неделе",
+                subtitle: nil,
+                severity: .info
+            ))
+        }
+
+        let failedCount = upcomingCharges.filter { $0.status == .failed }.count
+        if failedCount > 0 {
+            result.append(InsightData(
+                icon: "creditcard.trianglebadge.exclamationmark",
+                title: "\(failedCount) неудачных платежей",
+                subtitle: "Требуется внимание",
+                severity: .critical
+            ))
+        }
+
+        return result
     }
 }

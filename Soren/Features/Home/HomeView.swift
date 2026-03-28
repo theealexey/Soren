@@ -9,7 +9,6 @@ struct HomeView: View {
     @State private var viewModel: HomeViewModel?
     @State private var showAddSheet = false
     @State private var showSettings = false
-    @State private var defaultCurrency = UserPreferences.default.defaultCurrencyCode
 
     private let maxUpcomingItems = 5
 
@@ -41,13 +40,15 @@ struct HomeView: View {
                 }
             }
             .sheet(isPresented: $showAddSheet, onDismiss: {
-                viewModel?.load()
+                viewModel?.load(forceReload: true)
             }) {
                 addSubscriptionSheet
             }
             .task {
-                defaultCurrency = container.preferences.load().defaultCurrencyCode
-                let vm = HomeViewModel(repositories: container.repositories)
+                let vm = HomeViewModel(
+                    repositories: container.repositories,
+                    preferences: container.preferences
+                )
                 vm.load()
                 self.viewModel = vm
             }
@@ -78,7 +79,7 @@ struct HomeView: View {
             ErrorStateView(
                 message: "Не удалось загрузить данные"
             ) {
-                vm.load()
+                vm.load(forceReload: true)
             }
         } else if !vm.isLoaded {
             LoadingStateView()
@@ -94,7 +95,7 @@ struct HomeView: View {
     private func scrollableContent(_ vm: HomeViewModel) -> some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: Spacing.lg) {
-                financialSnapshot(vm.summary)
+                financialSnapshot(vm)
 
                 if !vm.upcomingCharges.isEmpty {
                     upcomingSection(vm.upcomingCharges)
@@ -110,13 +111,13 @@ struct HomeView: View {
             .padding(.vertical, Spacing.md)
         }
         .refreshable {
-            viewModel?.load()
+            viewModel?.load(forceReload: true)
         }
     }
 
     // MARK: - Financial Snapshot
 
-    private func financialSnapshot(_ summary: DashboardSummary) -> some View {
+    private func financialSnapshot(_ vm: HomeViewModel) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             SectionHeader("Обзор")
 
@@ -124,8 +125,8 @@ struct HomeView: View {
                 PremiumCard(.elevated) {
                     StatBlock(
                         title: "В месяц",
-                        amount: summary.monthlyTotal,
-                        currency: defaultCurrency,
+                        amount: vm.summary.monthlyTotal,
+                        currency: vm.defaultCurrency,
                         amountSize: .large
                     )
                 }
@@ -133,8 +134,8 @@ struct HomeView: View {
                 PremiumCard(.elevated) {
                     StatBlock(
                         title: "В год",
-                        amount: summary.yearlyProjection,
-                        currency: defaultCurrency,
+                        amount: vm.summary.yearlyProjection,
+                        currency: vm.defaultCurrency,
                         amountSize: .large
                     )
                 }
@@ -143,15 +144,15 @@ struct HomeView: View {
             HStack(spacing: Spacing.sm) {
                 metricChip(
                     icon: "repeat",
-                    value: "\(summary.activeItemCount)",
+                    value: "\(vm.summary.activeItemCount)",
                     label: "активных"
                 )
 
-                if summary.activeTrialCount > 0 {
+                if vm.summary.activeTrialCount > 0 {
                     metricChip(
                         icon: "clock",
-                        value: "\(summary.activeTrialCount)",
-                        label: pluralTrial(summary.activeTrialCount)
+                        value: "\(vm.summary.activeTrialCount)",
+                        label: HomeViewModel.pluralTrial(vm.summary.activeTrialCount)
                     )
                 }
             }
@@ -202,7 +203,7 @@ struct HomeView: View {
                     icon: "clock.badge.exclamationmark",
                     title: trial.title,
                     subtitle: HomeViewModel.trialSubtitle(for: trial),
-                    severity: trialSeverity(for: trial)
+                    severity: HomeViewModel.trialSeverity(for: trial)
                 )
             }
         }
@@ -212,12 +213,11 @@ struct HomeView: View {
 
     @ViewBuilder
     private func quickInsights(_ vm: HomeViewModel) -> some View {
-        let insights = buildInsights(vm)
-        if !insights.isEmpty {
+        if !vm.insights.isEmpty {
             VStack(alignment: .leading, spacing: Spacing.sm) {
                 SectionHeader("Аналитика")
 
-                ForEach(insights, id: \.title) { insight in
+                ForEach(vm.insights, id: \.title) { insight in
                     InsightCard(
                         icon: insight.icon,
                         title: insight.title,
@@ -263,68 +263,6 @@ struct HomeView: View {
         .background(ColorTokens.accent.opacity(0.1), in: Capsule())
     }
 
-    private func trialSeverity(for item: RecurringItem) -> InsightCard.Severity {
-        guard let days = item.daysUntilTrialEnd else { return .info }
-        if days <= 1 { return .critical }
-        if days <= 3 { return .warning }
-        return .info
-    }
-
-    /// Russian pluralization for "пробный период" count.
-    private func pluralTrial(_ count: Int) -> String {
-        let mod10 = count % 10
-        let mod100 = count % 100
-        if mod10 == 1 && mod100 != 11 { return "пробный" }
-        return "пробных"
-    }
-}
-
-// MARK: - Insight Builder
-
-private extension HomeView {
-
-    struct InsightData {
-        let icon: String
-        let title: String
-        let subtitle: String?
-        let severity: InsightCard.Severity
-    }
-
-    func buildInsights(_ vm: HomeViewModel) -> [InsightData] {
-        var result: [InsightData] = []
-
-        let overdueCount = vm.upcomingCharges.filter { $0.daysUntilNextCharge < 0 }.count
-        if overdueCount > 0 {
-            result.append(InsightData(
-                icon: "exclamationmark.triangle.fill",
-                title: "\(overdueCount) просроченных списаний",
-                subtitle: "Проверьте способы оплаты",
-                severity: .critical
-            ))
-        }
-
-        let weekTotal = vm.upcomingCharges.reduce(Decimal.zero) { $0 + $1.amount }
-        if weekTotal > 0 && vm.upcomingCharges.count >= 2 {
-            result.append(InsightData(
-                icon: "calendar.badge.clock",
-                title: "\(vm.upcomingCharges.count) списаний на этой неделе",
-                subtitle: nil,
-                severity: .info
-            ))
-        }
-
-        let failedCount = vm.upcomingCharges.filter { $0.status == .failed }.count
-        if failedCount > 0 {
-            result.append(InsightData(
-                icon: "creditcard.trianglebadge.exclamationmark",
-                title: "\(failedCount) неудачных платежей",
-                subtitle: "Требуется внимание",
-                severity: .critical
-            ))
-        }
-
-        return result
-    }
 }
 
 // MARK: - Preview

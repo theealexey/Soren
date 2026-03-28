@@ -62,7 +62,7 @@ struct AlertsView: View {
         if vm.hasError {
             ErrorStateView(
                 message: "Не удалось загрузить алерты",
-                retryAction: { vm.load() }
+                retryAction: { vm.load(forceReload: true) }
             )
         } else if vm.alerts.isEmpty {
             emptyState
@@ -78,7 +78,7 @@ struct AlertsView: View {
                 .padding(.horizontal, Spacing.lg)
                 .padding(.vertical, Spacing.md)
             }
-            .refreshable { vm.load() }
+            .refreshable { vm.load(forceReload: true) }
         }
     }
 
@@ -89,7 +89,7 @@ struct AlertsView: View {
             if vm.alerts.criticalCount > 0 {
                 InsightCard(
                     icon: "exclamationmark.triangle.fill",
-                    title: criticalTitle(vm.alerts),
+                    title: vm.criticalTitle,
                     subtitle: "Требуется внимание",
                     severity: .critical
                 )
@@ -99,7 +99,7 @@ struct AlertsView: View {
                 let nonCritical = vm.alerts.totalCount - vm.alerts.criticalCount
                 InsightCard(
                     icon: "bell.fill",
-                    title: alertCountTitle(nonCritical),
+                    title: vm.alertCountTitle(nonCritical),
                     subtitle: "Списания и триалы",
                     severity: .warning
                 )
@@ -159,16 +159,6 @@ struct AlertsView: View {
         return HomeViewModel.chargeSubtitle(for: item)
     }
 
-    private func criticalTitle(_ alerts: AlertsResult) -> String {
-        let count = alerts.criticalCount
-        if count == 1 { return "1 критическая проблема" }
-        return "\(count) критических проблем"
-    }
-
-    private func alertCountTitle(_ count: Int) -> String {
-        if count == 1 { return "1 предупреждение" }
-        return "\(count) предупреждений"
-    }
 }
 
 // MARK: - Preview

@@ -31,7 +31,8 @@ final class AlertsViewModel {
 
     // MARK: - Actions
 
-    func load() {
+    func load(forceReload: Bool = false) {
+        guard !isLoaded || forceReload else { return }
         error = nil
         do {
             let prefs = preferences.load()
@@ -96,6 +97,18 @@ final class AlertsViewModel {
         }
 
         return sections
+    }
+    // MARK: - Formatters
+
+    var criticalTitle: String {
+        let count = alerts.criticalCount
+        if count == 1 { return "1 критическая проблема" }
+        return "\(count) критических проблем"
+    }
+
+    func alertCountTitle(_ count: Int) -> String {
+        if count == 1 { return "1 предупреждение" }
+        return "\(count) предупреждений"
     }
 }
 
