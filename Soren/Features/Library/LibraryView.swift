@@ -6,6 +6,7 @@ import SwiftUI
 struct LibraryView: View {
     @Environment(AppContainer.self) private var container
     @State private var viewModel: LibraryViewModel?
+    @State private var showAddSheet = false
 
     var body: some View {
         NavigationStack {
@@ -18,11 +19,24 @@ struct LibraryView: View {
             }
             .navigationTitle("Подписки")
             .background(ColorTokens.background)
+            .sheet(isPresented: $showAddSheet, onDismiss: {
+                viewModel?.load()
+            }) {
+                addSubscriptionSheet
+            }
             .task {
                 let vm = LibraryViewModel(repositories: container.repositories)
                 vm.load()
                 self.viewModel = vm
             }
+        }
+    }
+
+    private var addSubscriptionSheet: some View {
+        NavigationStack {
+            ProviderPickerView(
+                viewModel: AddSubscriptionViewModel(container: container)
+            )
         }
     }
 
@@ -71,7 +85,17 @@ struct LibraryView: View {
         )
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                sortMenu(vm)
+                HStack(spacing: Spacing.sm) {
+                    sortMenu(vm)
+
+                    Button {
+                        showAddSheet = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(Typography.bodyMedium)
+                            .foregroundStyle(ColorTokens.accent)
+                    }
+                }
             }
         }
         .refreshable {
@@ -241,7 +265,7 @@ struct LibraryView: View {
             subtitle: "Добавьте подписки и сервисы, чтобы отслеживать расходы и не пропускать списания.",
             actionTitle: "Добавить"
         ) {
-            // Navigation to Add Item — wired in future session
+            showAddSheet = true
         }
     }
 

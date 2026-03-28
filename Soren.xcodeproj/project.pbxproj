@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A244B2BBB176CED0F9754472 /* SaveRecurringItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 166FA4DBF87F2FF23D82B9EE /* SaveRecurringItem.swift */; };
+		4E57BC194849D6C3D6CF9A4D /* AddSubscriptionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 343F7FC8FF3F52955FBDADB8 /* AddSubscriptionViewModel.swift */; };
+		A55A4C29B7ABD1F559254381 /* ProviderPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64C791CA210C02F20E623856 /* ProviderPickerView.swift */; };
+		ABB56DAD8ED9293DC029E64D /* SubscriptionFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04565A853F43B9CA2812A55F /* SubscriptionFormView.swift */; };
 		0050A4D1600A744F59A20613 /* ItemStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = E95E33778D21F29F937EC9AC /* ItemStatus.swift */; };
 		04646804567EAE64683EDBCC /* StatBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F935C51942C260D6EE1004A /* StatBlock.swift */; };
 		05D1DFB2D7D17FCCDF5A8124 /* CalendarPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EB340E329D8BABE4656FEFF /* CalendarPlaceholderView.swift */; };
@@ -116,6 +120,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		166FA4DBF87F2FF23D82B9EE /* SaveRecurringItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SaveRecurringItem.swift"; sourceTree = "<group>"; };
+		343F7FC8FF3F52955FBDADB8 /* AddSubscriptionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AddSubscriptionViewModel.swift"; sourceTree = "<group>"; };
+		64C791CA210C02F20E623856 /* ProviderPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProviderPickerView.swift"; sourceTree = "<group>"; };
+		04565A853F43B9CA2812A55F /* SubscriptionFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SubscriptionFormView.swift"; sourceTree = "<group>"; };
 		00327FFEEF7A9E012FB10737 /* InMemoryProviderCatalogRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InMemoryProviderCatalogRepository.swift; sourceTree = "<group>"; };
 		059917135C045069A2443DCE /* SDPaymentRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDPaymentRecord.swift; sourceTree = "<group>"; };
 		06BA485D3333CD7B7F8EF598 /* BillingCycleEncoderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillingCycleEncoderTests.swift; sourceTree = "<group>"; };
@@ -281,6 +289,7 @@
 			isa = PBXGroup;
 			children = (
 				9D13511271AC24E3638DFCA6 /* AddItem */,
+				3D6FFAB80BC859D4921AD976 /* AddSubscription */,
 				9F9A8685E1FDD7EEF1285E78 /* Alerts */,
 				DA378784F01CCD8F256EF109 /* Analytics */,
 				F7239AF483F895EE1F7E0DB3 /* Calendar */,
@@ -488,6 +497,16 @@
 			path = Onboarding;
 			sourceTree = "<group>";
 		};
+		3D6FFAB80BC859D4921AD976 /* AddSubscription */ = {
+			isa = PBXGroup;
+			children = (
+				343F7FC8FF3F52955FBDADB8 /* AddSubscriptionViewModel.swift */,
+				64C791CA210C02F20E623856 /* ProviderPickerView.swift */,
+				04565A853F43B9CA2812A55F /* SubscriptionFormView.swift */,
+			);
+			path = AddSubscription;
+			sourceTree = "<group>";
+		};
 		9D13511271AC24E3638DFCA6 /* AddItem */ = {
 			isa = PBXGroup;
 			children = (
@@ -523,6 +542,7 @@
 				8F38A40EE534B5375782C896 /* GetLibraryItems.swift */,
 				78657C07E384E7B1B6E5750D /* GetDashboardSummary.swift */,
 				49A8FBEBDE686369CCE8778C /* GetUpcomingCharges.swift */,
+				166FA4DBF87F2FF23D82B9EE /* SaveRecurringItem.swift */,
 			);
 			path = UseCases;
 			sourceTree = "<group>";
@@ -956,6 +976,10 @@
 				12701FBEF1E7897981F9D0DD /* ThemePreview.swift in Sources */,
 				E01CF41ECC10C2676A49E5E3 /* Typography.swift in Sources */,
 				3E2C15DCA2F42CC6D125237B /* UsageStatus.swift in Sources */,
+				A244B2BBB176CED0F9754472 /* SaveRecurringItem.swift in Sources */,
+				4E57BC194849D6C3D6CF9A4D /* AddSubscriptionViewModel.swift in Sources */,
+				A55A4C29B7ABD1F559254381 /* ProviderPickerView.swift in Sources */,
+				ABB56DAD8ED9293DC029E64D /* SubscriptionFormView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

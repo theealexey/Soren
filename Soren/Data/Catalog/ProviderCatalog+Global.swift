@@ -8,11 +8,11 @@ extension ProviderCatalog {
         // MARK: Video
         .init(id: "netflix", displayName: "Netflix", aliases: ["нетфликс"],
               category: .video, suggestedCurrencyCode: "USD", region: .global,
-              tags: ["streaming"], managementURL: URL(string: "https://www.netflix.com/account")),
+              tags: ["streaming", "popular"], managementURL: URL(string: "https://www.netflix.com/account")),
 
         .init(id: "youtube_premium", displayName: "YouTube Premium", aliases: ["ютуб", "youtube"],
               category: .video, suggestedCurrencyCode: "USD", region: .global,
-              tags: ["streaming", "ad-free"]),
+              tags: ["streaming", "ad-free", "popular"]),
 
         .init(id: "disney_plus", displayName: "Disney+", aliases: ["дисней"],
               category: .video, suggestedCurrencyCode: "USD", region: .global,
@@ -41,7 +41,7 @@ extension ProviderCatalog {
         // MARK: Music
         .init(id: "spotify", displayName: "Spotify", aliases: ["спотифай"],
               category: .music, suggestedCurrencyCode: "USD", region: .global,
-              tags: ["music", "streaming"]),
+              tags: ["music", "streaming", "popular"]),
 
         .init(id: "apple_music", displayName: "Apple Music", aliases: ["эпл мьюзик"],
               category: .music, suggestedCurrencyCode: "USD", region: .global,
@@ -62,7 +62,7 @@ extension ProviderCatalog {
         // MARK: Cloud
         .init(id: "icloud", displayName: "iCloud+", aliases: ["айклауд", "icloud"],
               category: .cloud, suggestedCurrencyCode: "USD", region: .global,
-              tags: ["apple", "storage"]),
+              tags: ["apple", "storage", "popular"]),
 
         .init(id: "google_one", displayName: "Google One", aliases: ["гугл один", "google drive"],
               category: .cloud, suggestedCurrencyCode: "USD", region: .global,
@@ -79,7 +79,7 @@ extension ProviderCatalog {
         // MARK: AI Tools
         .init(id: "chatgpt_plus", displayName: "ChatGPT Plus", aliases: ["чатгпт", "openai", "gpt"],
               category: .aiTools, suggestedCurrencyCode: "USD", region: .global,
-              tags: ["ai"]),
+              tags: ["ai", "popular"]),
 
         .init(id: "claude_pro", displayName: "Claude Pro", aliases: ["клод", "anthropic"],
               category: .aiTools, suggestedCurrencyCode: "USD", region: .global,
@@ -145,7 +145,7 @@ extension ProviderCatalog {
         // MARK: VPN & Security
         .init(id: "nordvpn", displayName: "NordVPN", aliases: ["норд"],
               category: .vpn, suggestedCurrencyCode: "USD", region: .global,
-              tags: ["vpn"]),
+              tags: ["vpn", "popular"]),
 
         .init(id: "surfshark", displayName: "Surfshark", aliases: ["серфшарк"],
               category: .vpn, suggestedCurrencyCode: "USD", region: .global,

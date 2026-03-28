@@ -7,6 +7,7 @@ import SwiftUI
 struct HomeView: View {
     @Environment(AppContainer.self) private var container
     @State private var viewModel: HomeViewModel?
+    @State private var showAddSheet = false
 
     var body: some View {
         NavigationStack {
@@ -19,11 +20,24 @@ struct HomeView: View {
             }
             .navigationTitle("Главная")
             .background(ColorTokens.background)
+            .sheet(isPresented: $showAddSheet, onDismiss: {
+                viewModel?.load()
+            }) {
+                addSubscriptionSheet
+            }
             .task {
                 let vm = HomeViewModel(repositories: container.repositories)
                 vm.load()
                 self.viewModel = vm
             }
+        }
+    }
+
+    private var addSubscriptionSheet: some View {
+        NavigationStack {
+            ProviderPickerView(
+                viewModel: AddSubscriptionViewModel(container: container)
+            )
         }
     }
 
@@ -192,7 +206,7 @@ struct HomeView: View {
             subtitle: "Добавьте первую подписку, чтобы увидеть дашборд с аналитикой расходов.",
             actionTitle: "Добавить"
         ) {
-            // Navigation to Add Item — wired in future session
+            showAddSheet = true
         }
     }
 

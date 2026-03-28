@@ -14,7 +14,7 @@ extension ProviderCatalog {
               aliases: ["яндекс", "yandex plus", "yandex+"],
               category: .shopping, itemType: .ecosystemBundle,
               suggestedCurrencyCode: "RUB", region: .russia,
-              tags: ["ecosystem", "bundle", "cashback"]),
+              tags: ["ecosystem", "bundle", "cashback", "popular"]),
 
         .init(id: "sber_prime", displayName: "СберПрайм+",
               aliases: ["сбер прайм", "sberprime", "sber"],
@@ -26,7 +26,7 @@ extension ProviderCatalog {
               aliases: ["мтс премиум", "mts premium"],
               category: .mobile, itemType: .ecosystemBundle,
               suggestedCurrencyCode: "RUB", region: .russia,
-              tags: ["ecosystem", "telecom", "bundle"]),
+              tags: ["ecosystem", "telecom", "bundle", "popular"]),
 
         .init(id: "tbank_pro", displayName: "Т-Банк Pro",
               aliases: ["т-банк", "tinkoff pro", "тинькофф про", "t-bank"],
