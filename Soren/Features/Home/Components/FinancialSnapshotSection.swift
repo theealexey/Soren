@@ -54,20 +54,22 @@ struct FinancialSnapshotSection: View {
     private func metricChip(icon: String, value: String, label: String) -> some View {
         HStack(spacing: Spacing.xxs) {
             Image(systemName: icon)
-                .font(Typography.overline)
+                .font(.caption2.weight(.semibold))
                 .foregroundStyle(ColorTokens.accent)
 
             Text(value)
-                .font(Typography.captionMedium)
+                .font(.caption.weight(.medium))
                 .foregroundStyle(ColorTokens.textPrimary)
 
             Text(label)
-                .font(Typography.caption)
+                .font(.caption)
                 .foregroundStyle(ColorTokens.textSecondary)
         }
+        .lineLimit(1)
         .padding(.horizontal, Spacing.sm)
         .padding(.vertical, Spacing.xxs)
         .background(ColorTokens.accent.opacity(0.1), in: Capsule())
+        .accessibilityElement(children: .combine)
     }
 }
 

@@ -7,8 +7,14 @@ import SwiftUI
 struct HomeView: View {
     @Environment(AppContainer.self) private var container
     @State private var viewModel: HomeViewModel?
-    @State private var showAddSheet = false
-    @State private var showSettings = false
+    @State private var activeSheet: Sheet?
+
+    private enum Sheet: Identifiable {
+        case settings
+        case addSubscription
+
+        var id: Self { self }
+    }
 
     private let maxUpcomingItems = 5
 
@@ -26,23 +32,27 @@ struct HomeView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        showSettings = true
+                        activeSheet = .settings
                     } label: {
                         Image(systemName: "gearshape")
                             .font(Typography.bodyMedium)
                             .foregroundStyle(ColorTokens.textSecondary)
                     }
+                    .accessibilityLabel(Text("Настройки"))
+                    .accessibilityHint(Text("Открыть настройки приложения"))
                 }
             }
-            .sheet(isPresented: $showSettings) {
-                NavigationStack {
-                    SettingsView()
-                }
-            }
-            .sheet(isPresented: $showAddSheet, onDismiss: {
+            .sheet(item: $activeSheet, onDismiss: {
                 viewModel?.load(forceReload: true)
-            }) {
-                addSubscriptionSheet
+            }) { sheet in
+                switch sheet {
+                case .settings:
+                    NavigationStack {
+                        SettingsView()
+                    }
+                case .addSubscription:
+                    addSubscriptionSheet
+                }
             }
             .task {
                 let vm = HomeViewModel(
@@ -132,7 +142,7 @@ struct HomeView: View {
             subtitle: "Добавьте первую подписку, чтобы увидеть дашборд с аналитикой расходов.",
             actionTitle: "Добавить"
         ) {
-            showAddSheet = true
+            activeSheet = .addSubscription
         }
     }
 }
