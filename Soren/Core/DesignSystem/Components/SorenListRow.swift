@@ -20,6 +20,10 @@ import SwiftUI
 /// )
 /// ```
 struct SorenListRow: View {
+
+    /// Leading inset for dividers between rows (icon width + row spacing).
+    static let dividerInset: CGFloat = 40 + Spacing.sm
+
     let title: String
     let subtitle: String?
     let amount: Decimal
@@ -83,7 +87,7 @@ struct SorenListRow: View {
 
     private var iconView: some View {
         Image(systemName: iconName)
-            .font(.system(size: 16, weight: .semibold))
+            .font(Typography.bodyMedium)
             .foregroundStyle(.white)
             .frame(width: 40, height: 40)
             .background(iconColor.gradient, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
@@ -151,7 +155,7 @@ private struct BadgeView: View {
             iconColor: ColorTokens.categoryVideo
         )
 
-        Divider().padding(.leading, 52 + Spacing.sm)
+        Divider().padding(.leading, SorenListRow.dividerInset)
 
         SorenListRow(
             title: "Яндекс Плюс",
@@ -163,7 +167,7 @@ private struct BadgeView: View {
             badge: .trial
         )
 
-        Divider().padding(.leading, 52 + Spacing.sm)
+        Divider().padding(.leading, SorenListRow.dividerInset)
 
         SorenListRow(
             title: "iCloud+ 200GB",

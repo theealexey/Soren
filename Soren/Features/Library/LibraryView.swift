@@ -97,7 +97,7 @@ struct LibraryView: View {
                         HStack(spacing: Spacing.xxs) {
                             if let icon = filter.icon {
                                 Image(systemName: icon)
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(Typography.overline)
                             }
 
                             Text(filter.title)
@@ -179,7 +179,7 @@ struct LibraryView: View {
 
                     if index < vm.filteredItems.count - 1 {
                         Divider()
-                            .padding(.leading, 52 + Spacing.sm)
+                            .padding(.leading, SorenListRow.dividerInset)
                     }
                 }
             }
@@ -203,7 +203,7 @@ struct LibraryView: View {
             }
         } label: {
             Image(systemName: "arrow.up.arrow.down")
-                .font(.system(size: 15, weight: .medium))
+                .font(Typography.bodyMedium)
                 .foregroundStyle(ColorTokens.accent)
         }
     }

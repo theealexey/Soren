@@ -36,7 +36,7 @@ struct FilterChip: View {
             HStack(spacing: Spacing.xxs) {
                 if let icon {
                     Image(systemName: icon)
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(Typography.overline)
                 }
 
                 Text(title)

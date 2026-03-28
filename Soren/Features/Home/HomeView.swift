@@ -137,7 +137,7 @@ struct HomeView: View {
 
                         if index < min(items.count, 5) - 1 {
                             Divider()
-                                .padding(.leading, 52 + Spacing.sm)
+                                .padding(.leading, SorenListRow.dividerInset)
                         }
                     }
                 }
@@ -201,7 +201,7 @@ struct HomeView: View {
     private func metricChip(icon: String, value: String, label: String) -> some View {
         HStack(spacing: Spacing.xxs) {
             Image(systemName: icon)
-                .font(.system(size: 11, weight: .semibold))
+                .font(Typography.overline)
                 .foregroundStyle(ColorTokens.accent)
 
             Text(value)
