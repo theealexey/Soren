@@ -28,13 +28,13 @@ enum ItemType: String, Codable, CaseIterable, Sendable {
 extension ItemType {
     var displayName: String {
         switch self {
-        case .subscription:     "Подписка"
-        case .membership:       "Членство"
-        case .mobilePlan:       "Тариф"
-        case .utilityBill:      "ЖКХ / Услуги"
-        case .ecosystemBundle:  "Экосистема"
-        case .trial:            "Пробный период"
-        case .otherRecurring:   "Прочее"
+        case .subscription:     String(localized: "Подписка")
+        case .membership:       String(localized: "Членство")
+        case .mobilePlan:       String(localized: "Тариф")
+        case .utilityBill:      String(localized: "ЖКХ / Услуги")
+        case .ecosystemBundle:  String(localized: "Экосистема")
+        case .trial:            String(localized: "Пробный период")
+        case .otherRecurring:   String(localized: "Прочее")
         }
     }
 

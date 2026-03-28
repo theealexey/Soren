@@ -20,7 +20,9 @@ struct SubscriptionFormView: View {
 
             noteSection
         }
-        .navigationTitle(viewModel.selectedProvider != nil ? "Новая подписка" : "Добавить вручную")
+        .navigationTitle(viewModel.selectedProvider != nil
+            ? String(localized: "Новая подписка")
+            : String(localized: "Добавить вручную"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {

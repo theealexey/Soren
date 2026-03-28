@@ -19,10 +19,10 @@ enum UsageStatus: String, Codable, CaseIterable, Sendable {
 extension UsageStatus {
     var displayName: String {
         switch self {
-        case .frequentlyUsed:   "Использую часто"
-        case .occasionallyUsed: "Использую иногда"
-        case .unused:           "Не использую"
-        case .unknown:          "Не указано"
+        case .frequentlyUsed:   String(localized: "Использую часто")
+        case .occasionallyUsed: String(localized: "Использую иногда")
+        case .unused:           String(localized: "Не использую")
+        case .unknown:          String(localized: "Не указано")
         }
     }
 

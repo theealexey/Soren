@@ -15,14 +15,14 @@ import SwiftUI
 /// )
 /// ```
 struct StatBlock: View {
-    let title: String
+    let title: LocalizedStringKey
     let amount: Decimal
     let currencyCode: String
     let trend: Trend?
     let amountSize: AmountLabel.Size
 
     init(
-        title: String,
+        title: LocalizedStringKey,
         amount: Decimal,
         currency currencyCode: String = "RUB",
         trend: Trend? = nil,

@@ -10,12 +10,19 @@ import SwiftUI
 /// SectionHeader("Active trials", action: "See all") { navigateToTrials() }
 /// ```
 struct SectionHeader: View {
-    let title: String
-    let actionTitle: String?
+    let title: LocalizedStringKey
+    let actionTitle: LocalizedStringKey?
     let action: (() -> Void)?
 
-    init(_ title: String, action actionTitle: String? = nil, perform action: (() -> Void)? = nil) {
+    init(_ title: LocalizedStringKey, action actionTitle: LocalizedStringKey? = nil, perform action: (() -> Void)? = nil) {
         self.title = title
+        self.actionTitle = actionTitle
+        self.action = action
+    }
+
+    /// Accepts a pre-localized String (e.g. from ViewModel computed properties).
+    init(_ title: String, action actionTitle: LocalizedStringKey? = nil, perform action: (() -> Void)? = nil) {
+        self.title = LocalizedStringKey(title)
         self.actionTitle = actionTitle
         self.action = action
     }

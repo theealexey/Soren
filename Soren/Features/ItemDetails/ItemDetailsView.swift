@@ -216,7 +216,7 @@ struct ItemDetailsView: View {
     private var trialWarning: some View {
         InsightCard(
             icon: "clock.badge.exclamationmark",
-            title: "Пробный период",
+            title: String(localized: "Пробный период"),
             subtitle: HomeViewModel.trialSubtitle(for: viewModel.item),
             severity: trialSeverity
         )
@@ -234,7 +234,7 @@ struct ItemDetailsView: View {
     private var actionsSection: some View {
         VStack(spacing: Spacing.xs) {
             actionButton(
-                title: "Редактировать",
+                title: String(localized: "Редактировать"),
                 icon: "pencil",
                 color: ColorTokens.accent
             ) {
@@ -242,7 +242,9 @@ struct ItemDetailsView: View {
             }
 
             actionButton(
-                title: viewModel.item.status == .paused ? "Возобновить" : "Приостановить",
+                title: viewModel.item.status == .paused
+                    ? String(localized: "Возобновить")
+                    : String(localized: "Приостановить"),
                 icon: viewModel.item.status == .paused ? "play.fill" : "pause.fill",
                 color: ColorTokens.warning
             ) {
@@ -254,7 +256,7 @@ struct ItemDetailsView: View {
 
             if viewModel.item.status != .archived {
                 actionButton(
-                    title: "Архивировать",
+                    title: String(localized: "Архивировать"),
                     icon: "archivebox",
                     color: ColorTokens.textSecondary
                 ) {
@@ -266,7 +268,7 @@ struct ItemDetailsView: View {
             }
 
             actionButton(
-                title: "Удалить",
+                title: String(localized: "Удалить"),
                 icon: "trash",
                 color: ColorTokens.error
             ) {
@@ -278,7 +280,7 @@ struct ItemDetailsView: View {
 
     // MARK: - Helpers
 
-    private func infoRow(icon: String, label: String, value: String) -> some View {
+    private func infoRow(icon: String, label: LocalizedStringKey, value: String) -> some View {
         HStack(spacing: Spacing.sm) {
             Image(systemName: icon)
                 .font(Typography.body)

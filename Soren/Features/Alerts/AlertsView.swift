@@ -90,7 +90,7 @@ struct AlertsView: View {
                 InsightCard(
                     icon: "exclamationmark.triangle.fill",
                     title: vm.criticalTitle,
-                    subtitle: "Требуется внимание",
+                    subtitle: String(localized: "Требуется внимание"),
                     severity: .critical
                 )
             }
@@ -100,7 +100,7 @@ struct AlertsView: View {
                 InsightCard(
                     icon: "bell.fill",
                     title: vm.alertCountTitle(nonCritical),
-                    subtitle: "Списания и триалы",
+                    subtitle: String(localized: "Списания и триалы"),
                     severity: .warning
                 )
             }
@@ -153,7 +153,7 @@ struct AlertsView: View {
     // MARK: - Helpers
 
     private func subtitle(for item: RecurringItem, in section: AlertSection) -> String {
-        if section.title == "Пробный период заканчивается" {
+        if section.title == String(localized: "Пробный период заканчивается") {
             return HomeViewModel.trialSubtitle(for: item)
         }
         return HomeViewModel.chargeSubtitle(for: item)

@@ -25,23 +25,23 @@ enum ItemCategory: String, Codable, CaseIterable, Sendable {
 extension ItemCategory {
     var displayName: String {
         switch self {
-        case .video:        "Видео"
-        case .music:        "Музыка"
-        case .books:        "Книги"
-        case .cloud:        "Облако"
-        case .productivity: "Продуктивность"
-        case .aiTools:      "AI-инструменты"
-        case .shopping:     "Покупки"
-        case .banking:      "Банки и экосистемы"
-        case .mobile:       "Мобильный"
-        case .internet:     "Интернет и ЖКХ"
-        case .health:       "Здоровье"
-        case .games:        "Игры"
-        case .vpn:          "VPN и безопасность"
-        case .food:         "Еда и доставка"
-        case .education:    "Образование"
-        case .creators:     "Креаторы и донаты"
-        case .other:        "Другое"
+        case .video:        String(localized: "Видео")
+        case .music:        String(localized: "Музыка")
+        case .books:        String(localized: "Книги")
+        case .cloud:        String(localized: "Облако")
+        case .productivity: String(localized: "Продуктивность")
+        case .aiTools:      String(localized: "AI-инструменты")
+        case .shopping:     String(localized: "Покупки")
+        case .banking:      String(localized: "Банки и экосистемы")
+        case .mobile:       String(localized: "Мобильный")
+        case .internet:     String(localized: "Интернет и ЖКХ")
+        case .health:       String(localized: "Здоровье")
+        case .games:        String(localized: "Игры")
+        case .vpn:          String(localized: "VPN и безопасность")
+        case .food:         String(localized: "Еда и доставка")
+        case .education:    String(localized: "Образование")
+        case .creators:     String(localized: "Креаторы и донаты")
+        case .other:        String(localized: "Другое")
         }
     }
 }

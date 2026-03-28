@@ -285,9 +285,9 @@ struct LibraryView: View {
     private func pluralSubscription(_ count: Int) -> String {
         let mod10 = count % 10
         let mod100 = count % 100
-        if mod10 == 1 && mod100 != 11 { return "подписка" }
-        if (2...4).contains(mod10) && !(12...14).contains(mod100) { return "подписки" }
-        return "подписок"
+        if mod10 == 1 && mod100 != 11 { return String(localized: "подписка") }
+        if (2...4).contains(mod10) && !(12...14).contains(mod100) { return String(localized: "подписки") }
+        return String(localized: "подписок")
     }
 }
 

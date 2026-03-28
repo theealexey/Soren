@@ -32,12 +32,12 @@ extension ReminderRule {
 
         var displayName: String {
             switch self {
-            case .daysBefore(let d):        "За \(d) \(dayWord(d)) до списания"
-            case .onChargeDay:              "В день списания"
-            case .onTrialEnd:               "При завершении пробного периода"
-            case .daysBeforeTrialEnd(let d): "За \(d) \(dayWord(d)) до конца пробного"
-            case .onAnnualRenewal:          "Перед годовым продлением"
-            case .onPaymentFailure:         "При ошибке оплаты"
+            case .daysBefore(let d):        String(localized: "За \(d) \(dayWord(d)) до списания")
+            case .onChargeDay:              String(localized: "В день списания")
+            case .onTrialEnd:               String(localized: "При завершении пробного периода")
+            case .daysBeforeTrialEnd(let d): String(localized: "За \(d) \(dayWord(d)) до конца пробного")
+            case .onAnnualRenewal:          String(localized: "Перед годовым продлением")
+            case .onPaymentFailure:         String(localized: "При ошибке оплаты")
             }
         }
 

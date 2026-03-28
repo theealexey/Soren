@@ -76,8 +76,8 @@ extension HomeViewModel {
         case .weekly:       .weekly
         case .monthly:      .monthly
         case .annual:       .yearly
-        case .quarterly:    .custom("кв")
-        case .semiannual:   .custom("п/г")
+        case .quarterly:    .custom(String(localized: "кв"))
+        case .semiannual:   .custom(String(localized: "п/г"))
         case .custom(let d): .custom("\(d)д")
         }
     }
@@ -98,20 +98,20 @@ extension HomeViewModel {
     /// Formatted subtitle for upcoming charge rows.
     static func chargeSubtitle(for item: RecurringItem) -> String {
         let days = item.daysUntilNextCharge
-        if days == 0 { return "Списание сегодня" }
-        if days == 1 { return "Списание завтра" }
-        if days < 0 { return "Просрочено на \(abs(days)) дн." }
-        return "Через \(days) дн."
+        if days == 0 { return String(localized: "Списание сегодня") }
+        if days == 1 { return String(localized: "Списание завтра") }
+        if days < 0 { return String(localized: "Просрочено на \(abs(days)) дн.") }
+        return String(localized: "Через \(days) дн.")
     }
 
     /// Formatted subtitle for trial insight cards.
     static func trialSubtitle(for item: RecurringItem) -> String {
         guard let daysLeft = item.daysUntilTrialEnd else {
-            return "Пробный период"
+            return String(localized: "Пробный период")
         }
-        if daysLeft <= 0 { return "Пробный период заканчивается сегодня" }
-        if daysLeft == 1 { return "Остался 1 день" }
-        return "Осталось \(daysLeft) дн."
+        if daysLeft <= 0 { return String(localized: "Пробный период заканчивается сегодня") }
+        if daysLeft == 1 { return String(localized: "Остался 1 день") }
+        return String(localized: "Осталось \(daysLeft) дн.")
     }
 
     /// Determines trial urgency severity for insight cards.
@@ -126,8 +126,8 @@ extension HomeViewModel {
     static func pluralTrial(_ count: Int) -> String {
         let mod10 = count % 10
         let mod100 = count % 100
-        if mod10 == 1 && mod100 != 11 { return "пробный" }
-        return "пробных"
+        if mod10 == 1 && mod100 != 11 { return String(localized: "пробный") }
+        return String(localized: "пробных")
     }
 }
 
@@ -149,8 +149,8 @@ extension HomeViewModel {
         if overdueCount > 0 {
             result.append(InsightData(
                 icon: "exclamationmark.triangle.fill",
-                title: "\(overdueCount) просроченных списаний",
-                subtitle: "Проверьте способы оплаты",
+                title: String(localized: "\(overdueCount) просроченных списаний"),
+                subtitle: String(localized: "Проверьте способы оплаты"),
                 severity: .critical
             ))
         }
@@ -159,7 +159,7 @@ extension HomeViewModel {
         if weekTotal > 0 && upcomingCharges.count >= 2 {
             result.append(InsightData(
                 icon: "calendar.badge.clock",
-                title: "\(upcomingCharges.count) списаний на этой неделе",
+                title: String(localized: "\(upcomingCharges.count) списаний на этой неделе"),
                 subtitle: nil,
                 severity: .info
             ))
@@ -169,8 +169,8 @@ extension HomeViewModel {
         if failedCount > 0 {
             result.append(InsightData(
                 icon: "creditcard.trianglebadge.exclamationmark",
-                title: "\(failedCount) неудачных платежей",
-                subtitle: "Требуется внимание",
+                title: String(localized: "\(failedCount) неудачных платежей"),
+                subtitle: String(localized: "Требуется внимание"),
                 severity: .critical
             ))
         }

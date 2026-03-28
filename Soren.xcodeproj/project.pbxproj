@@ -111,6 +111,7 @@
 		D9E33AE6238FFCFEA3FB1CD7 /* UserPreferencesRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAEFC5B91EDB95F024627C3A /* UserPreferencesRepository.swift */; };
 		52541EE17D98F415CC1CE2E1 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37534F9658CA89981533C48E /* SettingsViewModel.swift */; };
 		9E12154D20CF3FAD2BC3BC14 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F374C8D59B7A41BBA58DA377 /* SettingsView.swift */; };
+		B1C4A7F2E3D5689A0F12BC34 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = D2E5B8A3F4C6790B1A23CD45 /* Localizable.xcstrings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -239,6 +240,7 @@
 		FAEFC5B91EDB95F024627C3A /* UserPreferencesRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserPreferencesRepository.swift"; sourceTree = "<group>"; };
 		37534F9658CA89981533C48E /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SettingsViewModel.swift"; sourceTree = "<group>"; };
 		F374C8D59B7A41BBA58DA377 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SettingsView.swift"; sourceTree = "<group>"; };
+		D2E5B8A3F4C6790B1A23CD45 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -351,6 +353,7 @@
 			isa = PBXGroup;
 			children = (
 				A4181BB9ED2ED7AD9AE263B5 /* Assets.xcassets */,
+				D2E5B8A3F4C6790B1A23CD45 /* Localizable.xcstrings */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -903,11 +906,11 @@
 				};
 			};
 			buildConfigurationList = 8FE72A6CB40EED380B59977A /* Build configuration list for PBXProject "Soren" */;
-			developmentRegion = en;
+			developmentRegion = ru;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				Base,
-				en,
+				ru,
 			);
 			mainGroup = E59027FB3AEABC66EC3502E2;
 			minimizedProjectReferenceProxies = 1;
@@ -930,6 +933,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1108E709671370BBDE1A14AF /* Assets.xcassets in Resources */,
+				B1C4A7F2E3D5689A0F12BC34 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

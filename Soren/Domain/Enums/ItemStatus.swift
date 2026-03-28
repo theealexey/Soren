@@ -33,15 +33,15 @@ enum ItemStatus: String, Codable, CaseIterable, Sendable {
 extension ItemStatus {
     var displayName: String {
         switch self {
-        case .active:    "Активна"
-        case .dueSoon:   "Скоро списание"
-        case .dueToday:  "Списание сегодня"
-        case .overdue:   "Просрочена"
-        case .trial:     "Пробный период"
-        case .failed:    "Ошибка оплаты"
-        case .cancelled: "Отменена"
-        case .paused:    "Пауза"
-        case .archived:  "В архиве"
+        case .active:    String(localized: "Активна")
+        case .dueSoon:   String(localized: "Скоро списание")
+        case .dueToday:  String(localized: "Списание сегодня")
+        case .overdue:   String(localized: "Просрочена")
+        case .trial:     String(localized: "Пробный период")
+        case .failed:    String(localized: "Ошибка оплаты")
+        case .cancelled: String(localized: "Отменена")
+        case .paused:    String(localized: "Пауза")
+        case .archived:  String(localized: "В архиве")
         }
     }
 

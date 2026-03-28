@@ -39,8 +39,8 @@ extension SaveRecurringItem {
 
         var errorDescription: String? {
             switch self {
-            case .emptyTitle:    "Укажите название подписки"
-            case .invalidAmount: "Сумма должна быть больше нуля"
+            case .emptyTitle:    String(localized: "Укажите название подписки")
+            case .invalidAmount: String(localized: "Сумма должна быть больше нуля")
             }
         }
     }

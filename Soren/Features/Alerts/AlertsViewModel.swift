@@ -53,7 +53,7 @@ final class AlertsViewModel {
 
         if !alerts.overdue.isEmpty {
             sections.append(AlertSection(
-                title: "Просрочено",
+                title: String(localized: "Просрочено"),
                 icon: "exclamationmark.triangle.fill",
                 severity: .critical,
                 items: alerts.overdue
@@ -62,7 +62,7 @@ final class AlertsViewModel {
 
         if !alerts.failed.isEmpty {
             sections.append(AlertSection(
-                title: "Ошибка оплаты",
+                title: String(localized: "Ошибка оплаты"),
                 icon: "xmark.circle.fill",
                 severity: .critical,
                 items: alerts.failed
@@ -71,7 +71,7 @@ final class AlertsViewModel {
 
         if !alerts.dueToday.isEmpty {
             sections.append(AlertSection(
-                title: "Списание сегодня",
+                title: String(localized: "Списание сегодня"),
                 icon: "exclamationmark.circle.fill",
                 severity: .warning,
                 items: alerts.dueToday
@@ -80,7 +80,7 @@ final class AlertsViewModel {
 
         if !alerts.dueSoon.isEmpty {
             sections.append(AlertSection(
-                title: "Скоро списание",
+                title: String(localized: "Скоро списание"),
                 icon: "clock.fill",
                 severity: .warning,
                 items: alerts.dueSoon
@@ -89,7 +89,7 @@ final class AlertsViewModel {
 
         if !alerts.trialEnding.isEmpty {
             sections.append(AlertSection(
-                title: "Пробный период заканчивается",
+                title: String(localized: "Пробный период заканчивается"),
                 icon: "clock.badge.exclamationmark",
                 severity: .info,
                 items: alerts.trialEnding
@@ -102,13 +102,13 @@ final class AlertsViewModel {
 
     var criticalTitle: String {
         let count = alerts.criticalCount
-        if count == 1 { return "1 критическая проблема" }
-        return "\(count) критических проблем"
+        if count == 1 { return String(localized: "1 критическая проблема") }
+        return String(localized: "\(count) критических проблем")
     }
 
     func alertCountTitle(_ count: Int) -> String {
-        if count == 1 { return "1 предупреждение" }
-        return "\(count) предупреждений"
+        if count == 1 { return String(localized: "1 предупреждение") }
+        return String(localized: "\(count) предупреждений")
     }
 }
 

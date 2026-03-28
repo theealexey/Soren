@@ -15,16 +15,16 @@ import SwiftUI
 /// ```
 struct EmptyStateView: View {
     let icon: String
-    let title: String
-    let subtitle: String
-    let actionTitle: String?
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
+    let actionTitle: LocalizedStringKey?
     let action: (() -> Void)?
 
     init(
         icon: String,
-        title: String,
-        subtitle: String,
-        actionTitle: String? = nil,
+        title: LocalizedStringKey,
+        subtitle: LocalizedStringKey,
+        actionTitle: LocalizedStringKey? = nil,
         action: (() -> Void)? = nil
     ) {
         self.icon = icon
@@ -71,9 +71,9 @@ struct EmptyStateView: View {
 
 /// Centered loading indicator with optional message.
 struct LoadingStateView: View {
-    let message: String
+    let message: LocalizedStringKey
 
-    init(_ message: String = "Загрузка...") {
+    init(_ message: LocalizedStringKey = "Загрузка...") {
         self.message = message
     }
 
@@ -94,13 +94,13 @@ struct LoadingStateView: View {
 
 /// Shown when an operation fails.
 struct ErrorStateView: View {
-    let title: String
-    let message: String
+    let title: LocalizedStringKey
+    let message: LocalizedStringKey
     let retryAction: (() -> Void)?
 
     init(
-        title: String = "Что-то пошло не так",
-        message: String,
+        title: LocalizedStringKey = "Что-то пошло не так",
+        message: LocalizedStringKey,
         retryAction: (() -> Void)? = nil
     ) {
         self.title = title

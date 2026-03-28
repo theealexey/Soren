@@ -30,11 +30,11 @@ enum AppTab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .home:      "Главная"
-        case .library:   "Подписки"
-        case .calendar:  "Календарь"
-        case .analytics: "Аналитика"
-        case .alerts:    "Алерты"
+        case .home:      String(localized: "Главная")
+        case .library:   String(localized: "Подписки")
+        case .calendar:  String(localized: "Календарь")
+        case .analytics: String(localized: "Аналитика")
+        case .alerts:    String(localized: "Алерты")
         }
     }
 

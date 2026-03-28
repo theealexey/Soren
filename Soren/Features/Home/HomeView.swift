@@ -145,7 +145,7 @@ struct HomeView: View {
                 metricChip(
                     icon: "repeat",
                     value: "\(vm.summary.activeItemCount)",
-                    label: "активных"
+                    label: String(localized: "активных")
                 )
 
                 if vm.summary.activeTrialCount > 0 {

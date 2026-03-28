@@ -27,9 +27,9 @@ enum AppearanceMode: String, Codable, CaseIterable, Sendable {
 
     var displayName: String {
         switch self {
-        case .system: "Системная"
-        case .light:  "Светлая"
-        case .dark:   "Тёмная"
+        case .system: String(localized: "Системная")
+        case .light:  String(localized: "Светлая")
+        case .dark:   String(localized: "Тёмная")
         }
     }
 }

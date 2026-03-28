@@ -114,9 +114,9 @@ extension AmountLabel {
 
         var label: String {
             switch self {
-            case .monthly: "/мес"
-            case .yearly: "/год"
-            case .weekly: "/нед"
+            case .monthly: String(localized: "/мес")
+            case .yearly: String(localized: "/год")
+            case .weekly: String(localized: "/нед")
             case .custom(let text): "/\(text)"
             }
         }

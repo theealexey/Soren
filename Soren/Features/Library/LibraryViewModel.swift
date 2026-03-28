@@ -111,12 +111,12 @@ extension LibraryViewModel {
 
         var title: String {
             switch self {
-            case .all:       "Все"
-            case .active:    "Активные"
-            case .trial:     "Пробные"
-            case .paused:    "Пауза"
-            case .cancelled: "Отменённые"
-            case .archived:  "Архив"
+            case .all:       String(localized: "Все")
+            case .active:    String(localized: "Активные")
+            case .trial:     String(localized: "Пробные")
+            case .paused:    String(localized: "Пауза")
+            case .cancelled: String(localized: "Отменённые")
+            case .archived:  String(localized: "Архив")
             }
         }
 
@@ -166,11 +166,11 @@ extension LibraryViewModel {
 
         var title: String {
             switch self {
-            case .nextCharge:   "По дате списания"
-            case .name:         "По названию"
-            case .amountAsc:    "По цене ↑"
-            case .amountDesc:   "По цене ↓"
-            case .recentlyAdded: "Недавно добавленные"
+            case .nextCharge:   String(localized: "По дате списания")
+            case .name:         String(localized: "По названию")
+            case .amountAsc:    String(localized: "По цене ↑")
+            case .amountDesc:   String(localized: "По цене ↓")
+            case .recentlyAdded: String(localized: "Недавно добавленные")
             }
         }
 
@@ -210,8 +210,8 @@ extension LibraryViewModel {
         case .weekly:       .weekly
         case .monthly:      .monthly
         case .annual:       .yearly
-        case .quarterly:    .custom("кв")
-        case .semiannual:   .custom("п/г")
+        case .quarterly:    .custom(String(localized: "кв"))
+        case .semiannual:   .custom(String(localized: "п/г"))
         case .custom(let d): .custom("\(d)д")
         }
     }
@@ -232,17 +232,17 @@ extension LibraryViewModel {
     static func subtitle(for item: RecurringItem) -> String {
         switch item.status {
         case .cancelled:
-            return "Отменена"
+            return String(localized: "Отменена")
         case .paused:
-            return "На паузе"
+            return String(localized: "На паузе")
         case .archived:
-            return "В архиве"
+            return String(localized: "В архиве")
         default:
             let days = item.daysUntilNextCharge
-            if days < 0 { return "Просрочено на \(abs(days)) дн." }
-            if days == 0 { return "Списание сегодня" }
-            if days == 1 { return "Списание завтра" }
-            return "Списание через \(days) дн."
+            if days < 0 { return String(localized: "Просрочено на \(abs(days)) дн.") }
+            if days == 0 { return String(localized: "Списание сегодня") }
+            if days == 1 { return String(localized: "Списание завтра") }
+            return String(localized: "Списание через \(days) дн.")
         }
     }
 }

@@ -13,12 +13,12 @@ enum PaymentMethodType: String, Codable, CaseIterable, Sendable {
 extension PaymentMethodType {
     var displayName: String {
         switch self {
-        case .bankCard:       "Банковская карта"
+        case .bankCard:       String(localized: "Банковская карта")
         case .appleID:        "Apple ID"
-        case .mobileBilling:  "Счёт оператора"
-        case .bankAccount:    "Расчётный счёт"
-        case .cash:           "Наличные / вручную"
-        case .unknown:        "Не указан"
+        case .mobileBilling:  String(localized: "Счёт оператора")
+        case .bankAccount:    String(localized: "Расчётный счёт")
+        case .cash:           String(localized: "Наличные / вручную")
+        case .unknown:        String(localized: "Не указан")
         }
     }
 

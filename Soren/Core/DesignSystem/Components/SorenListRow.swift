@@ -106,11 +106,11 @@ extension SorenListRow {
 
         var title: String {
             switch self {
-            case .trial:   "Пробный"
-            case .dueSoon: "Скоро"
-            case .failed:  "Ошибка"
-            case .paused:  "Пауза"
-            case .annual:  "Годовая"
+            case .trial:   String(localized: "Пробный")
+            case .dueSoon: String(localized: "Скоро")
+            case .failed:  String(localized: "Ошибка")
+            case .paused:  String(localized: "Пауза")
+            case .annual:  String(localized: "Годовая")
             }
         }
 
