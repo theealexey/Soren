@@ -1,0 +1,66 @@
+import SwiftUI
+
+// MARK: - Upcoming Charges Section
+
+/// Dashboard section listing the next few charges with navigation links.
+struct UpcomingChargesSection: View {
+    let items: [RecurringItem]
+    let maxItems: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            SectionHeader("Ближайшие списания")
+
+            PremiumCard {
+                VStack(spacing: 0) {
+                    ForEach(Array(items.prefix(maxItems).enumerated()), id: \.element.id) { index, item in
+                        NavigationLink(value: item) {
+                            SorenListRow(
+                                title: item.title,
+                                subtitle: HomeViewModel.chargeSubtitle(for: item),
+                                amount: item.amount,
+                                currency: item.currencyCode,
+                                cycle: HomeViewModel.cycleLabel(for: item.billingCycle),
+                                iconName: item.category.systemIconName,
+                                iconColor: item.category.color,
+                                badge: HomeViewModel.badge(for: item)
+                            )
+                        }
+                        .buttonStyle(.plain)
+
+                        if index < min(items.count, maxItems) - 1 {
+                            Divider()
+                                .padding(.leading, SorenListRow.dividerInset)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    NavigationStack {
+        UpcomingChargesSection(
+            items: [
+                RecurringItem(
+                    title: "YouTube Premium",
+                    category: .video,
+                    amount: 299,
+                    nextChargeDate: Calendar.current.date(byAdding: .day, value: 2, to: .now)!
+                ),
+                RecurringItem(
+                    title: "Spotify",
+                    category: .music,
+                    amount: 199,
+                    nextChargeDate: Calendar.current.date(byAdding: .day, value: 5, to: .now)!
+                ),
+            ],
+            maxItems: 5
+        )
+        .padding(Spacing.lg)
+        .background(ColorTokens.background)
+    }
+}

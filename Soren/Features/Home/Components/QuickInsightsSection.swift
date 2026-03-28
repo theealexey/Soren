@@ -1,0 +1,46 @@
+import SwiftUI
+
+// MARK: - Quick Insights Section
+
+/// Dashboard section with actionable financial observations.
+struct QuickInsightsSection: View {
+    let insights: [HomeViewModel.InsightData]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            SectionHeader("Аналитика")
+
+            ForEach(insights, id: \.title) { insight in
+                InsightCard(
+                    icon: insight.icon,
+                    title: insight.title,
+                    subtitle: insight.subtitle,
+                    severity: insight.severity
+                )
+            }
+        }
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    QuickInsightsSection(
+        insights: [
+            HomeViewModel.InsightData(
+                icon: "exclamationmark.triangle.fill",
+                title: String(localized: "2 просроченных списания"),
+                subtitle: String(localized: "Проверьте способы оплаты"),
+                severity: .critical
+            ),
+            HomeViewModel.InsightData(
+                icon: "calendar.badge.clock",
+                title: String(localized: "4 списания на этой неделе"),
+                subtitle: nil,
+                severity: .info
+            ),
+        ]
+    )
+    .padding(Spacing.lg)
+    .background(ColorTokens.background)
+}
