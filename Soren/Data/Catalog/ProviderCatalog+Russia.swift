@@ -14,19 +14,32 @@ extension ProviderCatalog {
               aliases: ["яндекс", "yandex plus", "yandex+"],
               category: .shopping, itemType: .ecosystemBundle,
               suggestedCurrencyCode: "RUB", region: .russia,
-              tags: ["ecosystem", "bundle", "cashback", "popular"]),
+              tags: ["ecosystem", "bundle", "cashback", "popular"],
+              plans: [
+                  .init(id: "basic", name: "Базовый", amount: 199, billingCycle: .monthly, features: "Кешбэк, Музыка"),
+                  .init(id: "standard", name: "Стандарт", amount: 399, billingCycle: .monthly, features: "Кешбэк, Музыка, Кинопоиск"),
+                  .init(id: "family", name: "Семейный", amount: 599, billingCycle: .monthly, features: "До 4 участников"),
+              ]),
 
         .init(id: "sber_prime", displayName: "СберПрайм+",
               aliases: ["сбер прайм", "sberprime", "sber"],
               category: .banking, itemType: .ecosystemBundle,
               suggestedCurrencyCode: "RUB", region: .russia,
-              tags: ["ecosystem", "banking", "bundle"]),
+              tags: ["ecosystem", "banking", "bundle"],
+              plans: [
+                  .init(id: "standard", name: "Стандарт", amount: 399, billingCycle: .monthly, features: "Кешбэк, Звук, Okko"),
+                  .init(id: "prime_plus", name: "Прайм+", amount: 599, billingCycle: .monthly, features: "Всё + повышенный кешбэк"),
+              ]),
 
         .init(id: "mts_premium", displayName: "МТС Premium",
               aliases: ["мтс премиум", "mts premium"],
               category: .mobile, itemType: .ecosystemBundle,
               suggestedCurrencyCode: "RUB", region: .russia,
-              tags: ["ecosystem", "telecom", "bundle", "popular"]),
+              tags: ["ecosystem", "telecom", "bundle", "popular"],
+              plans: [
+                  .init(id: "standard", name: "Стандарт", amount: 199, billingCycle: .monthly, features: "KION, музыка, кешбэк"),
+                  .init(id: "family", name: "Семейный", amount: 349, billingCycle: .monthly, features: "До 5 участников"),
+              ]),
 
         .init(id: "tbank_pro", displayName: "Т-Банк Pro",
               aliases: ["т-банк", "tinkoff pro", "тинькофф про", "t-bank"],
@@ -110,7 +123,10 @@ extension ProviderCatalog {
               aliases: ["озон", "ozon"],
               category: .shopping, itemType: .membership,
               suggestedCurrencyCode: "RUB", region: .russia,
-              tags: ["marketplace", "delivery"]),
+              tags: ["marketplace", "delivery"],
+              plans: [
+                  .init(id: "standard", name: "Стандарт", amount: 199, billingCycle: .monthly, features: "Бесплатная доставка, баллы"),
+              ]),
 
         .init(id: "wb_club", displayName: "WB Клуб",
               aliases: ["вайлдберриз", "wildberries", "wb"],

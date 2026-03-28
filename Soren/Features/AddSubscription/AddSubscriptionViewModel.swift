@@ -17,6 +17,7 @@ final class AddSubscriptionViewModel {
     // MARK: - Form State
 
     var selectedProvider: ProviderTemplate?
+    var selectedTier: PlanTier?
     var title = ""
     var amountText = ""
     var currencyCode = "RUB"
@@ -59,17 +60,47 @@ final class AddSubscriptionViewModel {
 
     // MARK: - Provider Selection
 
+    var availableTiers: [PlanTier] {
+        selectedProvider?.plans ?? []
+    }
+
     func selectProvider(_ provider: ProviderTemplate) {
         selectedProvider = provider
+        selectedTier = nil
         title = provider.displayName
         currencyCode = provider.suggestedCurrencyCode
         billingCycle = provider.suggestedCycle
         category = provider.category
         itemType = provider.itemType
+
+        if provider.plans.count == 1 {
+            selectTier(provider.plans[0])
+        } else if provider.hasPlanTiers {
+            amountText = ""
+        }
+    }
+
+    func selectTier(_ tier: PlanTier) {
+        selectedTier = tier
+        amountText = "\(tier.amount)"
+        billingCycle = tier.billingCycle
+        if let override = tier.currencyCode {
+            currencyCode = override
+        }
+    }
+
+    func clearTier() {
+        selectedTier = nil
+        amountText = ""
+        if let provider = selectedProvider {
+            billingCycle = provider.suggestedCycle
+            currencyCode = provider.suggestedCurrencyCode
+        }
     }
 
     func startManualEntry() {
         selectedProvider = nil
+        selectedTier = nil
         title = ""
         amountText = ""
         currencyCode = "RUB"

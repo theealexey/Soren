@@ -16,6 +16,11 @@ struct ProviderTemplate: Identifiable, Hashable, Sendable {
     var managementURL: URL?
     /// SF Symbol or asset name for the icon.
     var iconAssetName: String?
+    /// Available pricing tiers. Empty means no predefined plans.
+    var plans: [PlanTier]
+
+    /// Whether this provider has predefined plan tiers.
+    var hasPlanTiers: Bool { !plans.isEmpty }
 
     init(
         id: String,
@@ -28,7 +33,8 @@ struct ProviderTemplate: Identifiable, Hashable, Sendable {
         region: Region = .global,
         tags: [String] = [],
         managementURL: URL? = nil,
-        iconAssetName: String? = nil
+        iconAssetName: String? = nil,
+        plans: [PlanTier] = []
     ) {
         self.id = id
         self.displayName = displayName
@@ -41,6 +47,7 @@ struct ProviderTemplate: Identifiable, Hashable, Sendable {
         self.tags = tags
         self.managementURL = managementURL
         self.iconAssetName = iconAssetName
+        self.plans = plans
     }
 }
 

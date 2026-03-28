@@ -8,15 +8,30 @@ extension ProviderCatalog {
         // MARK: Video
         .init(id: "netflix", displayName: "Netflix", aliases: ["нетфликс"],
               category: .video, suggestedCurrencyCode: "USD", region: .global,
-              tags: ["streaming", "popular"], managementURL: URL(string: "https://www.netflix.com/account")),
+              tags: ["streaming", "popular"], managementURL: URL(string: "https://www.netflix.com/account"),
+              plans: [
+                  .init(id: "standard_ads", name: "Standard с рекламой", amount: 7.99, billingCycle: .monthly, features: "1080p, 2 экрана"),
+                  .init(id: "standard", name: "Standard", amount: 15.49, billingCycle: .monthly, features: "1080p, 2 экрана, скачивание"),
+                  .init(id: "premium", name: "Premium", amount: 22.99, billingCycle: .monthly, features: "4K HDR, 4 экрана"),
+              ]),
 
         .init(id: "youtube_premium", displayName: "YouTube Premium", aliases: ["ютуб", "youtube"],
               category: .video, suggestedCurrencyCode: "USD", region: .global,
-              tags: ["streaming", "ad-free", "popular"]),
+              tags: ["streaming", "ad-free", "popular"],
+              plans: [
+                  .init(id: "individual", name: "Individual", amount: 13.99, billingCycle: .monthly),
+                  .init(id: "family", name: "Family", amount: 22.99, billingCycle: .monthly, features: "До 5 участников"),
+                  .init(id: "student", name: "Student", amount: 7.99, billingCycle: .monthly),
+              ]),
 
         .init(id: "disney_plus", displayName: "Disney+", aliases: ["дисней"],
               category: .video, suggestedCurrencyCode: "USD", region: .global,
-              tags: ["streaming"]),
+              tags: ["streaming"],
+              plans: [
+                  .init(id: "standard_ads", name: "Standard с рекламой", amount: 9.99, billingCycle: .monthly),
+                  .init(id: "standard", name: "Standard", amount: 15.99, billingCycle: .monthly, features: "Скачивание, без рекламы"),
+                  .init(id: "premium", name: "Premium", amount: 19.99, billingCycle: .monthly, features: "4K HDR, Dolby Atmos, 4 экрана"),
+              ]),
 
         .init(id: "hbo_max", displayName: "Max (HBO)", aliases: ["hbo", "max"],
               category: .video, suggestedCurrencyCode: "USD", region: .global,
@@ -41,11 +56,22 @@ extension ProviderCatalog {
         // MARK: Music
         .init(id: "spotify", displayName: "Spotify", aliases: ["спотифай"],
               category: .music, suggestedCurrencyCode: "USD", region: .global,
-              tags: ["music", "streaming", "popular"]),
+              tags: ["music", "streaming", "popular"],
+              plans: [
+                  .init(id: "individual", name: "Individual", amount: 11.99, billingCycle: .monthly),
+                  .init(id: "duo", name: "Duo", amount: 16.99, billingCycle: .monthly, features: "2 аккаунта"),
+                  .init(id: "family", name: "Family", amount: 19.99, billingCycle: .monthly, features: "До 6 участников"),
+                  .init(id: "student", name: "Student", amount: 5.99, billingCycle: .monthly),
+              ]),
 
         .init(id: "apple_music", displayName: "Apple Music", aliases: ["эпл мьюзик"],
               category: .music, suggestedCurrencyCode: "USD", region: .global,
-              tags: ["music", "apple"]),
+              tags: ["music", "apple"],
+              plans: [
+                  .init(id: "individual", name: "Individual", amount: 10.99, billingCycle: .monthly),
+                  .init(id: "family", name: "Family", amount: 16.99, billingCycle: .monthly, features: "До 6 участников"),
+                  .init(id: "student", name: "Student", amount: 5.99, billingCycle: .monthly),
+              ]),
 
         .init(id: "tidal", displayName: "TIDAL", aliases: ["тайдал"],
               category: .music, suggestedCurrencyCode: "USD", region: .global,
@@ -62,7 +88,14 @@ extension ProviderCatalog {
         // MARK: Cloud
         .init(id: "icloud", displayName: "iCloud+", aliases: ["айклауд", "icloud"],
               category: .cloud, suggestedCurrencyCode: "USD", region: .global,
-              tags: ["apple", "storage", "popular"]),
+              tags: ["apple", "storage", "popular"],
+              plans: [
+                  .init(id: "50gb", name: "50 ГБ", amount: 0.99, billingCycle: .monthly),
+                  .init(id: "200gb", name: "200 ГБ", amount: 2.99, billingCycle: .monthly),
+                  .init(id: "2tb", name: "2 ТБ", amount: 9.99, billingCycle: .monthly),
+                  .init(id: "6tb", name: "6 ТБ", amount: 29.99, billingCycle: .monthly),
+                  .init(id: "12tb", name: "12 ТБ", amount: 59.99, billingCycle: .monthly),
+              ]),
 
         .init(id: "google_one", displayName: "Google One", aliases: ["гугл один", "google drive"],
               category: .cloud, suggestedCurrencyCode: "USD", region: .global,
@@ -79,11 +112,20 @@ extension ProviderCatalog {
         // MARK: AI Tools
         .init(id: "chatgpt_plus", displayName: "ChatGPT Plus", aliases: ["чатгпт", "openai", "gpt"],
               category: .aiTools, suggestedCurrencyCode: "USD", region: .global,
-              tags: ["ai", "popular"]),
+              tags: ["ai", "popular"],
+              plans: [
+                  .init(id: "plus", name: "Plus", amount: 20, billingCycle: .monthly),
+                  .init(id: "team", name: "Team", amount: 25, billingCycle: .monthly, features: "Расширенные лимиты"),
+                  .init(id: "pro", name: "Pro", amount: 200, billingCycle: .monthly, features: "Безлимитный доступ"),
+              ]),
 
         .init(id: "claude_pro", displayName: "Claude Pro", aliases: ["клод", "anthropic"],
               category: .aiTools, suggestedCurrencyCode: "USD", region: .global,
-              tags: ["ai"]),
+              tags: ["ai"],
+              plans: [
+                  .init(id: "pro", name: "Pro", amount: 20, billingCycle: .monthly),
+                  .init(id: "max", name: "Max", amount: 100, billingCycle: .monthly, features: "Расширенные лимиты, приоритет"),
+              ]),
 
         .init(id: "midjourney", displayName: "Midjourney", aliases: ["миджорни"],
               category: .aiTools, suggestedCurrencyCode: "USD", region: .global,
@@ -245,6 +287,11 @@ extension ProviderCatalog {
         // MARK: Apple Bundles
         .init(id: "apple_one", displayName: "Apple One", aliases: ["эпл ван"],
               category: .cloud, itemType: .ecosystemBundle, suggestedCurrencyCode: "USD", region: .global,
-              tags: ["apple", "bundle"]),
+              tags: ["apple", "bundle"],
+              plans: [
+                  .init(id: "individual", name: "Individual", amount: 19.95, billingCycle: .monthly, features: "Music, TV+, Arcade, iCloud+ 50 ГБ"),
+                  .init(id: "family", name: "Family", amount: 25.95, billingCycle: .monthly, features: "До 6 чел., iCloud+ 200 ГБ"),
+                  .init(id: "premier", name: "Premier", amount: 37.95, billingCycle: .monthly, features: "Все + News+, Fitness+, iCloud+ 2 ТБ"),
+              ]),
     ]
 }

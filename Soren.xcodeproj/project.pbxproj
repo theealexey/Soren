@@ -38,6 +38,8 @@
 		28A24336DA2E58C4068B93E0 /* PaymentMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43F33DA92ABD30F75DE8851C /* PaymentMethod.swift */; };
 		2FF3082DDA2DD4B47E915831 /* SorenModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D87F6D00CB43C4EEAD6FD3F7 /* SorenModelContainer.swift */; };
 		3185C5DD77457E44D73D7463 /* ProviderTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAC69E24F7112B4A8F468D2D /* ProviderTemplate.swift */; };
+		PT01B1LD00000001A0000001 /* PlanTier.swift in Sources */ = {isa = PBXBuildFile; fileRef = PT01F1LE00000001B0000001 /* PlanTier.swift */; };
+		TC01B1LD00000002A0000002 /* TierChipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TC01F1LE00000002B0000002 /* TierChipView.swift */; };
 		318BC245F0A0CE7EEBD2F869 /* ItemCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEBC8639DFC777ED725C07D3 /* ItemCategory.swift */; };
 		33E19E039BEEA816734656AB /* RecurringItemRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3442B666B8433A69DB9762E2 /* RecurringItemRepository.swift */; };
 		38573EFEB02724F5145B9B3B /* ProviderTemplateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0CDC0B809B3C76636A90D2 /* ProviderTemplateTests.swift */; };
@@ -224,6 +226,8 @@
 		E649AB3F110DA227AEAD1E55 /* PaymentMethodRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethodRepository.swift; sourceTree = "<group>"; };
 		E95E33778D21F29F937EC9AC /* ItemStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemStatus.swift; sourceTree = "<group>"; };
 		EAC69E24F7112B4A8F468D2D /* ProviderTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderTemplate.swift; sourceTree = "<group>"; };
+		PT01F1LE00000001B0000001 /* PlanTier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanTier.swift; sourceTree = "<group>"; };
+		TC01F1LE00000002B0000002 /* TierChipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TierChipView.swift; sourceTree = "<group>"; };
 		F0F163392822F2FF77B7587C /* SorenWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SorenWidgets.swift; sourceTree = "<group>"; };
 		F1C8300C1A129E7BBB3B1F0A /* PaymentRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentRecord.swift; sourceTree = "<group>"; };
 		F3720B5F5D991DB038E27DA0 /* FlowLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLayout.swift; sourceTree = "<group>"; };
@@ -499,6 +503,7 @@
 				336084808B57CA32842434F2 /* Bundle.swift */,
 				43F33DA92ABD30F75DE8851C /* PaymentMethod.swift */,
 				F1C8300C1A129E7BBB3B1F0A /* PaymentRecord.swift */,
+				PT01F1LE00000001B0000001 /* PlanTier.swift */,
 				EAC69E24F7112B4A8F468D2D /* ProviderTemplate.swift */,
 				B698265EA94513CE0884AF37 /* RecurringItem.swift */,
 				80918D4746AD2EF6165BD1F7 /* ReminderRule.swift */,
@@ -684,6 +689,7 @@
 				AA75DA9D8213E0F85264205F /* SorenListRow.swift */,
 				6F935C51942C260D6EE1004A /* StatBlock.swift */,
 				20EC791707151DB425DF4523 /* StateViews.swift */,
+				TC01F1LE00000002B0000002 /* TierChipView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -997,6 +1003,7 @@
 				56049D299F1DFD17703353C9 /* PaymentRecordMapper.swift in Sources */,
 				F9534EA4A7CB1B4E854AC5D7 /* PaymentRecordRepository.swift in Sources */,
 				742600BB157FAB86A230F160 /* PremiumCard.swift in Sources */,
+				PT01B1LD00000001A0000001 /* PlanTier.swift in Sources */,
 				6B8A67B2922FD56ADC545EC9 /* ProviderCatalog+Global.swift in Sources */,
 				CF06E51679C5374C5F5C0FB9 /* ProviderCatalog+Russia.swift in Sources */,
 				8BEDC2D579427398D635B7CB /* ProviderCatalog.swift in Sources */,
@@ -1022,6 +1029,7 @@
 				8C7D3BD2F9DF89D996C92FE2 /* Spacing.swift in Sources */,
 				04646804567EAE64683EDBCC /* StatBlock.swift in Sources */,
 				14FAD191C47CD95CDF6C6518 /* StateViews.swift in Sources */,
+				TC01B1LD00000002A0000002 /* TierChipView.swift in Sources */,
 				AB35672A60CFCDCB614C95A4 /* SwiftDataPaymentMethodRepository.swift in Sources */,
 				2310FE7B5B1B97190A18B413 /* SwiftDataPaymentRecordRepository.swift in Sources */,
 				BB2BC37DC78284972F9B9A95 /* SwiftDataRecurringItemRepository.swift in Sources */,

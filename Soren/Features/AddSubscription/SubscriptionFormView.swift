@@ -12,6 +12,8 @@ struct SubscriptionFormView: View {
         Form {
             providerHeader
 
+            tierSection
+
             essentialsSection
 
             classificationSection
@@ -59,6 +61,42 @@ struct SubscriptionFormView: View {
                     }
                 }
                 .listRowBackground(Color.clear)
+            }
+        }
+    }
+
+    // MARK: - Plan Tier Selection
+
+    @ViewBuilder
+    private var tierSection: some View {
+        if !viewModel.availableTiers.isEmpty {
+            Section("Тариф") {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: Spacing.sm) {
+                        ForEach(viewModel.availableTiers) { tier in
+                            TierChipView(
+                                tier: tier,
+                                currencyCode: viewModel.currencyCode,
+                                isSelected: viewModel.selectedTier?.id == tier.id
+                            )
+                            .onTapGesture {
+                                if viewModel.selectedTier?.id == tier.id {
+                                    viewModel.clearTier()
+                                } else {
+                                    viewModel.selectTier(tier)
+                                }
+                                HapticEngine.selection()
+                            }
+                        }
+                    }
+                    .padding(.horizontal, Spacing.xxs)
+                }
+                .listRowInsets(EdgeInsets(
+                    top: Spacing.xs,
+                    leading: Spacing.xxs,
+                    bottom: Spacing.xs,
+                    trailing: Spacing.xxs
+                ))
             }
         }
     }
