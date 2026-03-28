@@ -20,11 +20,13 @@ final class AlertsViewModel {
     // MARK: - Dependencies
 
     private let getAlerts: GetAlerts
+    private let preferences: UserPreferencesRepository
 
     // MARK: - Init
 
-    init(repositories: RepositoryContainer) {
+    init(repositories: RepositoryContainer, preferences: UserPreferencesRepository = UserPreferencesRepository()) {
         self.getAlerts = GetAlerts(repository: repositories.recurringItems)
+        self.preferences = preferences
     }
 
     // MARK: - Actions
@@ -32,7 +34,11 @@ final class AlertsViewModel {
     func load() {
         error = nil
         do {
-            alerts = try getAlerts.execute()
+            let prefs = preferences.load()
+            alerts = try getAlerts.execute(
+                chargeAlertDays: prefs.chargeAlertDays,
+                trialAlertDays: prefs.trialAlertDays
+            )
             isLoaded = true
         } catch {
             self.error = error

@@ -27,12 +27,12 @@ struct ComponentsPreview: View {
 
     private var cardsSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader("Cards")
+            SectionHeader("Карточки")
 
-            PremiumCard { Text("Standard").font(Typography.body) }
-            PremiumCard(.elevated) { Text("Elevated").font(Typography.body) }
-            PremiumCard(.glass) { Text("Glass").font(Typography.body) }
-            PremiumCard(.tinted(ColorTokens.warning)) { Text("Tinted").font(Typography.body) }
+            PremiumCard { Text("Стандартная").font(Typography.body) }
+            PremiumCard(.elevated) { Text("Приподнятая").font(Typography.body) }
+            PremiumCard(.glass) { Text("Стеклянная").font(Typography.body) }
+            PremiumCard(.tinted(ColorTokens.warning)) { Text("Предупреждение").font(Typography.body) }
         }
     }
 
@@ -40,15 +40,15 @@ struct ComponentsPreview: View {
 
     private var statsSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader("Stat Blocks")
+            SectionHeader("Статистика")
 
             HStack(spacing: Spacing.sm) {
                 PremiumCard(.elevated) {
-                    StatBlock(title: "Monthly", amount: 4299, currency: "RUB", trend: .up(12.5))
+                    StatBlock(title: "В месяц", amount: 4299, currency: "RUB", trend: .up(12.5))
                 }
 
                 PremiumCard(.elevated) {
-                    StatBlock(title: "Yearly", amount: 51_588, currency: "RUB", trend: .down(3))
+                    StatBlock(title: "В год", amount: 51_588, currency: "RUB", trend: .down(3))
                 }
             }
         }
@@ -58,13 +58,13 @@ struct ComponentsPreview: View {
 
     private var listRowsSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader("List Rows", action: "See all") {}
+            SectionHeader("Список", action: "Все") {}
 
             PremiumCard {
                 VStack(spacing: 0) {
                     SorenListRow(
                         title: "YouTube Premium",
-                        subtitle: "Next: Apr 12",
+                        subtitle: "Списание: 12 апр",
                         amount: 299,
                         currency: "RUB",
                         iconName: "play.rectangle.fill",
@@ -75,7 +75,7 @@ struct ComponentsPreview: View {
 
                     SorenListRow(
                         title: "Яндекс Плюс",
-                        subtitle: "Trial ends in 3 days",
+                        subtitle: "Триал через 3 дня",
                         amount: 399,
                         currency: "RUB",
                         iconName: "star.fill",
@@ -87,7 +87,7 @@ struct ComponentsPreview: View {
 
                     SorenListRow(
                         title: "ChatGPT Plus",
-                        subtitle: "Payment failed",
+                        subtitle: "Ошибка оплаты",
                         amount: 20,
                         currency: "USD",
                         iconName: "brain.head.profile",
@@ -103,18 +103,18 @@ struct ComponentsPreview: View {
 
     private var insightsSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader("Insight Cards")
+            SectionHeader("Инсайты")
 
             InsightCard(
                 icon: "exclamationmark.triangle",
-                title: "4 charges in next 6 days",
-                subtitle: "Total: ₽2,847",
+                title: "4 списания за 6 дней",
+                subtitle: "Итого: ₽2 847",
                 severity: .warning
             )
 
             InsightCard(
                 icon: "arrow.down.right",
-                title: "You saved ₽1,200 vs last month",
+                title: "Сэкономлено ₽1 200 за месяц",
                 severity: .positive
             )
         }
@@ -124,7 +124,7 @@ struct ComponentsPreview: View {
 
     private var chipsSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader("Filter Chips")
+            SectionHeader("Фильтры")
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Spacing.xs) {
@@ -141,7 +141,7 @@ struct ComponentsPreview: View {
 
     private var iconsSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader("Provider Icons")
+            SectionHeader("Иконки провайдеров")
 
             HStack(spacing: Spacing.md) {
                 ProviderIcon(systemName: "play.rectangle.fill", color: .red, size: .small)
@@ -155,20 +155,20 @@ struct ComponentsPreview: View {
 
     private var statesSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader("Empty & Error States")
+            SectionHeader("Пустые и ошибочные состояния")
 
             PremiumCard {
                 EmptyStateView(
                     icon: "tray",
-                    title: "No subscriptions",
-                    subtitle: "Add your first recurring payment.",
-                    actionTitle: "Add Item"
+                    title: "Нет подписок",
+                    subtitle: "Добавьте первый рекуррентный платёж.",
+                    actionTitle: "Добавить"
                 ) {}
             }
 
             PremiumCard {
                 ErrorStateView(
-                    message: "Could not load data."
+                    message: "Не удалось загрузить данные."
                 ) {}
             }
         }

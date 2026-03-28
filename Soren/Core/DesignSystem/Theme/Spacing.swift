@@ -48,4 +48,15 @@ enum CornerRadius {
 
     /// 20pt — hero cards, modal sheets.
     static let extraLarge: CGFloat = 20
+
+    /// 2pt — hairline rounding on tiny bars/indicators.
+    static let hairline: CGFloat = 2
+}
+
+// MARK: - Icon Size
+
+/// Standardized icon frame dimensions.
+enum IconSize {
+    /// 32pt — card-level icons (InsightCard, etc.).
+    static let cardIcon: CGFloat = 32
 }

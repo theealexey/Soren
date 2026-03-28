@@ -4,11 +4,11 @@ struct LibraryPlaceholderView: View {
     var body: some View {
         NavigationStack {
             ContentUnavailableView(
-                "Library",
+                "Подписки",
                 systemImage: "list.bullet",
-                description: Text("All your recurring items in one place")
+                description: Text("Все рекуррентные платежи в одном месте")
             )
-            .navigationTitle("Library")
+            .navigationTitle("Подписки")
         }
     }
 }

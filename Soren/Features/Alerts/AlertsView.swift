@@ -37,7 +37,10 @@ struct AlertsView: View {
                 }
             }
             .task {
-                let vm = AlertsViewModel(repositories: container.repositories)
+                let vm = AlertsViewModel(
+                    repositories: container.repositories,
+                    preferences: container.preferences
+                )
                 vm.load()
                 self.viewModel = vm
             }

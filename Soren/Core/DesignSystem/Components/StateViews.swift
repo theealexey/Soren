@@ -37,7 +37,7 @@ struct EmptyStateView: View {
     var body: some View {
         VStack(spacing: Spacing.md) {
             Image(systemName: icon)
-                .font(.system(size: 44, weight: .light))
+                .font(Typography.emptyStateIcon)
                 .foregroundStyle(ColorTokens.textTertiary)
 
             VStack(spacing: Spacing.xxs) {
@@ -111,7 +111,7 @@ struct ErrorStateView: View {
     var body: some View {
         VStack(spacing: Spacing.md) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 44, weight: .light))
+                .font(Typography.emptyStateIcon)
                 .foregroundStyle(ColorTokens.error)
 
             VStack(spacing: Spacing.xxs) {
@@ -146,21 +146,21 @@ struct ErrorStateView: View {
 #Preview("Empty State") {
     EmptyStateView(
         icon: "tray",
-        title: "No subscriptions yet",
-        subtitle: "Add your first recurring payment to get started.",
-        actionTitle: "Add Item"
+        title: "Пока нет подписок",
+        subtitle: "Добавьте первый рекуррентный платёж, чтобы начать.",
+        actionTitle: "Добавить"
     ) {}
     .background(ColorTokens.background)
 }
 
 #Preview("Loading State") {
-    LoadingStateView("Loading subscriptions...")
+    LoadingStateView("Загрузка подписок...")
         .background(ColorTokens.background)
 }
 
 #Preview("Error State") {
     ErrorStateView(
-        message: "Could not load your data. Please try again."
+        message: "Не удалось загрузить данные. Попробуйте снова."
     ) {}
     .background(ColorTokens.background)
 }

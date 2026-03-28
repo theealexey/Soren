@@ -4,11 +4,11 @@ struct CalendarPlaceholderView: View {
     var body: some View {
         NavigationStack {
             ContentUnavailableView(
-                "Calendar",
+                "Календарь",
                 systemImage: "calendar",
-                description: Text("Visualize your payment timeline")
+                description: Text("Визуализация расписания платежей")
             )
-            .navigationTitle("Calendar")
+            .navigationTitle("Календарь")
         }
     }
 }

@@ -10,6 +10,8 @@ struct HomeView: View {
     @State private var showAddSheet = false
     @State private var showSettings = false
 
+    private let maxUpcomingItems = 5
+
     var body: some View {
         NavigationStack {
             Group {
@@ -162,7 +164,7 @@ struct HomeView: View {
 
             PremiumCard {
                 VStack(spacing: 0) {
-                    ForEach(Array(items.prefix(5).enumerated()), id: \.element.id) { index, item in
+                    ForEach(Array(items.prefix(maxUpcomingItems).enumerated()), id: \.element.id) { index, item in
                         NavigationLink(value: item) {
                             SorenListRow(
                                 title: item.title,
@@ -177,7 +179,7 @@ struct HomeView: View {
                         }
                         .buttonStyle(.plain)
 
-                        if index < min(items.count, 5) - 1 {
+                        if index < min(items.count, maxUpcomingItems) - 1 {
                             Divider()
                                 .padding(.leading, SorenListRow.dividerInset)
                         }

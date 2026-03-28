@@ -70,7 +70,7 @@ struct TrendBadge: View {
     var body: some View {
         HStack(spacing: Spacing.xxxs) {
             Image(systemName: iconName)
-                .font(.system(size: 9, weight: .bold))
+                .font(Typography.trendBadge)
 
             Text(label)
                 .font(Typography.footnote)
@@ -115,7 +115,7 @@ struct TrendBadge: View {
     HStack(spacing: Spacing.md) {
         PremiumCard(.elevated) {
             StatBlock(
-                title: "Monthly",
+                title: "В месяц",
                 amount: 4299,
                 currency: "RUB",
                 trend: .up(12.5)
@@ -124,7 +124,7 @@ struct TrendBadge: View {
 
         PremiumCard(.elevated) {
             StatBlock(
-                title: "Yearly",
+                title: "В год",
                 amount: 51_588,
                 currency: "RUB",
                 trend: .down(3)

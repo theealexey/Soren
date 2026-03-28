@@ -4,11 +4,11 @@ struct HomePlaceholderView: View {
     var body: some View {
         NavigationStack {
             ContentUnavailableView(
-                "Dashboard",
+                "Главная",
                 systemImage: "house.fill",
-                description: Text("Your recurring payments command center")
+                description: Text("Центр управления подписками")
             )
-            .navigationTitle("Home")
+            .navigationTitle("Главная")
         }
     }
 }

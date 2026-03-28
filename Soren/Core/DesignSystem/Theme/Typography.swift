@@ -57,6 +57,23 @@ enum Typography {
 
     /// Overline labels above sections: "UPCOMING", "ACTIVE TRIALS".
     static let overline = Font.system(size: 11, weight: .semibold)
+
+    // MARK: - Specialized
+
+    /// Large icon in empty/error state screens.
+    static let emptyStateIcon = Font.system(size: 44, weight: .light)
+
+    /// Empty state amount display (search "no results" icon).
+    static let emptyStateAmount = Font.system(size: 36, weight: .light)
+
+    /// Icon inside InsightCard / alert cards.
+    static let cardIcon = Font.system(size: 18, weight: .semibold)
+
+    /// Disclosure chevron in cards.
+    static let chevron = Font.system(size: 12, weight: .semibold)
+
+    /// Tiny trend arrow in TrendBadge.
+    static let trendBadge = Font.system(size: 9, weight: .bold)
 }
 
 // MARK: - View Modifier for Overline Style

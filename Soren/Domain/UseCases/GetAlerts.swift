@@ -13,7 +13,7 @@ struct GetAlerts {
         self.repository = repository
     }
 
-    func execute() throws -> AlertsResult {
+    func execute(chargeAlertDays: Int = 7, trialAlertDays: Int = 7) throws -> AlertsResult {
         let excludedStatuses: Set<ItemStatus> = [.cancelled, .paused, .archived]
 
         let items = try repository.fetchAll()
@@ -31,7 +31,7 @@ struct GetAlerts {
                 continue
             }
 
-            if let trialDays = item.daysUntilTrialEnd, item.isActiveTrial, trialDays <= 7 {
+            if let trialDays = item.daysUntilTrialEnd, item.isActiveTrial, trialDays <= trialAlertDays {
                 trialEnding.append(item)
             }
 
@@ -41,7 +41,7 @@ struct GetAlerts {
                 overdue.append(item)
             } else if daysUntil == 0 {
                 dueToday.append(item)
-            } else if daysUntil <= 7 {
+            } else if daysUntil <= chargeAlertDays {
                 dueSoon.append(item)
             }
         }

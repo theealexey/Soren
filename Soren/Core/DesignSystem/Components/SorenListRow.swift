@@ -148,7 +148,7 @@ private struct BadgeView: View {
     VStack(spacing: 0) {
         SorenListRow(
             title: "YouTube Premium",
-            subtitle: "Next charge: Apr 12",
+            subtitle: "Списание: 12 апр",
             amount: 299,
             currency: "RUB",
             iconName: "play.rectangle.fill",
@@ -159,7 +159,7 @@ private struct BadgeView: View {
 
         SorenListRow(
             title: "Яндекс Плюс",
-            subtitle: "Trial ends in 3 days",
+            subtitle: "Триал заканчивается через 3 дня",
             amount: 399,
             currency: "RUB",
             iconName: "star.fill",
@@ -171,7 +171,7 @@ private struct BadgeView: View {
 
         SorenListRow(
             title: "iCloud+ 200GB",
-            subtitle: "Charged monthly",
+            subtitle: "Ежемесячное списание",
             amount: 2.99,
             currency: "USD",
             iconName: "icloud.fill",

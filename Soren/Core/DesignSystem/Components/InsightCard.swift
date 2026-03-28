@@ -36,9 +36,9 @@ struct InsightCard: View {
         PremiumCard(.tinted(severity.color)) {
             HStack(spacing: Spacing.sm) {
                 Image(systemName: icon)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(Typography.cardIcon)
                     .foregroundStyle(severity.color)
-                    .frame(width: 32)
+                    .frame(width: IconSize.cardIcon)
 
                 VStack(alignment: .leading, spacing: Spacing.xxxs) {
                     Text(title)
@@ -55,7 +55,7 @@ struct InsightCard: View {
                 Spacer(minLength: 0)
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(Typography.chevron)
                     .foregroundStyle(ColorTokens.textTertiary)
             }
         }
@@ -88,27 +88,27 @@ extension InsightCard {
     VStack(spacing: Spacing.sm) {
         InsightCard(
             icon: "exclamationmark.triangle",
-            title: "4 charges in next 6 days",
-            subtitle: "Total: ₽2,847",
+            title: "4 списания за 6 дней",
+            subtitle: "Итого: ₽2 847",
             severity: .warning
         )
 
         InsightCard(
             icon: "arrow.up.right",
-            title: "Spending up 12% this month",
+            title: "Расходы выросли на 12% за месяц",
             severity: .critical
         )
 
         InsightCard(
             icon: "arrow.down.right",
-            title: "You saved ₽1,200 vs last month",
+            title: "Сэкономлено ₽1 200 за месяц",
             severity: .positive
         )
 
         InsightCard(
             icon: "clock",
-            title: "Яндекс Плюс trial ends in 3 days",
-            subtitle: "Will renew at ₽399/mo",
+            title: "Яндекс Плюс: триал через 3 дня",
+            subtitle: "Продление за ₽399/мес",
             severity: .info
         )
     }

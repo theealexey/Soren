@@ -4,11 +4,11 @@ struct AnalyticsPlaceholderView: View {
     var body: some View {
         NavigationStack {
             ContentUnavailableView(
-                "Analytics",
+                "Аналитика",
                 systemImage: "chart.bar.fill",
-                description: Text("Spending insights and forecasts")
+                description: Text("Анализ расходов и прогнозы")
             )
-            .navigationTitle("Analytics")
+            .navigationTitle("Аналитика")
         }
     }
 }

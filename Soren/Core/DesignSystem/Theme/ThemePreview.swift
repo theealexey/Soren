@@ -183,7 +183,7 @@ struct ThemePreview: View {
             Rectangle()
                 .fill(ColorTokens.accent)
                 .frame(width: value * 4, height: 12)
-                .clipShape(RoundedRectangle(cornerRadius: 2))
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.hairline))
         }
     }
 }

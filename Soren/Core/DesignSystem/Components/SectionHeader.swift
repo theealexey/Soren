@@ -44,9 +44,9 @@ struct SectionHeader: View {
 
 #Preview {
     VStack(alignment: .leading, spacing: Spacing.xl) {
-        SectionHeader("Upcoming charges")
-        SectionHeader("Active trials", action: "See all") {}
-        SectionHeader("This month", action: "Details") {}
+        SectionHeader("Ближайшие списания")
+        SectionHeader("Пробные периоды", action: "Все") {}
+        SectionHeader("Этот месяц", action: "Подробнее") {}
     }
     .padding(Spacing.lg)
     .background(ColorTokens.background)

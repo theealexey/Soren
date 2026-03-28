@@ -116,22 +116,22 @@ private extension View {
     ScrollView {
         VStack(spacing: Spacing.md) {
             PremiumCard {
-                Text("Standard Card")
+                Text("Стандартная карточка")
                     .font(Typography.headline)
             }
 
             PremiumCard(.elevated) {
-                Text("Elevated Card")
+                Text("Приподнятая карточка")
                     .font(Typography.headline)
             }
 
             PremiumCard(.glass) {
-                Text("Glass Card")
+                Text("Стеклянная карточка")
                     .font(Typography.headline)
             }
 
             PremiumCard(.tinted(ColorTokens.warning)) {
-                Text("Tinted Warning Card")
+                Text("Предупреждение")
                     .font(Typography.headline)
             }
         }

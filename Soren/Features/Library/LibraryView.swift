@@ -248,7 +248,7 @@ struct LibraryView: View {
     private func noResults(_ vm: LibraryViewModel) -> some View {
         VStack(spacing: Spacing.md) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 36, weight: .light))
+                .font(Typography.emptyStateAmount)
                 .foregroundStyle(ColorTokens.textTertiary)
 
             if !vm.searchText.isEmpty {
