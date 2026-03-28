@@ -24,7 +24,7 @@ enum AppTab: String, CaseIterable, Identifiable {
     case library
     case calendar
     case analytics
-    case settings
+    case alerts
 
     var id: String { rawValue }
 
@@ -34,7 +34,7 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .library:   "Подписки"
         case .calendar:  "Календарь"
         case .analytics: "Аналитика"
-        case .settings:  "Настройки"
+        case .alerts:    "Алерты"
         }
     }
 
@@ -44,7 +44,7 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .library:   "list.bullet"
         case .calendar:  "calendar"
         case .analytics: "chart.bar.fill"
-        case .settings:  "gearshape.fill"
+        case .alerts:    "bell.badge.fill"
         }
     }
 
@@ -55,7 +55,7 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .library:   LibraryView()
         case .calendar:  CalendarPlaceholderView()
         case .analytics: AnalyticsPlaceholderView()
-        case .settings:  SettingsPlaceholderView()
+        case .alerts:    AlertsView()
         }
     }
 }

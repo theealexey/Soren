@@ -105,6 +105,9 @@
 		19B9AA9211BCC12F5E44D0F2 /* ItemDetailsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B85494BC748A8825096F9A9 /* ItemDetailsViewModel.swift */; };
 		4F956364959E53F175FAC1F0 /* ItemDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C8B3AAC971C79330D945E78 /* ItemDetailsView.swift */; };
 		3D368029BC2900513A8EC4AE /* ItemEditFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54965F7F3AAF27A2442E4BC1 /* ItemEditFormView.swift */; };
+		D0F2090B59F99B86E53E29D7 /* GetAlerts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B563B0F047A474680DE9FB7 /* GetAlerts.swift */; };
+		AA4477C2E7B364E1A81430F1 /* AlertsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E61BA1895C3AFDFA3CB2C311 /* AlertsViewModel.swift */; };
+		880C0DEF4F3068839BA3A5ED /* AlertsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 648F586DAA84BEE90463C909 /* AlertsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -227,6 +230,9 @@
 		1B85494BC748A8825096F9A9 /* ItemDetailsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ItemDetailsViewModel.swift"; sourceTree = "<group>"; };
 		7C8B3AAC971C79330D945E78 /* ItemDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ItemDetailsView.swift"; sourceTree = "<group>"; };
 		54965F7F3AAF27A2442E4BC1 /* ItemEditFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ItemEditFormView.swift"; sourceTree = "<group>"; };
+		8B563B0F047A474680DE9FB7 /* GetAlerts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GetAlerts.swift"; sourceTree = "<group>"; };
+		E61BA1895C3AFDFA3CB2C311 /* AlertsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AlertsViewModel.swift"; sourceTree = "<group>"; };
+		648F586DAA84BEE90463C909 /* AlertsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AlertsView.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -528,6 +534,8 @@
 		9F9A8685E1FDD7EEF1285E78 /* Alerts */ = {
 			isa = PBXGroup;
 			children = (
+				648F586DAA84BEE90463C909 /* AlertsView.swift */,
+				E61BA1895C3AFDFA3CB2C311 /* AlertsViewModel.swift */,
 				E7065B516C39590C2CDAA89D /* Components */,
 			);
 			path = Alerts;
@@ -548,6 +556,7 @@
 		A6AF1B3AD8E7D94E895D7864 /* UseCases */ = {
 			isa = PBXGroup;
 			children = (
+				8B563B0F047A474680DE9FB7 /* GetAlerts.swift */,
 				A766D4CC1F29EE66D776BE73 /* DeleteRecurringItem.swift */,
 				B6AEB2C34BF2E7212D9E856F /* UpdateRecurringItem.swift */,
 				99ED11AD6BE786B0252959EE /* GetActiveTrials.swift */,
@@ -995,6 +1004,9 @@
 				4E57BC194849D6C3D6CF9A4D /* AddSubscriptionViewModel.swift in Sources */,
 				A55A4C29B7ABD1F559254381 /* ProviderPickerView.swift in Sources */,
 				ABB56DAD8ED9293DC029E64D /* SubscriptionFormView.swift in Sources */,
+				880C0DEF4F3068839BA3A5ED /* AlertsView.swift in Sources */,
+				AA4477C2E7B364E1A81430F1 /* AlertsViewModel.swift in Sources */,
+				D0F2090B59F99B86E53E29D7 /* GetAlerts.swift in Sources */,
 				3D368029BC2900513A8EC4AE /* ItemEditFormView.swift in Sources */,
 				4F956364959E53F175FAC1F0 /* ItemDetailsView.swift in Sources */,
 				19B9AA9211BCC12F5E44D0F2 /* ItemDetailsViewModel.swift in Sources */,
