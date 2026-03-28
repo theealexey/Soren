@@ -5,6 +5,7 @@ import SwiftData
 struct SorenApp: App {
     private let container: ModelContainer
     @State private var appContainer: AppContainer
+    @AppStorage("soren.appearanceMode") private var appearanceModeRaw = AppearanceMode.system.rawValue
 
     init() {
         do {
@@ -22,7 +23,16 @@ struct SorenApp: App {
         WindowGroup {
             RootView()
                 .environment(appContainer)
+                .preferredColorScheme(colorScheme)
         }
         .modelContainer(container)
+    }
+
+    private var colorScheme: ColorScheme? {
+        switch AppearanceMode(rawValue: appearanceModeRaw) {
+        case .light: .light
+        case .dark:  .dark
+        default:     nil
+        }
     }
 }

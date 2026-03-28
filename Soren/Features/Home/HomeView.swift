@@ -8,6 +8,7 @@ struct HomeView: View {
     @Environment(AppContainer.self) private var container
     @State private var viewModel: HomeViewModel?
     @State private var showAddSheet = false
+    @State private var showSettings = false
 
     var body: some View {
         NavigationStack {
@@ -20,6 +21,22 @@ struct HomeView: View {
             }
             .navigationTitle("Главная")
             .background(ColorTokens.background)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                            .font(Typography.bodyMedium)
+                            .foregroundStyle(ColorTokens.textSecondary)
+                    }
+                }
+            }
+            .sheet(isPresented: $showSettings) {
+                NavigationStack {
+                    SettingsView()
+                }
+            }
             .sheet(isPresented: $showAddSheet, onDismiss: {
                 viewModel?.load()
             }) {

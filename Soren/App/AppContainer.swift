@@ -10,18 +10,22 @@ import SwiftData
 final class AppContainer {
     let repositories: RepositoryContainer
     let providerCatalog: any ProviderCatalogRepository
+    let preferences: UserPreferencesRepository
 
     init(modelContext: ModelContext) {
         self.repositories = RepositoryContainer(context: modelContext)
         self.providerCatalog = InMemoryProviderCatalogRepository()
+        self.preferences = UserPreferencesRepository()
     }
 
     /// For SwiftUI Previews and tests — fully in-memory, no disk persistence.
     init(
         repositories: RepositoryContainer,
-        providerCatalog: any ProviderCatalogRepository = InMemoryProviderCatalogRepository()
+        providerCatalog: any ProviderCatalogRepository = InMemoryProviderCatalogRepository(),
+        preferences: UserPreferencesRepository = UserPreferencesRepository()
     ) {
         self.repositories = repositories
         self.providerCatalog = providerCatalog
+        self.preferences = preferences
     }
 }

@@ -48,7 +48,6 @@
 		446776A4B4A8B61EACD9791E /* MotionTokenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B50D4B434DAA34DC9657942 /* MotionTokenTests.swift */; };
 		48C574F5FDC05128E84F81A0 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93AF16A9BA161AB845824A50 /* HomeViewModel.swift */; };
 		4D64A67C6D09B01C37CB27F9 /* AmountLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7960A2157878C5C39AE82756 /* AmountLabel.swift */; };
-		4E83E248693B7874D49B7D18 /* SettingsPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF23AAFF7A62FB3E647A90A7 /* SettingsPlaceholderView.swift */; };
 		50C39ECEA025E0E6793551C1 /* SorenUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593F223EC1D8EC1482C3ABD5 /* SorenUITests.swift */; };
 		56049D299F1DFD17703353C9 /* PaymentRecordMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD1994F3779CF81744936E03 /* PaymentRecordMapper.swift */; };
 		5968C0D9F8158A03E4378934 /* MotionTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF14B2678835A6D1F6ECF96 /* MotionTokens.swift */; };
@@ -108,6 +107,10 @@
 		D0F2090B59F99B86E53E29D7 /* GetAlerts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B563B0F047A474680DE9FB7 /* GetAlerts.swift */; };
 		AA4477C2E7B364E1A81430F1 /* AlertsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E61BA1895C3AFDFA3CB2C311 /* AlertsViewModel.swift */; };
 		880C0DEF4F3068839BA3A5ED /* AlertsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 648F586DAA84BEE90463C909 /* AlertsView.swift */; };
+		F1A65FFBB1EEFEBDCB5CC77C /* UserPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C02F4D7365DE7A936B97207 /* UserPreferences.swift */; };
+		D9E33AE6238FFCFEA3FB1CD7 /* UserPreferencesRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAEFC5B91EDB95F024627C3A /* UserPreferencesRepository.swift */; };
+		52541EE17D98F415CC1CE2E1 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37534F9658CA89981533C48E /* SettingsViewModel.swift */; };
+		9E12154D20CF3FAD2BC3BC14 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F374C8D59B7A41BBA58DA377 /* SettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -216,7 +219,6 @@
 		E649AB3F110DA227AEAD1E55 /* PaymentMethodRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethodRepository.swift; sourceTree = "<group>"; };
 		E95E33778D21F29F937EC9AC /* ItemStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemStatus.swift; sourceTree = "<group>"; };
 		EAC69E24F7112B4A8F468D2D /* ProviderTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderTemplate.swift; sourceTree = "<group>"; };
-		EF23AAFF7A62FB3E647A90A7 /* SettingsPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPlaceholderView.swift; sourceTree = "<group>"; };
 		F0F163392822F2FF77B7587C /* SorenWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SorenWidgets.swift; sourceTree = "<group>"; };
 		F1C8300C1A129E7BBB3B1F0A /* PaymentRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentRecord.swift; sourceTree = "<group>"; };
 		F3720B5F5D991DB038E27DA0 /* FlowLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLayout.swift; sourceTree = "<group>"; };
@@ -233,6 +235,10 @@
 		8B563B0F047A474680DE9FB7 /* GetAlerts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GetAlerts.swift"; sourceTree = "<group>"; };
 		E61BA1895C3AFDFA3CB2C311 /* AlertsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AlertsViewModel.swift"; sourceTree = "<group>"; };
 		648F586DAA84BEE90463C909 /* AlertsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AlertsView.swift"; sourceTree = "<group>"; };
+		1C02F4D7365DE7A936B97207 /* UserPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserPreferences.swift"; sourceTree = "<group>"; };
+		FAEFC5B91EDB95F024627C3A /* UserPreferencesRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserPreferencesRepository.swift"; sourceTree = "<group>"; };
+		37534F9658CA89981533C48E /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SettingsViewModel.swift"; sourceTree = "<group>"; };
+		F374C8D59B7A41BBA58DA377 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SettingsView.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -246,8 +252,9 @@
 		04FEFDFC23730E51B4778E32 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				F374C8D59B7A41BBA58DA377 /* SettingsView.swift */,
+				37534F9658CA89981533C48E /* SettingsViewModel.swift */,
 				022B9D7CDCF848E6289A49ED /* Components */,
-				EF23AAFF7A62FB3E647A90A7 /* SettingsPlaceholderView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -379,6 +386,7 @@
 		432AAC70003325E60CD77D1A /* Repositories */ = {
 			isa = PBXGroup;
 			children = (
+				FAEFC5B91EDB95F024627C3A /* UserPreferencesRepository.swift */,
 				2B0E4355CE761328C61F5EE0 /* RepositoryContainer.swift */,
 				0D6C4649E26E70C22C78B306 /* RepositoryError.swift */,
 				931E5E8447CB6EBE61776031 /* SwiftDataPaymentMethodRepository.swift */,
@@ -472,6 +480,7 @@
 		683E60EE50A4F7F3D3E40628 /* Entities */ = {
 			isa = PBXGroup;
 			children = (
+				1C02F4D7365DE7A936B97207 /* UserPreferences.swift */,
 				336084808B57CA32842434F2 /* Bundle.swift */,
 				43F33DA92ABD30F75DE8851C /* PaymentMethod.swift */,
 				F1C8300C1A129E7BBB3B1F0A /* PaymentRecord.swift */,
@@ -986,7 +995,6 @@
 				69EA2A2E327CE93A0E5F2067 /* SDRecurringItem.swift in Sources */,
 				F5865F78E6EEE403D95E6498 /* SDReminderRule.swift in Sources */,
 				3A84C7CF0E76A7DE7C8B4500 /* SectionHeader.swift in Sources */,
-				4E83E248693B7874D49B7D18 /* SettingsPlaceholderView.swift in Sources */,
 				0941461856266EC88A29F01E /* Shadows.swift in Sources */,
 				EE06586CF84598617481ACE1 /* SorenApp.swift in Sources */,
 				85AF4F5E3E1C6D703BABF080 /* SorenListRow.swift in Sources */,
@@ -1004,6 +1012,10 @@
 				4E57BC194849D6C3D6CF9A4D /* AddSubscriptionViewModel.swift in Sources */,
 				A55A4C29B7ABD1F559254381 /* ProviderPickerView.swift in Sources */,
 				ABB56DAD8ED9293DC029E64D /* SubscriptionFormView.swift in Sources */,
+				9E12154D20CF3FAD2BC3BC14 /* SettingsView.swift in Sources */,
+				52541EE17D98F415CC1CE2E1 /* SettingsViewModel.swift in Sources */,
+				D9E33AE6238FFCFEA3FB1CD7 /* UserPreferencesRepository.swift in Sources */,
+				F1A65FFBB1EEFEBDCB5CC77C /* UserPreferences.swift in Sources */,
 				880C0DEF4F3068839BA3A5ED /* AlertsView.swift in Sources */,
 				AA4477C2E7B364E1A81430F1 /* AlertsViewModel.swift in Sources */,
 				D0F2090B59F99B86E53E29D7 /* GetAlerts.swift in Sources */,

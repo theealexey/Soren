@@ -7,6 +7,7 @@ import SwiftUI
 struct AlertsView: View {
     @Environment(AppContainer.self) private var container
     @State private var viewModel: AlertsViewModel?
+    @State private var showSettings = false
 
     var body: some View {
         NavigationStack {
@@ -22,12 +23,17 @@ struct AlertsView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        // Settings — placeholder for now
+                        showSettings = true
                     } label: {
                         Image(systemName: "gearshape")
                             .font(Typography.bodyMedium)
                             .foregroundStyle(ColorTokens.textSecondary)
                     }
+                }
+            }
+            .sheet(isPresented: $showSettings) {
+                NavigationStack {
+                    SettingsView()
                 }
             }
             .task {

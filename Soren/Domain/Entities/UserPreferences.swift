@@ -1,0 +1,35 @@
+import Foundation
+
+// MARK: - User Preferences
+
+/// Persistent user settings for the app.
+/// Stored in UserDefaults, not SwiftData (lightweight key-value, not domain data).
+struct UserPreferences: Sendable {
+    var defaultCurrencyCode: String
+    var chargeAlertDays: Int
+    var trialAlertDays: Int
+    var appearanceMode: AppearanceMode
+
+    static let `default` = UserPreferences(
+        defaultCurrencyCode: "RUB",
+        chargeAlertDays: 3,
+        trialAlertDays: 3,
+        appearanceMode: .system
+    )
+}
+
+// MARK: - Appearance Mode
+
+enum AppearanceMode: String, Codable, CaseIterable, Sendable {
+    case system
+    case light
+    case dark
+
+    var displayName: String {
+        switch self {
+        case .system: "Системная"
+        case .light:  "Светлая"
+        case .dark:   "Тёмная"
+        }
+    }
+}
