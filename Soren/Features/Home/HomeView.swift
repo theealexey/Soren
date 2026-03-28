@@ -9,6 +9,7 @@ struct HomeView: View {
     @State private var viewModel: HomeViewModel?
     @State private var showAddSheet = false
     @State private var showSettings = false
+    @State private var defaultCurrency = UserPreferences.default.defaultCurrencyCode
 
     private let maxUpcomingItems = 5
 
@@ -45,6 +46,7 @@ struct HomeView: View {
                 addSubscriptionSheet
             }
             .task {
+                defaultCurrency = container.preferences.load().defaultCurrencyCode
                 let vm = HomeViewModel(repositories: container.repositories)
                 vm.load()
                 self.viewModel = vm
@@ -123,7 +125,7 @@ struct HomeView: View {
                     StatBlock(
                         title: "В месяц",
                         amount: summary.monthlyTotal,
-                        currency: "RUB",
+                        currency: defaultCurrency,
                         amountSize: .large
                     )
                 }
@@ -132,7 +134,7 @@ struct HomeView: View {
                     StatBlock(
                         title: "В год",
                         amount: summary.yearlyProjection,
-                        currency: "RUB",
+                        currency: defaultCurrency,
                         amountSize: .large
                     )
                 }
