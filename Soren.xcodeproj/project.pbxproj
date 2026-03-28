@@ -100,6 +100,11 @@
 		F5865F78E6EEE403D95E6498 /* SDReminderRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 807CF443CA630D9D6CEE12FF /* SDReminderRule.swift */; };
 		F9534EA4A7CB1B4E854AC5D7 /* PaymentRecordRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F2D1730D9BADDD2F0A7C46A /* PaymentRecordRepository.swift */; };
 		FA9135CE43C789E1B16B94B3 /* InsightCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70A687720E7EE01306933D07 /* InsightCardTests.swift */; };
+		BD6240C0E67FAA177F20B386 /* UpdateRecurringItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6AEB2C34BF2E7212D9E856F /* UpdateRecurringItem.swift */; };
+		AD3FBBAF60EEC5CF06AEFD9D /* DeleteRecurringItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A766D4CC1F29EE66D776BE73 /* DeleteRecurringItem.swift */; };
+		19B9AA9211BCC12F5E44D0F2 /* ItemDetailsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B85494BC748A8825096F9A9 /* ItemDetailsViewModel.swift */; };
+		4F956364959E53F175FAC1F0 /* ItemDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C8B3AAC971C79330D945E78 /* ItemDetailsView.swift */; };
+		3D368029BC2900513A8EC4AE /* ItemEditFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54965F7F3AAF27A2442E4BC1 /* ItemEditFormView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -217,6 +222,11 @@
 		FB0CDC0B809B3C76636A90D2 /* ProviderTemplateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderTemplateTests.swift; sourceTree = "<group>"; };
 		FCEF5B74B2E1B0B2BC44B6B0 /* SorenApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SorenApp.swift; sourceTree = "<group>"; };
 		FD1994F3779CF81744936E03 /* PaymentRecordMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentRecordMapper.swift; sourceTree = "<group>"; };
+		B6AEB2C34BF2E7212D9E856F /* UpdateRecurringItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UpdateRecurringItem.swift"; sourceTree = "<group>"; };
+		A766D4CC1F29EE66D776BE73 /* DeleteRecurringItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DeleteRecurringItem.swift"; sourceTree = "<group>"; };
+		1B85494BC748A8825096F9A9 /* ItemDetailsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ItemDetailsViewModel.swift"; sourceTree = "<group>"; };
+		7C8B3AAC971C79330D945E78 /* ItemDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ItemDetailsView.swift"; sourceTree = "<group>"; };
+		54965F7F3AAF27A2442E4BC1 /* ItemEditFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ItemEditFormView.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -538,6 +548,8 @@
 		A6AF1B3AD8E7D94E895D7864 /* UseCases */ = {
 			isa = PBXGroup;
 			children = (
+				A766D4CC1F29EE66D776BE73 /* DeleteRecurringItem.swift */,
+				B6AEB2C34BF2E7212D9E856F /* UpdateRecurringItem.swift */,
 				99ED11AD6BE786B0252959EE /* GetActiveTrials.swift */,
 				8F38A40EE534B5375782C896 /* GetLibraryItems.swift */,
 				78657C07E384E7B1B6E5750D /* GetDashboardSummary.swift */,
@@ -704,6 +716,9 @@
 		E1D127EA4014D5B6358F42C3 /* ItemDetails */ = {
 			isa = PBXGroup;
 			children = (
+				54965F7F3AAF27A2442E4BC1 /* ItemEditFormView.swift */,
+				7C8B3AAC971C79330D945E78 /* ItemDetailsView.swift */,
+				1B85494BC748A8825096F9A9 /* ItemDetailsViewModel.swift */,
 				D60D0AC6A672B80FE8473535 /* Components */,
 			);
 			path = ItemDetails;
@@ -980,6 +995,11 @@
 				4E57BC194849D6C3D6CF9A4D /* AddSubscriptionViewModel.swift in Sources */,
 				A55A4C29B7ABD1F559254381 /* ProviderPickerView.swift in Sources */,
 				ABB56DAD8ED9293DC029E64D /* SubscriptionFormView.swift in Sources */,
+				3D368029BC2900513A8EC4AE /* ItemEditFormView.swift in Sources */,
+				4F956364959E53F175FAC1F0 /* ItemDetailsView.swift in Sources */,
+				19B9AA9211BCC12F5E44D0F2 /* ItemDetailsViewModel.swift in Sources */,
+				AD3FBBAF60EEC5CF06AEFD9D /* DeleteRecurringItem.swift in Sources */,
+				BD6240C0E67FAA177F20B386 /* UpdateRecurringItem.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

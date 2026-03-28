@@ -30,6 +30,14 @@ struct HomeView: View {
                 vm.load()
                 self.viewModel = vm
             }
+            .navigationDestination(for: RecurringItem.self) { item in
+                ItemDetailsView(
+                    viewModel: ItemDetailsViewModel(
+                        item: item,
+                        repositories: container.repositories
+                    )
+                )
+            }
         }
     }
 
@@ -138,16 +146,19 @@ struct HomeView: View {
             PremiumCard {
                 VStack(spacing: 0) {
                     ForEach(Array(items.prefix(5).enumerated()), id: \.element.id) { index, item in
-                        SorenListRow(
-                            title: item.title,
-                            subtitle: HomeViewModel.chargeSubtitle(for: item),
-                            amount: item.amount,
-                            currency: item.currencyCode,
-                            cycle: HomeViewModel.cycleLabel(for: item.billingCycle),
-                            iconName: item.category.systemIconName,
-                            iconColor: item.category.color,
-                            badge: HomeViewModel.badge(for: item)
-                        )
+                        NavigationLink(value: item) {
+                            SorenListRow(
+                                title: item.title,
+                                subtitle: HomeViewModel.chargeSubtitle(for: item),
+                                amount: item.amount,
+                                currency: item.currencyCode,
+                                cycle: HomeViewModel.cycleLabel(for: item.billingCycle),
+                                iconName: item.category.systemIconName,
+                                iconColor: item.category.color,
+                                badge: HomeViewModel.badge(for: item)
+                            )
+                        }
+                        .buttonStyle(.plain)
 
                         if index < min(items.count, 5) - 1 {
                             Divider()

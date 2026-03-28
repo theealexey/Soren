@@ -29,6 +29,14 @@ struct LibraryView: View {
                 vm.load()
                 self.viewModel = vm
             }
+            .navigationDestination(for: RecurringItem.self) { item in
+                ItemDetailsView(
+                    viewModel: ItemDetailsViewModel(
+                        item: item,
+                        repositories: container.repositories
+                    )
+                )
+            }
         }
     }
 
@@ -190,16 +198,19 @@ struct LibraryView: View {
         PremiumCard {
             VStack(spacing: 0) {
                 ForEach(Array(vm.filteredItems.enumerated()), id: \.element.id) { index, item in
-                    SorenListRow(
-                        title: item.title,
-                        subtitle: LibraryViewModel.subtitle(for: item),
-                        amount: item.amount,
-                        currency: item.currencyCode,
-                        cycle: LibraryViewModel.cycleLabel(for: item.billingCycle),
-                        iconName: item.category.systemIconName,
-                        iconColor: item.category.color,
-                        badge: LibraryViewModel.badge(for: item)
-                    )
+                    NavigationLink(value: item) {
+                        SorenListRow(
+                            title: item.title,
+                            subtitle: LibraryViewModel.subtitle(for: item),
+                            amount: item.amount,
+                            currency: item.currencyCode,
+                            cycle: LibraryViewModel.cycleLabel(for: item.billingCycle),
+                            iconName: item.category.systemIconName,
+                            iconColor: item.category.color,
+                            badge: LibraryViewModel.badge(for: item)
+                        )
+                    }
+                    .buttonStyle(.plain)
 
                     if index < vm.filteredItems.count - 1 {
                         Divider()
