@@ -27,6 +27,7 @@ struct HomeViewModelTests {
         )
     }
 
+
     private func makeItem(
         title: String = "Test",
         amount: Decimal = 299,
@@ -55,7 +56,7 @@ struct HomeViewModelTests {
     func emptyRepo() throws {
         let repo = try makeRepo()
         let vm = makeViewModel(repo: repo)
-        vm.load()
+        vm.loadLocalData()
 
         #expect(vm.summary == .empty)
         #expect(vm.upcomingCharges.isEmpty)
@@ -82,7 +83,7 @@ struct HomeViewModelTests {
         try repo.save(cancelled)
 
         let vm = makeViewModel(repo: repo)
-        vm.load()
+        vm.loadLocalData()
 
         // Only active + trial should count (both are monthly, multiplier = 1)
         #expect(vm.summary.monthlyTotal == 300)
@@ -99,7 +100,7 @@ struct HomeViewModelTests {
         try repo.save(annual)
 
         let vm = makeViewModel(repo: repo)
-        vm.load()
+        vm.loadLocalData()
 
         // 1200 * 0.0833 = 99.96
         #expect(vm.summary.monthlyTotal == 1200 * Decimal(string: "0.0833")!)
@@ -112,7 +113,7 @@ struct HomeViewModelTests {
         try repo.save(free)
 
         let vm = makeViewModel(repo: repo)
-        vm.load()
+        vm.loadLocalData()
 
         #expect(vm.summary.monthlyTotal == 0)
         #expect(vm.summary.activeItemCount == 1)
@@ -134,7 +135,7 @@ struct HomeViewModelTests {
         try repo.save(active)
 
         let vm = makeViewModel(repo: repo)
-        vm.load()
+        vm.loadLocalData()
 
         #expect(vm.summary.activeTrialCount == 2)
     }
@@ -157,7 +158,7 @@ struct HomeViewModelTests {
         try repo.save(day8)
 
         let vm = makeViewModel(repo: repo)
-        vm.load()
+        vm.loadLocalData()
 
         let titles = Set(vm.upcomingCharges.map(\.title))
         #expect(titles.contains("Tomorrow"))
@@ -174,7 +175,7 @@ struct HomeViewModelTests {
         try repo.save(overdue)
 
         let vm = makeViewModel(repo: repo)
-        vm.load()
+        vm.loadLocalData()
 
         // Past items may or may not appear depending on repository logic
         // The key test: ViewModel doesn't crash on negative daysUntilNextCharge
@@ -203,7 +204,7 @@ struct HomeViewModelTests {
         try repo.save(activeNoTrial)
 
         let vm = makeViewModel(repo: repo)
-        vm.load()
+        vm.loadLocalData()
 
         #expect(vm.activeTrials.count == 1)
         #expect(vm.activeTrials.first?.title == "Active Trial")
@@ -217,7 +218,7 @@ struct HomeViewModelTests {
         try repo.save(brokenTrial)
 
         let vm = makeViewModel(repo: repo)
-        vm.load()
+        vm.loadLocalData()
 
         #expect(vm.activeTrials.isEmpty)
     }
@@ -231,9 +232,9 @@ struct HomeViewModelTests {
         try repo.save(item)
 
         let vm = makeViewModel(repo: repo)
-        vm.load()
-        vm.load()
-        vm.load()
+        vm.loadLocalData()
+        vm.loadLocalData()
+        vm.loadLocalData()
 
         #expect(vm.summary.activeItemCount == 1)
         #expect(vm.summary.monthlyTotal == 100)
@@ -355,7 +356,7 @@ struct HomeViewModelTests {
         try repo.save(eur)
 
         let vm = makeViewModel(repo: repo)
-        vm.load()
+        vm.loadLocalData()
 
         // monthlyTotal sums raw amounts (no conversion) — this is expected for V1
         #expect(vm.summary.monthlyTotal == 299 + Decimal(string: "9.99")! + Decimal(string: "14.99")!)
@@ -379,7 +380,7 @@ struct HomeViewModelTests {
         }
 
         let vm = makeViewModel(repo: repo)
-        vm.load()
+        vm.loadLocalData()
 
         #expect(vm.summary.activeItemCount == 100)
         #expect(vm.isLoaded)
@@ -411,7 +412,7 @@ struct HomeViewModelTests {
         }
 
         let vm = makeViewModel(repo: repo)
-        vm.load()
+        vm.loadLocalData()
 
         #expect(vm.isLoaded)
         #expect(!vm.hasError)

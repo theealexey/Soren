@@ -63,24 +63,27 @@ final class HomeViewModel {
     // MARK: - Actions
 
     func load(forceReload: Bool = false) async {
+        // Fetch exchange rates (non-blocking — dashboard works without them)
+        if !isLoaded || forceReload, let provider = exchangeRateProvider {
+            do {
+                let rates = try await provider.latestRates()
+                exchangeRates = rates
+                ratesLastUpdated = rates.fetchedAt
+                isRatesStale = false
+            } catch {
+                isRatesStale = true
+            }
+        }
+
+        loadLocalData(forceReload: forceReload)
+    }
+
+    /// Sync core — loads dashboard from local SwiftData without network.
+    func loadLocalData(forceReload: Bool = false) {
         guard !isLoaded || forceReload else { return }
         error = nil
         do {
             defaultCurrency = preferences.load().defaultCurrencyCode
-
-            // Fetch exchange rates (non-blocking — dashboard works without them)
-            if let provider = exchangeRateProvider {
-                do {
-                    let rates = try await provider.latestRates()
-                    exchangeRates = rates
-                    ratesLastUpdated = rates.fetchedAt
-                    isRatesStale = false
-                } catch {
-                    // Keep stale rates if we had them; mark as stale
-                    isRatesStale = true
-                }
-            }
-
             summary = try getDashboardSummary.execute(
                 targetCurrency: defaultCurrency,
                 rates: exchangeRates

@@ -122,6 +122,11 @@
 		ER01B1LD00000004A0000004 /* ExchangeRateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = ER01F1LE00000004B0000004 /* ExchangeRateProvider.swift */; };
 		EC01B1LD00000005A0000005 /* ExchangeRateCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC01F1LE00000005B0000005 /* ExchangeRateCache.swift */; };
 		OE01B1LD00000006A0000006 /* OpenExchangeRateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = OE01F1LE00000006B0000006 /* OpenExchangeRateProvider.swift */; };
+		F2E1D0C9B8A7F6E5D4C3B2A1 /* ExchangeRatesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* ExchangeRatesTests.swift */; };
+		A3F2E1D0C9B8A7F6E5D4C3B2 /* SupportedCurrencyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* SupportedCurrencyTests.swift */; };
+		B4A3F2E1D0C9B8A7F6E5D4C3 /* ExchangeRateCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6A7B8C9D0E1F2A3B4 /* ExchangeRateCacheTests.swift */; };
+		C5B4A3F2E1D0C9B8A7F6E5D4 /* GetDashboardSummaryConversionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* GetDashboardSummaryConversionTests.swift */; };
+		D6C5B4A3F2E1D0C9B8A7F6E5 /* AddSubscriptionTierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F6A7B8C9D0E1F2A3B4C5D6 /* AddSubscriptionTierTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -261,6 +266,11 @@
 		ER01F1LE00000004B0000004 /* ExchangeRateProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRateProvider.swift; sourceTree = "<group>"; };
 		EC01F1LE00000005B0000005 /* ExchangeRateCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRateCache.swift; sourceTree = "<group>"; };
 		OE01F1LE00000006B0000006 /* OpenExchangeRateProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenExchangeRateProvider.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* ExchangeRatesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRatesTests.swift; sourceTree = "<group>"; };
+		B2C3D4E5F6A7B8C9D0E1F2A3 /* SupportedCurrencyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportedCurrencyTests.swift; sourceTree = "<group>"; };
+		C3D4E5F6A7B8C9D0E1F2A3B4 /* ExchangeRateCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRateCacheTests.swift; sourceTree = "<group>"; };
+		D4E5F6A7B8C9D0E1F2A3B4C5 /* GetDashboardSummaryConversionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetDashboardSummaryConversionTests.swift; sourceTree = "<group>"; };
+		E5F6A7B8C9D0E1F2A3B4C5D6 /* AddSubscriptionTierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSubscriptionTierTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -284,6 +294,7 @@
 		09ACBB7418D470400A75E2EA /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				E5F6A7B8C9D0E1F2A3B4C5D6 /* AddSubscriptionTierTests.swift */,
 				946AA7A82CD22CD520307B72 /* HomeViewModelTests.swift */,
 			);
 			path = Features;
@@ -352,8 +363,11 @@
 			isa = PBXGroup;
 			children = (
 				741C5159A29C5FE9FA23F568 /* BillingCycleTests.swift */,
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* ExchangeRatesTests.swift */,
+				D4E5F6A7B8C9D0E1F2A3B4C5 /* GetDashboardSummaryConversionTests.swift */,
 				FB0CDC0B809B3C76636A90D2 /* ProviderTemplateTests.swift */,
 				5D5A3EC78A790E61CAD07A89 /* RecurringItemTests.swift */,
+				B2C3D4E5F6A7B8C9D0E1F2A3 /* SupportedCurrencyTests.swift */,
 			);
 			path = Domain;
 			sourceTree = "<group>";
@@ -610,6 +624,7 @@
 			isa = PBXGroup;
 			children = (
 				06BA485D3333CD7B7F8EF598 /* BillingCycleEncoderTests.swift */,
+				C3D4E5F6A7B8C9D0E1F2A3B4 /* ExchangeRateCacheTests.swift */,
 				DECB5DA0FE20F6A22F9B861C /* ProviderCatalogTests.swift */,
 				E0AB930C23ECEE675A98629F /* RecurringItemMapperTests.swift */,
 				2FC899CA9B48E22DD2532F54 /* RepositoryTests.swift */,
@@ -1092,10 +1107,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D6C5B4A3F2E1D0C9B8A7F6E5 /* AddSubscriptionTierTests.swift in Sources */,
 				E9CBF6DF558DD865FFA2D11C /* AmountLabelTests.swift in Sources */,
 				CAB6B1C2053F8DD928BE5B9D /* HomeViewModelTests.swift in Sources */,
 				C495539F7E533ACA7ABF6162 /* BillingCycleEncoderTests.swift in Sources */,
 				0B2E3988602DFFDC732E24E8 /* BillingCycleTests.swift in Sources */,
+				B4A3F2E1D0C9B8A7F6E5D4C3 /* ExchangeRateCacheTests.swift in Sources */,
+				F2E1D0C9B8A7F6E5D4C3B2A1 /* ExchangeRatesTests.swift in Sources */,
+				C5B4A3F2E1D0C9B8A7F6E5D4 /* GetDashboardSummaryConversionTests.swift in Sources */,
 				FA9135CE43C789E1B16B94B3 /* InsightCardTests.swift in Sources */,
 				A8700790E0B2220E043C2E6B /* ListRowTests.swift in Sources */,
 				446776A4B4A8B61EACD9791E /* MotionTokenTests.swift in Sources */,
@@ -1108,6 +1127,7 @@
 				7707C4BFF9F47651CDDC2C3D /* SorenTests.swift in Sources */,
 				A6E5CF39F847ECCF37EA9C4A /* SpacingTokenTests.swift in Sources */,
 				E44AF6E3B1193D1539D9F6DF /* StatBlockTests.swift in Sources */,
+				A3F2E1D0C9B8A7F6E5D4C3B2 /* SupportedCurrencyTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
