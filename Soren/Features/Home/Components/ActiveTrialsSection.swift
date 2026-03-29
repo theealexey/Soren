@@ -8,7 +8,7 @@ struct ActiveTrialsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader("Пробные периоды")
+            SectionHeader(String(localized: "Пробные периоды"))
 
             ForEach(trials) { trial in
                 InsightCard(

@@ -71,7 +71,7 @@ struct ProviderPickerView: View {
 
     private var popularSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader("Популярные")
+            SectionHeader(String(localized: "Популярные"))
                 .padding(.horizontal, Spacing.lg)
 
             LazyVGrid(columns: columns, spacing: Spacing.sm) {

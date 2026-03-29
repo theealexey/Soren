@@ -9,7 +9,7 @@ struct UpcomingChargesSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader("Ближайшие списания")
+            SectionHeader(String(localized: "Ближайшие списания"))
 
             PremiumCard {
                 VStack(spacing: 0) {

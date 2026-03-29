@@ -115,7 +115,7 @@ struct ItemDetailsView: View {
 
     private var infoCard: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader("Информация")
+            SectionHeader(String(localized: "Информация"))
 
             PremiumCard {
                 VStack(spacing: 0) {
@@ -173,7 +173,7 @@ struct ItemDetailsView: View {
 
     private var costCard: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader("Стоимость")
+            SectionHeader(String(localized: "Стоимость"))
 
             HStack(spacing: Spacing.sm) {
                 PremiumCard(.elevated) {

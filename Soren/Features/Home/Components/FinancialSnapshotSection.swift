@@ -11,7 +11,7 @@ struct FinancialSnapshotSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader("Обзор")
+            SectionHeader(String(localized: "Обзор"))
 
             HStack(spacing: Spacing.sm) {
                 PremiumCard(.elevated) {
