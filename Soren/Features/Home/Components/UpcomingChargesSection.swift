@@ -17,13 +17,13 @@ struct UpcomingChargesSection: View {
                         NavigationLink(value: item) {
                             SorenListRow(
                                 title: item.title,
-                                subtitle: HomeViewModel.chargeSubtitle(for: item),
+                                subtitle: RecurringItemFormatter.chargeSubtitle(for: item),
                                 amount: item.amount,
                                 currency: item.currencyCode,
-                                cycle: HomeViewModel.cycleLabel(for: item.billingCycle),
+                                cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
                                 iconName: item.category.systemIconName,
                                 iconColor: item.category.color,
-                                badge: HomeViewModel.badge(for: item)
+                                badge: RecurringItemFormatter.badge(for: item)
                             )
                         }
                         .buttonStyle(.plain)

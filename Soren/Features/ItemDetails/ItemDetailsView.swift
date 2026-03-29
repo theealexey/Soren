@@ -217,7 +217,7 @@ struct ItemDetailsView: View {
         InsightCard(
             icon: "clock.badge.exclamationmark",
             title: String(localized: "Пробный период"),
-            subtitle: HomeViewModel.trialSubtitle(for: viewModel.item),
+            subtitle: RecurringItemFormatter.trialSubtitle(for: viewModel.item),
             severity: trialSeverity
         )
     }

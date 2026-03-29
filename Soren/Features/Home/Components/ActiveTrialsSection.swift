@@ -14,8 +14,8 @@ struct ActiveTrialsSection: View {
                 InsightCard(
                     icon: "clock.badge.exclamationmark",
                     title: trial.title,
-                    subtitle: HomeViewModel.trialSubtitle(for: trial),
-                    severity: HomeViewModel.trialSeverity(for: trial)
+                    subtitle: RecurringItemFormatter.trialSubtitle(for: trial),
+                    severity: RecurringItemFormatter.trialSeverity(for: trial)
                 )
             }
         }

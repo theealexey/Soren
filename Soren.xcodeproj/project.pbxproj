@@ -127,6 +127,9 @@
 		B4A3F2E1D0C9B8A7F6E5D4C3 /* ExchangeRateCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6A7B8C9D0E1F2A3B4 /* ExchangeRateCacheTests.swift */; };
 		C5B4A3F2E1D0C9B8A7F6E5D4 /* GetDashboardSummaryConversionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* GetDashboardSummaryConversionTests.swift */; };
 		D6C5B4A3F2E1D0C9B8A7F6E5 /* AddSubscriptionTierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F6A7B8C9D0E1F2A3B4C5D6 /* AddSubscriptionTierTests.swift */; };
+		RF01B1LD00000007A0000007 /* RecurringItemFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = RF01F1LE00000007B0000007 /* RecurringItemFormatter.swift */; };
+		IB01B1LD00000008A0000008 /* InsightsBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = IB01F1LE00000008B0000008 /* InsightsBuilder.swift */; };
+		RF01T1LD00000009A0000009 /* RecurringItemFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RF01T1LE00000009B0000009 /* RecurringItemFormatterTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -271,6 +274,9 @@
 		C3D4E5F6A7B8C9D0E1F2A3B4 /* ExchangeRateCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRateCacheTests.swift; sourceTree = "<group>"; };
 		D4E5F6A7B8C9D0E1F2A3B4C5 /* GetDashboardSummaryConversionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetDashboardSummaryConversionTests.swift; sourceTree = "<group>"; };
 		E5F6A7B8C9D0E1F2A3B4C5D6 /* AddSubscriptionTierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSubscriptionTierTests.swift; sourceTree = "<group>"; };
+		RF01F1LE00000007B0000007 /* RecurringItemFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringItemFormatter.swift; sourceTree = "<group>"; };
+		IB01F1LE00000008B0000008 /* InsightsBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightsBuilder.swift; sourceTree = "<group>"; };
+		RF01T1LE00000009B0000009 /* RecurringItemFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringItemFormatterTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -596,6 +602,7 @@
 		A1FEC478DA274FB42ABEBA3D /* SorenTests */ = {
 			isa = PBXGroup;
 			children = (
+				RF01G1LE0000000AC000000A /* Core */,
 				B21F63BB631A5473F1152311 /* Data */,
 				1037CFE29E90D5795DEBD8A5 /* DesignSystem */,
 				291DDE33C9885407D5BBDECC /* Domain */,
@@ -618,6 +625,14 @@
 				166FA4DBF87F2FF23D82B9EE /* SaveRecurringItem.swift */,
 			);
 			path = UseCases;
+			sourceTree = "<group>";
+		};
+		RF01G1LE0000000AC000000A /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				RF01T1LE00000009B0000009 /* RecurringItemFormatterTests.swift */,
+			);
+			path = Core;
 			sourceTree = "<group>";
 		};
 		B21F63BB631A5473F1152311 /* Data */ = {
@@ -688,6 +703,8 @@
 		CAFE1BF80BE7162DA17C20E0 /* Formatters */ = {
 			isa = PBXGroup;
 			children = (
+				RF01F1LE00000007B0000007 /* RecurringItemFormatter.swift */,
+				IB01F1LE00000008B0000008 /* InsightsBuilder.swift */,
 			);
 			path = Formatters;
 			sourceTree = "<group>";
@@ -1091,6 +1108,8 @@
 				ER01B1LD00000004A0000004 /* ExchangeRateProvider.swift in Sources */,
 				EC01B1LD00000005A0000005 /* ExchangeRateCache.swift in Sources */,
 				OE01B1LD00000006A0000006 /* OpenExchangeRateProvider.swift in Sources */,
+				RF01B1LD00000007A0000007 /* RecurringItemFormatter.swift in Sources */,
+				IB01B1LD00000008A0000008 /* InsightsBuilder.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1128,6 +1147,7 @@
 				A6E5CF39F847ECCF37EA9C4A /* SpacingTokenTests.swift in Sources */,
 				E44AF6E3B1193D1539D9F6DF /* StatBlockTests.swift in Sources */,
 				A3F2E1D0C9B8A7F6E5D4C3B2 /* SupportedCurrencyTests.swift in Sources */,
+				RF01T1LD00000009A0000009 /* RecurringItemFormatterTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

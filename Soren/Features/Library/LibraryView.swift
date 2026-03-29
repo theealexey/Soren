@@ -201,13 +201,13 @@ struct LibraryView: View {
                     NavigationLink(value: item) {
                         SorenListRow(
                             title: item.title,
-                            subtitle: LibraryViewModel.subtitle(for: item),
+                            subtitle: RecurringItemFormatter.subtitle(for: item),
                             amount: item.amount,
                             currency: item.currencyCode,
-                            cycle: LibraryViewModel.cycleLabel(for: item.billingCycle),
+                            cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
                             iconName: item.category.systemIconName,
                             iconColor: item.category.color,
-                            badge: LibraryViewModel.badge(for: item)
+                            badge: RecurringItemFormatter.badge(for: item)
                         )
                     }
                     .buttonStyle(.plain)

@@ -53,6 +53,7 @@ final class AlertsViewModel {
 
         if !alerts.overdue.isEmpty {
             sections.append(AlertSection(
+                kind: .overdue,
                 title: String(localized: "Просрочено"),
                 icon: "exclamationmark.triangle.fill",
                 severity: .critical,
@@ -62,6 +63,7 @@ final class AlertsViewModel {
 
         if !alerts.failed.isEmpty {
             sections.append(AlertSection(
+                kind: .failed,
                 title: String(localized: "Ошибка оплаты"),
                 icon: "xmark.circle.fill",
                 severity: .critical,
@@ -71,6 +73,7 @@ final class AlertsViewModel {
 
         if !alerts.dueToday.isEmpty {
             sections.append(AlertSection(
+                kind: .dueToday,
                 title: String(localized: "Списание сегодня"),
                 icon: "exclamationmark.circle.fill",
                 severity: .warning,
@@ -80,6 +83,7 @@ final class AlertsViewModel {
 
         if !alerts.dueSoon.isEmpty {
             sections.append(AlertSection(
+                kind: .dueSoon,
                 title: String(localized: "Скоро списание"),
                 icon: "clock.fill",
                 severity: .warning,
@@ -89,6 +93,7 @@ final class AlertsViewModel {
 
         if !alerts.trialEnding.isEmpty {
             sections.append(AlertSection(
+                kind: .trialEnding,
                 title: String(localized: "Пробный период заканчивается"),
                 icon: "clock.badge.exclamationmark",
                 severity: .info,
@@ -115,6 +120,16 @@ final class AlertsViewModel {
 // MARK: - Alert Section
 
 struct AlertSection: Identifiable {
+
+    enum Kind {
+        case overdue
+        case failed
+        case dueToday
+        case dueSoon
+        case trialEnding
+    }
+
+    let kind: Kind
     let title: String
     let icon: String
     let severity: InsightCard.Severity

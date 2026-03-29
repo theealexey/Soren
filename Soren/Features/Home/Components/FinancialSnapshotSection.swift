@@ -44,7 +44,7 @@ struct FinancialSnapshotSection: View {
                     metricChip(
                         icon: "clock",
                         value: "\(summary.activeTrialCount)",
-                        label: HomeViewModel.pluralTrial(summary.activeTrialCount)
+                        label: RecurringItemFormatter.pluralTrial(summary.activeTrialCount)
                     )
                 }
 

@@ -4,7 +4,7 @@ import SwiftUI
 
 /// Dashboard section with actionable financial observations.
 struct QuickInsightsSection: View {
-    let insights: [HomeViewModel.InsightData]
+    let insights: [InsightsBuilder.InsightData]
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -27,13 +27,13 @@ struct QuickInsightsSection: View {
 #Preview {
     QuickInsightsSection(
         insights: [
-            HomeViewModel.InsightData(
+            InsightsBuilder.InsightData(
                 icon: "exclamationmark.triangle.fill",
                 title: String(localized: "2 просроченных списания"),
                 subtitle: String(localized: "Проверьте способы оплаты"),
                 severity: .critical
             ),
-            HomeViewModel.InsightData(
+            InsightsBuilder.InsightData(
                 icon: "calendar.badge.clock",
                 title: String(localized: "4 списания на этой неделе"),
                 subtitle: nil,

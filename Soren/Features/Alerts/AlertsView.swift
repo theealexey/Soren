@@ -122,10 +122,10 @@ struct AlertsView: View {
                                 subtitle: subtitle(for: item, in: section),
                                 amount: item.amount,
                                 currency: item.currencyCode,
-                                cycle: HomeViewModel.cycleLabel(for: item.billingCycle),
+                                cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
                                 iconName: item.category.systemIconName,
                                 iconColor: item.category.color,
-                                badge: HomeViewModel.badge(for: item)
+                                badge: RecurringItemFormatter.badge(for: item)
                             )
                         }
                         .buttonStyle(.plain)
@@ -153,10 +153,10 @@ struct AlertsView: View {
     // MARK: - Helpers
 
     private func subtitle(for item: RecurringItem, in section: AlertSection) -> String {
-        if section.title == String(localized: "Пробный период заканчивается") {
-            return HomeViewModel.trialSubtitle(for: item)
+        if section.kind == .trialEnding {
+            return RecurringItemFormatter.trialSubtitle(for: item)
         }
-        return HomeViewModel.chargeSubtitle(for: item)
+        return RecurringItemFormatter.chargeSubtitle(for: item)
     }
 
 }

@@ -115,11 +115,11 @@ final class ItemDetailsViewModel {
     }
 
     var cycleLabel: AmountLabel.CycleLabel {
-        HomeViewModel.cycleLabel(for: item.billingCycle)
+        RecurringItemFormatter.cycleLabel(for: item.billingCycle)
     }
 
     var badge: SorenListRow.Badge? {
-        HomeViewModel.badge(for: item)
+        RecurringItemFormatter.badge(for: item)
     }
 
     var formattedNextCharge: String {
