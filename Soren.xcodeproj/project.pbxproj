@@ -118,6 +118,10 @@
 		C2B3C4D5E6F70829304B5C6D /* UpcomingChargesSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B3C4D5E6F70829304B5C6D /* UpcomingChargesSection.swift */; };
 		C3C4D5E6F7A8093A415C6D7E /* ActiveTrialsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3C4D5E6F7A8093A415C6D7E /* ActiveTrialsSection.swift */; };
 		C4D5E6F7A8B90A4B526D7E8F /* QuickInsightsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4D5E6F7A8B90A4B526D7E8F /* QuickInsightsSection.swift */; };
+		SC01B1LD00000003A0000003 /* SupportedCurrency.swift in Sources */ = {isa = PBXBuildFile; fileRef = SC01F1LE00000003B0000003 /* SupportedCurrency.swift */; };
+		ER01B1LD00000004A0000004 /* ExchangeRateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = ER01F1LE00000004B0000004 /* ExchangeRateProvider.swift */; };
+		EC01B1LD00000005A0000005 /* ExchangeRateCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC01F1LE00000005B0000005 /* ExchangeRateCache.swift */; };
+		OE01B1LD00000006A0000006 /* OpenExchangeRateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = OE01F1LE00000006B0000006 /* OpenExchangeRateProvider.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -253,6 +257,10 @@
 		F2B3C4D5E6F70829304B5C6D /* UpcomingChargesSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpcomingChargesSection.swift; sourceTree = "<group>"; };
 		F3C4D5E6F7A8093A415C6D7E /* ActiveTrialsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveTrialsSection.swift; sourceTree = "<group>"; };
 		F4D5E6F7A8B90A4B526D7E8F /* QuickInsightsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickInsightsSection.swift; sourceTree = "<group>"; };
+		SC01F1LE00000003B0000003 /* SupportedCurrency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportedCurrency.swift; sourceTree = "<group>"; };
+		ER01F1LE00000004B0000004 /* ExchangeRateProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRateProvider.swift; sourceTree = "<group>"; };
+		EC01F1LE00000005B0000005 /* ExchangeRateCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRateCache.swift; sourceTree = "<group>"; };
+		OE01F1LE00000006B0000006 /* OpenExchangeRateProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenExchangeRateProvider.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -507,6 +515,7 @@
 				EAC69E24F7112B4A8F468D2D /* ProviderTemplate.swift */,
 				B698265EA94513CE0884AF37 /* RecurringItem.swift */,
 				80918D4746AD2EF6165BD1F7 /* ReminderRule.swift */,
+				SC01F1LE00000003B0000003 /* SupportedCurrency.swift */,
 			);
 			path = Entities;
 			sourceTree = "<group>";
@@ -708,6 +717,7 @@
 				7F2D1730D9BADDD2F0A7C46A /* PaymentRecordRepository.swift */,
 				F7705C464A405A91322BAAC4 /* ProviderCatalogRepository.swift */,
 				3442B666B8433A69DB9762E2 /* RecurringItemRepository.swift */,
+				ER01F1LE00000004B0000004 /* ExchangeRateProvider.swift */,
 			);
 			path = Protocols;
 			sourceTree = "<group>";
@@ -721,12 +731,22 @@
 			path = Analytics;
 			sourceTree = "<group>";
 		};
+			NW01GRP000000007C0000007 /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				EC01F1LE00000005B0000005 /* ExchangeRateCache.swift */,
+				OE01F1LE00000006B0000006 /* OpenExchangeRateProvider.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
 		DD40D73F0124157D5326162B /* Data */ = {
 			isa = PBXGroup;
 			children = (
 				C0A53EFAF878A253F618FD07 /* Catalog */,
 				1A5771C9170702C9A6F52639 /* Export */,
 				51CC9476CF3E6878337E8051 /* Mappers */,
+				NW01GRP000000007C0000007 /* Networking */,
 				5CBAE86E2CAA720D33AD0D08 /* Notifications */,
 				5AA50F0CEB5A3B17C374F21F /* Persistence */,
 				432AAC70003325E60CD77D1A /* Repositories */,
@@ -1052,6 +1072,10 @@
 				19B9AA9211BCC12F5E44D0F2 /* ItemDetailsViewModel.swift in Sources */,
 				AD3FBBAF60EEC5CF06AEFD9D /* DeleteRecurringItem.swift in Sources */,
 				BD6240C0E67FAA177F20B386 /* UpdateRecurringItem.swift in Sources */,
+				SC01B1LD00000003A0000003 /* SupportedCurrency.swift in Sources */,
+				ER01B1LD00000004A0000004 /* ExchangeRateProvider.swift in Sources */,
+				EC01B1LD00000005A0000005 /* ExchangeRateCache.swift in Sources */,
+				OE01B1LD00000006A0000006 /* OpenExchangeRateProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -11,21 +11,25 @@ final class AppContainer {
     let repositories: RepositoryContainer
     let providerCatalog: any ProviderCatalogRepository
     let preferences: UserPreferencesRepository
+    let exchangeRateProvider: any ExchangeRateProvider
 
     init(modelContext: ModelContext) {
         self.repositories = RepositoryContainer(context: modelContext)
         self.providerCatalog = InMemoryProviderCatalogRepository()
         self.preferences = UserPreferencesRepository()
+        self.exchangeRateProvider = OpenExchangeRateProvider()
     }
 
     /// For SwiftUI Previews and tests — fully in-memory, no disk persistence.
     init(
         repositories: RepositoryContainer,
         providerCatalog: any ProviderCatalogRepository = InMemoryProviderCatalogRepository(),
-        preferences: UserPreferencesRepository = UserPreferencesRepository()
+        preferences: UserPreferencesRepository = UserPreferencesRepository(),
+        exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider()
     ) {
         self.repositories = repositories
         self.providerCatalog = providerCatalog
         self.preferences = preferences
+        self.exchangeRateProvider = exchangeRateProvider
     }
 }

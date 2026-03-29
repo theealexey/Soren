@@ -125,7 +125,7 @@ struct ItemEditFormView: View {
     // MARK: - Supported Currencies
 
     private var supportedCurrencies: [String] {
-        ["RUB", "USD", "EUR", "GBP", "TRY", "KZT", "BYN", "GEL", "AMD", "AED", "JPY", "CNY"]
+        SupportedCurrency.codes
     }
 }
 

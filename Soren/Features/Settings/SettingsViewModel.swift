@@ -75,7 +75,5 @@ final class SettingsViewModel {
 
     // MARK: - Supported Currencies
 
-    static let supportedCurrencies = [
-        "RUB", "USD", "EUR", "GBP", "TRY", "KZT", "BYN", "GEL", "AMD", "AED", "JPY", "CNY"
-    ]
+    static let supportedCurrencies = SupportedCurrency.codes
 }

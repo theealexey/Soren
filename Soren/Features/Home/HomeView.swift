@@ -43,7 +43,7 @@ struct HomeView: View {
                 }
             }
             .sheet(item: $activeSheet, onDismiss: {
-                viewModel?.load(forceReload: true)
+                Task { await viewModel?.load(forceReload: true) }
             }) { sheet in
                 switch sheet {
                 case .settings:
@@ -57,9 +57,10 @@ struct HomeView: View {
             .task {
                 let vm = HomeViewModel(
                     repositories: container.repositories,
-                    preferences: container.preferences
+                    preferences: container.preferences,
+                    exchangeRateProvider: container.exchangeRateProvider
                 )
-                vm.load()
+                await vm.load()
                 self.viewModel = vm
             }
             .navigationDestination(for: RecurringItem.self) { item in
@@ -89,7 +90,7 @@ struct HomeView: View {
             ErrorStateView(
                 message: "Не удалось загрузить данные"
             ) {
-                vm.load(forceReload: true)
+                Task { await vm.load(forceReload: true) }
             }
         } else if !vm.isLoaded {
             LoadingStateView()
@@ -107,7 +108,9 @@ struct HomeView: View {
             LazyVStack(alignment: .leading, spacing: Spacing.lg) {
                 FinancialSnapshotSection(
                     summary: vm.summary,
-                    defaultCurrency: vm.defaultCurrency
+                    defaultCurrency: vm.defaultCurrency,
+                    ratesLastUpdated: vm.ratesLastUpdated,
+                    isRatesStale: vm.isRatesStale
                 )
 
                 if !vm.upcomingCharges.isEmpty {
@@ -129,7 +132,7 @@ struct HomeView: View {
             .padding(.vertical, Spacing.md)
         }
         .refreshable {
-            viewModel?.load(forceReload: true)
+            await viewModel?.load(forceReload: true)
         }
     }
 

@@ -6,6 +6,8 @@ import SwiftUI
 struct FinancialSnapshotSection: View {
     let summary: DashboardSummary
     let defaultCurrency: String
+    var ratesLastUpdated: Date?
+    var isRatesStale: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -45,8 +47,23 @@ struct FinancialSnapshotSection: View {
                         label: HomeViewModel.pluralTrial(summary.activeTrialCount)
                     )
                 }
+
+                if summary.containsMixedCurrencies, ratesLastUpdated != nil {
+                    metricChip(
+                        icon: isRatesStale ? "exclamationmark.arrow.trianglehead.2.clockwise.rotate.90" : "arrow.trianglehead.2.clockwise.rotate.90",
+                        value: "",
+                        label: ratesStatusLabel
+                    )
+                }
             }
         }
+    }
+
+    private var ratesStatusLabel: String {
+        guard let date = ratesLastUpdated else { return "" }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: .now)
     }
 
     // MARK: - Metric Chip
@@ -81,9 +98,13 @@ struct FinancialSnapshotSection: View {
             monthlyTotal: 4299,
             yearlyProjection: 51_588,
             activeItemCount: 12,
-            activeTrialCount: 2
+            activeTrialCount: 2,
+            containsMixedCurrencies: true,
+            ratesAvailable: true
         ),
-        defaultCurrency: "RUB"
+        defaultCurrency: "RUB",
+        ratesLastUpdated: Date().addingTimeInterval(-3600),
+        isRatesStale: false
     )
     .padding(Spacing.lg)
     .background(ColorTokens.background)
