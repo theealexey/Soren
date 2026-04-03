@@ -7,7 +7,6 @@ import SwiftUI
 struct AlertsView: View {
     @Environment(AppContainer.self) private var container
     @State private var viewModel: AlertsViewModel?
-    @State private var showSettings = false
 
     var body: some View {
         NavigationStack {
@@ -18,24 +17,8 @@ struct AlertsView: View {
                     LoadingStateView()
                 }
             }
-            .navigationTitle("Алерты")
             .background(ColorTokens.background)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showSettings = true
-                    } label: {
-                        Image(systemName: "gearshape")
-                            .font(Typography.bodyMedium)
-                            .foregroundStyle(ColorTokens.textSecondary)
-                    }
-                }
-            }
-            .sheet(isPresented: $showSettings) {
-                NavigationStack {
-                    SettingsView()
-                }
-            }
+            .toolbarVisibility(.hidden, for: .navigationBar)
             .task {
                 let vm = AlertsViewModel(
                     repositories: container.repositories,

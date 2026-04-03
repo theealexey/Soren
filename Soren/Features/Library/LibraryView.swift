@@ -5,8 +5,8 @@ import SwiftUI
 /// Full list of recurring items with search, status filters, and sorting.
 struct LibraryView: View {
     @Environment(AppContainer.self) private var container
+    @Environment(\.addSubscriptionAction) private var addSubscription
     @State private var viewModel: LibraryViewModel?
-    @State private var showAddSheet = false
 
     var body: some View {
         NavigationStack {
@@ -17,13 +17,8 @@ struct LibraryView: View {
                     LoadingStateView()
                 }
             }
-            .navigationTitle("Подписки")
             .background(ColorTokens.background)
-            .sheet(isPresented: $showAddSheet, onDismiss: {
-                viewModel?.load()
-            }) {
-                addSubscriptionSheet
-            }
+            .toolbarVisibility(.hidden, for: .navigationBar)
             .task {
                 let vm = LibraryViewModel(repositories: container.repositories, preferences: container.preferences)
                 vm.load()
@@ -37,14 +32,6 @@ struct LibraryView: View {
                     )
                 )
             }
-        }
-    }
-
-    private var addSubscriptionSheet: some View {
-        NavigationStack {
-            ProviderPickerView(
-                viewModel: AddSubscriptionViewModel(container: container)
-            )
         }
     }
 
@@ -72,6 +59,8 @@ struct LibraryView: View {
     private func populatedLibrary(_ vm: LibraryViewModel) -> some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: Spacing.md) {
+                searchBar(vm)
+
                 filterChips(vm)
 
                 summaryBar(vm)
@@ -84,31 +73,46 @@ struct LibraryView: View {
             }
             .padding(.vertical, Spacing.md)
         }
-        .searchable(
-            text: Binding(
-                get: { vm.searchText },
-                set: { vm.searchText = $0 }
-            ),
-            prompt: "Поиск подписок"
-        )
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: Spacing.sm) {
-                    sortMenu(vm)
-
-                    Button {
-                        showAddSheet = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(Typography.bodyMedium)
-                            .foregroundStyle(ColorTokens.accent)
-                    }
-                }
-            }
-        }
         .refreshable {
             vm.load()
         }
+    }
+
+    // MARK: - Inline Search Bar
+
+    private func searchBar(_ vm: LibraryViewModel) -> some View {
+        HStack(spacing: Spacing.sm) {
+            HStack(spacing: Spacing.xs) {
+                Image(systemName: "magnifyingglass")
+                    .font(Typography.body)
+                    .foregroundStyle(ColorTokens.textTertiary)
+
+                TextField(
+                    "Поиск подписок",
+                    text: Binding(get: { vm.searchText }, set: { vm.searchText = $0 })
+                )
+                .font(Typography.body)
+                .foregroundStyle(ColorTokens.textPrimary)
+                .autocorrectionDisabled()
+
+                if !vm.searchText.isEmpty {
+                    Button {
+                        vm.searchText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(Typography.body)
+                            .foregroundStyle(ColorTokens.textTertiary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, Spacing.sm)
+            .padding(.vertical, Spacing.xs)
+            .background(ColorTokens.surface, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+
+            sortMenu(vm)
+        }
+        .padding(.horizontal, Spacing.lg)
     }
 
     // MARK: - Filter Chips
@@ -276,7 +280,7 @@ struct LibraryView: View {
             subtitle: "Добавьте подписки и сервисы, чтобы отслеживать расходы и не пропускать списания.",
             actionTitle: "Добавить"
         ) {
-            showAddSheet = true
+            addSubscription()
         }
     }
 

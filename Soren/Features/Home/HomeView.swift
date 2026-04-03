@@ -6,15 +6,8 @@ import SwiftUI
 /// Financial snapshot, upcoming charges, active trials, quick insights.
 struct HomeView: View {
     @Environment(AppContainer.self) private var container
+    @Environment(\.addSubscriptionAction) private var addSubscription
     @State private var viewModel: HomeViewModel?
-    @State private var activeSheet: Sheet?
-
-    private enum Sheet: Identifiable {
-        case settings
-        case addSubscription
-
-        var id: Self { self }
-    }
 
     private let maxUpcomingItems = 5
 
@@ -27,33 +20,8 @@ struct HomeView: View {
                     LoadingStateView()
                 }
             }
-            .navigationTitle("Главная")
             .background(ColorTokens.background)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        activeSheet = .settings
-                    } label: {
-                        Image(systemName: "gearshape")
-                            .font(Typography.bodyMedium)
-                            .foregroundStyle(ColorTokens.textSecondary)
-                    }
-                    .accessibilityLabel(Text("Настройки"))
-                    .accessibilityHint(Text("Открыть настройки приложения"))
-                }
-            }
-            .sheet(item: $activeSheet, onDismiss: {
-                Task { await viewModel?.load(forceReload: true) }
-            }) { sheet in
-                switch sheet {
-                case .settings:
-                    NavigationStack {
-                        SettingsView()
-                    }
-                case .addSubscription:
-                    addSubscriptionSheet
-                }
-            }
+            .toolbarVisibility(.hidden, for: .navigationBar)
             .task {
                 let vm = HomeViewModel(
                     repositories: container.repositories,
@@ -71,14 +39,6 @@ struct HomeView: View {
                     )
                 )
             }
-        }
-    }
-
-    private var addSubscriptionSheet: some View {
-        NavigationStack {
-            ProviderPickerView(
-                viewModel: AddSubscriptionViewModel(container: container)
-            )
         }
     }
 
@@ -145,7 +105,7 @@ struct HomeView: View {
             subtitle: "Добавьте первую подписку, чтобы увидеть дашборд с аналитикой расходов.",
             actionTitle: "Добавить"
         ) {
-            activeSheet = .addSubscription
+            addSubscription()
         }
     }
 }
