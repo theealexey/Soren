@@ -32,9 +32,6 @@
     "%lld" : {
 
     },
-    "%lldд" : {
-
-    },
     "%lld критических проблем" : {
 
     },
@@ -50,6 +47,18 @@
     "%lld списаний на этой неделе" : {
 
     },
+    "%lldд" : {
+
+    },
+    "$1,247.99" : {
+
+    },
+    "$12.99/mo" : {
+
+    },
+    "$249.50" : {
+
+    },
     "1 критическая проблема" : {
 
     },
@@ -57,6 +66,42 @@
 
     },
     "AI-инструменты" : {
+
+    },
+    "Body text for descriptions and explanations." : {
+
+    },
+    "Caption: Next charge Feb 14" : {
+
+    },
+    "CATEGORIES" : {
+
+    },
+    "CHART PALETTE" : {
+
+    },
+    "COLORS" : {
+
+    },
+    "Item Headline" : {
+
+    },
+    "OVERLINE LABEL" : {
+
+    },
+    "Screen Title" : {
+
+    },
+    "Section Header" : {
+
+    },
+    "SPACING" : {
+
+    },
+    "TYPOGRAPHY" : {
+
+    },
+    "USD" : {
 
     },
     "VPN и безопасность" : {

@@ -23,10 +23,21 @@ struct ProviderTemplate: Identifiable, Hashable, Sendable {
     /// Available pricing tiers. Empty means no predefined plans.
     var plans: [PlanTier]
 
-    /// Clearbit logo URL for this provider. Nil if no domain is set.
-    var logoURL: URL? {
-        guard let domain = clearbitDomain else { return nil }
-        return URL(string: "https://logo.clearbit.com/\(domain)?size=80")
+    /// Ordered list of logo URLs to try: Clearbit (best quality) → Google favicon fallback.
+    /// LogoLoader attempts them in order and returns the first successful response.
+    var logoURLs: [URL] {
+        guard let domain = clearbitDomain else { return [] }
+        var urls: [URL] = []
+        if let clearbit = URL(string: "https://logo.clearbit.com/\(domain)?size=80") {
+            urls.append(clearbit)
+        }
+        // Google favicon as reliable fallback (always available, no auth)
+        let googlePath = "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON"
+            + "&fallback_opts=TYPE,SIZE,URL&url=https://\(domain)&size=256"
+        if let google = URL(string: googlePath) {
+            urls.append(google)
+        }
+        return urls
     }
 
     /// Whether this provider has predefined plan tiers.
