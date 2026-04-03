@@ -6,27 +6,28 @@ import SwiftUI
 /// Shadows adapt automatically to light/dark via system behavior.
 enum ShadowTokens {
     /// Subtle lift for interactive elements (buttons, chips).
+    /// Cold blue-black tint signals depth without warmth.
     static let sm = ShadowStyle(
-        color: .black.opacity(0.06),
-        radius: 4,
+        color: Color(red: 0.0, green: 0.07, blue: 0.16).opacity(0.08),
+        radius: 3,
         x: 0,
-        y: 2
+        y: 1
     )
 
     /// Standard card elevation.
     static let md = ShadowStyle(
-        color: .black.opacity(0.08),
+        color: Color(red: 0.0, green: 0.07, blue: 0.16).opacity(0.12),
         radius: 8,
         x: 0,
-        y: 4
+        y: 3
     )
 
     /// Prominent elevation for floating elements, modals.
     static let lg = ShadowStyle(
-        color: .black.opacity(0.12),
+        color: Color(red: 0.0, green: 0.07, blue: 0.16).opacity(0.18),
         radius: 16,
         x: 0,
-        y: 8
+        y: 6
     )
 }
 

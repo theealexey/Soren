@@ -23,14 +23,22 @@ enum MaterialTokens {
 // MARK: - Glass Card Modifier
 
 extension View {
-    /// Applies a frosted glass card style — works as a premium
-    /// surface that subtly shows content beneath.
+    /// Applies a GXSC frosted glass card style.
+    /// Hairline gradient border (top-bright → bottom-dim) mimics light catching
+    /// the edge of a frosted glass panel — the defining motif of the aesthetic.
     func glassCard(cornerRadius: CGFloat = CornerRadius.large) -> some View {
         self
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius))
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .strokeBorder(.white.opacity(0.15), lineWidth: 0.5)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [.white.opacity(0.12), .white.opacity(0.04)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 0.5
+                    )
             )
     }
 }
