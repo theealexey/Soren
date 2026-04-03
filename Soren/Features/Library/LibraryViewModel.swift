@@ -17,6 +17,7 @@ final class LibraryViewModel {
     // MARK: - Data State
 
     private(set) var allItems: [RecurringItem] = []
+    private(set) var defaultCurrency: String = UserPreferences.default.defaultCurrencyCode
     private(set) var error: Error?
     private(set) var isLoaded = false
 
@@ -25,15 +26,18 @@ final class LibraryViewModel {
     // MARK: - Dependencies
 
     private let getLibraryItems: GetLibraryItems
+    private let preferences: UserPreferencesRepository
 
     // MARK: - Init
 
-    init(getLibraryItems: GetLibraryItems) {
+    init(getLibraryItems: GetLibraryItems, preferences: UserPreferencesRepository = UserPreferencesRepository()) {
         self.getLibraryItems = getLibraryItems
+        self.preferences = preferences
     }
 
-    init(repositories: RepositoryContainer) {
+    init(repositories: RepositoryContainer, preferences: UserPreferencesRepository = UserPreferencesRepository()) {
         self.getLibraryItems = GetLibraryItems(repository: repositories.recurringItems)
+        self.preferences = preferences
     }
 
     // MARK: - Actions
@@ -41,6 +45,7 @@ final class LibraryViewModel {
     func load() {
         error = nil
         do {
+            defaultCurrency = preferences.load().defaultCurrencyCode
             allItems = try getLibraryItems.execute()
             isLoaded = true
         } catch {

@@ -5,14 +5,21 @@ import SwiftUI
 /// App settings: default currency, appearance, notification preferences.
 /// Presented as a sheet from gear icon on Home and Alerts screens.
 struct SettingsView: View {
-    @Bindable var viewModel = SettingsViewModel()
+    @State private var viewModel = SettingsViewModel()
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
+        @Bindable var vm = viewModel
         Form {
-            generalSection
+            generalSection(
+                currency: $vm.defaultCurrencyCode,
+                appearance: $vm.appearanceMode
+            )
 
-            notificationsSection
+            notificationsSection(
+                chargeAlertDays: $vm.chargeAlertDays,
+                trialAlertDays: $vm.trialAlertDays
+            )
 
             aboutSection
         }
@@ -31,15 +38,18 @@ struct SettingsView: View {
 
     // MARK: - General
 
-    private var generalSection: some View {
+    private func generalSection(
+        currency: Binding<String>,
+        appearance: Binding<AppearanceMode>
+    ) -> some View {
         Section("Основное") {
-            Picker("Валюта по умолчанию", selection: $viewModel.defaultCurrencyCode) {
+            Picker("Валюта по умолчанию", selection: currency) {
                 ForEach(SettingsViewModel.supportedCurrencies, id: \.self) { code in
                     Text(code).tag(code)
                 }
             }
 
-            Picker("Внешний вид", selection: $viewModel.appearanceMode) {
+            Picker("Внешний вид", selection: appearance) {
                 ForEach(AppearanceMode.allCases, id: \.self) { mode in
                     Text(mode.displayName).tag(mode)
                 }
@@ -49,17 +59,20 @@ struct SettingsView: View {
 
     // MARK: - Notifications
 
-    private var notificationsSection: some View {
+    private func notificationsSection(
+        chargeAlertDays: Binding<Int>,
+        trialAlertDays: Binding<Int>
+    ) -> some View {
         Section("Уведомления") {
             Stepper(
                 "До списания: \(viewModel.chargeAlertDays) дн.",
-                value: $viewModel.chargeAlertDays,
+                value: chargeAlertDays,
                 in: 1...14
             )
 
             Stepper(
                 "До конца триала: \(viewModel.trialAlertDays) дн.",
-                value: $viewModel.trialAlertDays,
+                value: trialAlertDays,
                 in: 1...14
             )
         }

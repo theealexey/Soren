@@ -88,8 +88,8 @@ extension PremiumCard {
                  (.elevated, .elevated),
                  (.glass, .glass):
                 true
-            case (.tinted, .tinted):
-                true
+            case (.tinted(let l), .tinted(let r)):
+                l == r
             default:
                 false
             }

@@ -25,7 +25,7 @@ struct LibraryView: View {
                 addSubscriptionSheet
             }
             .task {
-                let vm = LibraryViewModel(repositories: container.repositories)
+                let vm = LibraryViewModel(repositories: container.repositories, preferences: container.preferences)
                 vm.load()
                 self.viewModel = vm
             }
@@ -183,7 +183,7 @@ struct LibraryView: View {
             if vm.filteredMonthlyTotal > 0 {
                 AmountLabel(
                     vm.filteredMonthlyTotal,
-                    currency: "RUB",
+                    currency: vm.defaultCurrency,
                     size: .small,
                     cycle: .monthly
                 )

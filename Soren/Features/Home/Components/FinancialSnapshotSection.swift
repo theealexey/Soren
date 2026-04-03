@@ -48,12 +48,22 @@ struct FinancialSnapshotSection: View {
                     )
                 }
 
-                if summary.containsMixedCurrencies, ratesLastUpdated != nil {
-                    metricChip(
-                        icon: isRatesStale ? "exclamationmark.arrow.trianglehead.2.clockwise.rotate.90" : "arrow.trianglehead.2.clockwise.rotate.90",
-                        value: "",
-                        label: ratesStatusLabel
-                    )
+                if summary.containsMixedCurrencies {
+                    if let _ = ratesLastUpdated {
+                        metricChip(
+                            icon: isRatesStale ? "exclamationmark.arrow.trianglehead.2.clockwise.rotate.90" : "arrow.trianglehead.2.clockwise.rotate.90",
+                            value: "",
+                            label: ratesStatusLabel,
+                            isWarning: isRatesStale
+                        )
+                    } else {
+                        metricChip(
+                            icon: "exclamationmark.triangle",
+                            value: "",
+                            label: String(localized: "нет курсов"),
+                            isWarning: true
+                        )
+                    }
                 }
             }
         }
@@ -68,24 +78,27 @@ struct FinancialSnapshotSection: View {
 
     // MARK: - Metric Chip
 
-    private func metricChip(icon: String, value: String, label: String) -> some View {
-        HStack(spacing: Spacing.xxs) {
+    private func metricChip(icon: String, value: String, label: String, isWarning: Bool = false) -> some View {
+        let tint = isWarning ? ColorTokens.warning : ColorTokens.accent
+        return HStack(spacing: Spacing.xxs) {
             Image(systemName: icon)
                 .font(.caption2.weight(.semibold))
-                .foregroundStyle(ColorTokens.accent)
+                .foregroundStyle(tint)
 
-            Text(value)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(ColorTokens.textPrimary)
+            if !value.isEmpty {
+                Text(value)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(ColorTokens.textPrimary)
+            }
 
             Text(label)
                 .font(.caption)
-                .foregroundStyle(ColorTokens.textSecondary)
+                .foregroundStyle(isWarning ? tint : ColorTokens.textSecondary)
         }
         .lineLimit(1)
         .padding(.horizontal, Spacing.sm)
         .padding(.vertical, Spacing.xxs)
-        .background(ColorTokens.accent.opacity(0.1), in: Capsule())
+        .background(tint.opacity(0.1), in: Capsule())
         .accessibilityElement(children: .combine)
     }
 }
