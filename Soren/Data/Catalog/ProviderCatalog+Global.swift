@@ -101,7 +101,7 @@ extension ProviderCatalog {
         .init(id: "qobuz", displayName: "Qobuz", aliases: ["кобуз"],
               category: .music, suggestedCurrencyCode: "USD", region: .global,
               tags: ["music", "hifi", "lossless"],
-              brandColorHex: "#003DA5",
+              brandColorHex: "#000000", clearbitDomain: "qobuz.com",
               plans: [
                   .init(id: "studio", name: "Studio", amount: 12.99, billingCycle: .monthly, features: "Hi-Res 24-bit, без рекламы"),
                   .init(id: "studio_annual", name: "Studio (год)", amount: 129.99, billingCycle: .annual, features: "Hi-Res 24-bit, без рекламы"),
