@@ -44,11 +44,7 @@ struct SubscriptionFormView: View {
         if let provider = viewModel.selectedProvider {
             Section {
                 HStack(spacing: Spacing.sm) {
-                    ProviderIcon(
-                        systemName: provider.category.systemIconName,
-                        color: provider.category.color,
-                        size: .large
-                    )
+                    ProviderIcon(provider: provider, size: .large)
 
                     VStack(alignment: .leading, spacing: Spacing.xxxs) {
                         Text(provider.displayName)

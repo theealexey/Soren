@@ -144,9 +144,9 @@ struct ComponentsPreview: View {
             SectionHeader("Иконки провайдеров")
 
             HStack(spacing: Spacing.md) {
-                ProviderIcon(systemName: "play.rectangle.fill", color: .red, size: .small)
-                ProviderIcon(systemName: "star.fill", color: .purple, size: .medium)
-                ProviderIcon(systemName: "icloud.fill", color: ColorTokens.categoryCloud, size: .large)
+                ProviderIcon(provider: ProviderCatalog.global.first { $0.id == "netflix" }!, size: .small)
+                ProviderIcon(provider: ProviderCatalog.global.first { $0.id == "spotify" }!, size: .medium)
+                ProviderIcon(provider: ProviderCatalog.global.first { $0.id == "icloud" }!, size: .large)
             }
         }
     }

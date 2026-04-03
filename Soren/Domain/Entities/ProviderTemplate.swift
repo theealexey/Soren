@@ -16,8 +16,18 @@ struct ProviderTemplate: Identifiable, Hashable, Sendable {
     var managementURL: URL?
     /// SF Symbol or asset name for the icon.
     var iconAssetName: String?
+    /// Hex brand color (e.g. "#E50914" for Netflix). Used for letter-mark icons.
+    var brandColorHex: String?
+    /// Domain used to fetch the logo from Clearbit (e.g. "netflix.com", "yandex.ru").
+    var clearbitDomain: String?
     /// Available pricing tiers. Empty means no predefined plans.
     var plans: [PlanTier]
+
+    /// Clearbit logo URL for this provider. Nil if no domain is set.
+    var logoURL: URL? {
+        guard let domain = clearbitDomain else { return nil }
+        return URL(string: "https://logo.clearbit.com/\(domain)?size=80")
+    }
 
     /// Whether this provider has predefined plan tiers.
     var hasPlanTiers: Bool { !plans.isEmpty }
@@ -34,6 +44,8 @@ struct ProviderTemplate: Identifiable, Hashable, Sendable {
         tags: [String] = [],
         managementURL: URL? = nil,
         iconAssetName: String? = nil,
+        brandColorHex: String? = nil,
+        clearbitDomain: String? = nil,
         plans: [PlanTier] = []
     ) {
         self.id = id
@@ -47,6 +59,8 @@ struct ProviderTemplate: Identifiable, Hashable, Sendable {
         self.tags = tags
         self.managementURL = managementURL
         self.iconAssetName = iconAssetName
+        self.brandColorHex = brandColorHex
+        self.clearbitDomain = clearbitDomain
         self.plans = plans
     }
 }
@@ -57,6 +71,33 @@ extension ProviderTemplate {
         case russia
         case europe
         case us
+    }
+
+    /// Short letter-mark for icon display (e.g. "N" for Netflix, "VK" for VK Музыка).
+    var letterMark: String {
+        let name = displayName
+
+        // Known abbreviation brands (all-caps or 2-3 letter abbreviations)
+        if name.count <= 4, name == name.uppercased() {
+            return String(name.prefix(3))
+        }
+
+        let words = name.split(separator: " ").map(String.init)
+
+        // Single word → first letter
+        if words.count == 1 {
+            return String(name.prefix(1)).uppercased()
+        }
+
+        // 2-letter abbreviation at start (VK, МТС, HBO, etc.)
+        if let first = words.first, first.count <= 3, first == first.uppercased(),
+           first.first?.isLetter == true {
+            return first
+        }
+
+        // Multi-word → first letters of first 2 words
+        let initials = words.prefix(2).compactMap(\.first).map(String.init).joined()
+        return initials.uppercased()
     }
 
     /// True if this template matches a given search query.

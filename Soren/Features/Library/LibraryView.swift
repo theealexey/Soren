@@ -207,6 +207,8 @@ struct LibraryView: View {
                             cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
                             iconName: item.category.systemIconName,
                             iconColor: item.category.color,
+                            brandColorHex: RecurringItemFormatter.brandColorHex(for: item),
+                            letterMark: RecurringItemFormatter.letterMark(for: item),
                             badge: RecurringItemFormatter.badge(for: item)
                         )
                     }

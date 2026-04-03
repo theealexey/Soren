@@ -15,6 +15,6 @@ final class SorenUITests: XCTestCase {
         XCTAssertTrue(app.tabBars.buttons["Подписки"].exists)
         XCTAssertTrue(app.tabBars.buttons["Календарь"].exists)
         XCTAssertTrue(app.tabBars.buttons["Аналитика"].exists)
-        XCTAssertTrue(app.tabBars.buttons["Настройки"].exists)
+        XCTAssertTrue(app.tabBars.buttons["Алерты"].exists)
     }
 }

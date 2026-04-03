@@ -88,11 +88,7 @@ struct ProviderPickerView: View {
             SubscriptionFormView(viewModel: viewModel)
         } label: {
             VStack(spacing: Spacing.xs) {
-                ProviderIcon(
-                    systemName: provider.category.systemIconName,
-                    color: provider.category.color,
-                    size: .large
-                )
+                ProviderIcon(provider: provider, size: .large)
 
                 Text(provider.displayName)
                     .font(Typography.captionMedium)
@@ -144,11 +140,7 @@ struct ProviderPickerView: View {
 
     private func catalogRow(_ provider: ProviderTemplate) -> some View {
         HStack(spacing: Spacing.sm) {
-            ProviderIcon(
-                systemName: provider.category.systemIconName,
-                color: provider.category.color,
-                size: .medium
-            )
+            ProviderIcon(provider: provider, size: .medium)
 
             Text(provider.displayName)
                 .font(Typography.headline)

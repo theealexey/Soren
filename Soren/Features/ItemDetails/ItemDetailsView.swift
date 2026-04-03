@@ -74,8 +74,7 @@ struct ItemDetailsView: View {
     private var heroSection: some View {
         VStack(spacing: Spacing.sm) {
             ProviderIcon(
-                systemName: viewModel.item.category.systemIconName,
-                color: viewModel.item.category.color,
+                category: viewModel.item.category,
                 size: .large
             )
 
