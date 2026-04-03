@@ -77,9 +77,9 @@ extension ProviderTemplate {
     var letterMark: String {
         let name = displayName
 
-        // Known abbreviation brands (all-caps or 2-3 letter abbreviations)
-        if name.count <= 4, name == name.uppercased() {
-            return String(name.prefix(3))
+        // Short all-caps brands (VK, МТС, HBO, IVI, etc.) — show as-is up to 3 chars
+        if name.count <= 3, name == name.uppercased(), name.first?.isLetter == true {
+            return name
         }
 
         let words = name.split(separator: " ").map(String.init)
@@ -95,8 +95,9 @@ extension ProviderTemplate {
             return first
         }
 
-        // Multi-word → first letters of first 2 words
-        let initials = words.prefix(2).compactMap(\.first).map(String.init).joined()
+        // Multi-word → first letters of first 2 letter-starting words (skip parentheticals)
+        let letterWords = words.filter { $0.first?.isLetter == true }
+        let initials = letterWords.prefix(2).compactMap(\.first).map(String.init).joined()
         return initials.uppercased()
     }
 
