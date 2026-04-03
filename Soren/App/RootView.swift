@@ -12,21 +12,22 @@ struct RootView: View {
     @State private var showSettings = false
 
     var body: some View {
-        ZStack {
-            // Each tab stays rendered — opacity keeps state alive
-            ForEach(AppTab.allCases) { tab in
-                tab.destination
-                    .opacity(selectedTab == tab ? 1 : 0)
-                    .allowsHitTesting(selectedTab == tab)
-                    .animation(.easeInOut(duration: 0.16), value: selectedTab)
-            }
-        }
-        .background(ColorTokens.background)
-        // Push content inward so it doesn't overlap our chrome
-        .safeAreaInset(edge: .top, spacing: 0) {
+        VStack(spacing: 0) {
             SorenTopBar(selectedTab: $selectedTab) {
                 showSettings = true
             }
+
+            // Each tab stays rendered — opacity keeps state alive
+            ZStack {
+                ForEach(AppTab.allCases) { tab in
+                    tab.destination
+                        .opacity(selectedTab == tab ? 1 : 0)
+                        .allowsHitTesting(selectedTab == tab)
+                        .animation(.easeInOut(duration: 0.16), value: selectedTab)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(ColorTokens.background)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             SorenAddBar {
