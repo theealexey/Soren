@@ -21,10 +21,8 @@ struct UpcomingChargesSection: View {
                                 amount: item.amount,
                                 currency: item.currencyCode,
                                 cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
-                                iconName: item.category.systemIconName,
-                                iconColor: item.category.color,
-                                brandColorHex: RecurringItemFormatter.brandColorHex(for: item),
-                                letterMark: RecurringItemFormatter.letterMark(for: item),
+                                providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
+                                category: item.category,
                                 badge: RecurringItemFormatter.badge(for: item)
                             )
                         }

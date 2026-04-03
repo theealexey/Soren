@@ -7,6 +7,9 @@ import SwiftUI
 ///
 /// Displays: icon/logo → title + subtitle → amount + cycle badge.
 ///
+/// When `providerTemplate` is set (item was added from the catalog), the leading icon
+/// uses `ProviderIcon` (bundled asset → Clearbit → letter-mark). Otherwise the category SF Symbol is shown.
+///
 /// Usage:
 /// ```swift
 /// SorenListRow(
@@ -15,8 +18,8 @@ import SwiftUI
 ///     amount: 299,
 ///     currency: "RUB",
 ///     cycle: .monthly,
-///     iconName: "play.rectangle.fill",
-///     iconColor: .red
+///     providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
+///     category: .video
 /// )
 /// ```
 struct SorenListRow: View {
@@ -29,10 +32,8 @@ struct SorenListRow: View {
     let amount: Decimal
     let currencyCode: String
     let cycle: AmountLabel.CycleLabel?
-    let iconName: String
-    let iconColor: Color
-    let brandColorHex: String?
-    let letterMark: String?
+    let providerTemplate: ProviderTemplate?
+    let category: ItemCategory
     let badge: Badge?
 
     init(
@@ -41,10 +42,8 @@ struct SorenListRow: View {
         amount: Decimal,
         currency currencyCode: String = "RUB",
         cycle: AmountLabel.CycleLabel? = .monthly,
-        iconName: String = "app.fill",
-        iconColor: Color = ColorTokens.accent,
-        brandColorHex: String? = nil,
-        letterMark: String? = nil,
+        providerTemplate: ProviderTemplate? = nil,
+        category: ItemCategory = .other,
         badge: Badge? = nil
     ) {
         self.title = title
@@ -52,10 +51,8 @@ struct SorenListRow: View {
         self.amount = amount
         self.currencyCode = currencyCode
         self.cycle = cycle
-        self.iconName = iconName
-        self.iconColor = iconColor
-        self.brandColorHex = brandColorHex
-        self.letterMark = letterMark
+        self.providerTemplate = providerTemplate
+        self.category = category
         self.badge = badge
     }
 
@@ -93,18 +90,14 @@ struct SorenListRow: View {
 
     @ViewBuilder
     private var iconView: some View {
-        if let hex = brandColorHex, let mark = letterMark {
-            Text(mark)
-                .font(.system(size: 17, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-                .frame(width: 40, height: 40)
-                .background(Color(hex: hex).gradient, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+        if let provider = providerTemplate {
+            ProviderIcon(provider: provider, size: .medium)
         } else {
-            Image(systemName: iconName)
+            Image(systemName: category.systemIconName)
                 .font(Typography.bodyMedium)
                 .foregroundStyle(.white)
                 .frame(width: 40, height: 40)
-                .background(iconColor.gradient, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+                .background(category.color.gradient, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
         }
     }
 }
@@ -166,8 +159,8 @@ private struct BadgeView: View {
             subtitle: "Списание: 12 апр",
             amount: 299,
             currency: "RUB",
-            iconName: "play.rectangle.fill",
-            iconColor: ColorTokens.categoryVideo
+            providerTemplate: ProviderCatalog.template(forProviderID: "youtube_premium"),
+            category: .video
         )
 
         Divider().padding(.leading, SorenListRow.dividerInset)
@@ -177,8 +170,7 @@ private struct BadgeView: View {
             subtitle: "Триал заканчивается через 3 дня",
             amount: 399,
             currency: "RUB",
-            iconName: "star.fill",
-            iconColor: .purple,
+            category: .shopping,
             badge: .trial
         )
 
@@ -189,8 +181,7 @@ private struct BadgeView: View {
             subtitle: "Ежемесячное списание",
             amount: 2.99,
             currency: "USD",
-            iconName: "icloud.fill",
-            iconColor: ColorTokens.categoryCloud,
+            category: .cloud,
             badge: .annual
         )
     }

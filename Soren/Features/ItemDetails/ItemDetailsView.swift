@@ -73,10 +73,13 @@ struct ItemDetailsView: View {
 
     private var heroSection: some View {
         VStack(spacing: Spacing.sm) {
-            ProviderIcon(
-                category: viewModel.item.category,
-                size: .large
-            )
+            Group {
+                if let provider = ProviderCatalog.template(forProviderID: viewModel.item.providerID) {
+                    ProviderIcon(provider: provider, size: .large)
+                } else {
+                    ProviderIcon(category: viewModel.item.category, size: .large)
+                }
+            }
 
             Text(viewModel.item.title)
                 .font(Typography.title)

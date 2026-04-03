@@ -5,10 +5,9 @@ import SwiftUI
 /// Displays a service provider icon with consistent sizing.
 ///
 /// Resolution priority:
-/// 1. Real logo from Clearbit CDN (async, cached by URLSession)
-/// 2. Asset catalog image named `provider_{id}` (bundled override)
-/// 3. Letter-mark with brand color gradient (generated, instant)
-/// 4. SF Symbol by category (fallback for manual entries)
+/// 1. Bundled asset image named `iconAssetName` or `provider_{id}` in Assets.xcassets
+/// 2. Letter-mark with brand-color gradient (generated, instant, no network)
+/// 3. SF Symbol by category (fallback for manual entries without a provider)
 struct ProviderIcon: View {
     private let content: Content
     let size: Size
@@ -16,19 +15,25 @@ struct ProviderIcon: View {
     // MARK: - Init (Provider-based)
 
     /// Creates an icon from a provider template.
-    /// Tries Clearbit logo first, falls back to letter-mark.
+    /// Bundled asset takes priority; otherwise falls to letter-mark or category symbol.
     init(provider: ProviderTemplate, size: Size = .medium) {
-        let assetName = "provider_\(provider.id)"
-        if UIImage(named: assetName) != nil {
-            self.content = .asset(assetName, provider, size)
-        } else if let url = provider.logoURL {
-            self.content = .remoteLogo(url, provider, size)
+        if let assetName = Self.bundledAssetName(for: provider) {
+            self.content = .asset(assetName)
         } else if let hex = provider.brandColorHex {
             self.content = .letterMark(provider.letterMark, Color(hex: hex))
         } else {
             self.content = .symbol(provider.category.systemIconName, provider.category.color)
         }
         self.size = size
+    }
+
+    /// Checks `Assets.xcassets` for a bundled image: `iconAssetName` or `provider_{id}`.
+    private static func bundledAssetName(for provider: ProviderTemplate) -> String? {
+        if let custom = provider.iconAssetName, UIImage(named: custom) != nil {
+            return custom
+        }
+        let standard = "provider_\(provider.id)"
+        return UIImage(named: standard) != nil ? standard : nil
     }
 
     // MARK: - Init (SF Symbol fallback)
@@ -51,10 +56,7 @@ struct ProviderIcon: View {
 
     var body: some View {
         switch content {
-        case .remoteLogo(let url, let provider, let iconSize):
-            RemoteLogoIcon(url: url, provider: provider, size: iconSize)
-
-        case .asset(let name, _, _):
+        case .asset(let name):
             Image(name)
                 .resizable()
                 .scaledToFill()
@@ -62,7 +64,11 @@ struct ProviderIcon: View {
                 .clipShape(RoundedRectangle(cornerRadius: size.radius))
 
         case .letterMark(let letters, let color):
-            letterMarkView(letters: letters, color: color)
+            Text(letters)
+                .font(.system(size: size.letterSize, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+                .frame(width: size.frame, height: size.frame)
+                .background(color.gradient, in: RoundedRectangle(cornerRadius: size.radius))
 
         case .symbol(let name, let color):
             Image(systemName: name)
@@ -72,72 +78,13 @@ struct ProviderIcon: View {
                 .background(color.gradient, in: RoundedRectangle(cornerRadius: size.radius))
         }
     }
-
-    // MARK: - Letter Mark
-
-    private func letterMarkView(letters: String, color: Color) -> some View {
-        Text(letters)
-            .font(.system(size: size.letterSize, weight: .bold, design: .rounded))
-            .foregroundStyle(.white)
-            .frame(width: size.frame, height: size.frame)
-            .background(color.gradient, in: RoundedRectangle(cornerRadius: size.radius))
-    }
-}
-
-// MARK: - Remote Logo
-
-/// Loads a logo from Clearbit asynchronously.
-/// Shows a letter-mark placeholder during loading; fades in the logo on success.
-private struct RemoteLogoIcon: View {
-    let url: URL
-    let provider: ProviderTemplate
-    let size: ProviderIcon.Size
-
-    var body: some View {
-        AsyncImage(url: url) { phase in
-            switch phase {
-            case .success(let image):
-                image
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: size.frame * 0.72, height: size.frame * 0.72)
-                    .frame(width: size.frame, height: size.frame)
-                    .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: size.radius))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: size.radius)
-                            .stroke(Color(.separator).opacity(0.4), lineWidth: 0.5)
-                    )
-                    .transition(.opacity)
-
-            case .failure:
-                // Clearbit failed — show letter-mark permanently
-                letterMark
-
-            default:
-                // Loading — show letter-mark as placeholder
-                letterMark
-            }
-        }
-    }
-
-    private var letterMark: some View {
-        Text(provider.letterMark)
-            .font(.system(size: size.letterSize, weight: .bold, design: .rounded))
-            .foregroundStyle(.white)
-            .frame(width: size.frame, height: size.frame)
-            .background(
-                (Color(hex: provider.brandColorHex ?? "#888888")).gradient,
-                in: RoundedRectangle(cornerRadius: size.radius)
-            )
-    }
 }
 
 // MARK: - Content
 
 extension ProviderIcon {
     private enum Content {
-        case remoteLogo(URL, ProviderTemplate, Size)
-        case asset(String, ProviderTemplate, Size)
+        case asset(String)
         case letterMark(String, Color)
         case symbol(String, Color)
     }
@@ -190,7 +137,7 @@ extension ProviderIcon {
 
 // MARK: - Preview
 
-#Preview("Clearbit Logos") {
+#Preview("Letter-mark Grid") {
     let providers = [
         ProviderCatalog.global.first { $0.id == "netflix" }!,
         ProviderCatalog.global.first { $0.id == "spotify" }!,

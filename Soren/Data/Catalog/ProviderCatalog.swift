@@ -9,4 +9,10 @@ enum ProviderCatalog {
 
     /// All providers across all regions, sorted alphabetically.
     static let all: [ProviderTemplate] = (global + russia).sorted { $0.displayName < $1.displayName }
+
+    /// Resolves a catalog template from a persisted `RecurringItem.providerID`.
+    static func template(forProviderID id: String?) -> ProviderTemplate? {
+        guard let id else { return nil }
+        return all.first { $0.id == id }
+    }
 }

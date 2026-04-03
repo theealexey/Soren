@@ -29,7 +29,7 @@ extension BillingCycle {
         case .quarterly:    String(localized: "кв")
         case .semiannual:   String(localized: "п/г")
         case .annual:       String(localized: "год")
-        case .custom(let d): "\(d)д"
+        case .custom(let d): String(localized: "\(d)д")
         }
     }
 

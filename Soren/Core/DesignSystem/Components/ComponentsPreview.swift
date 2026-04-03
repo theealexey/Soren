@@ -67,31 +67,31 @@ struct ComponentsPreview: View {
                         subtitle: "Списание: 12 апр",
                         amount: 299,
                         currency: "RUB",
-                        iconName: "play.rectangle.fill",
-                        iconColor: ColorTokens.categoryVideo
+                        providerTemplate: ProviderCatalog.template(forProviderID: "youtube_premium"),
+                        category: .video
                     )
 
-                    Divider().padding(.leading, 52)
+                    Divider().padding(.leading, SorenListRow.dividerInset)
 
                     SorenListRow(
                         title: "Яндекс Плюс",
                         subtitle: "Триал через 3 дня",
                         amount: 399,
                         currency: "RUB",
-                        iconName: "star.fill",
-                        iconColor: .purple,
+                        providerTemplate: ProviderCatalog.template(forProviderID: "yandex_plus"),
+                        category: .shopping,
                         badge: .trial
                     )
 
-                    Divider().padding(.leading, 52)
+                    Divider().padding(.leading, SorenListRow.dividerInset)
 
                     SorenListRow(
                         title: "ChatGPT Plus",
                         subtitle: "Ошибка оплаты",
                         amount: 20,
                         currency: "USD",
-                        iconName: "brain.head.profile",
-                        iconColor: ColorTokens.categoryAI,
+                        providerTemplate: ProviderCatalog.template(forProviderID: "chatgpt_plus"),
+                        category: .aiTools,
                         badge: .failed
                     )
                 }

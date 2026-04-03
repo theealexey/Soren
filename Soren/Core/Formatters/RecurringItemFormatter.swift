@@ -65,22 +65,6 @@ enum RecurringItemFormatter {
         }
     }
 
-    // MARK: - Icon Resolution
-
-    /// Brand hex color for a recurring item, resolved via the provider catalog.
-    /// Returns nil for manual entries without a catalog match.
-    static func brandColorHex(for item: RecurringItem) -> String? {
-        guard let providerID = item.providerID else { return nil }
-        return ProviderCatalog.all.first { $0.id == providerID }?.brandColorHex
-    }
-
-    /// Letter-mark for a recurring item, resolved via the provider catalog.
-    /// Returns nil for manual entries without a catalog match.
-    static func letterMark(for item: RecurringItem) -> String? {
-        guard let providerID = item.providerID else { return nil }
-        return ProviderCatalog.all.first { $0.id == providerID }.map(\.letterMark)
-    }
-
     // MARK: - Trial Display
 
     /// Formatted subtitle for trial insight cards.
