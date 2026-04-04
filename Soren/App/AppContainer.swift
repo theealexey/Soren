@@ -13,6 +13,10 @@ final class AppContainer {
     let preferences: UserPreferencesRepository
     let exchangeRateProvider: any ExchangeRateProvider
 
+    /// Incremented whenever recurring items are mutated.
+    /// Views observe this to know when to reload their ViewModels.
+    var itemsVersion: Int = 0
+
     init(modelContext: ModelContext) {
         self.repositories = RepositoryContainer(context: modelContext)
         self.providerCatalog = InMemoryProviderCatalogRepository()

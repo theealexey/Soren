@@ -43,6 +43,9 @@ struct RootView: View {
                 )
             }
         }
+        .onChange(of: showAddSheet) { _, isShowing in
+            if !isShowing { container.itemsVersion += 1 }
+        }
         .sheet(isPresented: $showSettings) {
             NavigationStack { SettingsView() }
         }

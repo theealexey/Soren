@@ -24,6 +24,9 @@ struct LibraryView: View {
                 vm.load()
                 self.viewModel = vm
             }
+            .onChange(of: container.itemsVersion) { _, _ in
+                viewModel?.load()
+            }
             .navigationDestination(for: RecurringItem.self) { item in
                 ItemDetailsView(
                     viewModel: ItemDetailsViewModel(

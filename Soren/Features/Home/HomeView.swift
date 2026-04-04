@@ -31,6 +31,9 @@ struct HomeView: View {
                 await vm.load()
                 self.viewModel = vm
             }
+            .onChange(of: container.itemsVersion) { _, _ in
+                viewModel?.loadLocalData(forceReload: true)
+            }
             .navigationDestination(for: RecurringItem.self) { item in
                 ItemDetailsView(
                     viewModel: ItemDetailsViewModel(
