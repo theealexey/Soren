@@ -7,9 +7,18 @@ import SwiftUI
 /// NavigationStack and ViewModel state stay alive across tab changes.
 struct RootView: View {
     @Environment(AppContainer.self) private var container
+    @AppStorage("soren.appearanceMode") private var appearanceModeRaw = AppearanceMode.system.rawValue
     @State private var selectedTab: AppTab = .home
     @State private var showAddSheet = false
     @State private var showSettings = false
+
+    private var preferredColorScheme: ColorScheme? {
+        switch AppearanceMode(rawValue: appearanceModeRaw) {
+        case .light: .light
+        case .dark:  .dark
+        default:     nil
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -48,6 +57,7 @@ struct RootView: View {
         }
         .sheet(isPresented: $showSettings) {
             NavigationStack { SettingsView() }
+                .preferredColorScheme(preferredColorScheme)
         }
     }
 }

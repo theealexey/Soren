@@ -33,7 +33,6 @@ struct SettingsView: View {
                 .fontWeight(.semibold)
             }
         }
-        .preferredColorScheme(viewModel.preferredColorScheme)
     }
 
     // MARK: - General
