@@ -264,7 +264,7 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .overview:      HomeView()
         case .subscriptions: LibraryView()
         case .calendar:      CalendarView()
-        case .insights:      AnalyticsPlaceholderView()
+        case .insights:      AnalyticsView()
         }
     }
 }

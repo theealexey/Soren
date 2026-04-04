@@ -78,7 +78,8 @@
 		A6E5CF39F847ECCF37EA9C4A /* SpacingTokenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5110E3C6D5E26466595C387D /* SpacingTokenTests.swift */; };
 		A8700790E0B2220E043C2E6B /* ListRowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E994CDE5B3934412FBC152E /* ListRowTests.swift */; };
 		AB35672A60CFCDCB614C95A4 /* SwiftDataPaymentMethodRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931E5E8447CB6EBE61776031 /* SwiftDataPaymentMethodRepository.swift */; };
-		AF6E1A157EDBACB100FEE1AC /* AnalyticsPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90762FBB5B6A43C011E02296 /* AnalyticsPlaceholderView.swift */; };
+		AF6E1A157EDBACB100FEE1AC /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90762FBB5B6A43C011E02296 /* AnalyticsView.swift */; };
+		A1N4LYT1C5VM0DEL12345678 /* AnalyticsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A3N4LYT1C5V1EW23456789 /* AnalyticsViewModel.swift */; };
 		B6B49575DA39529E4BCD86CE /* ReminderRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80918D4746AD2EF6165BD1F7 /* ReminderRule.swift */; };
 		B86D68E01D663F0FEF5DF81D /* PremiumCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FD0B969C2EC4F06C1DD91AE /* PremiumCardTests.swift */; };
 		BB2BC37DC78284972F9B9A95 /* SwiftDataRecurringItemRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1EF2A40A99AD1C124022D0 /* SwiftDataRecurringItemRepository.swift */; };
@@ -209,7 +210,8 @@
 		7F2D1730D9BADDD2F0A7C46A /* PaymentRecordRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentRecordRepository.swift; sourceTree = "<group>"; };
 		807CF443CA630D9D6CEE12FF /* SDReminderRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDReminderRule.swift; sourceTree = "<group>"; };
 		80918D4746AD2EF6165BD1F7 /* ReminderRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderRule.swift; sourceTree = "<group>"; };
-		90762FBB5B6A43C011E02296 /* AnalyticsPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsPlaceholderView.swift; sourceTree = "<group>"; };
+		90762FBB5B6A43C011E02296 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
+		B2A3N4LYT1C5V1EW23456789 /* AnalyticsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsViewModel.swift; sourceTree = "<group>"; };
 		931E5E8447CB6EBE61776031 /* SwiftDataPaymentMethodRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDataPaymentMethodRepository.swift; sourceTree = "<group>"; };
 		93AF16A9BA161AB845824A50 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		946AA7A82CD22CD520307B72 /* HomeViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModelTests.swift; sourceTree = "<group>"; };
@@ -765,7 +767,8 @@
 			isa = PBXGroup;
 			children = (
 				5085C53C3D90273C643F0A85 /* Components */,
-				90762FBB5B6A43C011E02296 /* AnalyticsPlaceholderView.swift */,
+				90762FBB5B6A43C011E02296 /* AnalyticsView.swift */,
+				B2A3N4LYT1C5V1EW23456789 /* AnalyticsViewModel.swift */,
 			);
 			path = Analytics;
 			sourceTree = "<group>";
@@ -1033,7 +1036,8 @@
 				C2B3C4D5E6F70829304B5C6D /* UpcomingChargesSection.swift in Sources */,
 				C3C4D5E6F7A8093A415C6D7E /* ActiveTrialsSection.swift in Sources */,
 				C4D5E6F7A8B90A4B526D7E8F /* QuickInsightsSection.swift in Sources */,
-				AF6E1A157EDBACB100FEE1AC /* AnalyticsPlaceholderView.swift in Sources */,
+				AF6E1A157EDBACB100FEE1AC /* AnalyticsView.swift in Sources */,
+				A1N4LYT1C5VM0DEL12345678 /* AnalyticsViewModel.swift in Sources */,
 				BC67F03FFAAF36667E671F79 /* AppContainer.swift in Sources */,
 				747917FE51A83E20934C9492 /* BillingCycle.swift in Sources */,
 				F3FD5F08E064C7378A305F93 /* Bundle.swift in Sources */,
