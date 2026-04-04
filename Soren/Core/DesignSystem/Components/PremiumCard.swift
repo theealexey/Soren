@@ -29,7 +29,11 @@ struct PremiumCard<Content: View>: View {
             .padding(Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(style.background, in: shape)
-            .overlay(style.border, in: shape)
+            .overlay {
+                shape
+                    .strokeBorder(style.border, lineWidth: style.borderWidth)
+                    .allowsHitTesting(false)
+            }
             .if(style == .elevated) { view in
                 view.elevation(ShadowTokens.md)
             }
@@ -79,6 +83,13 @@ extension PremiumCard {
                 AnyShapeStyle(.white.opacity(0.15))
             case .tinted(let color):
                 AnyShapeStyle(color.opacity(0.2))
+            }
+        }
+
+        var borderWidth: CGFloat {
+            switch self {
+            case .elevated: 0
+            default: 0.5
             }
         }
 
