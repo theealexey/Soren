@@ -2,9 +2,9 @@ import SwiftUI
 
 // MARK: - Root View
 
-/// App shell: custom top nav (tabs) + tab content + bottom add-subscription CTA.
-/// Native TabView is replaced with opacity-based switching so each tab's
-/// NavigationStack (and its ViewModel state) stays alive across tab changes.
+/// App shell: minimal context header + full-screen tab content + floating pill nav.
+/// Native TabView replaced with opacity-based switching so each tab's
+/// NavigationStack and ViewModel state stay alive across tab changes.
 struct RootView: View {
     @Environment(AppContainer.self) private var container
     @State private var selectedTab: AppTab = .home
@@ -13,11 +13,10 @@ struct RootView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            SorenTopBar(selectedTab: $selectedTab) {
+            SorenContextBar(tab: selectedTab) {
                 showSettings = true
             }
 
-            // Each tab stays rendered — opacity keeps state alive
             ZStack {
                 ForEach(AppTab.allCases) { tab in
                     tab.destination
@@ -30,11 +29,12 @@ struct RootView: View {
             .background(ColorTokens.background)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            SorenAddBar {
+            SorenFloatingPill(selectedTab: $selectedTab) {
                 showAddSheet = true
             }
+            .padding(.horizontal, Spacing.xl)
+            .padding(.bottom, Spacing.xs)
         }
-        // Global add sheet — triggered from bar or from empty-state views
         .environment(\.addSubscriptionAction, AddSubscriptionAction { showAddSheet = true })
         .sheet(isPresented: $showAddSheet) {
             NavigationStack {
@@ -52,31 +52,36 @@ struct RootView: View {
     }
 }
 
-// MARK: - Top Bar
+// MARK: - Context Bar
 
-/// Custom navigation bar: wordmark left · tab icons center-right · gear far right.
-private struct SorenTopBar: View {
-    @Binding var selectedTab: AppTab
+/// Minimal top header: contextual title for the active tab + settings gear.
+private struct SorenContextBar: View {
+    let tab: AppTab
     let settingsAction: () -> Void
+
+    private var contextTitle: String {
+        guard tab == .home else { return tab.title }
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "ru_RU")
+        fmt.dateFormat = "LLLL yyyy"
+        return fmt.string(from: .now).capitalized
+    }
 
     var body: some View {
         HStack(spacing: 0) {
-            // Wordmark
-            Text("SOREN")
-                .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                .tracking(3)
-                .foregroundStyle(ColorTokens.accent)
+            ZStack(alignment: .leading) {
+                ForEach(AppTab.allCases) { t in
+                    Text(t == .home ? contextTitle : t.title)
+                        .font(Typography.headline)
+                        .foregroundStyle(ColorTokens.textPrimary)
+                        .opacity(tab == t ? 1 : 0)
+                        .scaleEffect(tab == t ? 1 : 0.94, anchor: .leading)
+                }
+            }
+            .animation(.easeInOut(duration: 0.18), value: tab)
 
             Spacer()
 
-            // Tab icons
-            HStack(spacing: Spacing.xs) {
-                ForEach(AppTab.allCases) { tab in
-                    tabButton(tab)
-                }
-            }
-
-            // Settings
             Button(action: settingsAction) {
                 Image(systemName: "gearshape")
                     .font(.system(size: 16, weight: .regular))
@@ -84,10 +89,9 @@ private struct SorenTopBar: View {
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(.plain)
-            .padding(.leading, Spacing.xs)
         }
         .padding(.horizontal, Spacing.lg)
-        .padding(.vertical, Spacing.xs)
+        .padding(.vertical, Spacing.sm)
         .background {
             ColorTokens.surface
                 .overlay(alignment: .bottom) {
@@ -97,77 +101,85 @@ private struct SorenTopBar: View {
                 .ignoresSafeArea(edges: .top)
         }
     }
+}
+
+// MARK: - Floating Pill
+
+/// Capsule nav bar that floats above the bottom safe area.
+/// Left section: 5 tab icons. Right section: add-subscription "+" button.
+private struct SorenFloatingPill: View {
+    @Binding var selectedTab: AppTab
+    let onAdd: () -> Void
+
+    var body: some View {
+        HStack(spacing: 0) {
+            // Tab icons — fill available width evenly
+            HStack(spacing: 0) {
+                ForEach(AppTab.allCases) { tab in
+                    tabButton(tab)
+                }
+            }
+            .frame(maxWidth: .infinity)
+
+            // Hairline divider
+            Rectangle()
+                .fill(ColorTokens.separator)
+                .frame(width: 0.5, height: 22)
+                .padding(.horizontal, Spacing.sm)
+
+            // Add button
+            Button(action: {
+                HapticEngine.selection()
+                onAdd()
+            }) {
+                ZStack {
+                    Circle()
+                        .fill(ColorTokens.accent)
+                        .frame(width: 36, height: 36)
+                    Image(systemName: "plus")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+            }
+            .buttonStyle(.plain)
+            .padding(.trailing, Spacing.xs)
+        }
+        .padding(.leading, Spacing.xs)
+        .padding(.vertical, Spacing.xs)
+        .background {
+            Capsule()
+                .fill(.ultraThinMaterial)
+                .overlay {
+                    Capsule()
+                        .strokeBorder(ColorTokens.separator.opacity(0.5), lineWidth: 0.5)
+                }
+        }
+        .shadow(color: .black.opacity(0.10), radius: 20, x: 0, y: 6)
+        .shadow(color: .black.opacity(0.05), radius: 4,  x: 0, y: 2)
+    }
 
     private func tabButton(_ tab: AppTab) -> some View {
         let isActive = selectedTab == tab
 
         return Button {
-            withAnimation(MotionTokens.snappy) {
-                selectedTab = tab
-            }
+            withAnimation(MotionTokens.snappy) { selectedTab = tab }
             HapticEngine.selection()
         } label: {
             VStack(spacing: 3) {
                 Image(systemName: isActive ? tab.activeIcon : tab.icon)
-                    .font(.system(size: 16, weight: isActive ? .semibold : .regular))
+                    .font(.system(size: 17, weight: isActive ? .semibold : .regular))
                     .foregroundStyle(isActive ? ColorTokens.accent : ColorTokens.textTertiary)
-                    .frame(width: 28, height: 20)
+                    .frame(height: 20)
 
-                // Active indicator dot
                 Circle()
                     .fill(isActive ? ColorTokens.accent : Color.clear)
-                    .frame(width: 4, height: 4)
+                    .frame(width: 3.5, height: 3.5)
             }
-            .frame(width: 36)
+            .frame(maxWidth: .infinity)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .animation(.easeInOut(duration: 0.16), value: isActive)
-    }
-}
-
-// MARK: - Bottom Add Bar
-
-/// Full-width bottom CTA that launches the add-subscription flow.
-private struct SorenAddBar: View {
-    let action: () -> Void
-
-    var body: some View {
-        VStack(spacing: 0) {
-            ColorTokens.separator
-                .frame(height: 0.5)
-
-            Button(action: action) {
-                HStack(spacing: Spacing.sm) {
-                    ZStack {
-                        Circle()
-                            .fill(.white.opacity(0.2))
-                            .frame(width: 28, height: 28)
-                        Image(systemName: "plus")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.white)
-                    }
-
-                    Text("Добавить подписку")
-                        .font(Typography.bodyMedium)
-                        .foregroundStyle(.white)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, Spacing.sm)
-                .background(
-                    LinearGradient(
-                        colors: [ColorTokens.accent, ColorTokens.accent.opacity(0.85)],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    ),
-                    in: RoundedRectangle(cornerRadius: CornerRadius.large)
-                )
-                .padding(.horizontal, Spacing.lg)
-                .padding(.vertical, Spacing.sm)
-            }
-            .buttonStyle(.plain)
-        }
-        .background(ColorTokens.surface.ignoresSafeArea(edges: .bottom))
+        .animation(.easeInOut(duration: 0.15), value: isActive)
     }
 }
 
