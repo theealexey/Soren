@@ -9,9 +9,10 @@ import SwiftUI
 struct CalendarView: View {
     @Environment(AppContainer.self) private var container
     @State private var viewModel: CalendarViewModel?
+    @State private var navigationPath = NavigationPath()
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             Group {
                 if let vm = viewModel {
                     calendarContent(vm)

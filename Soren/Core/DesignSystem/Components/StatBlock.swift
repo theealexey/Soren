@@ -20,19 +20,24 @@ struct StatBlock: View {
     let currencyCode: String
     let trend: Trend?
     let amountSize: AmountLabel.Size
+    /// When true, the currency symbol is rendered on its own line below the amount.
+    /// Useful for dashboard cards where visual alignment matters more than compactness.
+    let breakCurrency: Bool
 
     init(
         title: LocalizedStringKey,
         amount: Decimal,
         currency currencyCode: String = "RUB",
         trend: Trend? = nil,
-        amountSize: AmountLabel.Size = .large
+        amountSize: AmountLabel.Size = .large,
+        breakCurrency: Bool = false
     ) {
         self.title = title
         self.amount = amount
         self.currencyCode = currencyCode
         self.trend = trend
         self.amountSize = amountSize
+        self.breakCurrency = breakCurrency
     }
 
     var body: some View {
@@ -40,12 +45,41 @@ struct StatBlock: View {
             Text(title)
                 .overlineStyle()
 
-            AmountLabel(amount, currency: currencyCode, size: amountSize)
+            if breakCurrency {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(formattedNumber)
+                        .font(amountSize.font)
+                        .foregroundStyle(ColorTokens.textPrimary)
+                        .contentTransition(.numericText(value: Double(truncating: amount as NSDecimalNumber)))
+                    Text(currencySymbol)
+                        .font(amountSize.font)
+                        .foregroundStyle(ColorTokens.textPrimary)
+                }
+            } else {
+                AmountLabel(amount, currency: currencyCode, size: amountSize)
+            }
 
             if let trend {
                 TrendBadge(trend: trend)
             }
         }
+    }
+
+    @MainActor
+    private var formattedNumber: String {
+        let fmt = NumberFormatter()
+        fmt.numberStyle = .decimal
+        fmt.minimumFractionDigits = 0
+        fmt.maximumFractionDigits = 2
+        return fmt.string(from: amount as NSDecimalNumber) ?? "\(amount)"
+    }
+
+    @MainActor
+    private var currencySymbol: String {
+        let fmt = NumberFormatter()
+        fmt.numberStyle = .currency
+        fmt.currencyCode = currencyCode
+        return fmt.currencySymbol ?? currencyCode
     }
 }
 

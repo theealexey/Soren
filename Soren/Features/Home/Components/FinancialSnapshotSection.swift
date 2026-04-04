@@ -19,7 +19,8 @@ struct FinancialSnapshotSection: View {
                         title: "В месяц",
                         amount: summary.monthlyTotal,
                         currency: defaultCurrency,
-                        amountSize: .large
+                        amountSize: .large,
+                        breakCurrency: true
                     )
                 }
 
@@ -28,7 +29,8 @@ struct FinancialSnapshotSection: View {
                         title: "В год",
                         amount: summary.yearlyProjection,
                         currency: defaultCurrency,
-                        amountSize: .large
+                        amountSize: .large,
+                        breakCurrency: true
                     )
                 }
             }

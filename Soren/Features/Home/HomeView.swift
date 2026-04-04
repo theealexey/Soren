@@ -9,11 +9,12 @@ struct HomeView: View {
     @Environment(AppContainer.self) private var container
     @Environment(\.addSubscriptionAction) private var addSubscription
     @State private var viewModel: HomeViewModel?
+    @State private var navigationPath = NavigationPath()
 
     private let maxUpcomingItems = 5
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             Group {
                 if let viewModel {
                     dashboardContent(viewModel)

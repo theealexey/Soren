@@ -8,6 +8,7 @@ struct LibraryView: View {
     @Environment(AppContainer.self) private var container
     @Environment(\.addSubscriptionAction) private var addSubscription
     @State private var viewModel: LibraryViewModel?
+    @State private var navigationPath = NavigationPath()
 
     /// Binding bridged to the optional ViewModel — safe to pass to .searchable.
     private var searchBinding: Binding<String> {
@@ -18,7 +19,7 @@ struct LibraryView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             Group {
                 if let viewModel {
                     libraryContent(viewModel)
