@@ -20,7 +20,7 @@ struct RootView: View {
 
             ZStack {
                 ForEach(AppTab.allCases) { tab in
-                    tab.destination
+                    tabDestination(tab)
                         .opacity(selectedTab == tab ? 1 : 0)
                         .animation(.easeInOut(duration: 0.16), value: selectedTab)
                         .allowsHitTesting(selectedTab == tab)
@@ -37,6 +37,18 @@ struct RootView: View {
         .environment(\.addSubscriptionAction, AddSubscriptionAction { activeSheet = .addSubscription })
         .environment(\.navigateToItem, NavigateToItemAction { activeSheet = .itemDetails($0) })
         .sheet(item: $activeSheet, onDismiss: { container.itemsVersion += 1 }, content: sheetContent)
+    }
+
+    // MARK: - Tab Router
+
+    @ViewBuilder
+    private func tabDestination(_ tab: AppTab) -> some View {
+        switch tab {
+        case .overview:      HomeView()
+        case .subscriptions: LibraryView()
+        case .calendar:      CalendarView()
+        case .insights:      AnalyticsView()
+        }
     }
 
     // MARK: - Sheet Router
@@ -304,16 +316,6 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .subscriptions: "list.bullet"
         case .calendar:      "calendar"
         case .insights:      "chart.bar.fill"
-        }
-    }
-
-    @ViewBuilder
-    var destination: some View {
-        switch self {
-        case .overview:      HomeView()
-        case .subscriptions: LibraryView()
-        case .calendar:      CalendarView()
-        case .insights:      AnalyticsView()
         }
     }
 }
