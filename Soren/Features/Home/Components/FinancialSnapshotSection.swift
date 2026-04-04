@@ -13,7 +13,7 @@ struct FinancialSnapshotSection: View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             SectionHeader(String(localized: "Обзор"))
 
-            HStack(spacing: Spacing.sm) {
+            HStack(alignment: .top, spacing: Spacing.sm) {
                 PremiumCard(.elevated) {
                     StatBlock(
                         title: "В месяц",
@@ -23,6 +23,7 @@ struct FinancialSnapshotSection: View {
                         breakCurrency: true
                     )
                 }
+                .frame(maxHeight: .infinity)
 
                 PremiumCard(.elevated) {
                     StatBlock(
@@ -33,6 +34,7 @@ struct FinancialSnapshotSection: View {
                         breakCurrency: true
                     )
                 }
+                .frame(maxHeight: .infinity)
             }
 
             HStack(spacing: Spacing.sm) {

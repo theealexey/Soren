@@ -51,6 +51,8 @@ struct StatBlock: View {
                         .font(amountSize.font)
                         .foregroundStyle(ColorTokens.textPrimary)
                         .contentTransition(.numericText(value: Double(truncating: amount as NSDecimalNumber)))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
                     Text(currencySymbol)
                         .font(amountSize.font)
                         .foregroundStyle(ColorTokens.textPrimary)
