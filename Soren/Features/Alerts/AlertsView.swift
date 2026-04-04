@@ -32,7 +32,8 @@ struct AlertsView: View {
                 ItemDetailsView(
                     viewModel: ItemDetailsViewModel(
                         item: item,
-                        repositories: container.repositories
+                        repositories: container.repositories,
+                        exchangeRateProvider: container.exchangeRateProvider
                     )
                 )
             }

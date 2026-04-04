@@ -30,13 +30,15 @@ final class ItemDetailsViewModel {
 
     private let updateRecurringItem: UpdateRecurringItem
     private let deleteRecurringItem: DeleteRecurringItem
+    private let exchangeRateProvider: any ExchangeRateProvider
 
     // MARK: - Init
 
-    init(item: RecurringItem, repositories: RepositoryContainer) {
+    init(item: RecurringItem, repositories: RepositoryContainer, exchangeRateProvider: any ExchangeRateProvider) {
         self.item = item
         self.updateRecurringItem = UpdateRecurringItem(repository: repositories.recurringItems)
         self.deleteRecurringItem = DeleteRecurringItem(repository: repositories.recurringItems)
+        self.exchangeRateProvider = exchangeRateProvider
     }
 
     // MARK: - Edit Actions
@@ -97,6 +99,28 @@ final class ItemDetailsViewModel {
     func delete() throws {
         try deleteRecurringItem.execute(id: item.id)
         isDeleted = true
+    }
+
+    // MARK: - Currency Conversion
+
+    /// Called when the user changes currency in the edit form.
+    /// Converts editAmountText from the old currency to the new one using cached rates.
+    /// Silently no-ops if rates are unavailable — leaves the amount unchanged.
+    func convertAmount(from sourceCurrency: String, to targetCurrency: String) async {
+        guard sourceCurrency != targetCurrency else { return }
+        guard let amount = Decimal(string: editAmountText.replacingOccurrences(of: ",", with: ".")) else { return }
+
+        do {
+            let rates = try await exchangeRateProvider.latestRates()
+            guard let converted = rates.convert(amount, from: sourceCurrency, to: targetCurrency) else { return }
+
+            var rounded = Decimal()
+            var mutable = converted
+            NSDecimalRound(&rounded, &mutable, 2, .plain)
+            editAmountText = "\(rounded)"
+        } catch {
+            // Rates unavailable — leave amount as-is, don't break the form.
+        }
     }
 
     // MARK: - Computed

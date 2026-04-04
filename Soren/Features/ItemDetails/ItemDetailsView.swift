@@ -360,7 +360,8 @@ struct ItemDetailsView: View {
                 ),
                 repositories: RepositoryContainer(
                     context: try! SorenModelContainer.inMemory().mainContext
-                )
+                ),
+                exchangeRateProvider: StaticExchangeRateProvider()
             )
         )
     }

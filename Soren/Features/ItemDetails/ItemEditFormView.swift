@@ -42,6 +42,9 @@ struct ItemEditFormView: View {
             }
         }
         .interactiveDismissDisabled()
+        .onChange(of: viewModel.editCurrencyCode) { old, new in
+            Task { await viewModel.convertAmount(from: old, to: new) }
+        }
     }
 
     // MARK: - Save
@@ -73,7 +76,8 @@ struct ItemEditFormView: View {
                     ),
                     repositories: RepositoryContainer(
                         context: try! SorenModelContainer.inMemory().mainContext
-                    )
+                    ),
+                    exchangeRateProvider: StaticExchangeRateProvider()
                 )
                 vm.startEditing()
                 return vm
