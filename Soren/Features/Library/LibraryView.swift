@@ -2,11 +2,20 @@ import SwiftUI
 
 // MARK: - Library View
 
-/// Full list of recurring items with search, status filters, and sorting.
+/// Full subscription list with native search, status filters, and sorting.
+/// "+" lives in the global context bar (RootView). Sort lives in the nav toolbar.
 struct LibraryView: View {
     @Environment(AppContainer.self) private var container
     @Environment(\.addSubscriptionAction) private var addSubscription
     @State private var viewModel: LibraryViewModel?
+
+    /// Binding bridged to the optional ViewModel — safe to pass to .searchable.
+    private var searchBinding: Binding<String> {
+        Binding(
+            get: { viewModel?.searchText ?? "" },
+            set: { viewModel?.searchText = $0 }
+        )
+    }
 
     var body: some View {
         NavigationStack {
@@ -18,7 +27,20 @@ struct LibraryView: View {
                 }
             }
             .background(ColorTokens.background)
-            .toolbarVisibility(.hidden, for: .navigationBar)
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .searchable(
+                text: searchBinding,
+                placement: .navigationBarDrawer(displayMode: .always),
+                prompt: "Поиск подписок"
+            )
+            .toolbar {
+                if let vm = viewModel {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        sortMenu(vm)
+                    }
+                }
+            }
             .task {
                 let vm = LibraryViewModel(repositories: container.repositories, preferences: container.preferences)
                 vm.load()
@@ -43,9 +65,7 @@ struct LibraryView: View {
     @ViewBuilder
     private func libraryContent(_ vm: LibraryViewModel) -> some View {
         if vm.hasError {
-            ErrorStateView(
-                message: "Не удалось загрузить подписки"
-            ) {
+            ErrorStateView(message: "Не удалось загрузить подписки") {
                 vm.load()
             }
         } else if !vm.isLoaded {
@@ -62,8 +82,6 @@ struct LibraryView: View {
     private func populatedLibrary(_ vm: LibraryViewModel) -> some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: Spacing.md) {
-                searchBar(vm)
-
                 filterChips(vm)
 
                 summaryBar(vm)
@@ -81,43 +99,6 @@ struct LibraryView: View {
         }
     }
 
-    // MARK: - Inline Search Bar
-
-    private func searchBar(_ vm: LibraryViewModel) -> some View {
-        HStack(spacing: Spacing.sm) {
-            HStack(spacing: Spacing.xs) {
-                Image(systemName: "magnifyingglass")
-                    .font(Typography.body)
-                    .foregroundStyle(ColorTokens.textTertiary)
-
-                TextField(
-                    "Поиск подписок",
-                    text: Binding(get: { vm.searchText }, set: { vm.searchText = $0 })
-                )
-                .font(Typography.body)
-                .foregroundStyle(ColorTokens.textPrimary)
-                .autocorrectionDisabled()
-
-                if !vm.searchText.isEmpty {
-                    Button {
-                        vm.searchText = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(Typography.body)
-                            .foregroundStyle(ColorTokens.textTertiary)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, Spacing.sm)
-            .padding(.vertical, Spacing.xs)
-            .background(ColorTokens.surface, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
-
-            sortMenu(vm)
-        }
-        .padding(.horizontal, Spacing.lg)
-    }
-
     // MARK: - Filter Chips
 
     private func filterChips(_ vm: LibraryViewModel) -> some View {
@@ -128,9 +109,7 @@ struct LibraryView: View {
                     let isSelected = vm.activeFilter == filter
 
                     Button {
-                        withAnimation(MotionTokens.snappy) {
-                            vm.activeFilter = filter
-                        }
+                        withAnimation(MotionTokens.snappy) { vm.activeFilter = filter }
                         HapticEngine.selection()
                     } label: {
                         HStack(spacing: Spacing.xxs) {
@@ -143,7 +122,7 @@ struct LibraryView: View {
                                 .font(Typography.captionMedium)
 
                             if count > 0 && filter != .all {
-                                Text("\(count)")
+                                Text(verbatim: "\(count)")
                                     .font(Typography.footnote)
                                     .fontWeight(.medium)
                                     .foregroundStyle(isSelected ? .white.opacity(0.8) : ColorTokens.textTertiary)
@@ -177,7 +156,7 @@ struct LibraryView: View {
 
     private func summaryBar(_ vm: LibraryViewModel) -> some View {
         HStack {
-            Text("\(vm.filteredItems.count)")
+            Text(verbatim: "\(vm.filteredItems.count)")
                 .font(Typography.bodyMedium)
                 .foregroundStyle(ColorTokens.textPrimary)
             + Text(" ")
@@ -235,9 +214,7 @@ struct LibraryView: View {
         Menu {
             ForEach(LibraryViewModel.SortOrder.allCases) { order in
                 Button {
-                    withAnimation(MotionTokens.smooth) {
-                        vm.sortOrder = order
-                    }
+                    withAnimation(MotionTokens.smooth) { vm.sortOrder = order }
                 } label: {
                     Label(order.title, systemImage: order.icon)
                 }

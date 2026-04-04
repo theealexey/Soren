@@ -2,10 +2,8 @@ import SwiftUI
 
 // MARK: - Root View
 
-/// App shell: context header + full-screen tab content + floating pill nav.
-/// 4 tabs: Overview · Subscriptions · Calendar · Insights
-/// "+" appears only on Overview and Subscriptions.
-/// Settings gear lives exclusively on Overview.
+/// App shell: context header + full-screen tab content + floating pill (pure nav).
+/// Each screen owns its toolbar actions — no global floating "+" logic.
 struct RootView: View {
     @Environment(AppContainer.self) private var container
     @AppStorage("soren.appearanceMode") private var appearanceModeRaw = AppearanceMode.system.rawValue
@@ -23,9 +21,7 @@ struct RootView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            SorenContextBar(tab: selectedTab) {
-                showSettings = true
-            }
+            SorenContextBar(tab: selectedTab) { contextBarTrailing }
 
             ZStack {
                 ForEach(AppTab.allCases) { tab in
@@ -39,14 +35,9 @@ struct RootView: View {
             .background(ColorTokens.background)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            SorenFloatingPill(
-                selectedTab: $selectedTab,
-                showAddButton: selectedTab.hasAddButton
-            ) {
-                showAddSheet = true
-            }
-            .padding(.horizontal, Spacing.xl)
-            .padding(.bottom, Spacing.xs)
+            SorenFloatingPill(selectedTab: $selectedTab)
+                .padding(.horizontal, Spacing.xl)
+                .padding(.bottom, Spacing.xs)
         }
         .environment(\.addSubscriptionAction, AddSubscriptionAction { showAddSheet = true })
         .sheet(isPresented: $showAddSheet) {
@@ -64,29 +55,73 @@ struct RootView: View {
                 .preferredColorScheme(preferredColorScheme)
         }
     }
+
+    // MARK: - Per-tab trailing actions
+
+    @ViewBuilder
+    private var contextBarTrailing: some View {
+        switch selectedTab {
+        case .overview:
+            HStack(spacing: Spacing.xxs) {
+                addButton
+                settingsButton
+            }
+        case .subscriptions:
+            addButton
+        case .calendar, .insights:
+            EmptyView()
+        }
+    }
+
+    private var addButton: some View {
+        Button {
+            HapticEngine.selection()
+            showAddSheet = true
+        } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(ColorTokens.accent)
+                .frame(width: 36, height: 36)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var settingsButton: some View {
+        Button { showSettings = true } label: {
+            Image(systemName: "gearshape")
+                .font(.system(size: 16, weight: .regular))
+                .foregroundStyle(ColorTokens.textTertiary)
+                .frame(width: 36, height: 36)
+        }
+        .buttonStyle(.plain)
+    }
 }
 
 // MARK: - Context Bar
 
-/// Minimal top header: contextual title for the active tab + optional settings gear.
-/// Gear is shown only on Overview (the app's home base).
-private struct SorenContextBar: View {
+/// Minimal top header: contextual title + per-tab trailing actions.
+private struct SorenContextBar<Trailing: View>: View {
     let tab: AppTab
-    let settingsAction: () -> Void
+    @ViewBuilder let trailing: () -> Trailing
 
     private var contextTitle: String {
-        guard tab == .overview else { return tab.title }
-        let fmt = DateFormatter()
-        fmt.locale = Locale(identifier: "ru_RU")
-        fmt.dateFormat = "LLLL yyyy"
-        return fmt.string(from: .now).capitalized
+        switch tab {
+        case .overview, .calendar:
+            let fmt = DateFormatter()
+            fmt.locale = Locale(identifier: "ru_RU")
+            fmt.dateFormat = "LLLL yyyy"
+            return fmt.string(from: .now).capitalized
+        default:
+            return tab.title
+        }
     }
 
     var body: some View {
         HStack(spacing: 0) {
             ZStack(alignment: .leading) {
                 ForEach(AppTab.allCases) { t in
-                    Text(t == .overview ? contextTitle : t.title)
+                    let title = (t == .overview || t == .calendar) ? contextTitle : t.title
+                    Text(verbatim: title)
                         .font(Typography.headline)
                         .foregroundStyle(ColorTokens.textPrimary)
                         .opacity(tab == t ? 1 : 0)
@@ -97,75 +132,37 @@ private struct SorenContextBar: View {
 
             Spacer()
 
-            if tab == .overview {
-                Button(action: settingsAction) {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 16, weight: .regular))
-                        .foregroundStyle(ColorTokens.textTertiary)
-                        .frame(width: 36, height: 36)
-                }
-                .buttonStyle(.plain)
-                .transition(.opacity.combined(with: .scale(scale: 0.8)))
-            }
+            trailing()
+                .transition(.opacity.combined(with: .scale(scale: 0.85)))
+                .animation(.easeInOut(duration: 0.18), value: tab)
         }
-        .animation(.easeInOut(duration: 0.18), value: tab)
         .padding(.horizontal, Spacing.lg)
         .padding(.vertical, Spacing.sm)
         .background {
             ColorTokens.surface
                 .overlay(alignment: .bottom) {
-                    ColorTokens.separator
-                        .frame(height: 0.5)
+                    ColorTokens.separator.frame(height: 0.5)
                 }
                 .ignoresSafeArea(edges: .top)
         }
     }
 }
 
-// MARK: - Floating Pill
+// MARK: - Floating Pill (pure navigator)
 
-/// Capsule nav bar that floats above the bottom safe area.
-/// Left: 4 tab icons. Right: optional "+" add button (Overview + Subscriptions only).
+/// Capsule tab switcher — no business logic, no "+" button.
+/// 4 icons only: Overview · Subscriptions · Calendar · Insights.
 private struct SorenFloatingPill: View {
     @Binding var selectedTab: AppTab
-    let showAddButton: Bool
-    let onAdd: () -> Void
 
     var body: some View {
         HStack(spacing: 0) {
-            HStack(spacing: 0) {
-                ForEach(AppTab.allCases) { tab in
-                    tabButton(tab)
-                }
-            }
-            .frame(maxWidth: .infinity)
-
-            if showAddButton {
-                Rectangle()
-                    .fill(ColorTokens.separator)
-                    .frame(width: 0.5, height: 22)
-                    .padding(.horizontal, Spacing.sm)
-
-                Button(action: {
-                    HapticEngine.selection()
-                    onAdd()
-                }) {
-                    ZStack {
-                        Circle()
-                            .fill(ColorTokens.accent)
-                            .frame(width: 36, height: 36)
-                        Image(systemName: "plus")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.white)
-                    }
-                }
-                .buttonStyle(.plain)
-                .padding(.trailing, Spacing.xs)
+            ForEach(AppTab.allCases) { tab in
+                tabButton(tab)
             }
         }
-        .padding(.leading, Spacing.xs)
+        .padding(.horizontal, Spacing.xs)
         .padding(.vertical, Spacing.xs)
-        .animation(.easeInOut(duration: 0.2), value: showAddButton)
         .background {
             Capsule()
                 .fill(.ultraThinMaterial)
@@ -256,11 +253,6 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .calendar:      "calendar"
         case .insights:      "chart.bar.fill"
         }
-    }
-
-    /// Whether the floating "+" add button is shown for this tab.
-    var hasAddButton: Bool {
-        self == .overview || self == .subscriptions
     }
 
     @ViewBuilder
