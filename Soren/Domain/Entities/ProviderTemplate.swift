@@ -28,7 +28,7 @@ struct ProviderTemplate: Identifiable, Hashable, Sendable {
     var logoURLs: [URL] {
         guard let domain = clearbitDomain else { return [] }
         var urls: [URL] = []
-        if let clearbit = URL(string: "https://logo.clearbit.com/\(domain)?size=80") {
+        if let clearbit = URL(string: "https://logo.clearbit.com/\(domain)?size=256") {
             urls.append(clearbit)
         }
         // Google favicon as reliable fallback (always available, no auth)

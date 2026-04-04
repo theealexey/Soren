@@ -153,7 +153,7 @@ private struct RemoteLogoIcon: View {
                     .scaledToFit()
                     .frame(width: size.frame * 0.72, height: size.frame * 0.72)
                     .frame(width: size.frame, height: size.frame)
-                    .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: size.radius))
+                    .background(Color.white, in: RoundedRectangle(cornerRadius: size.radius))
                     .overlay(
                         RoundedRectangle(cornerRadius: size.radius)
                             .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
