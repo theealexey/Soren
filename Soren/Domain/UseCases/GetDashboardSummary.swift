@@ -49,7 +49,7 @@ struct GetDashboardSummary {
         let hasRates = rates != nil && rates != .empty
 
         let monthlyTotal: Decimal
-        if let target = targetCurrency, let rates, isMixed {
+        if let target = targetCurrency, let rates {
             monthlyTotal = items.reduce(Decimal.zero) { sum, item in
                 let converted = rates.convert(item.monthlyEquivalent, from: item.currencyCode, to: target)
                 return sum + (converted ?? item.monthlyEquivalent)

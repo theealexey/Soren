@@ -22,6 +22,7 @@ struct HomeViewModelTests {
     private func makeViewModel(repo: SwiftDataRecurringItemRepository) -> HomeViewModel {
         HomeViewModel(
             getDashboardSummary: GetDashboardSummary(repository: repo),
+            getLibraryItems: GetLibraryItems(repository: repo),
             getUpcomingCharges: GetUpcomingCharges(repository: repo),
             getActiveTrials: GetActiveTrials(repository: repo)
         )

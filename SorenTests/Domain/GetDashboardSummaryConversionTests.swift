@@ -155,6 +155,23 @@ struct GetDashboardSummaryConversionTests {
         #expect(!summary.containsMixedCurrencies)
     }
 
+    @Test("Single currency different from target converts correctly")
+    func singleCurrencyDifferentFromTarget() throws {
+        let repo = try makeRepo()
+        // Both subscriptions in USD, display currency is EUR
+        try repo.save(makeItem(amount: 10, currency: "USD"))
+        try repo.save(makeItem(amount: 20, currency: "USD"))
+
+        let summary = try GetDashboardSummary(repository: repo)
+            .execute(targetCurrency: "EUR", rates: rates)
+
+        // 30 USD → EUR: 30 * 0.92 / 1 = 27.6
+        let expected = Decimal(30) * Decimal(string: "0.92")!
+        #expect(summary.monthlyTotal == expected)
+        #expect(!summary.containsMixedCurrencies)
+        #expect(summary.ratesAvailable)
+    }
+
     // MARK: - Yearly Invariant
 
     @Test("yearlyProjection is always monthlyTotal * 12")
