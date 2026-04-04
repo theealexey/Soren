@@ -27,6 +27,7 @@ final class AddSubscriptionViewModel {
     var startDate = Date.now
     var nextChargeDate = Date.now
     var note = ""
+    var usageStatus: UsageStatus = .unknown
 
     // MARK: - Save State
 
@@ -113,6 +114,7 @@ final class AddSubscriptionViewModel {
         startDate = .now
         nextChargeDate = .now
         note = ""
+        usageStatus = .unknown
     }
 
     // MARK: - Currency Conversion
@@ -185,6 +187,7 @@ final class AddSubscriptionViewModel {
             startDate: startDate,
             nextChargeDate: nextChargeDate,
             status: .active,
+            usageStatus: usageStatus,
             note: note
         )
 

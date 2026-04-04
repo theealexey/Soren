@@ -17,6 +17,7 @@ struct RecurringItemFormFields: View {
     @Binding var startDate: Date
     @Binding var nextChargeDate: Date
     @Binding var note: String
+    @Binding var usageStatus: UsageStatus
 
     var body: some View {
         essentialsSection
@@ -65,6 +66,12 @@ struct RecurringItemFormFields: View {
             Picker(String(localized: "Тип"), selection: $itemType) {
                 ForEach(ItemType.allCases, id: \.self) { type in
                     Text(type.displayName).tag(type)
+                }
+            }
+
+            Picker(String(localized: "Использование"), selection: $usageStatus) {
+                ForEach(UsageStatus.allCases, id: \.self) { status in
+                    Text(status.displayName).tag(status)
                 }
             }
         }

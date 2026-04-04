@@ -25,6 +25,7 @@ final class ItemDetailsViewModel {
     var editStartDate = Date.now
     var editNextChargeDate = Date.now
     var editNote = ""
+    var editUsageStatus: UsageStatus = .unknown
 
     // MARK: - Dependencies
 
@@ -53,6 +54,7 @@ final class ItemDetailsViewModel {
         editStartDate = item.startDate
         editNextChargeDate = item.nextChargeDate
         editNote = item.note
+        editUsageStatus = item.usageStatus
         isEditing = true
     }
 
@@ -75,6 +77,7 @@ final class ItemDetailsViewModel {
         updated.startDate = editStartDate
         updated.nextChargeDate = editNextChargeDate
         updated.note = editNote
+        updated.usageStatus = editUsageStatus
 
         // Use the returned copy — it carries the updatedAt stamp set by the use case.
         item = try updateRecurringItem.execute(updated)

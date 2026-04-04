@@ -1,5 +1,31 @@
 import Foundation
 
+// MARK: - Monthly Projection
+
+/// Projected total spend for a single calendar month, in defaultCurrency.
+struct MonthlyProjection: Identifiable {
+    let month: Date        // first day of the month
+    let total: Decimal
+    var id: Date { month }
+
+    /// Short month label for chart axis (e.g. "Апр").
+    var shortLabel: String {
+        Self.labelFormatter.string(from: month)
+    }
+
+    /// `Decimal → Double` bridge — only for chart rendering.
+    var doubleTotal: Double {
+        NSDecimalNumber(decimal: total).doubleValue
+    }
+
+    private static let labelFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "ru_RU")
+        f.dateFormat = "MMM"
+        return f
+    }()
+}
+
 // MARK: - Category Spend
 
 /// Aggregated monthly spend for one category, normalized to defaultCurrency.
@@ -27,6 +53,7 @@ final class AnalyticsViewModel {
 
     private(set) var summary: DashboardSummary = .empty
     private(set) var categoryBreakdown: [CategorySpend] = []
+    private(set) var monthlyProjections: [MonthlyProjection] = []
     private(set) var topItems: [RecurringItem] = []     // top 5 by monthly equivalent
     private(set) var annualItems: [RecurringItem] = []  // annual billing cycle
     private(set) var unusedItems: [RecurringItem] = []  // usageStatus == .unused
@@ -88,6 +115,7 @@ final class AnalyticsViewModel {
                 rates: exchangeRates
             )
             categoryBreakdown = buildCategoryBreakdown(items)
+            monthlyProjections = buildProjections(items)
             topItems = Array(
                 items.sorted { monthlyAmount($0) > monthlyAmount($1) }.prefix(5)
             )
@@ -111,6 +139,66 @@ final class AnalyticsViewModel {
         }
         return rates.convert(item.monthlyEquivalent, from: item.currencyCode, to: defaultCurrency)
             ?? item.monthlyEquivalent
+    }
+
+    private func buildProjections(_ items: [RecurringItem], months: Int = 6) -> [MonthlyProjection] {
+        let cal = Calendar.current
+        guard let monthStart = cal.date(from: cal.dateComponents([.year, .month], from: .now)) else { return [] }
+
+        return (0..<months).compactMap { offset in
+            guard let start = cal.date(byAdding: .month, value: offset, to: monthStart),
+                  let end   = cal.date(byAdding: .month, value: 1, to: start) else { return nil }
+
+            let total = items.reduce(Decimal.zero) { sum, item in
+                sum + projectedAmount(item, from: start, to: end)
+            }
+            return MonthlyProjection(month: start, total: total)
+        }
+    }
+
+    /// Amount this item contributes to a specific calendar month.
+    ///
+    /// - Monthly/weekly/custom: `monthlyEquivalent` every month (smooth).
+    /// - Long-cycle (quarterly, semiannual, annual): full `amount` only in months
+    ///   where a charge actually lands; zero otherwise.
+    private func projectedAmount(_ item: RecurringItem, from start: Date, to end: Date) -> Decimal {
+        if item.billingCycle.isLongCycle {
+            return hasCharge(item, from: start, to: end) ? convertedAmount(item) : .zero
+        }
+        return monthlyAmount(item)
+    }
+
+    /// Returns true if a billing cycle iteration of `item` falls within [start, end).
+    private func hasCharge(_ item: RecurringItem, from start: Date, to end: Date) -> Bool {
+        let cal = Calendar.current
+        let cycleMonths: Int
+        switch item.billingCycle {
+        case .quarterly:  cycleMonths = 3
+        case .semiannual: cycleMonths = 6
+        case .annual:     cycleMonths = 12
+        default:          return true
+        }
+
+        // Walk nextChargeDate backward until it's before `start`
+        var check = item.nextChargeDate
+        while check >= end {
+            guard let prev = cal.date(byAdding: .month, value: -cycleMonths, to: check) else { return false }
+            check = prev
+        }
+        // Then walk forward until it's >= start or past end
+        while check < start {
+            guard let next = cal.date(byAdding: .month, value: cycleMonths, to: check) else { return false }
+            check = next
+        }
+        return check >= start && check < end
+    }
+
+    /// Actual item amount converted to defaultCurrency (used for long-cycle charges).
+    private func convertedAmount(_ item: RecurringItem) -> Decimal {
+        guard let rates = exchangeRates, item.currencyCode != defaultCurrency else {
+            return item.amount
+        }
+        return rates.convert(item.amount, from: item.currencyCode, to: defaultCurrency) ?? item.amount
     }
 
     private func buildCategoryBreakdown(_ items: [RecurringItem]) -> [CategorySpend] {

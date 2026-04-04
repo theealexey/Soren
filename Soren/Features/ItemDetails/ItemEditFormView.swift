@@ -19,7 +19,8 @@ struct ItemEditFormView: View {
                 itemType: $viewModel.editItemType,
                 startDate: $viewModel.editStartDate,
                 nextChargeDate: $viewModel.editNextChargeDate,
-                note: $viewModel.editNote
+                note: $viewModel.editNote,
+                usageStatus: $viewModel.editUsageStatus
             )
         }
         .scrollContentBackground(.hidden)

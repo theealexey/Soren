@@ -23,7 +23,8 @@ struct SubscriptionFormView: View {
                 itemType: $viewModel.itemType,
                 startDate: $viewModel.startDate,
                 nextChargeDate: $viewModel.nextChargeDate,
-                note: $viewModel.note
+                note: $viewModel.note,
+                usageStatus: $viewModel.usageStatus
             )
         }
         .scrollContentBackground(.hidden)

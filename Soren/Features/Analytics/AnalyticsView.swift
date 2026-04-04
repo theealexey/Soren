@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 
 // MARK: - Analytics View
 
@@ -70,6 +71,10 @@ struct AnalyticsView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: Spacing.lg) {
                 overviewSection(vm)
+
+                if vm.monthlyProjections.count > 1 {
+                    forecastSection(vm)
+                }
 
                 if !vm.categoryBreakdown.isEmpty {
                     categorySection(vm)
@@ -168,7 +173,56 @@ struct AnalyticsView: View {
         )
     }
 
-    // MARK: - 2. Category Breakdown
+    // MARK: - 2. Spending Forecast
+
+    private func forecastSection(_ vm: AnalyticsViewModel) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            SectionHeader(String(localized: "Прогноз на 6 месяцев"))
+                .padding(.horizontal, Spacing.lg)
+
+            PremiumCard {
+                Chart(vm.monthlyProjections) { proj in
+                    BarMark(
+                        x: .value("Месяц", proj.shortLabel),
+                        y: .value("Сумма", proj.doubleTotal)
+                    )
+                    .foregroundStyle(ColorTokens.accent.gradient)
+                    .cornerRadius(6)
+                    .annotation(position: .top, alignment: .center) {
+                        if proj.doubleTotal > 0 {
+                            Text(compactAmount(proj.total, currency: vm.defaultCurrency))
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(ColorTokens.textSecondary)
+                        }
+                    }
+                }
+                .chartYAxis(.hidden)
+                .chartXAxis {
+                    AxisMarks { _ in
+                        AxisValueLabel()
+                            .font(.system(size: 12))
+                            .foregroundStyle(ColorTokens.textSecondary)
+                    }
+                }
+                .frame(height: 160)
+                .padding(.top, Spacing.xs)
+            }
+            .padding(.horizontal, Spacing.lg)
+        }
+    }
+
+    private func compactAmount(_ amount: Decimal, currency: String) -> String {
+        let n = NSDecimalNumber(decimal: amount).doubleValue
+        let symbol = Locale.current.localizedString(forCurrencyCode: currency) ?? currency
+        if n >= 1_000_000 {
+            return String(format: "%.1fM %@", n / 1_000_000, symbol)
+        } else if n >= 1_000 {
+            return String(format: "%.0fK %@", n / 1_000, symbol)
+        }
+        return String(format: "%.0f %@", n, symbol)
+    }
+
+    // MARK: - 3. Category Breakdown
 
     private func categorySection(_ vm: AnalyticsViewModel) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -236,7 +290,7 @@ struct AnalyticsView: View {
         }
     }
 
-    // MARK: - 3. Top Subscriptions
+    // MARK: - 4. Top Subscriptions
 
     private func topItemsSection(_ vm: AnalyticsViewModel) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -269,7 +323,7 @@ struct AnalyticsView: View {
         }
     }
 
-    // MARK: - 4. Annual Payments
+    // MARK: - 5. Annual Payments
 
     private func annualSection(_ vm: AnalyticsViewModel) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -318,7 +372,7 @@ struct AnalyticsView: View {
         return String(localized: "\(dateStr)")
     }
 
-    // MARK: - 5. Unused / Waste
+    // MARK: - 6. Unused / Waste
 
     private func unusedSection(_ vm: AnalyticsViewModel) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
