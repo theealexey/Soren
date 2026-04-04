@@ -53,11 +53,7 @@ struct ItemDetailsView: View {
                 ItemEditFormView(viewModel: viewModel)
             }
         }
-        .confirmationDialog(
-            "Удалить подписку?",
-            isPresented: $viewModel.showDeleteConfirmation,
-            titleVisibility: .visible
-        ) {
+        .alert("Удалить подписку?", isPresented: $viewModel.showDeleteConfirmation) {
             Button("Удалить", role: .destructive) {
                 deleteAndDismiss()
             }
