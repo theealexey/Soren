@@ -260,7 +260,7 @@ struct CalendarView: View {
                 PremiumCard {
                     VStack(spacing: 0) {
                         ForEach(Array(charges.enumerated()), id: \.element.id) { idx, item in
-                            NavigationLink(value: item) {
+                            Button { navigationPath.append(item) } label: {
                                 SorenListRow(
                                     title: item.title,
                                     subtitle: item.providerName == item.title ? nil : item.providerName,

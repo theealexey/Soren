@@ -10,6 +10,7 @@ final class HomeViewModel {
     // MARK: - State
 
     private(set) var summary: DashboardSummary = .empty
+    private(set) var allItems: [RecurringItem] = []
     private(set) var upcomingCharges: [RecurringItem] = []
     private(set) var activeTrials: [RecurringItem] = []
     private(set) var defaultCurrency: String = UserPreferences.default.defaultCurrencyCode
@@ -24,6 +25,7 @@ final class HomeViewModel {
     // MARK: - Dependencies
 
     private let getDashboardSummary: GetDashboardSummary
+    private let getLibraryItems: GetLibraryItems
     private let getUpcomingCharges: GetUpcomingCharges
     private let getActiveTrials: GetActiveTrials
     private let preferences: UserPreferencesRepository
@@ -33,12 +35,14 @@ final class HomeViewModel {
 
     init(
         getDashboardSummary: GetDashboardSummary,
+        getLibraryItems: GetLibraryItems,
         getUpcomingCharges: GetUpcomingCharges,
         getActiveTrials: GetActiveTrials,
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
         exchangeRateProvider: (any ExchangeRateProvider)? = nil
     ) {
         self.getDashboardSummary = getDashboardSummary
+        self.getLibraryItems = getLibraryItems
         self.getUpcomingCharges = getUpcomingCharges
         self.getActiveTrials = getActiveTrials
         self.preferences = preferences
@@ -52,6 +56,7 @@ final class HomeViewModel {
     ) {
         let repo = repositories.recurringItems
         self.getDashboardSummary = GetDashboardSummary(repository: repo)
+        self.getLibraryItems = GetLibraryItems(repository: repo)
         self.getUpcomingCharges = GetUpcomingCharges(repository: repo)
         self.getActiveTrials = GetActiveTrials(repository: repo)
         self.preferences = preferences
@@ -83,6 +88,7 @@ final class HomeViewModel {
                 targetCurrency: defaultCurrency,
                 rates: exchangeRates
             )
+            allItems = try getLibraryItems.execute()
             upcomingCharges = try getUpcomingCharges.execute()
             activeTrials = try getActiveTrials.execute()
             isLoaded = true

@@ -6,6 +6,7 @@ import SwiftUI
 struct UpcomingChargesSection: View {
     let items: [RecurringItem]
     let maxItems: Int
+    let onTap: (RecurringItem) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -14,7 +15,7 @@ struct UpcomingChargesSection: View {
             PremiumCard {
                 VStack(spacing: 0) {
                     ForEach(Array(items.prefix(maxItems).enumerated()), id: \.element.id) { index, item in
-                        NavigationLink(value: item) {
+                        Button { onTap(item) } label: {
                             SorenListRow(
                                 title: item.title,
                                 subtitle: RecurringItemFormatter.chargeSubtitle(for: item),
@@ -58,7 +59,8 @@ struct UpcomingChargesSection: View {
                     nextChargeDate: Calendar.current.date(byAdding: .day, value: 5, to: .now)!
                 ),
             ],
-            maxItems: 5
+            maxItems: 5,
+            onTap: { _ in }
         )
         .padding(Spacing.lg)
         .background(ColorTokens.background)

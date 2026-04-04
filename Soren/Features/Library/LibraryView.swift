@@ -186,7 +186,7 @@ struct LibraryView: View {
         PremiumCard {
             VStack(spacing: 0) {
                 ForEach(Array(vm.filteredItems.enumerated()), id: \.element.id) { index, item in
-                    NavigationLink(value: item) {
+                    Button { navigationPath.append(item) } label: {
                         SorenListRow(
                             title: item.title,
                             subtitle: RecurringItemFormatter.subtitle(for: item),

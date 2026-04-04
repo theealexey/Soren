@@ -257,7 +257,7 @@ struct AnalyticsView: View {
             PremiumCard {
                 VStack(spacing: 0) {
                     ForEach(Array(vm.topItems.enumerated()), id: \.element.id) { idx, item in
-                        NavigationLink(value: item) {
+                        Button { navigationPath.append(item) } label: {
                             SorenListRow(
                                 title: item.title,
                                 subtitle: item.providerName == item.title ? nil : item.providerName,
@@ -290,7 +290,7 @@ struct AnalyticsView: View {
             PremiumCard {
                 VStack(spacing: 0) {
                     ForEach(Array(vm.annualItems.enumerated()), id: \.element.id) { idx, item in
-                        NavigationLink(value: item) {
+                        Button { navigationPath.append(item) } label: {
                             SorenListRow(
                                 title: item.title,
                                 subtitle: nextAnnualLabel(for: item),
@@ -350,7 +350,7 @@ struct AnalyticsView: View {
             PremiumCard {
                 VStack(spacing: 0) {
                     ForEach(Array(vm.unusedItems.enumerated()), id: \.element.id) { idx, item in
-                        NavigationLink(value: item) {
+                        Button { navigationPath.append(item) } label: {
                             SorenListRow(
                                 title: item.title,
                                 subtitle: String(localized: "Не используется"),

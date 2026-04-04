@@ -70,6 +70,13 @@ struct HomeView: View {
     private func scrollableContent(_ vm: HomeViewModel) -> some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: Spacing.lg) {
+                if vm.allItems.count >= 2 {
+                    SubscriptionConstellationSection(
+                        items: vm.allItems,
+                        onTap: { navigationPath.append($0) }
+                    )
+                }
+
                 FinancialSnapshotSection(
                     summary: vm.summary,
                     defaultCurrency: vm.defaultCurrency,
@@ -80,7 +87,8 @@ struct HomeView: View {
                 if !vm.upcomingCharges.isEmpty {
                     UpcomingChargesSection(
                         items: vm.upcomingCharges,
-                        maxItems: maxUpcomingItems
+                        maxItems: maxUpcomingItems,
+                        onTap: { navigationPath.append($0) }
                     )
                 }
 
