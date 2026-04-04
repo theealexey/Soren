@@ -7,8 +7,8 @@ import SwiftUI
 struct LibraryView: View {
     @Environment(AppContainer.self) private var container
     @Environment(\.addSubscriptionAction) private var addSubscription
+    @Environment(\.navigateToItem) private var navigateToItem
     @State private var viewModel: LibraryViewModel?
-    @State private var selectedItem: RecurringItem?
 
     /// Binding bridged to the optional ViewModel — safe to pass to .searchable.
     private var searchBinding: Binding<String> {
@@ -50,16 +50,6 @@ struct LibraryView: View {
             }
             .onChange(of: container.itemsVersion) { _, _ in
                 viewModel?.load()
-            }
-            .sheet(item: $selectedItem) { item in
-                NavigationStack {
-                    ItemDetailsView(
-                        viewModel: ItemDetailsViewModel(
-                            item: item,
-                            repositories: container.repositories
-                        )
-                    )
-                }
             }
         }
     }
@@ -188,19 +178,17 @@ struct LibraryView: View {
         PremiumCard {
             VStack(spacing: 0) {
                 ForEach(Array(vm.filteredItems.enumerated()), id: \.element.id) { index, item in
-                    Button { selectedItem = item } label: {
-                        SorenListRow(
-                            title: item.title,
-                            subtitle: RecurringItemFormatter.subtitle(for: item),
-                            amount: item.amount,
-                            currency: item.currencyCode,
-                            cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
-                            providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
-                            category: item.category,
-                            badge: RecurringItemFormatter.badge(for: item)
-                        )
-                    }
-                    .buttonStyle(.plain)
+                    SorenListRow(
+                        title: item.title,
+                        subtitle: RecurringItemFormatter.subtitle(for: item),
+                        amount: item.amount,
+                        currency: item.currencyCode,
+                        cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
+                        providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
+                        category: item.category,
+                        badge: RecurringItemFormatter.badge(for: item)
+                    )
+                    .onTapGesture { navigateToItem(item) }
 
                     if index < vm.filteredItems.count - 1 {
                         Divider()

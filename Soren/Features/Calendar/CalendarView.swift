@@ -8,8 +8,8 @@ import SwiftUI
 /// 7-column day grid with charge indicators → selected-day charge list.
 struct CalendarView: View {
     @Environment(AppContainer.self) private var container
+    @Environment(\.navigateToItem) private var navigateToItem
     @State private var viewModel: CalendarViewModel?
-    @State private var selectedItem: RecurringItem?
 
     var body: some View {
         Group {
@@ -31,16 +31,6 @@ struct CalendarView: View {
         }
         .onChange(of: container.itemsVersion) { _, _ in
             viewModel?.load(forceReload: true)
-        }
-        .sheet(item: $selectedItem) { item in
-            NavigationStack {
-                ItemDetailsView(
-                    viewModel: ItemDetailsViewModel(
-                        item: item,
-                        repositories: container.repositories
-                    )
-                )
-            }
         }
     }
 
@@ -259,18 +249,16 @@ struct CalendarView: View {
                 PremiumCard {
                     VStack(spacing: 0) {
                         ForEach(Array(charges.enumerated()), id: \.element.id) { idx, item in
-                            Button { selectedItem = item } label: {
-                                SorenListRow(
-                                    title: item.title,
-                                    subtitle: item.providerName == item.title ? nil : item.providerName,
-                                    amount: item.amount,
-                                    currency: item.currencyCode,
-                                    cycle: item.billingCycle.cycleLabel,
-                                    providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
-                                    category: item.category
-                                )
-                            }
-                            .buttonStyle(.plain)
+                            SorenListRow(
+                                title: item.title,
+                                subtitle: item.providerName == item.title ? nil : item.providerName,
+                                amount: item.amount,
+                                currency: item.currencyCode,
+                                cycle: item.billingCycle.cycleLabel,
+                                providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
+                                category: item.category
+                            )
+                            .onTapGesture { navigateToItem(item) }
 
                             if idx < charges.count - 1 {
                                 Divider()

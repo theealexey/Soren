@@ -10,6 +10,7 @@ struct RootView: View {
     @State private var selectedTab: AppTab = .overview
     @State private var showAddSheet = false
     @State private var showSettings = false
+    @State private var selectedItem: RecurringItem?
 
     private var preferredColorScheme: ColorScheme? {
         AppearanceMode(rawValue: appearanceModeRaw)?.colorScheme
@@ -36,6 +37,17 @@ struct RootView: View {
                 .padding(.bottom, Spacing.xs)
         }
         .environment(\.addSubscriptionAction, AddSubscriptionAction { showAddSheet = true })
+        .environment(\.navigateToItem, NavigateToItemAction { selectedItem = $0 })
+        .sheet(item: $selectedItem) { item in
+            NavigationStack {
+                ItemDetailsView(
+                    viewModel: ItemDetailsViewModel(
+                        item: item,
+                        repositories: container.repositories
+                    )
+                )
+            }
+        }
         .sheet(isPresented: $showAddSheet) {
             NavigationStack {
                 ProviderPickerView(
@@ -218,6 +230,25 @@ extension EnvironmentValues {
     var addSubscriptionAction: AddSubscriptionAction {
         get { self[AddSubscriptionActionKey.self] }
         set { self[AddSubscriptionActionKey.self] = newValue }
+    }
+}
+
+// MARK: - NavigateToItem Environment Action
+
+@MainActor
+struct NavigateToItemAction: Sendable {
+    let trigger: @MainActor (RecurringItem) -> Void
+    func callAsFunction(_ item: RecurringItem) { trigger(item) }
+}
+
+private struct NavigateToItemActionKey: EnvironmentKey {
+    static let defaultValue = NavigateToItemAction(trigger: { _ in })
+}
+
+extension EnvironmentValues {
+    var navigateToItem: NavigateToItemAction {
+        get { self[NavigateToItemActionKey.self] }
+        set { self[NavigateToItemActionKey.self] = newValue }
     }
 }
 

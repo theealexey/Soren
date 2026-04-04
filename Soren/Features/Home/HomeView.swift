@@ -8,8 +8,8 @@ import SwiftUI
 struct HomeView: View {
     @Environment(AppContainer.self) private var container
     @Environment(\.addSubscriptionAction) private var addSubscription
+    @Environment(\.navigateToItem) private var navigateToItem
     @State private var viewModel: HomeViewModel?
-    @State private var selectedItem: RecurringItem?
 
     private let maxUpcomingItems = 5
 
@@ -34,16 +34,6 @@ struct HomeView: View {
         }
         .onChange(of: container.itemsVersion) { _, _ in
             viewModel?.loadLocalData(forceReload: true)
-        }
-        .sheet(item: $selectedItem) { item in
-            NavigationStack {
-                ItemDetailsView(
-                    viewModel: ItemDetailsViewModel(
-                        item: item,
-                        repositories: container.repositories
-                    )
-                )
-            }
         }
     }
 
@@ -80,7 +70,7 @@ struct HomeView: View {
                     UpcomingChargesSection(
                         items: vm.upcomingCharges,
                         maxItems: maxUpcomingItems,
-                        onTap: { selectedItem = $0 }
+                        onTap: { navigateToItem($0) }
                     )
                 }
 

@@ -15,19 +15,17 @@ struct UpcomingChargesSection: View {
             PremiumCard {
                 VStack(spacing: 0) {
                     ForEach(Array(items.prefix(maxItems).enumerated()), id: \.element.id) { index, item in
-                        Button { onTap(item) } label: {
-                            SorenListRow(
-                                title: item.title,
-                                subtitle: RecurringItemFormatter.chargeSubtitle(for: item),
-                                amount: item.amount,
-                                currency: item.currencyCode,
-                                cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
-                                providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
-                                category: item.category,
-                                badge: RecurringItemFormatter.badge(for: item)
-                            )
-                        }
-                        .buttonStyle(.plain)
+                        SorenListRow(
+                            title: item.title,
+                            subtitle: RecurringItemFormatter.chargeSubtitle(for: item),
+                            amount: item.amount,
+                            currency: item.currencyCode,
+                            cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
+                            providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
+                            category: item.category,
+                            badge: RecurringItemFormatter.badge(for: item)
+                        )
+                        .onTapGesture { onTap(item) }
 
                         if index < min(items.count, maxItems) - 1 {
                             Divider()
