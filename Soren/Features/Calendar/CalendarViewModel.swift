@@ -27,7 +27,10 @@ final class CalendarViewModel {
     private(set) var selectedDate: Date             // start of the tapped day
     private(set) var chargesByDate: [Date: [RecurringItem]] = [:]
     private(set) var daysInGrid: [CalendarDay] = []
+    /// Monthly total in `defaultCurrency` only — excludes items in other currencies.
     private(set) var monthlyTotal: Decimal = .zero
+    /// True if items in other currencies were excluded from monthlyTotal.
+    private(set) var hasMultiCurrencyItems = false
     private(set) var defaultCurrency: String = UserPreferences.default.defaultCurrencyCode
     private(set) var isLoaded = false
     private(set) var error: Error?
@@ -42,9 +45,21 @@ final class CalendarViewModel {
 
     // MARK: - Private
 
+    /// Single Gregorian calendar with ru_RU locale and Mon-first week used consistently
+    /// throughout this ViewModel. Using one instance prevents Calendar.current (which may
+    /// be non-Gregorian on CIS devices using Islamic or Persian system calendars) from
+    /// being mixed into date arithmetic.
+    static let cal: Calendar = {
+        var c = Calendar(identifier: .gregorian)
+        c.locale = Locale(identifier: "ru_RU")
+        c.firstWeekday = 2  // Monday
+        return c
+    }()
+
     private static let monthFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = Locale(identifier: "ru_RU")
+        f.calendar = CalendarViewModel.cal
         f.dateFormat = "LLLL yyyy"
         return f
     }()
@@ -60,10 +75,10 @@ final class CalendarViewModel {
     ) {
         self.repository = repository
         self.preferences = preferences
-        let today = Calendar.current.startOfDay(for: .now)
+        let today = Self.cal.startOfDay(for: .now)
         self.selectedDate = today
-        self.displayedMonth = Calendar.current.date(
-            from: Calendar.current.dateComponents([.year, .month], from: today)
+        self.displayedMonth = Self.cal.date(
+            from: Self.cal.dateComponents([.year, .month], from: today)
         ) ?? today
     }
 
@@ -74,14 +89,18 @@ final class CalendarViewModel {
     }
 
     func previousMonth() {
-        guard let prev = Calendar.current.date(byAdding: .month, value: -1, to: displayedMonth) else { return }
+        guard let prev = Self.cal.date(byAdding: .month, value: -1, to: displayedMonth) else { return }
         displayedMonth = prev
+        // Reset selection to the first day of the new month so the detail section
+        // always references a visible day.
+        selectedDate = prev
         reloadMonth()
     }
 
     func nextMonth() {
-        guard let next = Calendar.current.date(byAdding: .month, value: 1, to: displayedMonth) else { return }
+        guard let next = Self.cal.date(byAdding: .month, value: 1, to: displayedMonth) else { return }
         displayedMonth = next
+        selectedDate = next
         reloadMonth()
     }
 
@@ -91,7 +110,8 @@ final class CalendarViewModel {
         guard !isLoaded || forceReload else { return }
         defaultCurrency = preferences.load().defaultCurrencyCode
         reloadMonth()
-        isLoaded = true
+        // Only mark as loaded when reloadMonth did NOT produce an error.
+        if error == nil { isLoaded = true }
     }
 
     // MARK: - Private
@@ -104,10 +124,10 @@ final class CalendarViewModel {
             let gridStart = grid.first?.date ?? displayedMonth
             let gridEnd = grid.last?.date ?? displayedMonth
 
-            // Group charges falling within the grid's visible date range
+            // Group charges that fall within the grid's visible date range
             var byDate: [Date: [RecurringItem]] = [:]
             for item in items {
-                let day = Calendar.current.startOfDay(for: item.nextChargeDate)
+                let day = Self.cal.startOfDay(for: item.nextChargeDate)
                 if day >= gridStart && day <= gridEnd {
                     byDate[day, default: []].append(item)
                 }
@@ -116,16 +136,21 @@ final class CalendarViewModel {
             daysInGrid = grid
             chargesByDate = byDate
 
-            // Monthly total: items whose charge falls in the displayed month
+            // Monthly total: only items in defaultCurrency to avoid cross-currency nonsense.
+            // Compute monthEnd as startOfDay(last day of month) to be DST-safe.
             guard
-                let nextMonth = Calendar.current.date(byAdding: .month, value: 1, to: displayedMonth),
-                let monthEnd = Calendar.current.date(byAdding: .day, value: -1, to: nextMonth)
+                let nextMonthStart = Self.cal.date(byAdding: .month, value: 1, to: displayedMonth),
+                let monthEndRaw = Self.cal.date(byAdding: .day, value: -1, to: nextMonthStart)
             else { return }
+            let monthEnd = Self.cal.startOfDay(for: monthEndRaw)
 
-            monthlyTotal = items.filter { item in
-                let day = Calendar.current.startOfDay(for: item.nextChargeDate)
+            let monthItems = items.filter { item in
+                let day = Self.cal.startOfDay(for: item.nextChargeDate)
                 return day >= displayedMonth && day <= monthEnd
-            }.reduce(.zero) { $0 + $1.amount }
+            }
+            let sameCurrencyItems = monthItems.filter { $0.currencyCode == defaultCurrency }
+            monthlyTotal = sameCurrencyItems.reduce(.zero) { $0 + $1.amount }
+            hasMultiCurrencyItems = monthItems.count != sameCurrencyItems.count
 
         } catch {
             self.error = error
@@ -135,10 +160,7 @@ final class CalendarViewModel {
     // MARK: - Grid Construction
 
     private func buildGrid() -> [CalendarDay] {
-        var cal = Calendar(identifier: .gregorian)
-        cal.locale = Locale(identifier: "ru_RU")
-        cal.firstWeekday = 2   // Monday
-
+        let cal = Self.cal
         let today = cal.startOfDay(for: .now)
 
         guard

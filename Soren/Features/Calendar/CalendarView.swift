@@ -48,7 +48,7 @@ struct CalendarView: View {
 
     @ViewBuilder
     private func calendarContent(_ vm: CalendarViewModel) -> some View {
-        if let error = vm.error {
+        if vm.error != nil {
             ErrorStateView(message: "Не удалось загрузить данные") {
                 vm.load(forceReload: true)
             }
@@ -78,6 +78,7 @@ struct CalendarView: View {
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(Text(String(localized: "Предыдущий месяц")))
 
             Spacer()
 
@@ -99,6 +100,7 @@ struct CalendarView: View {
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(Text(String(localized: "Следующий месяц")))
         }
         .padding(.horizontal, Spacing.lg)
         .padding(.vertical, Spacing.sm)
@@ -117,19 +119,21 @@ struct CalendarView: View {
         }
         .padding(.horizontal, Spacing.sm)
         .padding(.bottom, Spacing.xs)
+        .accessibilityHidden(true)
     }
 
-    /// Mon-first short weekday labels for Russian locale.
+    /// Mon-first short weekday labels derived from the Gregorian ru_RU calendar.
+    /// Rotation uses `firstWeekday` so the logic matches `buildGrid()` in the ViewModel.
     private static let weekdayLabels: [String] = {
         var cal = Calendar(identifier: .gregorian)
         cal.locale = Locale(identifier: "ru_RU")
+        cal.firstWeekday = 2
         var symbols = cal.veryShortStandaloneWeekdaySymbols
-        // Default order is Sun-first: [Вс, Пн, Вт, Ср, Чт, Пт, Сб]
-        // Rotate by moving Sunday to the end → [Пн, Вт, Ср, Чт, Пт, Сб, Вс]
-        if symbols.count == 7 {
-            let sunday = symbols.removeFirst()
-            symbols.append(sunday)
-        }
+        // API returns Sun-first: [Вс, Пн, Вт, Ср, Чт, Пт, Сб]
+        // Rotate by (firstWeekday - 1) to get Mon-first: [Пн, Вт, Ср, Чт, Пт, Сб, Вс]
+        let rotation = cal.firstWeekday - 1
+        guard rotation > 0, symbols.count > rotation else { return symbols }
+        symbols = Array(symbols[rotation...]) + Array(symbols[..<rotation])
         return symbols
     }()
 
@@ -138,9 +142,11 @@ struct CalendarView: View {
     private func calendarGrid(_ vm: CalendarViewModel) -> some View {
         let rows = vm.daysInGrid.chunked(into: 7)
         return VStack(spacing: 0) {
-            ForEach(rows.indices, id: \.self) { rowIndex in
+            // Use first day's date as stable row identifier so SwiftUI can animate
+            // correctly when row count changes between months (4 vs 5 vs 6 rows).
+            ForEach(rows, id: \.first?.date) { row in
                 HStack(spacing: 0) {
-                    ForEach(rows[rowIndex]) { day in
+                    ForEach(row) { day in
                         dayCell(day, vm: vm)
                     }
                 }
@@ -153,31 +159,34 @@ struct CalendarView: View {
     // MARK: - Day Cell
 
     private func dayCell(_ day: CalendarDay, vm: CalendarViewModel) -> some View {
-        let isSelected = Calendar.current.isDate(day.date, inSameDayAs: vm.selectedDate)
+        let isSelected = CalendarViewModel.cal.isDate(day.date, inSameDayAs: vm.selectedDate)
         let charges = vm.chargesByDate[day.date] ?? []
+        let dayNumber = CalendarViewModel.cal.component(.day, from: day.date)
 
         return Button {
             withAnimation(MotionTokens.snappy) { vm.selectDate(day.date) }
             if !charges.isEmpty { HapticEngine.selection() }
         } label: {
             VStack(spacing: Spacing.xxs) {
-                dayNumber(day: day, isSelected: isSelected)
+                dayNumberView(number: dayNumber, day: day, isSelected: isSelected)
                 chargeDots(charges: charges, isSelected: isSelected)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, Spacing.xs)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityDayLabel(day: day, charges: charges))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    private func dayNumber(day: CalendarDay, isSelected: Bool) -> some View {
-        Text("\(Calendar.current.component(.day, from: day.date))")
+    private func dayNumberView(number: Int, day: CalendarDay, isSelected: Bool) -> some View {
+        Text("\(number)")
             .font(day.isToday ? Typography.bodyMedium : Typography.body)
             .foregroundStyle(
-                isSelected    ? .white :
-                day.isToday   ? ColorTokens.accent :
+                isSelected         ? .white :
+                day.isToday        ? ColorTokens.accent :
                 day.isCurrentMonth ? ColorTokens.textPrimary :
-                ColorTokens.textTertiary
+                                     ColorTokens.textTertiary
             )
             .frame(width: 32, height: 32)
             .background {
@@ -195,10 +204,12 @@ struct CalendarView: View {
             Color.clear.frame(height: 6)
         } else {
             HStack(spacing: 3) {
-                ForEach(0..<min(charges.count, 3), id: \.self) { _ in
+                // Use stable item IDs so SwiftUI animates dot add/remove correctly.
+                ForEach(charges.prefix(3)) { item in
                     Circle()
                         .fill(isSelected ? Color.white : ColorTokens.accent)
                         .frame(width: 4, height: 4)
+                        .id(item.id)
                 }
                 if charges.count > 3 {
                     Text("+\(charges.count - 3)")
@@ -209,6 +220,20 @@ struct CalendarView: View {
             .frame(height: 6)
         }
     }
+
+    private func accessibilityDayLabel(day: CalendarDay, charges: [RecurringItem]) -> Text {
+        let dayStr = Self.accessibilityDayFormatter.string(from: day.date)
+        if charges.isEmpty { return Text(verbatim: dayStr) }
+        return Text(verbatim: "\(dayStr), \(charges.count) платежей")
+    }
+
+    private static let accessibilityDayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "ru_RU")
+        f.calendar = CalendarViewModel.cal
+        f.dateFormat = "d MMMM"
+        return f
+    }()
 
     // MARK: - Selected Day Section
 
@@ -258,20 +283,27 @@ struct CalendarView: View {
             }
 
             if vm.monthlyTotal > 0 {
-                monthlyTotalFooter(total: vm.monthlyTotal, currency: vm.defaultCurrency)
+                monthlyTotalFooter(vm: vm)
             }
         }
         .padding(.bottom, Spacing.xxxl)
         .animation(MotionTokens.snappy, value: vm.selectedDate)
     }
 
-    private func monthlyTotalFooter(total: Decimal, currency: String) -> some View {
+    private func monthlyTotalFooter(vm: CalendarViewModel) -> some View {
         HStack {
-            Text(String(localized: "Итого за месяц"))
-                .font(Typography.captionMedium)
-                .foregroundStyle(ColorTokens.textSecondary)
+            VStack(alignment: .leading, spacing: Spacing.xxxs) {
+                Text(String(localized: "Итого за месяц"))
+                    .font(Typography.captionMedium)
+                    .foregroundStyle(ColorTokens.textSecondary)
+                if vm.hasMultiCurrencyItems {
+                    Text(String(localized: "Только \(vm.defaultCurrency)"))
+                        .font(Typography.footnote)
+                        .foregroundStyle(ColorTokens.textTertiary)
+                }
+            }
             Spacer()
-            AmountLabel(total, currency: currency, size: .medium)
+            AmountLabel(vm.monthlyTotal, currency: vm.defaultCurrency, size: .medium)
         }
         .padding(.horizontal, Spacing.lg)
         .padding(.top, Spacing.sm)
@@ -280,10 +312,10 @@ struct CalendarView: View {
     // MARK: - Helpers
 
     private static func dayTitle(for date: Date) -> String {
-        if Calendar.current.isDateInToday(date) {
+        if CalendarViewModel.cal.isDateInToday(date) {
             return String(localized: "Сегодня")
         }
-        if Calendar.current.isDateInTomorrow(date) {
+        if CalendarViewModel.cal.isDateInTomorrow(date) {
             return String(localized: "Завтра")
         }
         return Self.dayFormatter.string(from: date).capitalized
@@ -292,6 +324,7 @@ struct CalendarView: View {
     private static let dayFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = Locale(identifier: "ru_RU")
+        f.calendar = CalendarViewModel.cal
         f.dateFormat = "d MMMM"
         return f
     }()
@@ -313,12 +346,12 @@ private extension Array {
 private extension BillingCycle {
     var cycleLabel: AmountLabel.CycleLabel {
         switch self {
-        case .weekly:               .weekly
-        case .monthly:              .monthly
-        case .quarterly:            .custom(String(localized: "квар"))
-        case .semiannual:           .custom(String(localized: "пол"))
-        case .annual:               .yearly
-        case .custom(let days):     .custom("\(days)д")
+        case .weekly:            .weekly
+        case .monthly:           .monthly
+        case .quarterly:         .custom(String(localized: "квар"))
+        case .semiannual:        .custom(String(localized: "пол"))
+        case .annual:            .yearly
+        case .custom(let days):  .custom("\(days)д")
         }
     }
 }
