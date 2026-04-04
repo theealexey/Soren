@@ -13,10 +13,10 @@ import SwiftUI
 struct AnalyticsView: View {
     @Environment(AppContainer.self) private var container
     @State private var viewModel: AnalyticsViewModel?
-    @State private var navigationPath = NavigationPath()
+    @State private var selectedItem: RecurringItem?
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
+        NavigationStack {
             Group {
                 if let vm = viewModel {
                     analyticsContent(vm)
@@ -39,7 +39,7 @@ struct AnalyticsView: View {
             .onChange(of: container.itemsVersion) { _, _ in
                 viewModel?.loadLocalData(forceReload: true)
             }
-            .navigationDestination(for: RecurringItem.self) { item in
+            .navigationDestination(item: $selectedItem) { item in
                 ItemDetailsView(
                     viewModel: ItemDetailsViewModel(
                         item: item,
@@ -257,7 +257,7 @@ struct AnalyticsView: View {
             PremiumCard {
                 VStack(spacing: 0) {
                     ForEach(Array(vm.topItems.enumerated()), id: \.element.id) { idx, item in
-                        Button { navigationPath.append(item) } label: {
+                        Button { selectedItem = item } label: {
                             SorenListRow(
                                 title: item.title,
                                 subtitle: item.providerName == item.title ? nil : item.providerName,
@@ -290,7 +290,7 @@ struct AnalyticsView: View {
             PremiumCard {
                 VStack(spacing: 0) {
                     ForEach(Array(vm.annualItems.enumerated()), id: \.element.id) { idx, item in
-                        Button { navigationPath.append(item) } label: {
+                        Button { selectedItem = item } label: {
                             SorenListRow(
                                 title: item.title,
                                 subtitle: nextAnnualLabel(for: item),
@@ -350,7 +350,7 @@ struct AnalyticsView: View {
             PremiumCard {
                 VStack(spacing: 0) {
                     ForEach(Array(vm.unusedItems.enumerated()), id: \.element.id) { idx, item in
-                        Button { navigationPath.append(item) } label: {
+                        Button { selectedItem = item } label: {
                             SorenListRow(
                                 title: item.title,
                                 subtitle: String(localized: "Не используется"),

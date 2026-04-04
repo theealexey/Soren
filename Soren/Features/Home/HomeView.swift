@@ -9,12 +9,12 @@ struct HomeView: View {
     @Environment(AppContainer.self) private var container
     @Environment(\.addSubscriptionAction) private var addSubscription
     @State private var viewModel: HomeViewModel?
-    @State private var navigationPath = NavigationPath()
+    @State private var selectedItem: RecurringItem?
 
     private let maxUpcomingItems = 5
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
+        NavigationStack {
             Group {
                 if let viewModel {
                     dashboardContent(viewModel)
@@ -37,7 +37,7 @@ struct HomeView: View {
             .onChange(of: container.itemsVersion) { _, _ in
                 viewModel?.loadLocalData(forceReload: true)
             }
-            .navigationDestination(for: RecurringItem.self) { item in
+            .navigationDestination(item: $selectedItem) { item in
                 ItemDetailsView(
                     viewModel: ItemDetailsViewModel(
                         item: item,
@@ -70,13 +70,6 @@ struct HomeView: View {
     private func scrollableContent(_ vm: HomeViewModel) -> some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: Spacing.lg) {
-                if vm.allItems.count >= 2 {
-                    SubscriptionConstellationSection(
-                        items: vm.allItems,
-                        onTap: { navigationPath.append($0) }
-                    )
-                }
-
                 FinancialSnapshotSection(
                     summary: vm.summary,
                     defaultCurrency: vm.defaultCurrency,
@@ -88,7 +81,7 @@ struct HomeView: View {
                     UpcomingChargesSection(
                         items: vm.upcomingCharges,
                         maxItems: maxUpcomingItems,
-                        onTap: { navigationPath.append($0) }
+                        onTap: { selectedItem = $0 }
                     )
                 }
 

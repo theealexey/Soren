@@ -8,7 +8,7 @@ struct LibraryView: View {
     @Environment(AppContainer.self) private var container
     @Environment(\.addSubscriptionAction) private var addSubscription
     @State private var viewModel: LibraryViewModel?
-    @State private var navigationPath = NavigationPath()
+    @State private var selectedItem: RecurringItem?
 
     /// Binding bridged to the optional ViewModel — safe to pass to .searchable.
     private var searchBinding: Binding<String> {
@@ -19,7 +19,7 @@ struct LibraryView: View {
     }
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
+        NavigationStack {
             Group {
                 if let viewModel {
                     libraryContent(viewModel)
@@ -51,7 +51,7 @@ struct LibraryView: View {
             .onChange(of: container.itemsVersion) { _, _ in
                 viewModel?.load()
             }
-            .navigationDestination(for: RecurringItem.self) { item in
+            .navigationDestination(item: $selectedItem) { item in
                 ItemDetailsView(
                     viewModel: ItemDetailsViewModel(
                         item: item,
@@ -186,7 +186,7 @@ struct LibraryView: View {
         PremiumCard {
             VStack(spacing: 0) {
                 ForEach(Array(vm.filteredItems.enumerated()), id: \.element.id) { index, item in
-                    Button { navigationPath.append(item) } label: {
+                    Button { selectedItem = item } label: {
                         SorenListRow(
                             title: item.title,
                             subtitle: RecurringItemFormatter.subtitle(for: item),

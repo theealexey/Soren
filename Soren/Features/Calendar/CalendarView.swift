@@ -9,10 +9,10 @@ import SwiftUI
 struct CalendarView: View {
     @Environment(AppContainer.self) private var container
     @State private var viewModel: CalendarViewModel?
-    @State private var navigationPath = NavigationPath()
+    @State private var selectedItem: RecurringItem?
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
+        NavigationStack {
             Group {
                 if let vm = viewModel {
                     calendarContent(vm)
@@ -34,7 +34,7 @@ struct CalendarView: View {
             .onChange(of: container.itemsVersion) { _, _ in
                 viewModel?.load(forceReload: true)
             }
-            .navigationDestination(for: RecurringItem.self) { item in
+            .navigationDestination(item: $selectedItem) { item in
                 ItemDetailsView(
                     viewModel: ItemDetailsViewModel(
                         item: item,
@@ -260,7 +260,7 @@ struct CalendarView: View {
                 PremiumCard {
                     VStack(spacing: 0) {
                         ForEach(Array(charges.enumerated()), id: \.element.id) { idx, item in
-                            Button { navigationPath.append(item) } label: {
+                            Button { selectedItem = item } label: {
                                 SorenListRow(
                                     title: item.title,
                                     subtitle: item.providerName == item.title ? nil : item.providerName,
