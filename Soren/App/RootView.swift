@@ -23,8 +23,8 @@ struct RootView: View {
                 ForEach(AppTab.allCases) { tab in
                     tab.destination
                         .opacity(selectedTab == tab ? 1 : 0)
-                        .allowsHitTesting(selectedTab == tab)
                         .animation(.easeInOut(duration: 0.16), value: selectedTab)
+                        .allowsHitTesting(selectedTab == tab)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

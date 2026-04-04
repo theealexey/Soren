@@ -12,29 +12,28 @@ struct CalendarView: View {
     @State private var selectedItem: RecurringItem?
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if let vm = viewModel {
-                    calendarContent(vm)
-                } else {
-                    LoadingStateView()
-                }
+        Group {
+            if let vm = viewModel {
+                calendarContent(vm)
+            } else {
+                LoadingStateView()
             }
-            .background(ColorTokens.background)
-            .toolbarVisibility(.hidden, for: .navigationBar)
-            .task {
-                guard viewModel == nil else { return }
-                let vm = CalendarViewModel(
-                    repository: container.repositories.recurringItems,
-                    preferences: container.preferences
-                )
-                viewModel = vm
-                vm.load()
-            }
-            .onChange(of: container.itemsVersion) { _, _ in
-                viewModel?.load(forceReload: true)
-            }
-            .navigationDestination(item: $selectedItem) { item in
+        }
+        .background(ColorTokens.background)
+        .task {
+            guard viewModel == nil else { return }
+            let vm = CalendarViewModel(
+                repository: container.repositories.recurringItems,
+                preferences: container.preferences
+            )
+            viewModel = vm
+            vm.load()
+        }
+        .onChange(of: container.itemsVersion) { _, _ in
+            viewModel?.load(forceReload: true)
+        }
+        .sheet(item: $selectedItem) { item in
+            NavigationStack {
                 ItemDetailsView(
                     viewModel: ItemDetailsViewModel(
                         item: item,

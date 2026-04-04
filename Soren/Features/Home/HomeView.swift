@@ -14,30 +14,29 @@ struct HomeView: View {
     private let maxUpcomingItems = 5
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if let viewModel {
-                    dashboardContent(viewModel)
-                } else {
-                    LoadingStateView()
-                }
+        Group {
+            if let viewModel {
+                dashboardContent(viewModel)
+            } else {
+                LoadingStateView()
             }
-            .background(ColorTokens.background)
-            .toolbarVisibility(.hidden, for: .navigationBar)
-            .task {
-                guard viewModel == nil else { return }
-                let vm = HomeViewModel(
-                    repositories: container.repositories,
-                    preferences: container.preferences,
-                    exchangeRateProvider: container.exchangeRateProvider
-                )
-                self.viewModel = vm   // assign first — eliminates nil loading flash
-                await vm.load()
-            }
-            .onChange(of: container.itemsVersion) { _, _ in
-                viewModel?.loadLocalData(forceReload: true)
-            }
-            .navigationDestination(item: $selectedItem) { item in
+        }
+        .background(ColorTokens.background)
+        .task {
+            guard viewModel == nil else { return }
+            let vm = HomeViewModel(
+                repositories: container.repositories,
+                preferences: container.preferences,
+                exchangeRateProvider: container.exchangeRateProvider
+            )
+            self.viewModel = vm
+            await vm.load()
+        }
+        .onChange(of: container.itemsVersion) { _, _ in
+            viewModel?.loadLocalData(forceReload: true)
+        }
+        .sheet(item: $selectedItem) { item in
+            NavigationStack {
                 ItemDetailsView(
                     viewModel: ItemDetailsViewModel(
                         item: item,

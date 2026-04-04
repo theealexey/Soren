@@ -16,30 +16,29 @@ struct AnalyticsView: View {
     @State private var selectedItem: RecurringItem?
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if let vm = viewModel {
-                    analyticsContent(vm)
-                } else {
-                    LoadingStateView()
-                }
+        Group {
+            if let vm = viewModel {
+                analyticsContent(vm)
+            } else {
+                LoadingStateView()
             }
-            .background(ColorTokens.background)
-            .toolbarVisibility(.hidden, for: .navigationBar)
-            .task {
-                guard viewModel == nil else { return }
-                let vm = AnalyticsViewModel(
-                    repositories: container.repositories,
-                    preferences: container.preferences,
-                    exchangeRateProvider: container.exchangeRateProvider
-                )
-                viewModel = vm
-                await vm.load()
-            }
-            .onChange(of: container.itemsVersion) { _, _ in
-                viewModel?.loadLocalData(forceReload: true)
-            }
-            .navigationDestination(item: $selectedItem) { item in
+        }
+        .background(ColorTokens.background)
+        .task {
+            guard viewModel == nil else { return }
+            let vm = AnalyticsViewModel(
+                repositories: container.repositories,
+                preferences: container.preferences,
+                exchangeRateProvider: container.exchangeRateProvider
+            )
+            viewModel = vm
+            await vm.load()
+        }
+        .onChange(of: container.itemsVersion) { _, _ in
+            viewModel?.loadLocalData(forceReload: true)
+        }
+        .sheet(item: $selectedItem) { item in
+            NavigationStack {
                 ItemDetailsView(
                     viewModel: ItemDetailsViewModel(
                         item: item,

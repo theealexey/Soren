@@ -51,13 +51,15 @@ struct LibraryView: View {
             .onChange(of: container.itemsVersion) { _, _ in
                 viewModel?.load()
             }
-            .navigationDestination(item: $selectedItem) { item in
-                ItemDetailsView(
-                    viewModel: ItemDetailsViewModel(
-                        item: item,
-                        repositories: container.repositories
+            .sheet(item: $selectedItem) { item in
+                NavigationStack {
+                    ItemDetailsView(
+                        viewModel: ItemDetailsViewModel(
+                            item: item,
+                            repositories: container.repositories
+                        )
                     )
-                )
+                }
             }
         }
     }
