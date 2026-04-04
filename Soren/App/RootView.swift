@@ -8,9 +8,7 @@ struct RootView: View {
     @Environment(AppContainer.self) private var container
     @AppStorage("soren.appearanceMode") private var appearanceModeRaw = AppearanceMode.system.rawValue
     @State private var selectedTab: AppTab = .overview
-    @State private var showAddSheet = false
-    @State private var showSettings = false
-    @State private var selectedItem: RecurringItem?
+    @State private var activeSheet: ActiveSheet?
 
     private var preferredColorScheme: ColorScheme? {
         AppearanceMode(rawValue: appearanceModeRaw)?.colorScheme
@@ -36,9 +34,17 @@ struct RootView: View {
                 .padding(.horizontal, Spacing.xl)
                 .padding(.bottom, Spacing.xs)
         }
-        .environment(\.addSubscriptionAction, AddSubscriptionAction { showAddSheet = true })
-        .environment(\.navigateToItem, NavigateToItemAction { selectedItem = $0 })
-        .sheet(item: $selectedItem) { item in
+        .environment(\.addSubscriptionAction, AddSubscriptionAction { activeSheet = .addSubscription })
+        .environment(\.navigateToItem, NavigateToItemAction { activeSheet = .itemDetails($0) })
+        .sheet(item: $activeSheet, onDismiss: { container.itemsVersion += 1 }, content: sheetContent)
+    }
+
+    // MARK: - Sheet Router
+
+    @ViewBuilder
+    private func sheetContent(for sheet: ActiveSheet) -> some View {
+        switch sheet {
+        case .itemDetails(let item):
             NavigationStack {
                 ItemDetailsView(
                     viewModel: ItemDetailsViewModel(
@@ -47,18 +53,13 @@ struct RootView: View {
                     )
                 )
             }
-        }
-        .sheet(isPresented: $showAddSheet) {
+        case .addSubscription:
             NavigationStack {
                 ProviderPickerView(
                     viewModel: AddSubscriptionViewModel(container: container)
                 )
             }
-        }
-        .onChange(of: showAddSheet) { _, isShowing in
-            if !isShowing { container.itemsVersion += 1 }
-        }
-        .sheet(isPresented: $showSettings) {
+        case .settings:
             NavigationStack { SettingsView() }
                 .preferredColorScheme(preferredColorScheme)
         }
@@ -84,7 +85,7 @@ struct RootView: View {
     private var addButton: some View {
         Button {
             HapticEngine.selection()
-            showAddSheet = true
+            activeSheet = .addSubscription
         } label: {
             Image(systemName: "plus")
                 .font(.system(size: 17, weight: .semibold))
@@ -95,7 +96,7 @@ struct RootView: View {
     }
 
     private var settingsButton: some View {
-        Button { showSettings = true } label: {
+        Button { activeSheet = .settings } label: {
             Image(systemName: "gearshape")
                 .font(.system(size: 16, weight: .regular))
                 .foregroundStyle(ColorTokens.textTertiary)
@@ -113,6 +114,22 @@ private let _sorenMonthYearFormatter: DateFormatter = {
     f.dateFormat = "LLLL yyyy"
     return f
 }()
+
+// MARK: - Active Sheet
+
+private enum ActiveSheet: Identifiable {
+    case itemDetails(RecurringItem)
+    case addSubscription
+    case settings
+
+    var id: String {
+        switch self {
+        case .itemDetails(let item): "item-\(item.id.uuidString)"
+        case .addSubscription:       "add"
+        case .settings:              "settings"
+        }
+    }
+}
 
 // MARK: - Context Bar
 

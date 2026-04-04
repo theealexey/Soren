@@ -249,16 +249,18 @@ struct CalendarView: View {
                 PremiumCard {
                     VStack(spacing: 0) {
                         ForEach(Array(charges.enumerated()), id: \.element.id) { idx, item in
-                            SorenListRow(
-                                title: item.title,
-                                subtitle: item.providerName == item.title ? nil : item.providerName,
-                                amount: item.amount,
-                                currency: item.currencyCode,
-                                cycle: item.billingCycle.cycleLabel,
-                                providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
-                                category: item.category
-                            )
-                            .onTapGesture { navigateToItem(item) }
+                            Button { navigateToItem(item) } label: {
+                                SorenListRow(
+                                    title: item.title,
+                                    subtitle: item.providerName == item.title ? nil : item.providerName,
+                                    amount: item.amount,
+                                    currency: item.currencyCode,
+                                    cycle: item.billingCycle.cycleLabel,
+                                    providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
+                                    category: item.category
+                                )
+                            }
+                            .buttonStyle(.plain)
 
                             if idx < charges.count - 1 {
                                 Divider()

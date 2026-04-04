@@ -246,16 +246,18 @@ struct AnalyticsView: View {
             PremiumCard {
                 VStack(spacing: 0) {
                     ForEach(Array(vm.topItems.enumerated()), id: \.element.id) { idx, item in
-                        SorenListRow(
-                            title: item.title,
-                            subtitle: item.providerName == item.title ? nil : item.providerName,
-                            amount: vm.monthlyAmount(item),
-                            currency: vm.defaultCurrency,
-                            cycle: .monthly,
-                            providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
-                            category: item.category
-                        )
-                        .onTapGesture { navigateToItem(item) }
+                        Button { navigateToItem(item) } label: {
+                            SorenListRow(
+                                title: item.title,
+                                subtitle: item.providerName == item.title ? nil : item.providerName,
+                                amount: vm.monthlyAmount(item),
+                                currency: vm.defaultCurrency,
+                                cycle: .monthly,
+                                providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
+                                category: item.category
+                            )
+                        }
+                        .buttonStyle(.plain)
 
                         if idx < vm.topItems.count - 1 {
                             Divider().padding(.leading, SorenListRow.dividerInset)
@@ -277,16 +279,18 @@ struct AnalyticsView: View {
             PremiumCard {
                 VStack(spacing: 0) {
                     ForEach(Array(vm.annualItems.enumerated()), id: \.element.id) { idx, item in
-                        SorenListRow(
-                            title: item.title,
-                            subtitle: nextAnnualLabel(for: item),
-                            amount: item.amount,
-                            currency: item.currencyCode,
-                            cycle: .yearly,
-                            providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
-                            category: item.category
-                        )
-                        .onTapGesture { navigateToItem(item) }
+                        Button { navigateToItem(item) } label: {
+                            SorenListRow(
+                                title: item.title,
+                                subtitle: nextAnnualLabel(for: item),
+                                amount: item.amount,
+                                currency: item.currencyCode,
+                                cycle: .yearly,
+                                providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
+                                category: item.category
+                            )
+                        }
+                        .buttonStyle(.plain)
 
                         if idx < vm.annualItems.count - 1 {
                             Divider().padding(.leading, SorenListRow.dividerInset)
@@ -335,17 +339,19 @@ struct AnalyticsView: View {
             PremiumCard {
                 VStack(spacing: 0) {
                     ForEach(Array(vm.unusedItems.enumerated()), id: \.element.id) { idx, item in
-                        SorenListRow(
-                            title: item.title,
-                            subtitle: String(localized: "Не используется"),
-                            amount: item.amount,
-                            currency: item.currencyCode,
-                            cycle: item.billingCycle.cycleLabel,
-                            providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
-                            category: item.category,
-                            badge: .paused
-                        )
-                        .onTapGesture { navigateToItem(item) }
+                        Button { navigateToItem(item) } label: {
+                            SorenListRow(
+                                title: item.title,
+                                subtitle: String(localized: "Не используется"),
+                                amount: item.amount,
+                                currency: item.currencyCode,
+                                cycle: item.billingCycle.cycleLabel,
+                                providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
+                                category: item.category,
+                                badge: .paused
+                            )
+                        }
+                        .buttonStyle(.plain)
 
                         if idx < vm.unusedItems.count - 1 {
                             Divider().padding(.leading, SorenListRow.dividerInset)

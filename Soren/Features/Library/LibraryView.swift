@@ -2,55 +2,31 @@ import SwiftUI
 
 // MARK: - Library View
 
-/// Full subscription list with native search, status filters, and sorting.
-/// "+" lives in the global context bar (RootView). Sort lives in the nav toolbar.
+/// Full subscription list with inline search, status filters, and sorting.
+/// "+" lives in the global context bar (RootView). Sort is inline in the summary bar.
 struct LibraryView: View {
     @Environment(AppContainer.self) private var container
     @Environment(\.addSubscriptionAction) private var addSubscription
     @Environment(\.navigateToItem) private var navigateToItem
     @State private var viewModel: LibraryViewModel?
 
-    /// Binding bridged to the optional ViewModel — safe to pass to .searchable.
-    private var searchBinding: Binding<String> {
-        Binding(
-            get: { viewModel?.searchText ?? "" },
-            set: { viewModel?.searchText = $0 }
-        )
-    }
-
     var body: some View {
-        NavigationStack {
-            Group {
-                if let viewModel {
-                    libraryContent(viewModel)
-                } else {
-                    LoadingStateView()
-                }
+        Group {
+            if let viewModel {
+                libraryContent(viewModel)
+            } else {
+                LoadingStateView()
             }
-            .background(ColorTokens.background)
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
-            .searchable(
-                text: searchBinding,
-                placement: .navigationBarDrawer(displayMode: .always),
-                prompt: "Поиск подписок"
-            )
-            .toolbar {
-                if let vm = viewModel {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        sortMenu(vm)
-                    }
-                }
-            }
-            .task {
-                guard viewModel == nil else { return }
-                let vm = LibraryViewModel(repositories: container.repositories, preferences: container.preferences)
-                self.viewModel = vm   // assign first — eliminates nil loading flash
-                vm.load()
-            }
-            .onChange(of: container.itemsVersion) { _, _ in
-                viewModel?.load()
-            }
+        }
+        .background(ColorTokens.background)
+        .task {
+            guard viewModel == nil else { return }
+            let vm = LibraryViewModel(repositories: container.repositories, preferences: container.preferences)
+            self.viewModel = vm
+            vm.load()
+        }
+        .onChange(of: container.itemsVersion) { _, _ in
+            viewModel?.load()
         }
     }
 
@@ -76,6 +52,8 @@ struct LibraryView: View {
     private func populatedLibrary(_ vm: LibraryViewModel) -> some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: Spacing.md) {
+                searchBar(vm)
+
                 filterChips(vm)
 
                 summaryBar(vm)
@@ -91,6 +69,39 @@ struct LibraryView: View {
         .refreshable {
             vm.load()
         }
+    }
+
+    // MARK: - Search Bar
+
+    private func searchBar(_ vm: LibraryViewModel) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: "magnifyingglass")
+                .font(Typography.body)
+                .foregroundStyle(ColorTokens.textTertiary)
+
+            TextField(
+                String(localized: "Поиск подписок"),
+                text: Binding(get: { vm.searchText }, set: { vm.searchText = $0 })
+            )
+            .textFieldStyle(.plain)
+            .font(Typography.body)
+            .foregroundStyle(ColorTokens.textPrimary)
+            .autocorrectionDisabled()
+
+            if !vm.searchText.isEmpty {
+                Button {
+                    vm.searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(ColorTokens.textTertiary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, Spacing.sm)
+        .padding(.vertical, Spacing.xs)
+        .background(ColorTokens.surfaceElevated, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+        .padding(.horizontal, Spacing.lg)
     }
 
     // MARK: - Filter Chips
@@ -168,6 +179,8 @@ struct LibraryView: View {
                     cycle: .monthly
                 )
             }
+
+            sortMenu(vm)
         }
         .padding(.horizontal, Spacing.lg)
     }
@@ -178,17 +191,21 @@ struct LibraryView: View {
         PremiumCard {
             VStack(spacing: 0) {
                 ForEach(Array(vm.filteredItems.enumerated()), id: \.element.id) { index, item in
-                    SorenListRow(
-                        title: item.title,
-                        subtitle: RecurringItemFormatter.subtitle(for: item),
-                        amount: item.amount,
-                        currency: item.currencyCode,
-                        cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
-                        providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
-                        category: item.category,
-                        badge: RecurringItemFormatter.badge(for: item)
-                    )
-                    .onTapGesture { navigateToItem(item) }
+                    Button {
+                        navigateToItem(item)
+                    } label: {
+                        SorenListRow(
+                            title: item.title,
+                            subtitle: RecurringItemFormatter.subtitle(for: item),
+                            amount: item.amount,
+                            currency: item.currencyCode,
+                            cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
+                            providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
+                            category: item.category,
+                            badge: RecurringItemFormatter.badge(for: item)
+                        )
+                    }
+                    .buttonStyle(.plain)
 
                     if index < vm.filteredItems.count - 1 {
                         Divider()
@@ -216,6 +233,7 @@ struct LibraryView: View {
             Image(systemName: "arrow.up.arrow.down")
                 .font(Typography.bodyMedium)
                 .foregroundStyle(ColorTokens.accent)
+                .frame(width: 36, height: 36)
         }
     }
 
