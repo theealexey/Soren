@@ -23,7 +23,7 @@ struct ThemePreview: View {
 
     private var colorsSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text("COLORS")
+            Text(verbatim: "COLORS")
                 .overlineStyle()
 
             colorRow("Background", ColorTokens.background)
@@ -43,46 +43,46 @@ struct ThemePreview: View {
 
     private var typographySection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text("TYPOGRAPHY")
+            Text(verbatim: "TYPOGRAPHY")
                 .overlineStyle()
 
-            Text("$1,247.99")
+            Text(verbatim: "1 247,99 ₽")
                 .font(Typography.heroAmount)
                 .foregroundStyle(ColorTokens.textPrimary)
 
-            Text("$249.50")
+            Text(verbatim: "249,50 ₽")
                 .font(Typography.amountLarge)
                 .foregroundStyle(ColorTokens.textPrimary)
 
-            Text("$12.99/mo")
+            Text(verbatim: "12,99 ₽/мес")
                 .font(Typography.amountMedium)
                 .foregroundStyle(ColorTokens.textPrimary)
 
-            Text("USD")
+            Text(verbatim: "RUB")
                 .font(Typography.amountSmall)
                 .foregroundStyle(ColorTokens.textSecondary)
 
-            Text("Screen Title")
+            Text(verbatim: "Заголовок экрана")
                 .font(Typography.title)
                 .foregroundStyle(ColorTokens.textPrimary)
 
-            Text("Section Header")
+            Text(verbatim: "Заголовок раздела")
                 .font(Typography.sectionHeader)
                 .foregroundStyle(ColorTokens.textPrimary)
 
-            Text("Item Headline")
+            Text(verbatim: "Заголовок элемента")
                 .font(Typography.headline)
                 .foregroundStyle(ColorTokens.textPrimary)
 
-            Text("Body text for descriptions and explanations.")
+            Text(verbatim: "Основной текст для описаний и пояснений.")
                 .font(Typography.body)
                 .foregroundStyle(ColorTokens.textSecondary)
 
-            Text("Caption: Next charge Feb 14")
+            Text(verbatim: "Подпись: следующее списание 14 февр.")
                 .font(Typography.caption)
                 .foregroundStyle(ColorTokens.textTertiary)
 
-            Text("OVERLINE LABEL")
+            Text(verbatim: "ОВЕРЛАЙН МЕТКА")
                 .overlineStyle()
         }
     }
@@ -91,7 +91,7 @@ struct ThemePreview: View {
 
     private var spacingSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text("SPACING")
+            Text(verbatim: "SPACING")
                 .overlineStyle()
 
             spacingRow("xxxs", Spacing.xxxs)
@@ -109,7 +109,7 @@ struct ThemePreview: View {
 
     private var chartColorsSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text("CHART PALETTE")
+            Text(verbatim: "CHART PALETTE")
                 .overlineStyle()
 
             HStack(spacing: Spacing.xxs) {
@@ -126,25 +126,25 @@ struct ThemePreview: View {
 
     private var categoryColorsSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text("CATEGORIES")
+            Text(verbatim: "CATEGORIES")
                 .overlineStyle()
 
             let categories: [(String, Color)] = [
-                ("Video", ColorTokens.categoryVideo),
-                ("Music", ColorTokens.categoryMusic),
-                ("Cloud", ColorTokens.categoryCloud),
-                ("Productivity", ColorTokens.categoryProductivity),
+                ("Видео", ColorTokens.categoryVideo),
+                ("Музыка", ColorTokens.categoryMusic),
+                ("Облако", ColorTokens.categoryCloud),
+                ("Продуктивность", ColorTokens.categoryProductivity),
                 ("AI", ColorTokens.categoryAI),
-                ("Shopping", ColorTokens.categoryShopping),
-                ("Banking", ColorTokens.categoryBanking),
-                ("Mobile", ColorTokens.categoryMobile),
-                ("Health", ColorTokens.categoryHealth),
-                ("Games", ColorTokens.categoryGames),
+                ("Покупки", ColorTokens.categoryShopping),
+                ("Банки", ColorTokens.categoryBanking),
+                ("Мобильный", ColorTokens.categoryMobile),
+                ("Здоровье", ColorTokens.categoryHealth),
+                ("Игры", ColorTokens.categoryGames),
             ]
 
             FlowLayout(spacing: Spacing.xs) {
                 ForEach(categories, id: \.0) { name, color in
-                    Text(name)
+                    Text(verbatim: name)
                         .font(Typography.captionMedium)
                         .foregroundStyle(.white)
                         .padding(.horizontal, Spacing.xs)
@@ -167,7 +167,7 @@ struct ThemePreview: View {
                         .strokeBorder(ColorTokens.separator, lineWidth: 0.5)
                 )
 
-            Text(name)
+            Text(verbatim: name)
                 .font(Typography.body)
                 .foregroundStyle(ColorTokens.textPrimary)
         }
@@ -175,7 +175,7 @@ struct ThemePreview: View {
 
     private func spacingRow(_ name: String, _ value: CGFloat) -> some View {
         HStack(spacing: Spacing.sm) {
-            Text("\(name) (\(Int(value))pt)")
+            Text(verbatim: "\(name) (\(Int(value))pt)")
                 .font(Typography.caption)
                 .foregroundStyle(ColorTokens.textSecondary)
                 .frame(width: 100, alignment: .trailing)

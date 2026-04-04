@@ -2,13 +2,14 @@ import SwiftUI
 
 // MARK: - Root View
 
-/// App shell: minimal context header + full-screen tab content + floating pill nav.
-/// Native TabView replaced with opacity-based switching so each tab's
-/// NavigationStack and ViewModel state stay alive across tab changes.
+/// App shell: context header + full-screen tab content + floating pill nav.
+/// 4 tabs: Overview · Subscriptions · Calendar · Insights
+/// "+" appears only on Overview and Subscriptions.
+/// Settings gear lives exclusively on Overview.
 struct RootView: View {
     @Environment(AppContainer.self) private var container
     @AppStorage("soren.appearanceMode") private var appearanceModeRaw = AppearanceMode.system.rawValue
-    @State private var selectedTab: AppTab = .home
+    @State private var selectedTab: AppTab = .overview
     @State private var showAddSheet = false
     @State private var showSettings = false
 
@@ -38,7 +39,10 @@ struct RootView: View {
             .background(ColorTokens.background)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            SorenFloatingPill(selectedTab: $selectedTab) {
+            SorenFloatingPill(
+                selectedTab: $selectedTab,
+                showAddButton: selectedTab.hasAddButton
+            ) {
                 showAddSheet = true
             }
             .padding(.horizontal, Spacing.xl)
@@ -64,13 +68,14 @@ struct RootView: View {
 
 // MARK: - Context Bar
 
-/// Minimal top header: contextual title for the active tab + settings gear.
+/// Minimal top header: contextual title for the active tab + optional settings gear.
+/// Gear is shown only on Overview (the app's home base).
 private struct SorenContextBar: View {
     let tab: AppTab
     let settingsAction: () -> Void
 
     private var contextTitle: String {
-        guard tab == .home else { return tab.title }
+        guard tab == .overview else { return tab.title }
         let fmt = DateFormatter()
         fmt.locale = Locale(identifier: "ru_RU")
         fmt.dateFormat = "LLLL yyyy"
@@ -81,7 +86,7 @@ private struct SorenContextBar: View {
         HStack(spacing: 0) {
             ZStack(alignment: .leading) {
                 ForEach(AppTab.allCases) { t in
-                    Text(t == .home ? contextTitle : t.title)
+                    Text(t == .overview ? contextTitle : t.title)
                         .font(Typography.headline)
                         .foregroundStyle(ColorTokens.textPrimary)
                         .opacity(tab == t ? 1 : 0)
@@ -92,14 +97,18 @@ private struct SorenContextBar: View {
 
             Spacer()
 
-            Button(action: settingsAction) {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(ColorTokens.textTertiary)
-                    .frame(width: 36, height: 36)
+            if tab == .overview {
+                Button(action: settingsAction) {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 16, weight: .regular))
+                        .foregroundStyle(ColorTokens.textTertiary)
+                        .frame(width: 36, height: 36)
+                }
+                .buttonStyle(.plain)
+                .transition(.opacity.combined(with: .scale(scale: 0.8)))
             }
-            .buttonStyle(.plain)
         }
+        .animation(.easeInOut(duration: 0.18), value: tab)
         .padding(.horizontal, Spacing.lg)
         .padding(.vertical, Spacing.sm)
         .background {
@@ -116,14 +125,14 @@ private struct SorenContextBar: View {
 // MARK: - Floating Pill
 
 /// Capsule nav bar that floats above the bottom safe area.
-/// Left section: 5 tab icons. Right section: add-subscription "+" button.
+/// Left: 4 tab icons. Right: optional "+" add button (Overview + Subscriptions only).
 private struct SorenFloatingPill: View {
     @Binding var selectedTab: AppTab
+    let showAddButton: Bool
     let onAdd: () -> Void
 
     var body: some View {
         HStack(spacing: 0) {
-            // Tab icons — fill available width evenly
             HStack(spacing: 0) {
                 ForEach(AppTab.allCases) { tab in
                     tabButton(tab)
@@ -131,31 +140,32 @@ private struct SorenFloatingPill: View {
             }
             .frame(maxWidth: .infinity)
 
-            // Hairline divider
-            Rectangle()
-                .fill(ColorTokens.separator)
-                .frame(width: 0.5, height: 22)
-                .padding(.horizontal, Spacing.sm)
+            if showAddButton {
+                Rectangle()
+                    .fill(ColorTokens.separator)
+                    .frame(width: 0.5, height: 22)
+                    .padding(.horizontal, Spacing.sm)
 
-            // Add button
-            Button(action: {
-                HapticEngine.selection()
-                onAdd()
-            }) {
-                ZStack {
-                    Circle()
-                        .fill(ColorTokens.accent)
-                        .frame(width: 36, height: 36)
-                    Image(systemName: "plus")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white)
+                Button(action: {
+                    HapticEngine.selection()
+                    onAdd()
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(ColorTokens.accent)
+                            .frame(width: 36, height: 36)
+                        Image(systemName: "plus")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.white)
+                    }
                 }
+                .buttonStyle(.plain)
+                .padding(.trailing, Spacing.xs)
             }
-            .buttonStyle(.plain)
-            .padding(.trailing, Spacing.xs)
         }
         .padding(.leading, Spacing.xs)
         .padding(.vertical, Spacing.xs)
+        .animation(.easeInOut(duration: 0.2), value: showAddButton)
         .background {
             Capsule()
                 .fill(.ultraThinMaterial)
@@ -214,52 +224,52 @@ extension EnvironmentValues {
 // MARK: - Tab Definition
 
 enum AppTab: String, CaseIterable, Identifiable {
-    case home
-    case library
+    case overview
+    case subscriptions
     case calendar
-    case analytics
-    case alerts
+    case insights
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .home:      String(localized: "Главная")
-        case .library:   String(localized: "Подписки")
-        case .calendar:  String(localized: "Календарь")
-        case .analytics: String(localized: "Аналитика")
-        case .alerts:    String(localized: "Алерты")
+        case .overview:      String(localized: "Обзор")
+        case .subscriptions: String(localized: "Подписки")
+        case .calendar:      String(localized: "Календарь")
+        case .insights:      String(localized: "Аналитика")
         }
     }
 
     var icon: String {
         switch self {
-        case .home:      "house"
-        case .library:   "list.bullet"
-        case .calendar:  "calendar"
-        case .analytics: "chart.bar"
-        case .alerts:    "bell"
+        case .overview:      "house"
+        case .subscriptions: "list.bullet"
+        case .calendar:      "calendar"
+        case .insights:      "chart.bar"
         }
     }
 
     var activeIcon: String {
         switch self {
-        case .home:      "house.fill"
-        case .library:   "list.bullet"
-        case .calendar:  "calendar"
-        case .analytics: "chart.bar.fill"
-        case .alerts:    "bell.fill"
+        case .overview:      "house.fill"
+        case .subscriptions: "list.bullet"
+        case .calendar:      "calendar"
+        case .insights:      "chart.bar.fill"
         }
+    }
+
+    /// Whether the floating "+" add button is shown for this tab.
+    var hasAddButton: Bool {
+        self == .overview || self == .subscriptions
     }
 
     @ViewBuilder
     var destination: some View {
         switch self {
-        case .home:      HomeView()
-        case .library:   LibraryView()
-        case .calendar:  CalendarPlaceholderView()
-        case .analytics: AnalyticsPlaceholderView()
-        case .alerts:    AlertsView()
+        case .overview:      HomeView()
+        case .subscriptions: LibraryView()
+        case .calendar:      CalendarPlaceholderView()
+        case .insights:      AnalyticsPlaceholderView()
         }
     }
 }
