@@ -203,7 +203,7 @@ struct ItemDetailsView: View {
 
     private var noteCard: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader("Заметка")
+            SectionHeader(String(localized: "Заметка"))
 
             PremiumCard {
                 Text(viewModel.item.note)

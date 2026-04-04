@@ -8,7 +8,7 @@ struct QuickInsightsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader("Аналитика")
+            SectionHeader(String(localized: "Аналитика"))
 
             ForEach(insights, id: \.title) { insight in
                 InsightCard(
