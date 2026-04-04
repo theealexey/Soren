@@ -263,7 +263,7 @@ enum AppTab: String, CaseIterable, Identifiable {
         switch self {
         case .overview:      HomeView()
         case .subscriptions: LibraryView()
-        case .calendar:      CalendarPlaceholderView()
+        case .calendar:      CalendarView()
         case .insights:      AnalyticsPlaceholderView()
         }
     }

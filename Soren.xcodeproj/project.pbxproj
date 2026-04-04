@@ -14,6 +14,7 @@
 		0050A4D1600A744F59A20613 /* ItemStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = E95E33778D21F29F937EC9AC /* ItemStatus.swift */; };
 		04646804567EAE64683EDBCC /* StatBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F935C51942C260D6EE1004A /* StatBlock.swift */; };
 		05D1DFB2D7D17FCCDF5A8124 /* CalendarPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EB340E329D8BABE4656FEFF /* CalendarPlaceholderView.swift */; };
+		C4A1E2B3D405A6B70812CA10 /* CalendarViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CA1E2B3D4E5F6A0B1C2D3E /* CalendarViewModel.swift */; };
 		0941461856266EC88A29F01E /* Shadows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730D410421B54FB89BDF8AA /* Shadows.swift */; };
 		0B02B6F86D5888DF4761D60D /* LibraryPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759C37B3FCD48C89A97006CB /* LibraryPlaceholderView.swift */; };
 		554085738159BAB4FC2448F4 /* ItemCategory+UI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EF5D9178DF61397769F3F9E /* ItemCategory+UI.swift */; };
@@ -189,6 +190,7 @@
 		593F223EC1D8EC1482C3ABD5 /* SorenUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SorenUITests.swift; sourceTree = "<group>"; };
 		5D5A3EC78A790E61CAD07A89 /* RecurringItemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringItemTests.swift; sourceTree = "<group>"; };
 		5EB340E329D8BABE4656FEFF /* CalendarPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarPlaceholderView.swift; sourceTree = "<group>"; };
+		F0CA1E2B3D4E5F6A0B1C2D3E /* CalendarViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarViewModel.swift; sourceTree = "<group>"; };
 		6832C56DB6430B9577C4A6F9 /* Spacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Spacing.swift; sourceTree = "<group>"; };
 		6F935C51942C260D6EE1004A /* StatBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatBlock.swift; sourceTree = "<group>"; };
 		704603302FD9C648B425E8B6 /* AppContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainer.swift; sourceTree = "<group>"; };
@@ -863,6 +865,7 @@
 			children = (
 				E0BCBA25E3733B23E1C13244 /* Components */,
 				5EB340E329D8BABE4656FEFF /* CalendarPlaceholderView.swift */,
+				F0CA1E2B3D4E5F6A0B1C2D3E /* CalendarViewModel.swift */,
 			);
 			path = Calendar;
 			sourceTree = "<group>";
@@ -1035,6 +1038,7 @@
 				747917FE51A83E20934C9492 /* BillingCycle.swift in Sources */,
 				F3FD5F08E064C7378A305F93 /* Bundle.swift in Sources */,
 				05D1DFB2D7D17FCCDF5A8124 /* CalendarPlaceholderView.swift in Sources */,
+				C4A1E2B3D405A6B70812CA10 /* CalendarViewModel.swift in Sources */,
 				24B721CF97AA2287C4604C53 /* ColorTokens.swift in Sources */,
 				0D4F8587FDCFA17DC643A56F /* ComponentsPreview.swift in Sources */,
 				78CF60E9E02A0597C29DD8AE /* FilterChip.swift in Sources */,
