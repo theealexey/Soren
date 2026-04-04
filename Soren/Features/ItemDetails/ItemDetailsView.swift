@@ -61,6 +61,7 @@ struct ItemDetailsView: View {
             Button("Удалить", role: .destructive) {
                 deleteAndDismiss()
             }
+            Button("Отменить", role: .cancel) { }
         } message: {
             Text("«\(viewModel.item.title)» будет удалена без возможности восстановления.")
         }
