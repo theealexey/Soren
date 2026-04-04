@@ -3,16 +3,18 @@ import SwiftUI
 // MARK: - Home View Model
 
 /// Drives the Home / Dashboard screen.
-/// Loads financial summary, upcoming charges, and active trials
-/// through dedicated Use Cases.
+/// Financial snapshot at top, then status-filtered subscription list below.
 @MainActor @Observable
 final class HomeViewModel {
 
-    // MARK: - State
+    // MARK: - Filter State
+
+    var activeFilter: HomeFilter = .all
+
+    // MARK: - Data State
 
     private(set) var summary: DashboardSummary = .empty
-    private(set) var upcomingCharges: [RecurringItem] = []
-    private(set) var activeTrials: [RecurringItem] = []
+    private(set) var allItems: [RecurringItem] = []
     private(set) var defaultCurrency: String = UserPreferences.default.defaultCurrencyCode
     private(set) var exchangeRates: ExchangeRates?
     private(set) var ratesLastUpdated: Date?
@@ -22,11 +24,32 @@ final class HomeViewModel {
 
     var hasError: Bool { error != nil }
 
+    // MARK: - Computed — Filtered Items
+
+    /// Live subscriptions only (active, trial, paused). Excludes archived/cancelled.
+    private var liveItems: [RecurringItem] {
+        let liveStatuses: Set<ItemStatus> = [.active, .dueSoon, .dueToday, .overdue, .failed, .trial, .paused]
+        return allItems
+            .filter { liveStatuses.contains($0.status) }
+            .sorted { $0.nextChargeDate < $1.nextChargeDate }
+    }
+
+    var filteredItems: [RecurringItem] {
+        activeFilter.apply(to: liveItems)
+    }
+
+    var filterCounts: [HomeFilter: Int] {
+        var counts: [HomeFilter: Int] = [.all: liveItems.count]
+        for filter in HomeFilter.allCases where filter != .all {
+            counts[filter] = filter.apply(to: liveItems).count
+        }
+        return counts
+    }
+
     // MARK: - Dependencies
 
     private let getDashboardSummary: GetDashboardSummary
-    private let getUpcomingCharges: GetUpcomingCharges
-    private let getActiveTrials: GetActiveTrials
+    private let getLibraryItems: GetLibraryItems
     private let preferences: UserPreferencesRepository
     private let exchangeRateProvider: (any ExchangeRateProvider)?
 
@@ -34,19 +57,16 @@ final class HomeViewModel {
 
     init(
         getDashboardSummary: GetDashboardSummary,
-        getUpcomingCharges: GetUpcomingCharges,
-        getActiveTrials: GetActiveTrials,
+        getLibraryItems: GetLibraryItems,
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
         exchangeRateProvider: (any ExchangeRateProvider)? = nil
     ) {
         self.getDashboardSummary = getDashboardSummary
-        self.getUpcomingCharges = getUpcomingCharges
-        self.getActiveTrials = getActiveTrials
+        self.getLibraryItems = getLibraryItems
         self.preferences = preferences
         self.exchangeRateProvider = exchangeRateProvider
     }
 
-    /// Convenience init from RepositoryContainer.
     init(
         repositories: RepositoryContainer,
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
@@ -54,8 +74,7 @@ final class HomeViewModel {
     ) {
         let repo = repositories.recurringItems
         self.getDashboardSummary = GetDashboardSummary(repository: repo)
-        self.getUpcomingCharges = GetUpcomingCharges(repository: repo)
-        self.getActiveTrials = GetActiveTrials(repository: repo)
+        self.getLibraryItems = GetLibraryItems(repository: repo)
         self.preferences = preferences
         self.exchangeRateProvider = exchangeRateProvider
     }
@@ -63,7 +82,6 @@ final class HomeViewModel {
     // MARK: - Actions
 
     func load(forceReload: Bool = false) async {
-        // Fetch exchange rates (non-blocking — dashboard works without them)
         if !isLoaded || forceReload, let provider = exchangeRateProvider {
             do {
                 let rates = try await provider.latestRates()
@@ -74,11 +92,9 @@ final class HomeViewModel {
                 isRatesStale = true
             }
         }
-
         loadLocalData(forceReload: forceReload)
     }
 
-    /// Sync core — loads dashboard from local SwiftData without network.
     func loadLocalData(forceReload: Bool = false) {
         guard !isLoaded || forceReload else { return }
         error = nil
@@ -88,8 +104,7 @@ final class HomeViewModel {
                 targetCurrency: defaultCurrency,
                 rates: exchangeRates
             )
-            upcomingCharges = try getUpcomingCharges.execute()
-            activeTrials = try getActiveTrials.execute()
+            allItems = try getLibraryItems.execute()
             isLoaded = true
         } catch {
             self.error = error
@@ -100,8 +115,52 @@ final class HomeViewModel {
 // MARK: - Insights
 
 extension HomeViewModel {
-
     var insights: [InsightsBuilder.InsightData] {
-        InsightsBuilder.build(from: upcomingCharges)
+        InsightsBuilder.build(from: liveItems)
+    }
+}
+
+// MARK: - Home Filter
+
+extension HomeViewModel {
+
+    enum HomeFilter: String, CaseIterable, Identifiable {
+        case all
+        case active
+        case trial
+        case paused
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .all:    String(localized: "Все")
+            case .active: String(localized: "Активные")
+            case .trial:  String(localized: "Пробные")
+            case .paused: String(localized: "Пауза")
+            }
+        }
+
+        var icon: String? {
+            switch self {
+            case .all:    nil
+            case .active: "checkmark.circle"
+            case .trial:  "clock"
+            case .paused: "pause.circle"
+            }
+        }
+
+        func apply(to items: [RecurringItem]) -> [RecurringItem] {
+            switch self {
+            case .all:
+                return items
+            case .active:
+                return items.filter { [.active, .dueSoon, .dueToday, .overdue, .failed].contains($0.status) }
+            case .trial:
+                return items.filter { $0.status == .trial }
+            case .paused:
+                return items.filter { $0.status == .paused }
+            }
+        }
     }
 }

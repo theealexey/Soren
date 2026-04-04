@@ -2,14 +2,12 @@ import SwiftUI
 
 // MARK: - Home View
 
-/// Dashboard — the app's command center.
-/// Financial snapshot, upcoming charges, active trials, quick insights.
+/// Dashboard: financial snapshot at the top, then status-filtered
+/// subscription list (Все / Активные / Пробные / Пауза).
 struct HomeView: View {
     @Environment(AppContainer.self) private var container
     @Environment(\.addSubscriptionAction) private var addSubscription
     @State private var viewModel: HomeViewModel?
-
-    private let maxUpcomingItems = 5
 
     var body: some View {
         NavigationStack {
@@ -45,19 +43,17 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Dashboard Content
+    // MARK: - Content Router
 
     @ViewBuilder
     private func dashboardContent(_ vm: HomeViewModel) -> some View {
         if vm.hasError {
-            ErrorStateView(
-                message: "Не удалось загрузить данные"
-            ) {
+            ErrorStateView(message: "Не удалось загрузить данные") {
                 Task { await vm.load(forceReload: true) }
             }
         } else if !vm.isLoaded {
             LoadingStateView()
-        } else if vm.summary == .empty && vm.upcomingCharges.isEmpty {
+        } else if vm.allItems.isEmpty {
             emptyDashboard
         } else {
             scrollableContent(vm)
@@ -69,6 +65,7 @@ struct HomeView: View {
     private func scrollableContent(_ vm: HomeViewModel) -> some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: Spacing.lg) {
+                // Financial overview
                 FinancialSnapshotSection(
                     summary: vm.summary,
                     defaultCurrency: vm.defaultCurrency,
@@ -76,17 +73,10 @@ struct HomeView: View {
                     isRatesStale: vm.isRatesStale
                 )
 
-                if !vm.upcomingCharges.isEmpty {
-                    UpcomingChargesSection(
-                        items: vm.upcomingCharges,
-                        maxItems: maxUpcomingItems
-                    )
-                }
+                // Status filter chips + list
+                subscriptionSection(vm)
 
-                if !vm.activeTrials.isEmpty {
-                    ActiveTrialsSection(trials: vm.activeTrials)
-                }
-
+                // Actionable insights (overdue, upcoming etc.)
                 if !vm.insights.isEmpty {
                     QuickInsightsSection(insights: vm.insights)
                 }
@@ -99,7 +89,129 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Empty State
+    // MARK: - Subscription Section
+
+    @ViewBuilder
+    private func subscriptionSection(_ vm: HomeViewModel) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            SectionHeader(String(localized: "Подписки"))
+
+            // Filter chips
+            filterChips(vm)
+
+            // List or contextual empty
+            if vm.filteredItems.isEmpty {
+                emptyFilter(vm.activeFilter)
+            } else {
+                itemsList(vm)
+            }
+        }
+    }
+
+    // MARK: - Filter Chips
+
+    private func filterChips(_ vm: HomeViewModel) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: Spacing.xs) {
+                ForEach(HomeViewModel.HomeFilter.allCases) { filter in
+                    let count = vm.filterCounts[filter] ?? 0
+                    let isActive = vm.activeFilter == filter
+
+                    Button {
+                        withAnimation(MotionTokens.snappy) { vm.activeFilter = filter }
+                        HapticEngine.selection()
+                    } label: {
+                        HStack(spacing: Spacing.xxs) {
+                            if let icon = filter.icon {
+                                Image(systemName: icon)
+                                    .font(Typography.overline)
+                            }
+
+                            Text(filter.title)
+                                .font(Typography.captionMedium)
+
+                            if count > 0 && filter != .all {
+                                Text("\(count)")
+                                    .font(Typography.footnote)
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(isActive ? .white.opacity(0.8) : ColorTokens.textTertiary)
+                            }
+                        }
+                        .padding(.horizontal, Spacing.sm)
+                        .padding(.vertical, Spacing.xs)
+                        .foregroundStyle(isActive ? .white : ColorTokens.textSecondary)
+                        .background(
+                            isActive
+                                ? AnyShapeStyle(ColorTokens.accent)
+                                : AnyShapeStyle(ColorTokens.surfaceElevated),
+                            in: Capsule()
+                        )
+                        .overlay(
+                            Capsule()
+                                .strokeBorder(
+                                    isActive ? .clear : ColorTokens.separator.opacity(0.5),
+                                    lineWidth: 0.5
+                                )
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .animation(.easeInOut(duration: 0.15), value: isActive)
+                }
+            }
+        }
+    }
+
+    // MARK: - Items List
+
+    private func itemsList(_ vm: HomeViewModel) -> some View {
+        PremiumCard {
+            VStack(spacing: 0) {
+                ForEach(Array(vm.filteredItems.enumerated()), id: \.element.id) { index, item in
+                    NavigationLink(value: item) {
+                        SorenListRow(
+                            title: item.title,
+                            subtitle: RecurringItemFormatter.subtitle(for: item),
+                            amount: item.amount,
+                            currency: item.currencyCode,
+                            cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
+                            providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
+                            category: item.category,
+                            badge: RecurringItemFormatter.badge(for: item)
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    if index < vm.filteredItems.count - 1 {
+                        Divider()
+                            .padding(.leading, SorenListRow.dividerInset)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Empty Filter State
+
+    @ViewBuilder
+    private func emptyFilter(_ filter: HomeViewModel.HomeFilter) -> some View {
+        let message: String = switch filter {
+        case .all:    String(localized: "Нет активных подписок")
+        case .active: String(localized: "Нет активных подписок")
+        case .trial:  String(localized: "Нет пробных периодов")
+        case .paused: String(localized: "Нет приостановленных подписок")
+        }
+
+        HStack {
+            Spacer()
+            Text(message)
+                .font(Typography.body)
+                .foregroundStyle(ColorTokens.textTertiary)
+                .padding(.vertical, Spacing.xl)
+            Spacer()
+        }
+    }
+
+    // MARK: - Empty Dashboard
 
     private var emptyDashboard: some View {
         EmptyStateView(
