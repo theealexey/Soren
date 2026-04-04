@@ -37,17 +37,20 @@ final class AddSubscriptionViewModel {
 
     private let catalog: any ProviderCatalogRepository
     private let saveRecurringItem: SaveRecurringItem
+    private let exchangeRateProvider: any ExchangeRateProvider
 
     // MARK: - Init
 
-    init(catalog: any ProviderCatalogRepository, saveRecurringItem: SaveRecurringItem) {
+    init(catalog: any ProviderCatalogRepository, saveRecurringItem: SaveRecurringItem, exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider()) {
         self.catalog = catalog
         self.saveRecurringItem = saveRecurringItem
+        self.exchangeRateProvider = exchangeRateProvider
     }
 
     init(container: AppContainer) {
         self.catalog = container.providerCatalog
         self.saveRecurringItem = SaveRecurringItem(repository: container.repositories.recurringItems)
+        self.exchangeRateProvider = container.exchangeRateProvider
     }
 
     // MARK: - Load Providers
@@ -110,6 +113,25 @@ final class AddSubscriptionViewModel {
         startDate = .now
         nextChargeDate = .now
         note = ""
+    }
+
+    // MARK: - Currency Conversion
+
+    func convertAmount(from sourceCurrency: String, to targetCurrency: String) async {
+        guard sourceCurrency != targetCurrency else { return }
+        guard let amount = Decimal(string: amountText.replacingOccurrences(of: ",", with: ".")) else { return }
+
+        do {
+            let rates = try await exchangeRateProvider.latestRates()
+            guard let converted = rates.convert(amount, from: sourceCurrency, to: targetCurrency) else { return }
+
+            var rounded = Decimal()
+            var mutable = converted
+            NSDecimalRound(&rounded, &mutable, 2, .plain)
+            amountText = "\(rounded)"
+        } catch {
+            // Rates unavailable — leave amount as-is.
+        }
     }
 
     // MARK: - Filtered Providers

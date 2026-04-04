@@ -41,6 +41,9 @@ struct SubscriptionFormView: View {
                 .disabled(!viewModel.canSave)
             }
         }
+        .onChange(of: viewModel.currencyCode) { old, new in
+            Task { await viewModel.convertAmount(from: old, to: new) }
+        }
     }
 
     // MARK: - Provider Header
