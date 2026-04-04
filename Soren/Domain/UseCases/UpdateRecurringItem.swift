@@ -12,11 +12,14 @@ struct UpdateRecurringItem {
         self.repository = repository
     }
 
-    func execute(_ item: RecurringItem) throws {
+    /// Validates and persists the item. Returns the saved copy with `updatedAt` stamped.
+    @discardableResult
+    func execute(_ item: RecurringItem) throws -> RecurringItem {
         try validate(item)
         var updated = item
         updated.updatedAt = .now
         try repository.update(updated)
+        return updated
     }
 
     // MARK: - Validation

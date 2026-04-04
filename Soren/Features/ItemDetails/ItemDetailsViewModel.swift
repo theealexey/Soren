@@ -43,7 +43,7 @@ final class ItemDetailsViewModel {
 
     func startEditing() {
         editTitle = item.title
-        editAmountText = "\(item.amount)"
+        editAmountText = item.amount.description   // locale-independent decimal string
         editCurrencyCode = item.currencyCode
         editBillingCycle = item.billingCycle
         editCategory = item.category
@@ -74,9 +74,8 @@ final class ItemDetailsViewModel {
         updated.nextChargeDate = editNextChargeDate
         updated.note = editNote
 
-        try updateRecurringItem.execute(updated)
-        item = updated
-        item.updatedAt = .now
+        // Use the returned copy — it carries the updatedAt stamp set by the use case.
+        item = try updateRecurringItem.execute(updated)
         isEditing = false
     }
 
@@ -85,18 +84,14 @@ final class ItemDetailsViewModel {
     func togglePause() throws {
         var updated = item
         updated.status = item.status == .paused ? .active : .paused
-        try updateRecurringItem.execute(updated)
-        item = updated
-        item.updatedAt = .now
+        item = try updateRecurringItem.execute(updated)
     }
 
     func archive() throws {
         var updated = item
         updated.status = .archived
         updated.archivedAt = .now
-        try updateRecurringItem.execute(updated)
-        item = updated
-        item.updatedAt = .now
+        item = try updateRecurringItem.execute(updated)
     }
 
     func delete() throws {

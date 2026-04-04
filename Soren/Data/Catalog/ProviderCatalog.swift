@@ -10,9 +10,13 @@ enum ProviderCatalog {
     /// All providers across all regions, sorted alphabetically.
     static let all: [ProviderTemplate] = (global + russia).sorted { $0.displayName < $1.displayName }
 
+    /// O(1) lookup index — built once from `all` at module load time.
+    private static let _index: [String: ProviderTemplate] =
+        Dictionary(uniqueKeysWithValues: all.map { ($0.id, $0) })
+
     /// Resolves a catalog template from a persisted `RecurringItem.providerID`.
     static func template(forProviderID id: String?) -> ProviderTemplate? {
         guard let id else { return nil }
-        return all.first { $0.id == id }
+        return _index[id]
     }
 }

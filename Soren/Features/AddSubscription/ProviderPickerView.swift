@@ -7,6 +7,11 @@ import SwiftUI
 struct ProviderPickerView: View {
     @Bindable var viewModel: AddSubscriptionViewModel
 
+    /// Drives programmatic navigation to SubscriptionFormView.
+    /// Set to true after viewModel state is fully prepared — eliminates the
+    /// simultaneousGesture + NavigationLink ordering race.
+    @State private var isShowingForm = false
+
     private let columns = [
         GridItem(.flexible(), spacing: Spacing.sm),
         GridItem(.flexible(), spacing: Spacing.sm),
@@ -25,11 +30,14 @@ struct ProviderPickerView: View {
             }
             .padding(.vertical, Spacing.md)
         }
-        .navigationTitle("Добавить")
+        .navigationTitle(String(localized: "Добавить"))
         .searchable(
             text: $viewModel.searchText,
-            prompt: "Поиск сервисов"
+            prompt: String(localized: "Поиск сервисов")
         )
+        .navigationDestination(isPresented: $isShowingForm) {
+            SubscriptionFormView(viewModel: viewModel)
+        }
         .task {
             await viewModel.loadProviders()
         }
@@ -38,8 +46,9 @@ struct ProviderPickerView: View {
     // MARK: - Manual Entry
 
     private var manualEntryButton: some View {
-        NavigationLink {
-            SubscriptionFormView(viewModel: viewModel)
+        Button {
+            viewModel.startManualEntry()
+            isShowingForm = true
         } label: {
             HStack(spacing: Spacing.sm) {
                 Image(systemName: "plus.circle.fill")
@@ -48,7 +57,7 @@ struct ProviderPickerView: View {
                     .frame(width: 40, height: 40)
                     .background(ColorTokens.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: CornerRadius.medium))
 
-                Text("Добавить вручную")
+                Text(String(localized: "Добавить вручную"))
                     .font(Typography.headline)
                     .foregroundStyle(ColorTokens.textPrimary)
 
@@ -62,9 +71,6 @@ struct ProviderPickerView: View {
         }
         .buttonStyle(.plain)
         .padding(.horizontal, Spacing.lg)
-        .simultaneousGesture(TapGesture().onEnded {
-            viewModel.startManualEntry()
-        })
     }
 
     // MARK: - Popular Services
@@ -84,8 +90,9 @@ struct ProviderPickerView: View {
     }
 
     private func popularProviderCard(_ provider: ProviderTemplate) -> some View {
-        NavigationLink {
-            SubscriptionFormView(viewModel: viewModel)
+        Button {
+            viewModel.selectProvider(provider)
+            isShowingForm = true
         } label: {
             VStack(spacing: Spacing.xs) {
                 ProviderIcon(provider: provider, size: .large)
@@ -100,9 +107,6 @@ struct ProviderPickerView: View {
             .background(ColorTokens.surfaceElevated, in: RoundedRectangle(cornerRadius: CornerRadius.large))
         }
         .buttonStyle(.plain)
-        .simultaneousGesture(TapGesture().onEnded {
-            viewModel.selectProvider(provider)
-        })
     }
 
     // MARK: - Catalog by Category
@@ -116,15 +120,13 @@ struct ProviderPickerView: View {
                 PremiumCard {
                     VStack(spacing: 0) {
                         ForEach(Array(group.providers.enumerated()), id: \.element.id) { index, provider in
-                            NavigationLink {
-                                SubscriptionFormView(viewModel: viewModel)
+                            Button {
+                                viewModel.selectProvider(provider)
+                                isShowingForm = true
                             } label: {
                                 catalogRow(provider)
                             }
                             .buttonStyle(.plain)
-                            .simultaneousGesture(TapGesture().onEnded {
-                                viewModel.selectProvider(provider)
-                            })
 
                             if index < group.providers.count - 1 {
                                 Divider()

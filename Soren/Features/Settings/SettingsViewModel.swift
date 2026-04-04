@@ -11,24 +11,27 @@ final class SettingsViewModel {
     // MARK: - Bindable State
 
     var defaultCurrencyCode: String {
-        didSet { save() }
+        didSet { debouncedSave() }
     }
 
     var chargeAlertDays: Int {
-        didSet { save() }
+        didSet { debouncedSave() }
     }
 
     var trialAlertDays: Int {
-        didSet { save() }
+        didSet { debouncedSave() }
     }
 
     var appearanceMode: AppearanceMode {
-        didSet { save() }
+        didSet { debouncedSave() }
     }
 
     // MARK: - Dependencies
 
     private let repository: UserPreferencesRepository
+
+    /// Cancellable debounce task — prevents a UserDefaults write on every stepper tick.
+    private var saveTask: Task<Void, Never>?
 
     // MARK: - Init
 
@@ -42,6 +45,16 @@ final class SettingsViewModel {
     }
 
     // MARK: - Save
+
+    /// Coalesces rapid changes (e.g., stepper taps) into a single UserDefaults write.
+    private func debouncedSave() {
+        saveTask?.cancel()
+        saveTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled else { return }
+            self?.save()
+        }
+    }
 
     private func save() {
         let prefs = UserPreferences(
@@ -66,11 +79,7 @@ final class SettingsViewModel {
     // MARK: - Color Scheme
 
     var preferredColorScheme: ColorScheme? {
-        switch appearanceMode {
-        case .system: nil
-        case .light:  .light
-        case .dark:   .dark
-        }
+        appearanceMode.colorScheme
     }
 
     // MARK: - Supported Currencies

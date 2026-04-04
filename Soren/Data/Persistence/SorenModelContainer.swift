@@ -42,4 +42,19 @@ enum SorenModelContainer {
         )
         return try ModelContainer(for: schema, configurations: config)
     }
+
+    // MARK: - Recovery
+
+    /// Deletes the production SQLite store and its WAL/SHM sidecar files.
+    /// Called when the store is corrupted (e.g., failed iCloud sync).
+    /// After calling this, re-invoke `production()` for a fresh empty store.
+    static func deleteProductionStore() {
+        let fm = FileManager.default
+        guard let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return }
+        let base = appSupport.appendingPathComponent("default.store", isDirectory: false)
+        for suffix in ["", "-wal", "-shm"] {
+            let url = suffix.isEmpty ? base : URL(fileURLWithPath: base.path + suffix)
+            try? fm.removeItem(at: url)
+        }
+    }
 }

@@ -16,7 +16,8 @@ struct GetAlerts {
     func execute(chargeAlertDays: Int = 7, trialAlertDays: Int = 7) throws -> AlertsResult {
         let excludedStatuses: Set<ItemStatus> = [.cancelled, .paused, .archived]
 
-        let items = try repository.fetchAll()
+        // fetchActive() uses a SwiftData predicate — avoids loading archived/cancelled rows.
+        let items = try repository.fetchActive()
             .filter { !excludedStatuses.contains($0.status) }
 
         var overdue: [RecurringItem] = []

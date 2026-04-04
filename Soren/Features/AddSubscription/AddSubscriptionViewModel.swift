@@ -82,7 +82,7 @@ final class AddSubscriptionViewModel {
 
     func selectTier(_ tier: PlanTier) {
         selectedTier = tier
-        amountText = "\(tier.amount)"
+        amountText = tier.amount.description   // .description is locale-independent unlike "\(decimal)"
         billingCycle = tier.billingCycle
         if let override = tier.currencyCode {
             currencyCode = override

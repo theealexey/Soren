@@ -23,7 +23,9 @@ struct SettingsView: View {
 
             aboutSection
         }
-        .navigationTitle("Настройки")
+        .scrollContentBackground(.hidden)
+        .background(ColorTokens.background)
+        .navigationTitle(String(localized: "Настройки"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {

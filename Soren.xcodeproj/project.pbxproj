@@ -65,6 +65,7 @@
 		79CA3E5719B015C9EEF4DDE6 /* RepositoryError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D6C4649E26E70C22C78B306 /* RepositoryError.swift */; };
 		7B612B706C269FEE15488C88 /* PaymentMethodType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F60FF5906A163D8A9D885B /* PaymentMethodType.swift */; };
 		800E374C5E3AD6DB70E259B9 /* ProviderCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DECB5DA0FE20F6A22F9B861C /* ProviderCatalogTests.swift */; };
+		A1B2C3D4E5F60002A1B2C3D4 /* RecurringItemFormFields.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60001A1B2C3D4 /* RecurringItemFormFields.swift */; };
 		85AF4F5E3E1C6D703BABF080 /* SorenListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA75DA9D8213E0F85264205F /* SorenListRow.swift */; };
 		8BEDC2D579427398D635B7CB /* ProviderCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96C23F0287FFE6BD2405D175 /* ProviderCatalog.swift */; };
 		8C7D3BD2F9DF89D996C92FE2 /* Spacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6832C56DB6430B9577C4A6F9 /* Spacing.swift */; };
@@ -217,6 +218,7 @@
 		A241AE4DF892153A82322147 /* ItemType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemType.swift; sourceTree = "<group>"; };
 		A24F4A666D09CE7D6B730480 /* PaymentMethodMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethodMapper.swift; sourceTree = "<group>"; };
 		A4181BB9ED2ED7AD9AE263B5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A1B2C3D4E5F60001A1B2C3D4 /* RecurringItemFormFields.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringItemFormFields.swift; sourceTree = "<group>"; };
 		AA75DA9D8213E0F85264205F /* SorenListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SorenListRow.swift; sourceTree = "<group>"; };
 		AAF14B2678835A6D1F6ECF96 /* MotionTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionTokens.swift; sourceTree = "<group>"; };
 		ABF2C435F1328325A12FBB44 /* SwiftDataPaymentRecordRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDataPaymentRecordRepository.swift; sourceTree = "<group>"; };
@@ -729,6 +731,7 @@
 				D608B428CBCD3D27DA555CD0 /* PremiumCard.swift */,
 				7594AC2BF9C18EA3752F7938 /* ProviderIcon.swift */,
 				323D31D8EF35B87ADA825188 /* SectionHeader.swift */,
+				A1B2C3D4E5F60001A1B2C3D4 /* RecurringItemFormFields.swift */,
 				AA75DA9D8213E0F85264205F /* SorenListRow.swift */,
 				6F935C51942C260D6EE1004A /* StatBlock.swift */,
 				20EC791707151DB425DF4523 /* StateViews.swift */,
@@ -1080,6 +1083,7 @@
 				3A84C7CF0E76A7DE7C8B4500 /* SectionHeader.swift in Sources */,
 				0941461856266EC88A29F01E /* Shadows.swift in Sources */,
 				EE06586CF84598617481ACE1 /* SorenApp.swift in Sources */,
+				A1B2C3D4E5F60002A1B2C3D4 /* RecurringItemFormFields.swift in Sources */,
 				85AF4F5E3E1C6D703BABF080 /* SorenListRow.swift in Sources */,
 				2FF3082DDA2DD4B47E915831 /* SorenModelContainer.swift in Sources */,
 				8C7D3BD2F9DF89D996C92FE2 /* Spacing.swift in Sources */,

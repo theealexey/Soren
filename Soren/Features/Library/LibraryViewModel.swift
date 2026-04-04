@@ -8,11 +8,17 @@ import Foundation
 @MainActor @Observable
 final class LibraryViewModel {
 
-    // MARK: - User Input State
+    // MARK: - User Input State (trigger recompute on change)
 
-    var searchText = ""
-    var activeFilter: StatusFilter = .all
-    var sortOrder: SortOrder = .nextCharge
+    var searchText: String = "" {
+        didSet { if oldValue != searchText { recompute() } }
+    }
+    var activeFilter: StatusFilter = .all {
+        didSet { if oldValue != activeFilter { recompute() } }
+    }
+    var sortOrder: SortOrder = .nextCharge {
+        didSet { if oldValue != sortOrder { recompute() } }
+    }
 
     // MARK: - Data State
 
@@ -20,6 +26,13 @@ final class LibraryViewModel {
     private(set) var defaultCurrency: String = UserPreferences.default.defaultCurrencyCode
     private(set) var error: Error?
     private(set) var isLoaded = false
+
+    // MARK: - Filtered Output (stored — computed once per state change, not per render)
+
+    private(set) var filteredItems: [RecurringItem] = []
+    private(set) var filterCounts: [StatusFilter: Int] = [:]
+    private(set) var filteredMonthlyTotal: Decimal = .zero
+    private(set) var activeCategories: [ItemCategory] = []
 
     var hasError: Bool { error != nil }
 
@@ -48,20 +61,24 @@ final class LibraryViewModel {
             defaultCurrency = preferences.load().defaultCurrencyCode
             allItems = try getLibraryItems.execute()
             isLoaded = true
+            recompute()
         } catch {
             self.error = error
         }
     }
 
-    // MARK: - Filtered & Sorted Output
+    // MARK: - Recompute (single pass — O(n log n) once per state change, not per render)
 
-    var filteredItems: [RecurringItem] {
-        var result = allItems
+    private func recompute() {
+        // 1. Filter counts: one pass per status filter over allItems.
+        var counts: [StatusFilter: Int] = [.all: allItems.count]
+        for filter in StatusFilter.allCases where filter != .all {
+            counts[filter] = filter.apply(to: allItems).count
+        }
+        filterCounts = counts
 
-        // 1. Status filter
-        result = activeFilter.apply(to: result)
-
-        // 2. Search
+        // 2. Filtered + searched + sorted items.
+        var result = activeFilter.apply(to: allItems)
         if !searchText.isEmpty {
             let query = searchText.lowercased()
             result = result.filter { item in
@@ -71,33 +88,16 @@ final class LibraryViewModel {
                 || item.note.lowercased().contains(query)
             }
         }
-
-        // 3. Sort
         result = sortOrder.apply(to: result)
+        filteredItems = result
 
-        return result
-    }
-
-    /// Counts per status filter — used for badges on chips.
-    var filterCounts: [StatusFilter: Int] {
-        var counts: [StatusFilter: Int] = [.all: allItems.count]
-        for filter in StatusFilter.allCases where filter != .all {
-            counts[filter] = filter.apply(to: allItems).count
-        }
-        return counts
-    }
-
-    /// Categories present in the current dataset for the category breakdown.
-    var activeCategories: [ItemCategory] {
-        let cats = Set(filteredItems.map(\.category))
-        return ItemCategory.allCases.filter { cats.contains($0) }
-    }
-
-    /// Monthly total of currently filtered items.
-    var filteredMonthlyTotal: Decimal {
-        filteredItems
+        // 3. Monthly total and active categories derived from the filtered result.
+        filteredMonthlyTotal = result
             .filter(\.status.countsInTotals)
-            .reduce(Decimal.zero) { $0 + $1.monthlyEquivalent }
+            .reduce(.zero) { $0 + $1.monthlyEquivalent }
+
+        let cats = Set(result.map(\.category))
+        activeCategories = ItemCategory.allCases.filter { cats.contains($0) }
     }
 }
 

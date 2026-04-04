@@ -24,13 +24,14 @@ struct HomeView: View {
             .background(ColorTokens.background)
             .toolbarVisibility(.hidden, for: .navigationBar)
             .task {
+                guard viewModel == nil else { return }
                 let vm = HomeViewModel(
                     repositories: container.repositories,
                     preferences: container.preferences,
                     exchangeRateProvider: container.exchangeRateProvider
                 )
+                self.viewModel = vm   // assign first — eliminates nil loading flash
                 await vm.load()
-                self.viewModel = vm
             }
             .onChange(of: container.itemsVersion) { _, _ in
                 viewModel?.loadLocalData(forceReload: true)

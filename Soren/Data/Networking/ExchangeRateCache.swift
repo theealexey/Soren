@@ -11,6 +11,11 @@ protocol ExchangeRateCache: Sendable {
 // MARK: - UserDefaults Implementation
 
 /// Persists exchange rates in UserDefaults as JSON.
+///
+/// SAFETY: `UserDefaults` is internally thread-safe for basic get/set operations.
+/// This class holds no other mutable state, making cross-actor access safe without
+/// actor isolation. If any non-UserDefaults state is added in future, reconsider
+/// and make this an `actor` instead.
 final class UserDefaultsExchangeRateCache: ExchangeRateCache, @unchecked Sendable {
     private let defaults: UserDefaults
     private let key = "soren.exchangeRates"

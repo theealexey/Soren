@@ -25,7 +25,8 @@ import SwiftUI
 struct SorenListRow: View {
 
     /// Leading inset for dividers between rows (icon width + row spacing).
-    static let dividerInset: CGFloat = 40 + Spacing.sm
+    /// References ProviderIcon.Size.medium.frame so it stays in sync if icon sizes change.
+    static let dividerInset: CGFloat = ProviderIcon.Size.medium.frame + Spacing.sm
 
     let title: String
     let subtitle: String?

@@ -8,15 +8,28 @@ struct SorenApp: App {
     @AppStorage("soren.appearanceMode") private var appearanceModeRaw = AppearanceMode.system.rawValue
 
     init() {
-        do {
-            let modelContainer = try SorenModelContainer.production()
-            self.container = modelContainer
-            self._appContainer = State(
-                initialValue: AppContainer(modelContext: modelContainer.mainContext)
-            )
-        } catch {
-            fatalError("Failed to initialize ModelContainer: \(error)")
+        func makeAppContainer(_ mc: ModelContainer) -> AppContainer {
+            AppContainer(modelContext: mc.mainContext)
         }
+
+        if let mc = try? SorenModelContainer.production() {
+            container = mc
+            _appContainer = State(initialValue: makeAppContainer(mc))
+            return
+        }
+
+        // Store may be corrupted (e.g., failed iCloud sync). Delete and retry.
+        SorenModelContainer.deleteProductionStore()
+        if let mc = try? SorenModelContainer.production() {
+            container = mc
+            _appContainer = State(initialValue: makeAppContainer(mc))
+            return
+        }
+
+        // Last resort: in-memory only. User data is lost for this session but the app runs.
+        let mc = try! SorenModelContainer.inMemory()
+        container = mc
+        _appContainer = State(initialValue: makeAppContainer(mc))
     }
 
     var body: some Scene {
@@ -29,10 +42,6 @@ struct SorenApp: App {
     }
 
     private var colorScheme: ColorScheme? {
-        switch AppearanceMode(rawValue: appearanceModeRaw) {
-        case .light: .light
-        case .dark:  .dark
-        default:     nil
-        }
+        AppearanceMode(rawValue: appearanceModeRaw)?.colorScheme
     }
 }

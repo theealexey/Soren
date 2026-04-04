@@ -6,7 +6,10 @@ import UIKit
 /// Loads provider logos from a prioritised list of URLs.
 /// Caches in memory (NSCache) and on disk (URLCache on URLSession).
 /// Priority per provider: Clearbit → Google favicon → nil (letter-mark shown).
-private final class LogoLoader: @unchecked Sendable {
+///
+/// Implemented as an `actor` so that NSCache mutations are serialised and
+/// UIImage values are safely passed to @MainActor callers under Swift 6.
+private actor LogoLoader {
 
     static let shared = LogoLoader()
 

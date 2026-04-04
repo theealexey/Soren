@@ -26,8 +26,8 @@ enum InsightsBuilder {
             ))
         }
 
-        let weekTotal = upcomingCharges.reduce(Decimal.zero) { $0 + $1.amount }
-        if weekTotal > 0 && upcomingCharges.count >= 2 {
+        // Use count directly — all saved items have amount > 0, so count >= 2 implies total > 0.
+        if upcomingCharges.count >= 2 {
             result.append(InsightData(
                 icon: "calendar.badge.clock",
                 title: String(localized: "\(upcomingCharges.count) списаний на этой неделе"),

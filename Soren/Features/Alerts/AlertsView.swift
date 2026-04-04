@@ -20,12 +20,13 @@ struct AlertsView: View {
             .background(ColorTokens.background)
             .toolbarVisibility(.hidden, for: .navigationBar)
             .task {
+                guard viewModel == nil else { return }
                 let vm = AlertsViewModel(
                     repositories: container.repositories,
                     preferences: container.preferences
                 )
+                self.viewModel = vm   // assign first — eliminates nil loading flash
                 vm.load()
-                self.viewModel = vm
             }
             .navigationDestination(for: RecurringItem.self) { item in
                 ItemDetailsView(

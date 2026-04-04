@@ -10,25 +10,31 @@ struct ItemEditFormView: View {
 
     var body: some View {
         Form {
-            essentialsSection
-
-            classificationSection
-
-            datesSection
-
-            noteSection
+            RecurringItemFormFields(
+                title: $viewModel.editTitle,
+                amountText: $viewModel.editAmountText,
+                currencyCode: $viewModel.editCurrencyCode,
+                billingCycle: $viewModel.editBillingCycle,
+                category: $viewModel.editCategory,
+                itemType: $viewModel.editItemType,
+                startDate: $viewModel.editStartDate,
+                nextChargeDate: $viewModel.editNextChargeDate,
+                note: $viewModel.editNote
+            )
         }
-        .navigationTitle("Редактирование")
+        .scrollContentBackground(.hidden)
+        .background(ColorTokens.background)
+        .navigationTitle(String(localized: "Редактирование"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("Отмена") {
+                Button(String(localized: "Отмена")) {
                     viewModel.cancelEditing()
                 }
             }
 
             ToolbarItem(placement: .confirmationAction) {
-                Button("Сохранить") {
+                Button(String(localized: "Сохранить")) {
                     saveAndDismiss()
                 }
                 .fontWeight(.semibold)
@@ -36,78 +42,6 @@ struct ItemEditFormView: View {
             }
         }
         .interactiveDismissDisabled()
-    }
-
-    // MARK: - Essentials
-
-    private var essentialsSection: some View {
-        Section("Основное") {
-            TextField("Название", text: $viewModel.editTitle)
-
-            HStack {
-                TextField("Сумма", text: $viewModel.editAmountText)
-                    .keyboardType(.decimalPad)
-
-                Picker("", selection: $viewModel.editCurrencyCode) {
-                    ForEach(supportedCurrencies, id: \.self) { code in
-                        Text(code).tag(code)
-                    }
-                }
-                .labelsHidden()
-                .fixedSize()
-            }
-
-            Picker("Период оплаты", selection: $viewModel.editBillingCycle) {
-                ForEach(BillingCycle.allCases, id: \.self) { cycle in
-                    Text(cycle.displayName).tag(cycle)
-                }
-            }
-        }
-    }
-
-    // MARK: - Classification
-
-    private var classificationSection: some View {
-        Section("Категория") {
-            Picker("Категория", selection: $viewModel.editCategory) {
-                ForEach(ItemCategory.allCases, id: \.self) { cat in
-                    Text(cat.displayName).tag(cat)
-                }
-            }
-
-            Picker("Тип", selection: $viewModel.editItemType) {
-                ForEach(ItemType.allCases, id: \.self) { type in
-                    Text(type.displayName).tag(type)
-                }
-            }
-        }
-    }
-
-    // MARK: - Dates
-
-    private var datesSection: some View {
-        Section("Даты") {
-            DatePicker(
-                "Дата начала",
-                selection: $viewModel.editStartDate,
-                displayedComponents: .date
-            )
-
-            DatePicker(
-                "Следующее списание",
-                selection: $viewModel.editNextChargeDate,
-                displayedComponents: .date
-            )
-        }
-    }
-
-    // MARK: - Note
-
-    private var noteSection: some View {
-        Section("Заметка") {
-            TextField("Тариф, аккаунт, детали...", text: $viewModel.editNote, axis: .vertical)
-                .lineLimit(3...6)
-        }
     }
 
     // MARK: - Save
@@ -122,11 +56,6 @@ struct ItemEditFormView: View {
         }
     }
 
-    // MARK: - Supported Currencies
-
-    private var supportedCurrencies: [String] {
-        SupportedCurrency.codes
-    }
 }
 
 // MARK: - Preview

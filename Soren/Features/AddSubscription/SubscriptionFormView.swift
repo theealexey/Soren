@@ -14,21 +14,27 @@ struct SubscriptionFormView: View {
 
             tierSection
 
-            essentialsSection
-
-            classificationSection
-
-            datesSection
-
-            noteSection
+            RecurringItemFormFields(
+                title: $viewModel.title,
+                amountText: $viewModel.amountText,
+                currencyCode: $viewModel.currencyCode,
+                billingCycle: $viewModel.billingCycle,
+                category: $viewModel.category,
+                itemType: $viewModel.itemType,
+                startDate: $viewModel.startDate,
+                nextChargeDate: $viewModel.nextChargeDate,
+                note: $viewModel.note
+            )
         }
+        .scrollContentBackground(.hidden)
+        .background(ColorTokens.background)
         .navigationTitle(viewModel.selectedProvider != nil
             ? String(localized: "Новая подписка")
             : String(localized: "Добавить вручную"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button("Сохранить") {
+                Button(String(localized: "Сохранить")) {
                     saveAndDismiss()
                 }
                 .fontWeight(.semibold)
@@ -97,78 +103,6 @@ struct SubscriptionFormView: View {
         }
     }
 
-    // MARK: - Essentials
-
-    private var essentialsSection: some View {
-        Section("Основное") {
-            TextField("Название", text: $viewModel.title)
-
-            HStack {
-                TextField("Сумма", text: $viewModel.amountText)
-                    .keyboardType(.decimalPad)
-
-                Picker("", selection: $viewModel.currencyCode) {
-                    ForEach(supportedCurrencies, id: \.self) { code in
-                        Text(code).tag(code)
-                    }
-                }
-                .labelsHidden()
-                .fixedSize()
-            }
-
-            Picker("Период оплаты", selection: $viewModel.billingCycle) {
-                ForEach(BillingCycle.allCases, id: \.self) { cycle in
-                    Text(cycle.displayName).tag(cycle)
-                }
-            }
-        }
-    }
-
-    // MARK: - Classification
-
-    private var classificationSection: some View {
-        Section("Категория") {
-            Picker("Категория", selection: $viewModel.category) {
-                ForEach(ItemCategory.allCases, id: \.self) { cat in
-                    Text(cat.displayName).tag(cat)
-                }
-            }
-
-            Picker("Тип", selection: $viewModel.itemType) {
-                ForEach(ItemType.allCases, id: \.self) { type in
-                    Text(type.displayName).tag(type)
-                }
-            }
-        }
-    }
-
-    // MARK: - Dates
-
-    private var datesSection: some View {
-        Section("Даты") {
-            DatePicker(
-                "Дата начала",
-                selection: $viewModel.startDate,
-                displayedComponents: .date
-            )
-
-            DatePicker(
-                "Следующее списание",
-                selection: $viewModel.nextChargeDate,
-                displayedComponents: .date
-            )
-        }
-    }
-
-    // MARK: - Note
-
-    private var noteSection: some View {
-        Section("Заметка") {
-            TextField("Тариф, аккаунт, детали...", text: $viewModel.note, axis: .vertical)
-                .lineLimit(3...6)
-        }
-    }
-
     // MARK: - Save
 
     private func saveAndDismiss() {
@@ -181,11 +115,6 @@ struct SubscriptionFormView: View {
         }
     }
 
-    // MARK: - Supported Currencies
-
-    private var supportedCurrencies: [String] {
-        SupportedCurrency.codes
-    }
 }
 
 // MARK: - Preview

@@ -142,8 +142,13 @@ enum BillingCycleEncoder {
 /// Simple format — tags must not contain commas.
 enum TagsEncoder {
 
+    /// Encodes tags as a comma-separated string.
+    /// Strips commas from individual tag values to prevent round-trip corruption.
     static func encode(_ tags: [String]) -> String {
-        tags.joined(separator: ",")
+        tags
+            .map { $0.replacingOccurrences(of: ",", with: "") }
+            .filter { !$0.isEmpty }
+            .joined(separator: ",")
     }
 
     static func decode(_ raw: String) -> [String] {

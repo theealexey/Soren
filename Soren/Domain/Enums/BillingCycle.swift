@@ -47,13 +47,14 @@ extension BillingCycle {
 
     /// Monthly equivalent cost multiplier.
     /// Used to normalise costs in Analytics.
+    /// All literals use Decimal(string:) to avoid Double intermediate representation (binary imprecision).
     var monthlyMultiplier: Decimal {
         switch self {
-        case .weekly:           4.33
-        case .monthly:          1
-        case .quarterly:        0.333
-        case .semiannual:       0.166
-        case .annual:           0.0833
+        case .weekly:           Decimal(string: "4.333")!   // 52 weeks / 12 months
+        case .monthly:          Decimal(1)
+        case .quarterly:        Decimal(string: "0.3333")!  // 1/3
+        case .semiannual:       Decimal(string: "0.1667")!  // 1/6
+        case .annual:           Decimal(string: "0.0833")!  // 1/12
         case .custom(let d):    Decimal(30) / Decimal(d)
         }
     }
@@ -68,6 +69,8 @@ extension BillingCycle {
 }
 
 extension BillingCycle: CaseIterable {
+    /// `.custom` is intentionally excluded — it requires a companion days-input UI
+    /// and cannot be represented as a simple Picker row. Use a dedicated custom-days editor instead.
     static var allCases: [BillingCycle] {
         [.weekly, .monthly, .quarterly, .semiannual, .annual]
     }

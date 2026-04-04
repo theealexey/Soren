@@ -121,7 +121,8 @@ final class AlertsViewModel {
 
 struct AlertSection: Identifiable {
 
-    enum Kind {
+    /// String rawValue used as stable identity — never changes with locale.
+    enum Kind: String {
         case overdue
         case failed
         case dueToday
@@ -135,5 +136,6 @@ struct AlertSection: Identifiable {
     let severity: InsightCard.Severity
     let items: [RecurringItem]
 
-    var id: String { title }
+    /// Stable, locale-independent identity based on Kind.rawValue (not the translated title).
+    var id: String { kind.rawValue }
 }

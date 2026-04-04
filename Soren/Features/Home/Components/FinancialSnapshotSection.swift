@@ -49,7 +49,7 @@ struct FinancialSnapshotSection: View {
                 }
 
                 if summary.containsMixedCurrencies {
-                    if let _ = ratesLastUpdated {
+                    if ratesLastUpdated != nil {
                         metricChip(
                             icon: isRatesStale ? "exclamationmark.arrow.trianglehead.2.clockwise.rotate.90" : "arrow.trianglehead.2.clockwise.rotate.90",
                             value: "",
@@ -71,10 +71,15 @@ struct FinancialSnapshotSection: View {
 
     private var ratesStatusLabel: String {
         guard let date = ratesLastUpdated else { return "" }
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: .now)
+        return Self.relativeFormatter.localizedString(for: date, relativeTo: .now)
     }
+
+    // Allocated once — RelativeDateTimeFormatter creation is moderately expensive.
+    private static let relativeFormatter: RelativeDateTimeFormatter = {
+        let f = RelativeDateTimeFormatter()
+        f.unitsStyle = .abbreviated
+        return f
+    }()
 
     // MARK: - Metric Chip
 

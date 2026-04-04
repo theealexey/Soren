@@ -8,42 +8,50 @@ import UIKit
 @MainActor
 enum HapticEngine {
 
+    // MARK: - Retained generators (Apple recommends keeping these alive and calling prepare() before use)
+
+    private static let notificationGen  = UINotificationFeedbackGenerator()
+    private static let selectionGen     = UISelectionFeedbackGenerator()
+    private static let lightImpactGen   = UIImpactFeedbackGenerator(style: .light)
+    private static let mediumImpactGen  = UIImpactFeedbackGenerator(style: .medium)
+    private static let heavyImpactGen   = UIImpactFeedbackGenerator(style: .heavy)
+
     // MARK: - Transactional
 
     /// Item added, payment marked as done, reminder saved.
     static func success() {
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        notificationGen.notificationOccurred(.success)
     }
 
     /// Validation error, failed action.
     static func error() {
-        UINotificationFeedbackGenerator().notificationOccurred(.error)
+        notificationGen.notificationOccurred(.error)
     }
 
     /// Trial ending soon, upcoming charge alert.
     static func warning() {
-        UINotificationFeedbackGenerator().notificationOccurred(.warning)
+        notificationGen.notificationOccurred(.warning)
     }
 
     // MARK: - Interactive
 
     /// Tab selection, filter toggle, chip tap.
     static func selection() {
-        UISelectionFeedbackGenerator().selectionChanged()
+        selectionGen.selectionChanged()
     }
 
     /// Button press, card tap.
     static func lightImpact() {
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        lightImpactGen.impactOccurred()
     }
 
     /// Delete, archive action confirmation.
     static func mediumImpact() {
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        mediumImpactGen.impactOccurred()
     }
 
     /// Destructive confirmation, pull-to-refresh threshold.
     static func heavyImpact() {
-        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+        heavyImpactGen.impactOccurred()
     }
 }

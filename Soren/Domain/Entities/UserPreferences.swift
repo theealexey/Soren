@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 // MARK: - User Preferences
 
@@ -30,6 +31,14 @@ enum AppearanceMode: String, Codable, CaseIterable, Sendable {
         case .system: String(localized: "Системная")
         case .light:  String(localized: "Светлая")
         case .dark:   String(localized: "Тёмная")
+        }
+    }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: nil
+        case .light:  .light
+        case .dark:   .dark
         }
     }
 }

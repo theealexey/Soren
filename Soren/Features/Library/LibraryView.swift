@@ -42,9 +42,10 @@ struct LibraryView: View {
                 }
             }
             .task {
+                guard viewModel == nil else { return }
                 let vm = LibraryViewModel(repositories: container.repositories, preferences: container.preferences)
+                self.viewModel = vm   // assign first — eliminates nil loading flash
                 vm.load()
-                self.viewModel = vm
             }
             .onChange(of: container.itemsVersion) { _, _ in
                 viewModel?.load()
