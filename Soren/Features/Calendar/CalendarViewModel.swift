@@ -138,10 +138,16 @@ final class CalendarViewModel {
 
             // Monthly total: only items in defaultCurrency to avoid cross-currency nonsense.
             // Compute monthEnd as startOfDay(last day of month) to be DST-safe.
+            // Reset totals before the guard so stale values never persist on failure.
+            monthlyTotal = .zero
+            hasMultiCurrencyItems = false
             guard
                 let nextMonthStart = Self.cal.date(byAdding: .month, value: 1, to: displayedMonth),
                 let monthEndRaw = Self.cal.date(byAdding: .day, value: -1, to: nextMonthStart)
-            else { return }
+            else {
+                assertionFailure("CalendarViewModel: failed to compute month boundaries for \(displayedMonth)")
+                return
+            }
             let monthEnd = Self.cal.startOfDay(for: monthEndRaw)
 
             let monthItems = items.filter { item in
