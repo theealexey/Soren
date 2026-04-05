@@ -43,29 +43,17 @@ struct CategorySpend: Identifiable {
 
 /// Drives the Insights/Analytics tab.
 ///
-/// Computes spending breakdown by category, top subscriptions by cost,
-/// annual items to watch, and potentially-unused waste candidates.
-/// Exchange rates are fetched async for cross-currency totals.
+/// Loads a single [RecurringItem] snapshot and builds AnalyticsScreenState
+/// atomically — all counts, totals and breakdowns derive from the same array.
+/// Exchange rates are fetched async on first load and reused on item changes.
 @MainActor @Observable
 final class AnalyticsViewModel {
 
     // MARK: - State
 
-    private(set) var summary: DashboardSummary = .empty
-    private(set) var categoryBreakdown: [CategorySpend] = []
-    private(set) var monthlyProjections: [MonthlyProjection] = []
-    private(set) var topItems: [RecurringItem] = []     // top 5 by monthly equivalent
-    private(set) var annualItems: [RecurringItem] = []  // annual billing cycle
-    private(set) var unusedItems: [RecurringItem] = []  // usageStatus == .unused
-    private(set) var defaultCurrency: String = UserPreferences.default.defaultCurrencyCode
-    private(set) var exchangeRates: ExchangeRates?
+    private(set) var screenState: AnalyticsScreenState = .empty
     private(set) var isLoaded = false
     private(set) var error: Error?
-
-    /// Total monthly spend of all unused items — the "waste" figure.
-    var unusedMonthlyCost: Decimal {
-        unusedItems.reduce(.zero) { $0 + monthlyAmount($1) }
-    }
 
     // MARK: - Dependencies
 
@@ -73,6 +61,11 @@ final class AnalyticsViewModel {
     private let repository: any RecurringItemRepository
     private let preferences: UserPreferencesRepository
     private let exchangeRateProvider: (any ExchangeRateProvider)?
+
+    // MARK: - Exchange rates — VM-internal, not exposed in screenState
+
+    private var exchangeRates: ExchangeRates?
+    private var defaultCurrency: String = UserPreferences.default.defaultCurrencyCode
 
     // MARK: - Init
 
@@ -109,21 +102,25 @@ final class AnalyticsViewModel {
         error = nil
         do {
             let items = try repository.fetchActive()
-            summary = getDashboardSummary.execute(
+
+            let summary = getDashboardSummary.execute(
                 items: items,
                 targetCurrency: defaultCurrency,
                 rates: exchangeRates
             )
-            categoryBreakdown = buildCategoryBreakdown(items)
-            monthlyProjections = buildProjections(items)
-            topItems = Array(
-                items.sorted { monthlyAmount($0) > monthlyAmount($1) }.prefix(5)
+            let unusedItems = items.filter { $0.usageStatus == .unused }
+            let unusedCost = unusedItems.reduce(Decimal.zero) { $0 + monthlyAmount($1) }
+
+            screenState = AnalyticsScreenState(
+                summary: summary,
+                categoryBreakdown: buildCategoryBreakdown(items),
+                monthlyProjections: buildProjections(items),
+                topItems: Array(items.sorted { monthlyAmount($0) > monthlyAmount($1) }.prefix(5)),
+                annualItems: items.filter { if case .annual = $0.billingCycle { return true }; return false },
+                unusedItems: unusedItems,
+                defaultCurrency: defaultCurrency,
+                unusedMonthlyCost: unusedCost
             )
-            annualItems = items.filter {
-                if case .annual = $0.billingCycle { return true }
-                return false
-            }
-            unusedItems = items.filter { $0.usageStatus == .unused }
             isLoaded = true
         } catch {
             self.error = error

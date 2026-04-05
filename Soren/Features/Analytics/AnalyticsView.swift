@@ -50,7 +50,7 @@ struct AnalyticsView: View {
             }
         } else if !vm.isLoaded {
             LoadingStateView()
-        } else if vm.summary == .empty {
+        } else if vm.screenState.isEmpty {
             emptyState
         } else {
             scrollContent(vm)
@@ -68,28 +68,29 @@ struct AnalyticsView: View {
     // MARK: - Scroll Content
 
     private func scrollContent(_ vm: AnalyticsViewModel) -> some View {
-        ScrollView {
+        let state = vm.screenState
+        return ScrollView {
             LazyVStack(alignment: .leading, spacing: Spacing.lg) {
-                overviewSection(vm)
+                overviewSection(state)
 
-                if vm.monthlyProjections.count > 1 {
-                    forecastSection(vm)
+                if state.monthlyProjections.count > 1 {
+                    forecastSection(state)
                 }
 
-                if !vm.categoryBreakdown.isEmpty {
-                    categorySection(vm)
+                if !state.categoryBreakdown.isEmpty {
+                    categorySection(state)
                 }
 
-                if !vm.topItems.isEmpty {
-                    topItemsSection(vm)
+                if !state.topItems.isEmpty {
+                    topItemsSection(state, vm: vm)
                 }
 
-                if !vm.annualItems.isEmpty {
-                    annualSection(vm)
+                if !state.annualItems.isEmpty {
+                    annualSection(state)
                 }
 
-                if !vm.unusedItems.isEmpty {
-                    unusedSection(vm)
+                if !state.unusedItems.isEmpty {
+                    unusedSection(state)
                 }
             }
             .padding(.vertical, Spacing.md)
@@ -98,7 +99,7 @@ struct AnalyticsView: View {
 
     // MARK: - 1. Overview
 
-    private func overviewSection(_ vm: AnalyticsViewModel) -> some View {
+    private func overviewSection(_ state: AnalyticsScreenState) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             SectionHeader(String(localized: "Обзор"))
                 .padding(.horizontal, Spacing.lg)
@@ -107,16 +108,16 @@ struct AnalyticsView: View {
                 PremiumCard(.elevated) {
                     StatBlock(
                         title: "В месяц",
-                        amount: vm.summary.monthlyTotal,
-                        currency: vm.defaultCurrency
+                        amount: state.summary.monthlyTotal,
+                        currency: state.defaultCurrency
                     )
                 }
 
                 PremiumCard(.elevated) {
                     StatBlock(
                         title: "В год",
-                        amount: vm.summary.yearlyProjection,
-                        currency: vm.defaultCurrency
+                        amount: state.summary.yearlyProjection,
+                        currency: state.defaultCurrency
                     )
                 }
             }
@@ -125,22 +126,22 @@ struct AnalyticsView: View {
             HStack(spacing: Spacing.xs) {
                 metricChip(
                     icon: "repeat",
-                    value: "\(vm.summary.activeItemCount)",
+                    value: "\(state.summary.activeItemCount)",
                     label: String(localized: "активных")
                 )
 
-                if vm.summary.activeTrialCount > 0 {
+                if state.summary.activeTrialCount > 0 {
                     metricChip(
                         icon: "clock",
-                        value: "\(vm.summary.activeTrialCount)",
+                        value: "\(state.summary.activeTrialCount)",
                         label: String(localized: "пробных")
                     )
                 }
 
-                if !vm.unusedItems.isEmpty {
+                if !state.unusedItems.isEmpty {
                     metricChip(
                         icon: "exclamationmark.circle",
-                        value: "\(vm.unusedItems.count)",
+                        value: "\(state.unusedItems.count)",
                         label: String(localized: "неиспользуемых"),
                         isWarning: true
                     )
@@ -175,13 +176,13 @@ struct AnalyticsView: View {
 
     // MARK: - 2. Spending Forecast
 
-    private func forecastSection(_ vm: AnalyticsViewModel) -> some View {
+    private func forecastSection(_ state: AnalyticsScreenState) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             SectionHeader(String(localized: "Прогноз на 6 месяцев"))
                 .padding(.horizontal, Spacing.lg)
 
             PremiumCard {
-                Chart(vm.monthlyProjections) { proj in
+                Chart(state.monthlyProjections) { proj in
                     BarMark(
                         x: .value("Месяц", proj.shortLabel),
                         y: .value("Сумма", proj.doubleTotal)
@@ -190,7 +191,7 @@ struct AnalyticsView: View {
                     .cornerRadius(6)
                     .annotation(position: .top, alignment: .center) {
                         if proj.doubleTotal > 0 {
-                            Text(compactAmount(proj.total, currency: vm.defaultCurrency))
+                            Text(compactAmount(proj.total, currency: state.defaultCurrency))
                                 .font(.system(size: 10, weight: .medium))
                                 .foregroundStyle(ColorTokens.textSecondary)
                         }
@@ -231,19 +232,19 @@ struct AnalyticsView: View {
 
     // MARK: - 3. Category Breakdown
 
-    private func categorySection(_ vm: AnalyticsViewModel) -> some View {
+    private func categorySection(_ state: AnalyticsScreenState) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             SectionHeader(String(localized: "По категориям"))
                 .padding(.horizontal, Spacing.lg)
 
-            stackedBar(vm.categoryBreakdown)
+            stackedBar(state.categoryBreakdown)
                 .padding(.horizontal, Spacing.lg)
 
             PremiumCard {
                 VStack(spacing: Spacing.sm) {
-                    let maxProportion = vm.categoryBreakdown.first?.proportion ?? 1
-                    ForEach(vm.categoryBreakdown) { spend in
-                        categoryRow(spend, maxProportion: maxProportion, currency: vm.defaultCurrency)
+                    let maxProportion = state.categoryBreakdown.first?.proportion ?? 1
+                    ForEach(state.categoryBreakdown) { spend in
+                        categoryRow(spend, maxProportion: maxProportion, currency: state.defaultCurrency)
                     }
                 }
             }
@@ -299,20 +300,22 @@ struct AnalyticsView: View {
 
     // MARK: - 4. Top Subscriptions
 
-    private func topItemsSection(_ vm: AnalyticsViewModel) -> some View {
+    // vm is passed alongside state because monthlyAmount() still lives on the VM.
+    // Step 4 removes this by pre-computing amounts into TopSpendRowModel.
+    private func topItemsSection(_ state: AnalyticsScreenState, vm: AnalyticsViewModel) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             SectionHeader(String(localized: "Топ подписки"))
                 .padding(.horizontal, Spacing.lg)
 
             PremiumCard {
                 VStack(spacing: 0) {
-                    ForEach(Array(vm.topItems.enumerated()), id: \.element.id) { idx, item in
+                    ForEach(Array(state.topItems.enumerated()), id: \.element.id) { idx, item in
                         Button { navigateToItem(item) } label: {
                             SorenListRow(
                                 title: item.title,
                                 subtitle: item.providerName == item.title ? nil : item.providerName,
                                 amount: vm.monthlyAmount(item),
-                                currency: vm.defaultCurrency,
+                                currency: state.defaultCurrency,
                                 cycle: .monthly,
                                 providerTemplate: item.providerTemplate,
                                 category: item.category
@@ -320,7 +323,7 @@ struct AnalyticsView: View {
                         }
                         .buttonStyle(.plain)
 
-                        if idx < vm.topItems.count - 1 {
+                        if idx < state.topItems.count - 1 {
                             Divider().padding(.leading, SorenListRow.dividerInset)
                         }
                     }
@@ -332,14 +335,14 @@ struct AnalyticsView: View {
 
     // MARK: - 5. Annual Payments
 
-    private func annualSection(_ vm: AnalyticsViewModel) -> some View {
+    private func annualSection(_ state: AnalyticsScreenState) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             SectionHeader(String(localized: "Годовые платежи"))
                 .padding(.horizontal, Spacing.lg)
 
             PremiumCard {
                 VStack(spacing: 0) {
-                    ForEach(Array(vm.annualItems.enumerated()), id: \.element.id) { idx, item in
+                    ForEach(Array(state.annualItems.enumerated()), id: \.element.id) { idx, item in
                         Button { navigateToItem(item) } label: {
                             SorenListRow(
                                 title: item.title,
@@ -353,7 +356,7 @@ struct AnalyticsView: View {
                         }
                         .buttonStyle(.plain)
 
-                        if idx < vm.annualItems.count - 1 {
+                        if idx < state.annualItems.count - 1 {
                             Divider().padding(.leading, SorenListRow.dividerInset)
                         }
                     }
@@ -381,13 +384,13 @@ struct AnalyticsView: View {
 
     // MARK: - 6. Unused / Waste
 
-    private func unusedSection(_ vm: AnalyticsViewModel) -> some View {
+    private func unusedSection(_ state: AnalyticsScreenState) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             HStack {
                 SectionHeader(String(localized: "Не используются"))
                 Spacer()
-                if vm.unusedMonthlyCost > 0 {
-                    Text(String(localized: "−\(wasteString(vm.unusedMonthlyCost)) \(vm.defaultCurrency)/мес"))
+                if state.unusedMonthlyCost > 0 {
+                    Text(String(localized: "−\(wasteString(state.unusedMonthlyCost)) \(state.defaultCurrency)/мес"))
                         .font(Typography.captionMedium)
                         .foregroundStyle(ColorTokens.warning)
                         .padding(.horizontal, Spacing.sm)
@@ -399,7 +402,7 @@ struct AnalyticsView: View {
 
             PremiumCard {
                 VStack(spacing: 0) {
-                    ForEach(Array(vm.unusedItems.enumerated()), id: \.element.id) { idx, item in
+                    ForEach(Array(state.unusedItems.enumerated()), id: \.element.id) { idx, item in
                         Button { navigateToItem(item) } label: {
                             SorenListRow(
                                 title: item.title,
@@ -413,7 +416,7 @@ struct AnalyticsView: View {
                         }
                         .buttonStyle(.plain)
 
-                        if idx < vm.unusedItems.count - 1 {
+                        if idx < state.unusedItems.count - 1 {
                             Divider().padding(.leading, SorenListRow.dividerInset)
                         }
                     }
