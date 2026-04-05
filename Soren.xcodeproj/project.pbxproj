@@ -7,6 +7,24 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CDB0A81977D2432C86357781 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69663B6C10B9414FAF35D1D1 /* AppTheme.swift */; };
+		05790EFBB4D541EF810D126F /* AppThemeKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41B658CEA490477D8C9C98DE /* AppThemeKey.swift */; };
+		EE38CC0587514A408D6D80A5 /* AppThemeModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FBDF07888514A3591A496BF /* AppThemeModifier.swift */; };
+		97A2A20CAEAB44E68F63BB6B /* BillingLandscapePoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 518F83043EE845518E690DFF /* BillingLandscapePoint.swift */; };
+		1ADF799AA8B2490380869A3A /* BillingLandscapeSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 059E53FDD4F948749DF1C2E9 /* BillingLandscapeSelection.swift */; };
+		C3F221DC85A147078C49BE70 /* NextPaymentCalloutState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89C379F4B06646F3956F3F64 /* NextPaymentCalloutState.swift */; };
+		FBC07F89D51B4605B50D63D1 /* InsightRowModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE172E0B5E684CC19763CB33 /* InsightRowModel.swift */; };
+		8AEC1D96D7CB4B72B1F54A07 /* HomeScreenState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D72E47EA8B4764B44794D7 /* HomeScreenState.swift */; };
+		3E2E56769CA64921A495EA1C /* LandscapeBarResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6B398A67174A1FA40F43D0 /* LandscapeBarResolver.swift */; };
+		769084C98FFE42B2B965548D /* HomeHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 854915DD16B440FEA13354E3 /* HomeHeaderView.swift */; };
+		70B22FC6DDB344A0A6B70413 /* NextPaymentCalloutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD001DE005DD40109FA73A60 /* NextPaymentCalloutView.swift */; };
+		CA60769477B748D983E2F0FA /* InsightSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61D30BBCE8424436885B4D74 /* InsightSectionView.swift */; };
+		FBAF607458A444818CE10543 /* InsightRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2886D16BD348EEA024640B /* InsightRowView.swift */; };
+		014D858542BA45469FF7110F /* BillingLandscapeContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E74491D809F427EAB8BB111 /* BillingLandscapeContainerView.swift */; };
+		9A7DF8F544C94F2D93FE2F76 /* BillingLandscapeChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51FB7D97D28E4505A4CD3C30 /* BillingLandscapeChartView.swift */; };
+		94268973B4794217879E305A /* LandscapeAxisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04E1E42E947949BE89BAC319 /* LandscapeAxisView.swift */; };
+		784BA385171A415495030F72 /* LandscapeGestureOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0487492063B242E08541502E /* LandscapeGestureOverlay.swift */; };
+		8E978C6C57204131A4609A4B /* AppContainer+HomeFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D50D0910B47D47E48DF287AD /* AppContainer+HomeFactory.swift */; };
 		0050A4D1600A744F59A20613 /* ItemStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = E95E33778D21F29F937EC9AC /* ItemStatus.swift */; };
 		04646804567EAE64683EDBCC /* StatBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F935C51942C260D6EE1004A /* StatBlock.swift */; };
 		051FAD3976769942DAEFA932 /* SaveRecurringItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6937BB77EA2ED3E831320FCE /* SaveRecurringItem.swift */; };
@@ -159,6 +177,24 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		69663B6C10B9414FAF35D1D1 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		41B658CEA490477D8C9C98DE /* AppThemeKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppThemeKey.swift; sourceTree = "<group>"; };
+		5FBDF07888514A3591A496BF /* AppThemeModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppThemeModifier.swift; sourceTree = "<group>"; };
+		518F83043EE845518E690DFF /* BillingLandscapePoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillingLandscapePoint.swift; sourceTree = "<group>"; };
+		059E53FDD4F948749DF1C2E9 /* BillingLandscapeSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillingLandscapeSelection.swift; sourceTree = "<group>"; };
+		89C379F4B06646F3956F3F64 /* NextPaymentCalloutState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextPaymentCalloutState.swift; sourceTree = "<group>"; };
+		DE172E0B5E684CC19763CB33 /* InsightRowModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightRowModel.swift; sourceTree = "<group>"; };
+		A5D72E47EA8B4764B44794D7 /* HomeScreenState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreenState.swift; sourceTree = "<group>"; };
+		CB6B398A67174A1FA40F43D0 /* LandscapeBarResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandscapeBarResolver.swift; sourceTree = "<group>"; };
+		854915DD16B440FEA13354E3 /* HomeHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeHeaderView.swift; sourceTree = "<group>"; };
+		DD001DE005DD40109FA73A60 /* NextPaymentCalloutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextPaymentCalloutView.swift; sourceTree = "<group>"; };
+		61D30BBCE8424436885B4D74 /* InsightSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightSectionView.swift; sourceTree = "<group>"; };
+		1F2886D16BD348EEA024640B /* InsightRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightRowView.swift; sourceTree = "<group>"; };
+		4E74491D809F427EAB8BB111 /* BillingLandscapeContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillingLandscapeContainerView.swift; sourceTree = "<group>"; };
+		51FB7D97D28E4505A4CD3C30 /* BillingLandscapeChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillingLandscapeChartView.swift; sourceTree = "<group>"; };
+		04E1E42E947949BE89BAC319 /* LandscapeAxisView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandscapeAxisView.swift; sourceTree = "<group>"; };
+		0487492063B242E08541502E /* LandscapeGestureOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandscapeGestureOverlay.swift; sourceTree = "<group>"; };
+		D50D0910B47D47E48DF287AD /* AppContainer+HomeFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppContainer+HomeFactory.swift"; sourceTree = "<group>"; };
 		00327FFEEF7A9E012FB10737 /* InMemoryProviderCatalogRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InMemoryProviderCatalogRepository.swift; sourceTree = "<group>"; };
 		03A97C0EA66D48E990556524 /* UserPreferencesRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPreferencesRepository.swift; sourceTree = "<group>"; };
 		042695C7057463B3D9AB304B /* HomeViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModelTests.swift; sourceTree = "<group>"; };
@@ -298,6 +334,26 @@
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		704C33C13F2645638B6DD64F /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				518F83043EE845518E690DFF /* BillingLandscapePoint.swift */,
+				059E53FDD4F948749DF1C2E9 /* BillingLandscapeSelection.swift */,
+				89C379F4B06646F3956F3F64 /* NextPaymentCalloutState.swift */,
+				DE172E0B5E684CC19763CB33 /* InsightRowModel.swift */,
+				A5D72E47EA8B4764B44794D7 /* HomeScreenState.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		502C84E330DE44FA80F665AA /* Resolvers */ = {
+			isa = PBXGroup;
+			children = (
+				CB6B398A67174A1FA40F43D0 /* LandscapeBarResolver.swift */,
+			);
+			path = Resolvers;
+			sourceTree = "<group>";
+		};
 		014DA37A1409675DBDCF4251 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
@@ -347,6 +403,9 @@
 				6832C56DB6430B9577C4A6F9 /* Spacing.swift */,
 				309532E5E620E13F6A2E6C91 /* ThemePreview.swift */,
 				20E0A890641C92835FBE96BA /* Typography.swift */,
+				69663B6C10B9414FAF35D1D1 /* AppTheme.swift */,
+				41B658CEA490477D8C9C98DE /* AppThemeKey.swift */,
+				5FBDF07888514A3591A496BF /* AppThemeModifier.swift */,
 			);
 			path = Theme;
 			sourceTree = "<group>";
@@ -401,6 +460,8 @@
 			isa = PBXGroup;
 			children = (
 				480403287A59878737DC097A /* Components */,
+				704C33C13F2645638B6DD64F /* Models */,
+				502C84E330DE44FA80F665AA /* Resolvers */,
 				BE4523F2EAB67907AF58C619 /* HomePlaceholderView.swift */,
 				FA3970FC76BF4241015E9CE3 /* HomeView.swift */,
 				83E9DF3D4E0331FB4D1B57BD /* HomeViewModel.swift */,
@@ -475,6 +536,14 @@
 				D6C99E730C19005FFF3BCF5E /* QuickInsightsSection.swift */,
 				8CAF60659D8DB6ABDD97D8BB /* SubscriptionConstellation.swift */,
 				F553F5DC9556568610C73878 /* UpcomingChargesSection.swift */,
+				854915DD16B440FEA13354E3 /* HomeHeaderView.swift */,
+				DD001DE005DD40109FA73A60 /* NextPaymentCalloutView.swift */,
+				61D30BBCE8424436885B4D74 /* InsightSectionView.swift */,
+				1F2886D16BD348EEA024640B /* InsightRowView.swift */,
+				4E74491D809F427EAB8BB111 /* BillingLandscapeContainerView.swift */,
+				51FB7D97D28E4505A4CD3C30 /* BillingLandscapeChartView.swift */,
+				04E1E42E947949BE89BAC319 /* LandscapeAxisView.swift */,
+				0487492063B242E08541502E /* LandscapeGestureOverlay.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -842,6 +911,7 @@
 				CA945694AA563A401CBA4141 /* RootView.swift */,
 				FCEF5B74B2E1B0B2BC44B6B0 /* SorenApp.swift */,
 				339444BD13EEC0437916A2E4 /* StoreRecoveryView.swift */,
+				D50D0910B47D47E48DF287AD /* AppContainer+HomeFactory.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -1050,6 +1120,24 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CDB0A81977D2432C86357781 /* AppTheme.swift in Sources */,
+				05790EFBB4D541EF810D126F /* AppThemeKey.swift in Sources */,
+				EE38CC0587514A408D6D80A5 /* AppThemeModifier.swift in Sources */,
+				97A2A20CAEAB44E68F63BB6B /* BillingLandscapePoint.swift in Sources */,
+				1ADF799AA8B2490380869A3A /* BillingLandscapeSelection.swift in Sources */,
+				C3F221DC85A147078C49BE70 /* NextPaymentCalloutState.swift in Sources */,
+				FBC07F89D51B4605B50D63D1 /* InsightRowModel.swift in Sources */,
+				8AEC1D96D7CB4B72B1F54A07 /* HomeScreenState.swift in Sources */,
+				3E2E56769CA64921A495EA1C /* LandscapeBarResolver.swift in Sources */,
+				769084C98FFE42B2B965548D /* HomeHeaderView.swift in Sources */,
+				70B22FC6DDB344A0A6B70413 /* NextPaymentCalloutView.swift in Sources */,
+				CA60769477B748D983E2F0FA /* InsightSectionView.swift in Sources */,
+				FBAF607458A444818CE10543 /* InsightRowView.swift in Sources */,
+				014D858542BA45469FF7110F /* BillingLandscapeContainerView.swift in Sources */,
+				9A7DF8F544C94F2D93FE2F76 /* BillingLandscapeChartView.swift in Sources */,
+				94268973B4794217879E305A /* LandscapeAxisView.swift in Sources */,
+				784BA385171A415495030F72 /* LandscapeGestureOverlay.swift in Sources */,
+				8E978C6C57204131A4609A4B /* AppContainer+HomeFactory.swift in Sources */,
 				57CFE0656FBA0834CADD574F /* ActiveTrialsSection.swift in Sources */,
 				1D8BAEA0072A517150500030 /* AddSubscriptionViewModel.swift in Sources */,
 				5CEE366B3F7515472AC86539 /* AlertsView.swift in Sources */,

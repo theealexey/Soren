@@ -14,6 +14,7 @@ struct SorenApp: App {
                         .environment(appContainer)
                         .environment(appState)
                         .modelContainer(container)
+                        .modifier(AppThemeModifier(mode: appState.appearanceMode))
                 } else {
                     StoreRecoveryView { appState.recoverWithReset() }
                 }

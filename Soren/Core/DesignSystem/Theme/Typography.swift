@@ -59,6 +59,12 @@ enum Typography {
     /// Semibold + uppercase + wide tracking = airport gate / wayfinding signage.
     static let overline = Font.system(size: 11, weight: .semibold)
 
+    // MARK: - Chart
+
+    /// Axis tick labels on mini charts and the Billing Landscape.
+    /// Monospaced digits prevent layout shifts as numbers change.
+    static let axisLabel = Font.system(size: 10, design: .monospaced)
+
     // MARK: - Specialized
 
     /// Large icon in empty/error state screens.

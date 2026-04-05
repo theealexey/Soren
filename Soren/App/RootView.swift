@@ -168,7 +168,7 @@ private struct SorenContextBar<Trailing: View>: View {
 
     private var contextTitle: String {
         switch tab {
-        case .overview, .calendar:
+        case .calendar:
             return _sorenMonthYearFormatter.string(from: .now).capitalized
         default:
             return tab.title
@@ -179,7 +179,7 @@ private struct SorenContextBar<Trailing: View>: View {
         HStack(spacing: 0) {
             ZStack(alignment: .leading) {
                 ForEach(AppTab.allCases) { t in
-                    let title = (t == .overview || t == .calendar) ? contextTitle : t.title
+                    let title = t == .calendar ? contextTitle : t.title
                     Text(verbatim: title)
                         .font(Typography.headline)
                         .foregroundStyle(ColorTokens.textPrimary)
