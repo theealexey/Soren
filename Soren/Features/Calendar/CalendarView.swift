@@ -214,7 +214,16 @@ struct CalendarView: View {
     private func accessibilityDayLabel(day: CalendarDay, charges: [RecurringItem]) -> Text {
         let dayStr = Self.accessibilityDayFormatter.string(from: day.date)
         if charges.isEmpty { return Text(verbatim: dayStr) }
-        return Text(verbatim: "\(dayStr), \(charges.count) платежей")
+        return Text(verbatim: "\(dayStr), \(pluralPayments(charges.count))")
+    }
+
+    private func pluralPayments(_ n: Int) -> String {
+        let mod10 = n % 10, mod100 = n % 100
+        switch mod10 {
+        case 1 where mod100 != 11:                             return "\(n) платёж"
+        case 2...4 where !(mod100 >= 12 && mod100 <= 14):     return "\(n) платежа"
+        default:                                               return "\(n) платежей"
+        }
     }
 
     private static let accessibilityDayFormatter: DateFormatter = {
@@ -255,7 +264,7 @@ struct CalendarView: View {
                                     subtitle: item.providerName == item.title ? nil : item.providerName,
                                     amount: item.amount,
                                     currency: item.currencyCode,
-                                    cycle: item.billingCycle.cycleLabel,
+                                    cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
                                     providerTemplate: item.providerTemplate,
                                     category: item.category
                                 )
@@ -331,20 +340,6 @@ private extension Array {
     }
 }
 
-// MARK: - BillingCycle+CycleLabel
-
-private extension BillingCycle {
-    var cycleLabel: AmountLabel.CycleLabel {
-        switch self {
-        case .weekly:            .weekly
-        case .monthly:           .monthly
-        case .quarterly:         .custom(String(localized: "квар"))
-        case .semiannual:        .custom(String(localized: "пол"))
-        case .annual:            .yearly
-        case .custom(let days):  .custom("\(days)д")
-        }
-    }
-}
 
 // MARK: - Preview
 

@@ -399,7 +399,7 @@ struct AnalyticsView: View {
                                 subtitle: String(localized: "Не используется"),
                                 amount: item.amount,
                                 currency: item.currencyCode,
-                                cycle: item.billingCycle.cycleLabel,
+                                cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
                                 providerTemplate: item.providerTemplate,
                                 category: item.category,
                                 badge: .paused
@@ -422,21 +422,6 @@ struct AnalyticsView: View {
         formatter.numberStyle = .decimal
         formatter.maximumFractionDigits = 0
         return formatter.string(from: NSDecimalNumber(decimal: amount)) ?? amount.description
-    }
-}
-
-// MARK: - BillingCycle+CycleLabel
-
-private extension BillingCycle {
-    var cycleLabel: AmountLabel.CycleLabel {
-        switch self {
-        case .weekly:            .weekly
-        case .monthly:           .monthly
-        case .quarterly:         .custom(String(localized: "квар"))
-        case .semiannual:        .custom(String(localized: "пол"))
-        case .annual:            .yearly
-        case .custom(let days):  .custom("\(days)д")
-        }
     }
 }
 

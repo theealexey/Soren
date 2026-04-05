@@ -16,7 +16,7 @@ enum RecurringItemFormatter {
         case .annual:       .yearly
         case .quarterly:    .custom(String(localized: "кв"))
         case .semiannual:   .custom(String(localized: "п/г"))
-        case .custom(let d): .custom("\(d)д")
+        case .custom(let d): .custom(String(localized: "\(d)д"))
         }
     }
 
