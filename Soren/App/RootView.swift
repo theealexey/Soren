@@ -8,7 +8,20 @@ struct RootView: View {
     @Environment(AppContainer.self) private var container
     @Environment(AppState.self) private var appState
     @State private var selectedTab: AppTab = .overview
+    @State private var visitedTabs: Set<AppTab> = [.overview]
     @State private var activeSheet: ActiveSheet?
+
+    /// Binding that marks a tab as visited before switching to it, ensuring both
+    /// state mutations land in the same render cycle (no blank-frame flicker).
+    private var tabBinding: Binding<AppTab> {
+        Binding(
+            get: { selectedTab },
+            set: { tab in
+                visitedTabs.insert(tab)
+                selectedTab = tab
+            }
+        )
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -16,17 +29,23 @@ struct RootView: View {
 
             ZStack {
                 ForEach(AppTab.allCases) { tab in
-                    tabDestination(tab)
-                        .opacity(selectedTab == tab ? 1 : 0)
-                        .animation(.easeInOut(duration: 0.16), value: selectedTab)
-                        .allowsHitTesting(selectedTab == tab)
+                    // Opacity wrapper always exists — preserves crossfade animation.
+                    // Content is created only on first visit and kept alive thereafter.
+                    Group {
+                        if visitedTabs.contains(tab) {
+                            tabDestination(tab)
+                        }
+                    }
+                    .opacity(selectedTab == tab ? 1 : 0)
+                    .animation(.easeInOut(duration: 0.16), value: selectedTab)
+                    .allowsHitTesting(selectedTab == tab)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(ColorTokens.background)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            SorenFloatingPill(selectedTab: $selectedTab)
+            SorenFloatingPill(selectedTab: tabBinding)
                 .padding(.horizontal, Spacing.xl)
                 .padding(.bottom, Spacing.xs)
         }
