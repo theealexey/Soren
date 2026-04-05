@@ -213,7 +213,8 @@ struct AnalyticsView: View {
 
     private func compactAmount(_ amount: Decimal, currency: String) -> String {
         let n = NSDecimalNumber(decimal: amount).doubleValue
-        let symbol = Locale.current.localizedString(forCurrencyCode: currency) ?? currency
+        Self.annotationFormatter.currencyCode = currency
+        let symbol = Self.annotationFormatter.currencySymbol ?? currency
         if n >= 1_000_000 {
             return String(format: "%.1fM %@", n / 1_000_000, symbol)
         } else if n >= 1_000 {
@@ -221,6 +222,12 @@ struct AnalyticsView: View {
         }
         return String(format: "%.0f %@", n, symbol)
     }
+
+    private static let annotationFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        return f
+    }()
 
     // MARK: - 3. Category Breakdown
 
@@ -401,8 +408,7 @@ struct AnalyticsView: View {
                                 currency: item.currencyCode,
                                 cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
                                 providerTemplate: item.providerTemplate,
-                                category: item.category,
-                                badge: .paused
+                                category: item.category
                             )
                         }
                         .buttonStyle(.plain)
@@ -417,11 +423,15 @@ struct AnalyticsView: View {
         }
     }
 
+    private static let wasteFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        f.maximumFractionDigits = 0
+        return f
+    }()
+
     private func wasteString(_ amount: Decimal) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSDecimalNumber(decimal: amount)) ?? amount.description
+        Self.wasteFormatter.string(from: NSDecimalNumber(decimal: amount)) ?? amount.description
     }
 }
 
