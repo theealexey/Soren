@@ -1,5 +1,4 @@
 import Foundation
-import SwiftUI
 
 // MARK: - Item Details View Model
 
@@ -135,44 +134,11 @@ final class ItemDetailsViewModel {
         return true
     }
 
-    var cycleLabel: AmountLabel.CycleLabel {
-        RecurringItemFormatter.cycleLabel(for: item.billingCycle)
-    }
-
-    var badge: SorenListRow.Badge? {
-        RecurringItemFormatter.badge(for: item)
-    }
-
     var formattedNextCharge: String {
         item.nextChargeDate.formatted(.dateTime.day().month(.wide))
     }
 
     var formattedStartDate: String {
         item.startDate.formatted(.dateTime.day().month(.wide).year())
-    }
-
-    var statusColor: Color {
-        switch item.status {
-        case .active:               ColorTokens.success
-        case .dueSoon, .dueToday:   ColorTokens.warning
-        case .overdue, .failed:     ColorTokens.error
-        case .trial:                ColorTokens.info
-        case .paused:               ColorTokens.textTertiary
-        case .cancelled, .archived: ColorTokens.textTertiary
-        }
-    }
-
-    var statusIcon: String {
-        switch item.status {
-        case .active:    "checkmark.circle.fill"
-        case .dueSoon:   "clock.fill"
-        case .dueToday:  "exclamationmark.circle.fill"
-        case .overdue:   "exclamationmark.triangle.fill"
-        case .trial:     "clock.badge.checkmark.fill"
-        case .failed:    "xmark.circle.fill"
-        case .cancelled: "minus.circle.fill"
-        case .paused:    "pause.circle.fill"
-        case .archived:  "archivebox.fill"
-        }
     }
 }

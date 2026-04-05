@@ -58,13 +58,13 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Notifications
+    // MARK: - Alert Thresholds
 
     private func notificationsSection(
         chargeAlertDays: Binding<Int>,
         trialAlertDays: Binding<Int>
     ) -> some View {
-        Section("Уведомления") {
+        Section {
             Stepper(
                 "До списания: \(viewModel.chargeAlertDays) дн.",
                 value: chargeAlertDays,
@@ -76,6 +76,10 @@ struct SettingsView: View {
                 value: trialAlertDays,
                 in: 1...14
             )
+        } header: {
+            Text("Напоминания об оплате")
+        } footer: {
+            Text("Soren покажет предупреждение за указанное количество дней до события.")
         }
     }
 

@@ -66,6 +66,39 @@ struct ItemDetailsView: View {
         }
     }
 
+    // MARK: - Display Helpers
+    // These live in the View — they map domain state to presentation types
+    // so that ItemDetailsViewModel stays SwiftUI-free.
+
+    private var cycleLabel: AmountLabel.CycleLabel {
+        RecurringItemFormatter.cycleLabel(for: viewModel.item.billingCycle)
+    }
+
+    private var statusColor: Color {
+        switch viewModel.item.status {
+        case .active:               ColorTokens.success
+        case .dueSoon, .dueToday:   ColorTokens.warning
+        case .overdue, .failed:     ColorTokens.error
+        case .trial:                ColorTokens.info
+        case .paused:               ColorTokens.textTertiary
+        case .cancelled, .archived: ColorTokens.textTertiary
+        }
+    }
+
+    private var statusIcon: String {
+        switch viewModel.item.status {
+        case .active:    "checkmark.circle.fill"
+        case .dueSoon:   "clock.fill"
+        case .dueToday:  "exclamationmark.circle.fill"
+        case .overdue:   "exclamationmark.triangle.fill"
+        case .trial:     "clock.badge.checkmark.fill"
+        case .failed:    "xmark.circle.fill"
+        case .cancelled: "minus.circle.fill"
+        case .paused:    "pause.circle.fill"
+        case .archived:  "archivebox.fill"
+        }
+    }
+
     // MARK: - Hero Section
 
     private var heroSection: some View {
@@ -86,7 +119,7 @@ struct ItemDetailsView: View {
                 viewModel.item.amount,
                 currency: viewModel.item.currencyCode,
                 size: .hero,
-                cycle: viewModel.cycleLabel
+                cycle: cycleLabel
             )
         }
         .frame(maxWidth: .infinity)
@@ -97,16 +130,16 @@ struct ItemDetailsView: View {
 
     private var statusBadge: some View {
         HStack(spacing: Spacing.xxs) {
-            Image(systemName: viewModel.statusIcon)
+            Image(systemName: statusIcon)
                 .font(Typography.captionMedium)
 
             Text(viewModel.item.status.displayName)
                 .font(Typography.captionMedium)
         }
-        .foregroundStyle(viewModel.statusColor)
+        .foregroundStyle(statusColor)
         .padding(.horizontal, Spacing.sm)
         .padding(.vertical, Spacing.xxs)
-        .background(viewModel.statusColor.opacity(0.12), in: Capsule())
+        .background(statusColor.opacity(0.12), in: Capsule())
         .frame(maxWidth: .infinity)
     }
 
