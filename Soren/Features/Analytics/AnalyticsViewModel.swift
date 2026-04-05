@@ -39,6 +39,23 @@ struct CategorySpend: Identifiable {
     var id: String { category.rawValue }
 }
 
+// MARK: - Top Spend Row Model
+
+/// Pre-computed display model for one row in the Top Subscriptions section.
+/// AnalyticsViewModel builds this at load time so the View performs no computation.
+struct TopSpendRowModel: Identifiable {
+    let id: UUID
+    let title: String
+    let subtitle: String?
+    /// Monthly equivalent in defaultCurrency, converted via exchange rates if available.
+    let monthlyAmount: Decimal
+    let currency: String
+    let providerTemplate: ProviderTemplate?
+    let category: ItemCategory
+    /// Full item retained as navigation payload — navigateToItem requires RecurringItem.
+    let navigationItem: RecurringItem
+}
+
 // MARK: - Analytics View Model
 
 /// Drives the Insights/Analytics tab.
@@ -112,11 +129,27 @@ final class AnalyticsViewModel {
             let unusedItems = items.filter { $0.usageStatus == .unused }
             let unusedCost = unusedItems.reduce(Decimal.zero) { $0 + monthlyAmount($1) }
 
+            let topRows = items
+                .sorted { monthlyAmount($0) > monthlyAmount($1) }
+                .prefix(5)
+                .map { item in
+                    TopSpendRowModel(
+                        id: item.id,
+                        title: item.title,
+                        subtitle: item.providerName == item.title ? nil : item.providerName,
+                        monthlyAmount: monthlyAmount(item),
+                        currency: defaultCurrency,
+                        providerTemplate: item.providerTemplate,
+                        category: item.category,
+                        navigationItem: item
+                    )
+                }
+
             screenState = AnalyticsScreenState(
                 summary: summary,
                 categoryBreakdown: buildCategoryBreakdown(items),
                 monthlyProjections: buildProjections(items),
-                topItems: Array(items.sorted { monthlyAmount($0) > monthlyAmount($1) }.prefix(5)),
+                topItems: Array(topRows),
                 annualItems: items.filter { if case .annual = $0.billingCycle { return true }; return false },
                 unusedItems: unusedItems,
                 defaultCurrency: defaultCurrency,
@@ -131,7 +164,7 @@ final class AnalyticsViewModel {
     // MARK: - Private
 
     /// Monthly amount in defaultCurrency, converting via exchange rates when available.
-    func monthlyAmount(_ item: RecurringItem) -> Decimal {
+    private func monthlyAmount(_ item: RecurringItem) -> Decimal {
         guard let rates = exchangeRates, item.currencyCode != defaultCurrency else {
             return item.monthlyEquivalent
         }

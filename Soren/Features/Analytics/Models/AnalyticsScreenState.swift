@@ -13,7 +13,7 @@ struct AnalyticsScreenState {
     let summary: DashboardSummary
     let categoryBreakdown: [CategorySpend]
     let monthlyProjections: [MonthlyProjection]
-    let topItems: [RecurringItem]
+    let topItems: [TopSpendRowModel]
     let annualItems: [RecurringItem]
     let unusedItems: [RecurringItem]
     let defaultCurrency: String
@@ -27,7 +27,7 @@ struct AnalyticsScreenState {
         summary: .empty,
         categoryBreakdown: [],
         monthlyProjections: [],
-        topItems: [],
+        topItems: [] as [TopSpendRowModel],
         annualItems: [],
         unusedItems: [],
         defaultCurrency: UserPreferences.default.defaultCurrencyCode,

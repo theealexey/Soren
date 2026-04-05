@@ -78,7 +78,7 @@ struct AnalyticsView: View {
                 }
 
                 if !state.topItems.isEmpty {
-                    topItemsSection(state, vm: vm)
+                    topItemsSection(state)
                 }
 
                 if !state.annualItems.isEmpty {
@@ -296,25 +296,23 @@ struct AnalyticsView: View {
 
     // MARK: - 4. Top Subscriptions
 
-    // vm is passed alongside state because monthlyAmount() still lives on the VM.
-    // Step 4 removes this by pre-computing amounts into TopSpendRowModel.
-    private func topItemsSection(_ state: AnalyticsScreenState, vm: AnalyticsViewModel) -> some View {
+    private func topItemsSection(_ state: AnalyticsScreenState) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             SectionHeader(String(localized: "Топ подписки"))
                 .padding(.horizontal, Spacing.lg)
 
             PremiumCard {
                 VStack(spacing: 0) {
-                    ForEach(Array(state.topItems.enumerated()), id: \.element.id) { idx, item in
-                        Button { navigateToItem(item) } label: {
+                    ForEach(Array(state.topItems.enumerated()), id: \.element.id) { idx, row in
+                        Button { navigateToItem(row.navigationItem) } label: {
                             SorenListRow(
-                                title: item.title,
-                                subtitle: item.providerName == item.title ? nil : item.providerName,
-                                amount: vm.monthlyAmount(item),
-                                currency: state.defaultCurrency,
+                                title: row.title,
+                                subtitle: row.subtitle,
+                                amount: row.monthlyAmount,
+                                currency: row.currency,
                                 cycle: .monthly,
-                                providerTemplate: item.providerTemplate,
-                                category: item.category
+                                providerTemplate: row.providerTemplate,
+                                category: row.category
                             )
                         }
                         .buttonStyle(.plain)
