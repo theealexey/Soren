@@ -68,6 +68,7 @@
 		56049D299F1DFD17703353C9 /* PaymentRecordMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD1994F3779CF81744936E03 /* PaymentRecordMapper.swift */; };
 		58F6E167FEE2F5C960398CD1 /* AnalyticsScreenState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02EF7C7AC416F7F58020CA5 /* AnalyticsScreenState.swift */; };
 		5968C0D9F8158A03E4378934 /* MotionTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF14B2678835A6D1F6ECF96 /* MotionTokens.swift */; };
+		59BED9521348FF07C091DB15 /* GetActiveItems.swift in Sources */ = {isa = PBXBuildFile; fileRef = 335CFDDA67A8B09141C4A214 /* GetActiveItems.swift */; };
 		5AE21674EB0DAD1D53DAFF1E /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E52D3F451BE12EB14780CCCD /* LibraryView.swift */; };
 		5CEE366B3F7515472AC86539 /* AlertsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 829AF2823E0062D5A87CC9F2 /* AlertsView.swift */; };
 		618D50695425118B520E9A88 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6891119CD8F819B68CB2C224 /* AppTheme.swift */; };
@@ -124,6 +125,7 @@
 		C3502270C48B6F7C7C802509 /* AddSubscriptionTierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C260B954C3104C784E92C46 /* AddSubscriptionTierTests.swift */; };
 		C48971AE7A9316BBDD5F065C /* InMemoryProviderCatalogRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00327FFEEF7A9E012FB10737 /* InMemoryProviderCatalogRepository.swift */; };
 		C495539F7E533ACA7ABF6162 /* BillingCycleEncoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06BA485D3333CD7B7F8EF598 /* BillingCycleEncoderTests.swift */; };
+		C585BED9BAE43ABE4BF44C80 /* AppContainer+AnalyticsFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDA0E9CE1CF93B8F5C95A797 /* AppContainer+AnalyticsFactory.swift */; };
 		C6190DB7C51FB64DB0E293B2 /* ProviderCatalogRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7705C464A405A91322BAAC4 /* ProviderCatalogRepository.swift */; };
 		C69C3476C2F7A36F5F94EC54 /* AppThemeKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6AD358CDCB53D8F2605A5C6 /* AppThemeKey.swift */; };
 		C7A695C4B22130DC3F0EF8EE /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3970FC76BF4241015E9CE3 /* HomeView.swift */; };
@@ -212,6 +214,7 @@
 		311318194B8656243E68001D /* RecurringItemFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringItemFormatter.swift; sourceTree = "<group>"; };
 		323D31D8EF35B87ADA825188 /* SectionHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionHeader.swift; sourceTree = "<group>"; };
 		32D559E2D2DF29D539F3D1AB /* CalendarViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarViewModel.swift; sourceTree = "<group>"; };
+		335CFDDA67A8B09141C4A214 /* GetActiveItems.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetActiveItems.swift; sourceTree = "<group>"; };
 		336084808B57CA32842434F2 /* Bundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bundle.swift; sourceTree = "<group>"; };
 		339444BD13EEC0437916A2E4 /* StoreRecoveryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreRecoveryView.swift; sourceTree = "<group>"; };
 		34047924A1C9CC4DB9DF675D /* RecurringItemFormFields.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringItemFormFields.swift; sourceTree = "<group>"; };
@@ -321,6 +324,7 @@
 		FB0CDC0B809B3C76636A90D2 /* ProviderTemplateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderTemplateTests.swift; sourceTree = "<group>"; };
 		FCEF5B74B2E1B0B2BC44B6B0 /* SorenApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SorenApp.swift; sourceTree = "<group>"; };
 		FD1994F3779CF81744936E03 /* PaymentRecordMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentRecordMapper.swift; sourceTree = "<group>"; };
+		FDA0E9CE1CF93B8F5C95A797 /* AppContainer+AnalyticsFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppContainer+AnalyticsFactory.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -714,6 +718,7 @@
 			isa = PBXGroup;
 			children = (
 				4A97F884F05552C0F6B3D2C0 /* DeleteRecurringItem.swift */,
+				335CFDDA67A8B09141C4A214 /* GetActiveItems.swift */,
 				ABC90BA9C0E1E720BACD159A /* GetActiveTrials.swift */,
 				54064B8613A795CC1E157F4E /* GetAlerts.swift */,
 				7DCD529175663CFB16A4EB3F /* GetDashboardSummary.swift */,
@@ -900,6 +905,7 @@
 			isa = PBXGroup;
 			children = (
 				704603302FD9C648B425E8B6 /* AppContainer.swift */,
+				FDA0E9CE1CF93B8F5C95A797 /* AppContainer+AnalyticsFactory.swift */,
 				065C3A6652CA332D4B3CFEA6 /* AppContainer+HomeFactory.swift */,
 				2264C0A5E995F4CE3A9289F4 /* AppState.swift */,
 				CA945694AA563A401CBA4141 /* RootView.swift */,
@@ -1120,6 +1126,7 @@
 				58F6E167FEE2F5C960398CD1 /* AnalyticsScreenState.swift in Sources */,
 				ECA6E72B57B8A4CA040B307D /* AnalyticsView.swift in Sources */,
 				99D4482F2360C3032DA9DD5F /* AnalyticsViewModel.swift in Sources */,
+				C585BED9BAE43ABE4BF44C80 /* AppContainer+AnalyticsFactory.swift in Sources */,
 				2E9A9C78436D16FB785D0B50 /* AppContainer+HomeFactory.swift in Sources */,
 				BC67F03FFAAF36667E671F79 /* AppContainer.swift in Sources */,
 				B86ABB04AF6B42AB1DC7255F /* AppState.swift in Sources */,
@@ -1143,6 +1150,7 @@
 				AE87E4DBEC8756BF60319FD3 /* ExchangeRateProvider.swift in Sources */,
 				78CF60E9E02A0597C29DD8AE /* FilterChip.swift in Sources */,
 				0FF6F5DDD7EE7C32BE3B2F47 /* FlowLayout.swift in Sources */,
+				59BED9521348FF07C091DB15 /* GetActiveItems.swift in Sources */,
 				68C1B8C9BDD8BA8DA757A8B8 /* GetActiveTrials.swift in Sources */,
 				D49AFF4872D3E4B862086798 /* GetAlerts.swift in Sources */,
 				385AC9ECBAF58206DD986D58 /* GetDashboardSummary.swift in Sources */,

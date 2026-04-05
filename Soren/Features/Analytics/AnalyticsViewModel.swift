@@ -57,8 +57,8 @@ final class AnalyticsViewModel {
 
     // MARK: - Dependencies
 
+    private let getActiveItems: GetActiveItems
     private let getDashboardSummary: GetDashboardSummary
-    private let repository: any RecurringItemRepository
     private let preferences: UserPreferencesRepository
     private let exchangeRateProvider: (any ExchangeRateProvider)?
 
@@ -70,12 +70,13 @@ final class AnalyticsViewModel {
     // MARK: - Init
 
     init(
-        repositories: RepositoryContainer,
+        getActiveItems: GetActiveItems,
+        getDashboardSummary: GetDashboardSummary = GetDashboardSummary(),
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
         exchangeRateProvider: (any ExchangeRateProvider)? = nil
     ) {
-        self.getDashboardSummary = GetDashboardSummary()
-        self.repository = repositories.recurringItems
+        self.getActiveItems = getActiveItems
+        self.getDashboardSummary = getDashboardSummary
         self.preferences = preferences
         self.exchangeRateProvider = exchangeRateProvider
     }
@@ -101,7 +102,7 @@ final class AnalyticsViewModel {
         guard !isLoaded || forceReload else { return }
         error = nil
         do {
-            let items = try repository.fetchActive()
+            let items = try getActiveItems.execute()
 
             let summary = getDashboardSummary.execute(
                 items: items,

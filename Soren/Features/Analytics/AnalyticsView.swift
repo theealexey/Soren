@@ -27,11 +27,7 @@ struct AnalyticsView: View {
         .background(ColorTokens.background)
         .task {
             guard viewModel == nil else { return }
-            let vm = AnalyticsViewModel(
-                repositories: container.repositories,
-                preferences: container.preferences,
-                exchangeRateProvider: container.exchangeRateProvider
-            )
+            let vm = container.makeAnalyticsViewModel()
             viewModel = vm
             await vm.load()
         }
