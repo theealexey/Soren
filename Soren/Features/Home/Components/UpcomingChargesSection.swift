@@ -22,7 +22,7 @@ struct UpcomingChargesSection: View {
                                 amount: item.amount,
                                 currency: item.currencyCode,
                                 cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
-                                providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
+                                providerTemplate: item.providerTemplate,
                                 category: item.category,
                                 badge: RecurringItemFormatter.badge(for: item)
                             )

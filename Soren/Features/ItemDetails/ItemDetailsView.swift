@@ -104,7 +104,7 @@ struct ItemDetailsView: View {
     private var heroSection: some View {
         VStack(spacing: Spacing.sm) {
             Group {
-                if let provider = ProviderCatalog.template(forProviderID: viewModel.item.providerID) {
+                if let provider = viewModel.item.providerTemplate {
                     ProviderIcon(provider: provider, size: .large)
                 } else {
                     ProviderIcon(category: viewModel.item.category, size: .large)

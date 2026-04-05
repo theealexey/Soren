@@ -307,7 +307,7 @@ struct AnalyticsView: View {
                                 amount: vm.monthlyAmount(item),
                                 currency: vm.defaultCurrency,
                                 cycle: .monthly,
-                                providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
+                                providerTemplate: item.providerTemplate,
                                 category: item.category
                             )
                         }
@@ -340,7 +340,7 @@ struct AnalyticsView: View {
                                 amount: item.amount,
                                 currency: item.currencyCode,
                                 cycle: .yearly,
-                                providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
+                                providerTemplate: item.providerTemplate,
                                 category: item.category
                             )
                         }
@@ -400,7 +400,7 @@ struct AnalyticsView: View {
                                 amount: item.amount,
                                 currency: item.currencyCode,
                                 cycle: item.billingCycle.cycleLabel,
-                                providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
+                                providerTemplate: item.providerTemplate,
                                 category: item.category,
                                 badge: .paused
                             )

@@ -256,7 +256,7 @@ struct CalendarView: View {
                                     amount: item.amount,
                                     currency: item.currencyCode,
                                     cycle: item.billingCycle.cycleLabel,
-                                    providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
+                                    providerTemplate: item.providerTemplate,
                                     category: item.category
                                 )
                             }

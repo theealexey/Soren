@@ -125,6 +125,7 @@
 		DB49E0177D4FD6870A3615B2 /* HapticEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0FCEDA034825514200F7242 /* HapticEngine.swift */; };
 		DE1B04F17D9067BA723B05C4 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E9DF3D4E0331FB4D1B57BD /* HomeViewModel.swift */; };
 		E01CF41ECC10C2676A49E5E3 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20E0A890641C92835FBE96BA /* Typography.swift */; };
+		E1B1D3C77391D10CC31EF694 /* RecurringItem+ProviderTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46369C987E666D41860F0D98 /* RecurringItem+ProviderTemplate.swift */; };
 		E34E6599E65A32E0D0B53DCA /* ItemCategory+UI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0ABFF3976C352E0D7805781 /* ItemCategory+UI.swift */; };
 		E44AF6E3B1193D1539D9F6DF /* StatBlockTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D894AE57EE24BDE2C349DB /* StatBlockTests.swift */; };
 		E8794D9F7CC10724A272BD30 /* InsightsBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF99DB7F322CD045D657B971 /* InsightsBuilder.swift */; };
@@ -203,6 +204,7 @@
 		37F60FF5906A163D8A9D885B /* PaymentMethodType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethodType.swift; sourceTree = "<group>"; };
 		3FD0B969C2EC4F06C1DD91AE /* PremiumCardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumCardTests.swift; sourceTree = "<group>"; };
 		43F33DA92ABD30F75DE8851C /* PaymentMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethod.swift; sourceTree = "<group>"; };
+		46369C987E666D41860F0D98 /* RecurringItem+ProviderTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RecurringItem+ProviderTemplate.swift"; sourceTree = "<group>"; };
 		4A97F884F05552C0F6B3D2C0 /* DeleteRecurringItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteRecurringItem.swift; sourceTree = "<group>"; };
 		4D6D373FF90E36B6391BC878 /* ProviderPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderPickerView.swift; sourceTree = "<group>"; };
 		4DDCE10FBEA592108BF24705 /* GetLibraryItems.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetLibraryItems.swift; sourceTree = "<group>"; };
@@ -721,6 +723,7 @@
 				96C23F0287FFE6BD2405D175 /* ProviderCatalog.swift */,
 				1EB4E6EA40D1C2BF3A3C1EB5 /* ProviderCatalog+Global.swift */,
 				54D6DF4C5A91EEF6EEE2ECA8 /* ProviderCatalog+Russia.swift */,
+				46369C987E666D41860F0D98 /* RecurringItem+ProviderTemplate.swift */,
 			);
 			path = Catalog;
 			sourceTree = "<group>";
@@ -1112,6 +1115,7 @@
 				90B939C6EB340325F0D8765A /* ProviderPickerView.swift in Sources */,
 				3185C5DD77457E44D73D7463 /* ProviderTemplate.swift in Sources */,
 				A9EC36C9F16E390D1EB9E43E /* QuickInsightsSection.swift in Sources */,
+				E1B1D3C77391D10CC31EF694 /* RecurringItem+ProviderTemplate.swift in Sources */,
 				61F023309389D0FAAB60DBFB /* RecurringItem.swift in Sources */,
 				0B0F17015B71292BB90DC1E5 /* RecurringItemFormFields.swift in Sources */,
 				42F8B50D7C256BA73B7A0466 /* RecurringItemFormatter.swift in Sources */,
