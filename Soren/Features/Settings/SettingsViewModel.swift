@@ -1,10 +1,10 @@
 import Foundation
-import SwiftUI
 
 // MARK: - Settings View Model
 
 /// Drives the Settings screen.
 /// Loads and auto-saves user preferences to UserDefaults.
+/// Note: appearanceMode is owned by AppState, not this ViewModel.
 @MainActor @Observable
 final class SettingsViewModel {
 
@@ -19,10 +19,6 @@ final class SettingsViewModel {
     }
 
     var trialAlertDays: Int {
-        didSet { debouncedSave() }
-    }
-
-    var appearanceMode: AppearanceMode {
         didSet { debouncedSave() }
     }
 
@@ -41,7 +37,6 @@ final class SettingsViewModel {
         self.defaultCurrencyCode = prefs.defaultCurrencyCode
         self.chargeAlertDays = prefs.chargeAlertDays
         self.trialAlertDays = prefs.trialAlertDays
-        self.appearanceMode = prefs.appearanceMode
     }
 
     // MARK: - Save
@@ -57,13 +52,11 @@ final class SettingsViewModel {
     }
 
     private func save() {
-        let prefs = UserPreferences(
+        repository.save(UserPreferences(
             defaultCurrencyCode: defaultCurrencyCode,
             chargeAlertDays: chargeAlertDays,
-            trialAlertDays: trialAlertDays,
-            appearanceMode: appearanceMode
-        )
-        repository.save(prefs)
+            trialAlertDays: trialAlertDays
+        ))
     }
 
     // MARK: - App Info
@@ -74,12 +67,6 @@ final class SettingsViewModel {
 
     var buildNumber: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
-    }
-
-    // MARK: - Color Scheme
-
-    var preferredColorScheme: ColorScheme? {
-        appearanceMode.colorScheme
     }
 
     // MARK: - Supported Currencies

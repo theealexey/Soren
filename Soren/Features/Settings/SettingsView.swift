@@ -5,15 +5,17 @@ import SwiftUI
 /// App settings: default currency, appearance, notification preferences.
 /// Presented as a sheet from gear icon on Home and Alerts screens.
 struct SettingsView: View {
+    @Environment(AppState.self) private var appState
     @State private var viewModel = SettingsViewModel()
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         @Bindable var vm = viewModel
+        @Bindable var appState = appState
         Form {
             generalSection(
                 currency: $vm.defaultCurrencyCode,
-                appearance: $vm.appearanceMode
+                appearance: $appState.appearanceMode
             )
 
             notificationsSection(
@@ -109,5 +111,6 @@ struct SettingsView: View {
 #Preview {
     NavigationStack {
         SettingsView()
+            .environment(AppState())
     }
 }

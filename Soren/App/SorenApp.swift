@@ -4,7 +4,6 @@ import SwiftData
 @main
 struct SorenApp: App {
     @State private var appState = AppState()
-    @AppStorage("soren.appearanceMode") private var appearanceModeRaw = AppearanceMode.system.rawValue
 
     var body: some Scene {
         WindowGroup {
@@ -13,12 +12,13 @@ struct SorenApp: App {
                    let container = appState.modelContainer {
                     RootView()
                         .environment(appContainer)
+                        .environment(appState)
                         .modelContainer(container)
                 } else {
                     StoreRecoveryView { appState.recoverWithReset() }
                 }
             }
-            .preferredColorScheme(AppearanceMode(rawValue: appearanceModeRaw)?.colorScheme)
+            .preferredColorScheme(appState.appearanceMode.colorScheme)
         }
     }
 }

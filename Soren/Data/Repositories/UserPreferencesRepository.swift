@@ -4,6 +4,7 @@ import Foundation
 
 /// Persists user preferences via UserDefaults.
 /// Intentionally a concrete struct — no protocol needed for simple key-value storage.
+/// Note: appearanceMode is owned by AppState and persisted separately.
 struct UserPreferencesRepository {
 
     private nonisolated(unsafe) let defaults: UserDefaults
@@ -18,7 +19,6 @@ struct UserPreferencesRepository {
         static let defaultCurrency = "soren.defaultCurrency"
         static let chargeAlertDays = "soren.chargeAlertDays"
         static let trialAlertDays  = "soren.trialAlertDays"
-        static let appearanceMode  = "soren.appearanceMode"
     }
 
     // MARK: - Load
@@ -36,14 +36,10 @@ struct UserPreferencesRepository {
             ? defaults.integer(forKey: Key.trialAlertDays)
             : fallback.trialAlertDays
 
-        let modeRaw = defaults.string(forKey: Key.appearanceMode) ?? fallback.appearanceMode.rawValue
-        let mode = AppearanceMode(rawValue: modeRaw) ?? fallback.appearanceMode
-
         return UserPreferences(
             defaultCurrencyCode: currency,
             chargeAlertDays: chargeDays,
-            trialAlertDays: trialDays,
-            appearanceMode: mode
+            trialAlertDays: trialDays
         )
     }
 
@@ -53,6 +49,5 @@ struct UserPreferencesRepository {
         defaults.set(prefs.defaultCurrencyCode, forKey: Key.defaultCurrency)
         defaults.set(prefs.chargeAlertDays, forKey: Key.chargeAlertDays)
         defaults.set(prefs.trialAlertDays, forKey: Key.trialAlertDays)
-        defaults.set(prefs.appearanceMode.rawValue, forKey: Key.appearanceMode)
     }
 }

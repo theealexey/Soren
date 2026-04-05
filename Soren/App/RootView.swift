@@ -6,13 +6,9 @@ import SwiftUI
 /// Each screen owns its toolbar actions — no global floating "+" logic.
 struct RootView: View {
     @Environment(AppContainer.self) private var container
-    @AppStorage("soren.appearanceMode") private var appearanceModeRaw = AppearanceMode.system.rawValue
+    @Environment(AppState.self) private var appState
     @State private var selectedTab: AppTab = .overview
     @State private var activeSheet: ActiveSheet?
-
-    private var preferredColorScheme: ColorScheme? {
-        AppearanceMode(rawValue: appearanceModeRaw)?.colorScheme
-    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -74,7 +70,7 @@ struct RootView: View {
             }
         case .settings:
             NavigationStack { SettingsView() }
-                .preferredColorScheme(preferredColorScheme)
+                .preferredColorScheme(appState.appearanceMode.colorScheme)
         }
     }
 

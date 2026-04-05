@@ -8,13 +8,11 @@ struct UserPreferences: Sendable {
     var defaultCurrencyCode: String
     var chargeAlertDays: Int
     var trialAlertDays: Int
-    var appearanceMode: AppearanceMode
 
     static let `default` = UserPreferences(
         defaultCurrencyCode: "RUB",
         chargeAlertDays: 3,
-        trialAlertDays: 3,
-        appearanceMode: .system
+        trialAlertDays: 3
     )
 }
 
