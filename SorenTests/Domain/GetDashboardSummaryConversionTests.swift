@@ -46,8 +46,8 @@ struct GetDashboardSummaryConversionTests {
         try repo.save(makeItem(amount: 100, currency: "RUB"))
         try repo.save(makeItem(amount: 200, currency: "RUB"))
 
-        let summary = try GetDashboardSummary(repository: repo)
-            .execute(targetCurrency: "RUB", rates: rates)
+        let items = try repo.fetchActive()
+        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: rates)
 
         #expect(summary.monthlyTotal == 300)
         #expect(!summary.containsMixedCurrencies)
@@ -62,8 +62,8 @@ struct GetDashboardSummaryConversionTests {
         try repo.save(makeItem(amount: 100, currency: "RUB"))
         try repo.save(makeItem(amount: 10, currency: "USD"))
 
-        let summary = try GetDashboardSummary(repository: repo)
-            .execute(targetCurrency: "RUB", rates: rates)
+        let items = try repo.fetchActive()
+        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: rates)
 
         // $10 USD → RUB: 10 * 87.5 / 1 = 875
         // Total: 100 + 875 = 975
@@ -80,8 +80,8 @@ struct GetDashboardSummaryConversionTests {
         try repo.save(makeItem(amount: 10, currency: "EUR"))
         try repo.save(makeItem(amount: 5, currency: "GBP"))
 
-        let summary = try GetDashboardSummary(repository: repo)
-            .execute(targetCurrency: "RUB", rates: rates)
+        let items = try repo.fetchActive()
+        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: rates)
 
         // EUR→RUB: 10 * 87.5 / 0.92
         let eurInRub = Decimal(10) * Decimal(string: "87.5")! / Decimal(string: "0.92")!
@@ -100,8 +100,8 @@ struct GetDashboardSummaryConversionTests {
         try repo.save(makeItem(amount: 100, currency: "RUB"))
         try repo.save(makeItem(amount: 10, currency: "USD"))
 
-        let summary = try GetDashboardSummary(repository: repo)
-            .execute(targetCurrency: "RUB", rates: nil)
+        let items = try repo.fetchActive()
+        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: nil)
 
         // Raw sum: 100 + 10 = 110 (meaningless but safe)
         #expect(summary.monthlyTotal == 110)
@@ -115,8 +115,8 @@ struct GetDashboardSummaryConversionTests {
         try repo.save(makeItem(amount: 100, currency: "RUB"))
         try repo.save(makeItem(amount: 10, currency: "USD"))
 
-        let summary = try GetDashboardSummary(repository: repo)
-            .execute(targetCurrency: "RUB", rates: .empty)
+        let items = try repo.fetchActive()
+        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: .empty)
 
         #expect(summary.monthlyTotal == 110)
         #expect(!summary.ratesAvailable)
@@ -130,11 +130,11 @@ struct GetDashboardSummaryConversionTests {
         try repo.save(makeItem(amount: 100, currency: "RUB"))
         try repo.save(makeItem(amount: 50, currency: "XYZ"))  // Not in rates
 
-        let summary = try GetDashboardSummary(repository: repo)
-            .execute(targetCurrency: "RUB", rates: rates)
+        let items = try repo.fetchActive()
+        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: rates)
 
         // XYZ can't convert → falls back to raw 50
-        // Total: 100 (RUB converted = 100) + 50 (raw)
+        // Total: 100 (RUB no conversion needed) + 50 (raw fallback)
         #expect(summary.monthlyTotal == 150)
         #expect(summary.containsMixedCurrencies)
     }
@@ -147,8 +147,8 @@ struct GetDashboardSummaryConversionTests {
         try repo.save(makeItem(amount: 100, currency: "USD"))
         try repo.save(makeItem(amount: 200, currency: "USD"))
 
-        let summary = try GetDashboardSummary(repository: repo)
-            .execute(targetCurrency: "USD", rates: rates)
+        let items = try repo.fetchActive()
+        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "USD", rates: rates)
 
         // No conversion needed — all USD
         #expect(summary.monthlyTotal == 300)
@@ -162,8 +162,8 @@ struct GetDashboardSummaryConversionTests {
         try repo.save(makeItem(amount: 10, currency: "USD"))
         try repo.save(makeItem(amount: 20, currency: "USD"))
 
-        let summary = try GetDashboardSummary(repository: repo)
-            .execute(targetCurrency: "EUR", rates: rates)
+        let items = try repo.fetchActive()
+        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "EUR", rates: rates)
 
         // 30 USD → EUR: 30 * 0.92 / 1 = 27.6
         let expected = Decimal(30) * Decimal(string: "0.92")!
@@ -180,8 +180,8 @@ struct GetDashboardSummaryConversionTests {
         try repo.save(makeItem(amount: 100, currency: "RUB"))
         try repo.save(makeItem(amount: 10, currency: "EUR"))
 
-        let summary = try GetDashboardSummary(repository: repo)
-            .execute(targetCurrency: "RUB", rates: rates)
+        let items = try repo.fetchActive()
+        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: rates)
 
         #expect(summary.yearlyProjection == summary.monthlyTotal * 12)
     }
@@ -191,8 +191,8 @@ struct GetDashboardSummaryConversionTests {
     @Test("Zero items returns empty summary")
     func emptyState() throws {
         let repo = try makeRepo()
-        let summary = try GetDashboardSummary(repository: repo)
-            .execute(targetCurrency: "RUB", rates: rates)
+        let items = try repo.fetchActive()
+        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: rates)
 
         #expect(summary == .empty)
     }
@@ -213,8 +213,8 @@ struct GetDashboardSummaryConversionTests {
         )
         try repo.save(trial)
 
-        let summary = try GetDashboardSummary(repository: repo)
-            .execute(targetCurrency: "RUB", rates: rates)
+        let items = try repo.fetchActive()
+        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: rates)
 
         #expect(summary.monthlyTotal == 500)
         #expect(summary.activeTrialCount == 1)

@@ -21,13 +21,11 @@ struct HomeViewModelTests {
 
     private func makeViewModel(repo: SwiftDataRecurringItemRepository) -> HomeViewModel {
         HomeViewModel(
-            getDashboardSummary: GetDashboardSummary(repository: repo),
-            getLibraryItems: GetLibraryItems(repository: repo),
             getUpcomingCharges: GetUpcomingCharges(repository: repo),
-            getActiveTrials: GetActiveTrials(repository: repo)
+            getActiveTrials: GetActiveTrials(repository: repo),
+            preferences: UserPreferencesRepository()
         )
     }
-
 
     private func makeItem(
         title: String = "Test",
@@ -53,76 +51,130 @@ struct HomeViewModelTests {
 
     // MARK: - Empty State
 
-    @Test("Empty repository produces empty summary")
+    @Test("Empty repository produces empty landscape")
     func emptyRepo() throws {
         let repo = try makeRepo()
         let vm = makeViewModel(repo: repo)
-        vm.loadLocalData()
+        vm.load()
 
-        #expect(vm.summary == .empty)
-        #expect(vm.upcomingCharges.isEmpty)
-        #expect(vm.activeTrials.isEmpty)
+        #expect(vm.isLoaded)
+        #expect(!vm.hasError)
+        #expect(vm.landscapePoints.count == 30)
+        #expect(vm.landscapePoints.allSatisfy { $0.chargeCount == 0 })
+        #expect(vm.insights.isEmpty)
+    }
+
+    // MARK: - Landscape Charges
+
+    @Test("Active items appear in landscape at correct day offset")
+    func activeItemsPopulateLandscape() throws {
+        let repo = try makeRepo()
+        try repo.save(makeItem(title: "A", amount: 100, status: .active))
+        try repo.save(makeItem(title: "B", amount: 200, status: .active))
+
+        let vm = makeViewModel(repo: repo)
+        vm.load()
+
+        #expect(vm.isLoaded)
+        #expect(vm.landscapePoints[3].chargeCount == 2)
+        #expect(vm.landscapePoints[3].rawTotal == 300)
+    }
+
+    @Test("Truly archived items (archivedAt set) excluded from landscape")
+    func archivedItemsExcludedFromLandscape() throws {
+        let repo = try makeRepo()
+        let active = makeItem(title: "Active", amount: 100)
+        let archived = RecurringItem(
+            title: "Archived",
+            amount: 9999,
+            currencyCode: "RUB",
+            nextChargeDate: Calendar.current.date(byAdding: .day, value: 3, to: .now)!,
+            archivedAt: .now
+        )
+
+        try repo.save(active)
+        try repo.save(archived)
+
+        let vm = makeViewModel(repo: repo)
+        vm.load()
+
+        #expect(vm.landscapePoints[3].chargeCount == 1)
+        #expect(vm.landscapePoints[3].rawTotal == 100)
+    }
+
+    @Test("Annual item appears in landscape on its charge date")
+    func annualItemAppearsInLandscape() throws {
+        let repo = try makeRepo()
+        try repo.save(makeItem(title: "Annual", amount: 1200, billingCycle: .annual))
+
+        let vm = makeViewModel(repo: repo)
+        vm.load()
+
+        #expect(vm.isLoaded)
+        #expect(vm.landscapePoints[3].chargeCount == 1)
+        #expect(vm.landscapePoints[3].rawTotal == 1200)
+    }
+
+    @Test("Zero-amount item still appears in landscape")
+    func zeroAmountItemInLandscape() throws {
+        let repo = try makeRepo()
+        try repo.save(makeItem(title: "Free tier", amount: 0))
+
+        let vm = makeViewModel(repo: repo)
+        vm.load()
+
+        #expect(vm.isLoaded)
+        #expect(vm.landscapePoints[3].chargeCount == 1)
+        #expect(vm.landscapePoints[3].rawTotal == 0)
+    }
+
+    // MARK: - Upcoming Window
+
+    @Test("Items within 30-day window appear; items at day+31 do not")
+    func upcomingWindowBoundary() throws {
+        let repo = try makeRepo()
+
+        let tomorrow = makeItem(title: "Tomorrow",
+                                nextCharge: Calendar.current.date(byAdding: .day, value: 1, to: .now))
+        let day7 = makeItem(title: "Day7",
+                            nextCharge: Calendar.current.date(byAdding: .day, value: 7, to: .now))
+        let day31 = makeItem(title: "Day31",
+                             nextCharge: Calendar.current.date(byAdding: .day, value: 31, to: .now))
+
+        try repo.save(tomorrow)
+        try repo.save(day7)
+        try repo.save(day31)
+
+        let vm = makeViewModel(repo: repo)
+        vm.load()
+
+        let totalCharges = vm.landscapePoints.reduce(0) { $0 + $1.chargeCount }
+        #expect(totalCharges == 2)
+        #expect(vm.landscapePoints[1].chargeCount == 1)
+        #expect(vm.landscapePoints[7].chargeCount == 1)
+    }
+
+    @Test("Past-due items don't crash ViewModel")
+    func pastDueHandling() throws {
+        let repo = try makeRepo()
+
+        let overdue = makeItem(title: "Overdue",
+                               nextCharge: Calendar.current.date(byAdding: .day, value: -2, to: .now))
+        try repo.save(overdue)
+
+        let vm = makeViewModel(repo: repo)
+        vm.load()
+
+        // Past items may or may not appear depending on repository logic
+        // The key test: ViewModel doesn't crash on negative daysUntilNextCharge
         #expect(vm.isLoaded)
         #expect(!vm.hasError)
     }
 
-    // MARK: - Summary Calculations
+    // MARK: - Insights / Active Trials
 
-    @Test("Monthly total aggregates only active items")
-    func monthlyTotalExcludesArchived() throws {
-        let repo = try makeRepo()
-
-        let active = makeItem(title: "A", amount: 100, status: .active)
-        let trial = makeItem(title: "B", amount: 200, status: .trial,
-                             trialEndDate: Calendar.current.date(byAdding: .day, value: 10, to: .now))
-        let archived = makeItem(title: "C", amount: 9999, status: .archived)
-        let cancelled = makeItem(title: "D", amount: 5000, status: .cancelled)
-
-        try repo.save(active)
-        try repo.save(trial)
-        try repo.save(archived)
-        try repo.save(cancelled)
-
-        let vm = makeViewModel(repo: repo)
-        vm.loadLocalData()
-
-        // Only active + trial should count (both are monthly, multiplier = 1)
-        #expect(vm.summary.monthlyTotal == 300)
-        #expect(vm.summary.yearlyProjection == 3600)
-        #expect(vm.summary.activeItemCount == 2)
-    }
-
-    @Test("Annual item monthly equivalent is correct")
-    func annualItemEquivalent() throws {
-        let repo = try makeRepo()
-
-        // 1200 RUB/year → 1200 * 0.0833 = 99.96/month
-        let annual = makeItem(title: "Annual", amount: 1200, billingCycle: .annual)
-        try repo.save(annual)
-
-        let vm = makeViewModel(repo: repo)
-        vm.loadLocalData()
-
-        // 1200 * 0.0833 = 99.96
-        #expect(vm.summary.monthlyTotal == 1200 * Decimal(string: "0.0833")!)
-    }
-
-    @Test("Zero-amount item doesn't break totals")
-    func zeroAmountItem() throws {
-        let repo = try makeRepo()
-        let free = makeItem(title: "Free tier", amount: 0)
-        try repo.save(free)
-
-        let vm = makeViewModel(repo: repo)
-        vm.loadLocalData()
-
-        #expect(vm.summary.monthlyTotal == 0)
-        #expect(vm.summary.activeItemCount == 1)
-        #expect(vm.isLoaded)
-    }
-
-    @Test("Trial count only includes trial status items")
-    func trialCountAccuracy() throws {
+    @Test("Trial ending within 14 days appears in insights")
+    func trialInsightAppearsForEndingSoonTrials() throws {
         let repo = try makeRepo()
 
         let trial1 = makeItem(title: "T1", status: .trial,
@@ -136,57 +188,15 @@ struct HomeViewModelTests {
         try repo.save(active)
 
         let vm = makeViewModel(repo: repo)
-        vm.loadLocalData()
+        vm.load()
 
-        #expect(vm.summary.activeTrialCount == 2)
+        let trialInsight = vm.insights.first(where: { $0.id == .trial })
+        #expect(trialInsight != nil)
+        // Earliest-ending trial (T2, day+2) should be the one shown
+        #expect(trialInsight?.value.contains("T2") == true)
     }
 
-    // MARK: - Upcoming Charges
-
-    @Test("Upcoming charges only includes items within 7-day window")
-    func upcomingWindowBoundary() throws {
-        let repo = try makeRepo()
-
-        let tomorrow = makeItem(title: "Tomorrow",
-                                nextCharge: Calendar.current.date(byAdding: .day, value: 1, to: .now))
-        let day7 = makeItem(title: "Day7",
-                            nextCharge: Calendar.current.date(byAdding: .day, value: 7, to: .now))
-        let day8 = makeItem(title: "Day8",
-                            nextCharge: Calendar.current.date(byAdding: .day, value: 8, to: .now))
-
-        try repo.save(tomorrow)
-        try repo.save(day7)
-        try repo.save(day8)
-
-        let vm = makeViewModel(repo: repo)
-        vm.loadLocalData()
-
-        let titles = Set(vm.upcomingCharges.map(\.title))
-        #expect(titles.contains("Tomorrow"))
-        #expect(titles.contains("Day7"))
-        #expect(!titles.contains("Day8"))
-    }
-
-    @Test("Past-due items appear in upcoming if repository returns them")
-    func pastDueHandling() throws {
-        let repo = try makeRepo()
-
-        let overdue = makeItem(title: "Overdue",
-                               nextCharge: Calendar.current.date(byAdding: .day, value: -2, to: .now))
-        try repo.save(overdue)
-
-        let vm = makeViewModel(repo: repo)
-        vm.loadLocalData()
-
-        // Past items may or may not appear depending on repository logic
-        // The key test: ViewModel doesn't crash on negative daysUntilNextCharge
-        #expect(vm.isLoaded)
-        #expect(!vm.hasError)
-    }
-
-    // MARK: - Active Trials
-
-    @Test("Active trials filters correctly — expired trials excluded")
+    @Test("Expired trial excluded — only active trial appears in insights")
     func expiredTrialsExcluded() throws {
         let repo = try makeRepo()
 
@@ -198,20 +208,21 @@ struct HomeViewModelTests {
             title: "Expired Trial", status: .trial,
             trialEndDate: Calendar.current.date(byAdding: .day, value: -1, to: .now)
         )
-        let activeNoTrial = makeItem(title: "Regular", status: .active)
+        let regularActive = makeItem(title: "Regular", status: .active)
 
         try repo.save(activeTrial)
         try repo.save(expiredTrial)
-        try repo.save(activeNoTrial)
+        try repo.save(regularActive)
 
         let vm = makeViewModel(repo: repo)
-        vm.loadLocalData()
+        vm.load()
 
-        #expect(vm.activeTrials.count == 1)
-        #expect(vm.activeTrials.first?.title == "Active Trial")
+        let trialInsight = vm.insights.first(where: { $0.id == .trial })
+        #expect(trialInsight != nil)
+        #expect(trialInsight?.value.contains("Active Trial") == true)
     }
 
-    @Test("Trial with nil trialEndDate is not an active trial")
+    @Test("Trial with nil trialEndDate does not produce trial insight")
     func trialWithNilEndDate() throws {
         let repo = try makeRepo()
 
@@ -219,26 +230,26 @@ struct HomeViewModelTests {
         try repo.save(brokenTrial)
 
         let vm = makeViewModel(repo: repo)
-        vm.loadLocalData()
+        vm.load()
 
-        #expect(vm.activeTrials.isEmpty)
+        #expect(!vm.insights.contains(where: { $0.id == .trial }))
     }
 
     // MARK: - Load Idempotency
 
-    @Test("Multiple loads don't duplicate data")
+    @Test("Multiple loads don't duplicate landscape data")
     func multipleLoads() throws {
         let repo = try makeRepo()
         let item = makeItem(title: "Single", amount: 100)
         try repo.save(item)
 
         let vm = makeViewModel(repo: repo)
-        vm.loadLocalData()
-        vm.loadLocalData()
-        vm.loadLocalData()
+        vm.load()
+        vm.load()
+        vm.load()
 
-        #expect(vm.summary.activeItemCount == 1)
-        #expect(vm.summary.monthlyTotal == 100)
+        #expect(vm.landscapePoints.count == 30)
+        #expect(vm.landscapePoints[3].chargeCount == 1)
     }
 
     // MARK: - Mixed Currency Stress
@@ -256,12 +267,11 @@ struct HomeViewModelTests {
         try repo.save(eur)
 
         let vm = makeViewModel(repo: repo)
-        vm.loadLocalData()
+        vm.load()
 
-        // monthlyTotal sums raw amounts (no conversion) — this is expected for V1
-        #expect(vm.summary.monthlyTotal == 299 + Decimal(string: "9.99")! + Decimal(string: "14.99")!)
-        #expect(vm.summary.activeItemCount == 3)
         #expect(vm.isLoaded)
+        #expect(!vm.hasError)
+        #expect(vm.landscapePoints.reduce(0) { $0 + $1.chargeCount } == 3)
     }
 
     // MARK: - Large Dataset
@@ -280,17 +290,16 @@ struct HomeViewModelTests {
         }
 
         let vm = makeViewModel(repo: repo)
-        vm.loadLocalData()
+        vm.load()
 
-        #expect(vm.summary.activeItemCount == 100)
         #expect(vm.isLoaded)
-        // Sum of 1..100 = 5050
-        #expect(vm.summary.monthlyTotal == 5050)
+        #expect(vm.landscapePoints.count == 30)
+        #expect(vm.landscapePoints.reduce(0) { $0 + $1.chargeCount } == 100)
     }
 
     // MARK: - All Statuses Survive Load
 
-    @Test("Every ItemStatus survives through ViewModel load")
+    @Test("Every ItemStatus survives through ViewModel load without crashing")
     func allStatusesSurviveLoad() throws {
         let repo = try makeRepo()
 
@@ -312,13 +321,13 @@ struct HomeViewModelTests {
         }
 
         let vm = makeViewModel(repo: repo)
-        vm.loadLocalData()
+        vm.load()
 
         #expect(vm.isLoaded)
         #expect(!vm.hasError)
-        // archived + cancelled + paused are filtered out of fetchActive
-        // Active count depends on repository's fetchActive logic
-        #expect(vm.summary.activeItemCount > 0)
+        // archived + cancelled + paused are filtered from fetchActive
+        // but fetchUpcoming only filters archivedAt — chargeCount may be higher
+        #expect(vm.landscapePoints.count == 30)
     }
 }
 
@@ -336,7 +345,8 @@ struct GetDashboardSummaryTests {
     @Test("Empty repo returns empty summary")
     func emptyReturnsEmpty() throws {
         let repo = try makeRepo()
-        let summary = try GetDashboardSummary(repository: repo).execute()
+        let items = try repo.fetchActive()
+        let summary = GetDashboardSummary().execute(items: items)
         #expect(summary == .empty)
     }
 
@@ -350,7 +360,8 @@ struct GetDashboardSummaryTests {
         )
         try repo.save(item)
 
-        let summary = try GetDashboardSummary(repository: repo).execute()
+        let items = try repo.fetchActive()
+        let summary = GetDashboardSummary().execute(items: items)
         #expect(summary.yearlyProjection == summary.monthlyTotal * 12)
     }
 }
