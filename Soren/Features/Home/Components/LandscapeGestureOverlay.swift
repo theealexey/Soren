@@ -19,15 +19,15 @@ struct LandscapeGestureOverlay: View {
         GeometryReader { proxy in
             Color.clear
                 .contentShape(Rectangle())
-                .gesture(
+                .simultaneousGesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged { value in
                             let index = indexFor(x: value.location.x, width: proxy.size.width)
                             onSelectIndex(index)
                         }
-                        .onEnded { value in
-                            let index = indexFor(x: value.location.x, width: proxy.size.width)
-                            onSelectIndex(index)
+                        .onEnded { _ in
+                            // Do NOT call onSelectIndex here — it would re-trigger the
+                            // toggle and immediately deselect whatever onChanged just set.
                             onRelease()
                         }
                 )

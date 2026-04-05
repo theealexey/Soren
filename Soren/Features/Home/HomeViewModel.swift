@@ -66,6 +66,7 @@ final class HomeViewModel {
     func load(forceReload: Bool = false) {
         guard !isLoaded || forceReload else { return }
         error = nil
+        selection = nil
 
         do {
             let currency = preferences.load().defaultCurrencyCode
