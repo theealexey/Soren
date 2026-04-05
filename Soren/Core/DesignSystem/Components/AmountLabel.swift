@@ -42,8 +42,17 @@ struct AmountLabel: View {
                 Text(cycle.label)
                     .font(size.cycleFont)
                     .foregroundStyle(ColorTokens.textTertiary)
+                    .accessibilityHidden(true)
             }
         }
+        .accessibilityLabel(accessibilityLabel)
+    }
+
+    private var accessibilityLabel: String {
+        let formatted = Self.formatter(for: currencyCode)
+            .string(from: amount as NSDecimalNumber) ?? "\(amount) \(currencyCode)"
+        guard let cycle else { return formatted }
+        return "\(formatted) \(cycle.accessibilityText)"
     }
 
     private var formattedAmount: String {
@@ -112,12 +121,23 @@ extension AmountLabel {
         case weekly
         case custom(String)
 
+        /// Short visual suffix: "/мес", "/год", etc.
         var label: String {
             switch self {
-            case .monthly: String(localized: "/мес")
-            case .yearly: String(localized: "/год")
-            case .weekly: String(localized: "/нед")
+            case .monthly:          String(localized: "/мес")
+            case .yearly:           String(localized: "/год")
+            case .weekly:           String(localized: "/нед")
             case .custom(let text): "/\(text)"
+            }
+        }
+
+        /// Spoken version for VoiceOver: "в месяц", "в год", etc.
+        var accessibilityText: String {
+            switch self {
+            case .monthly:          String(localized: "в месяц")
+            case .yearly:           String(localized: "в год")
+            case .weekly:           String(localized: "в неделю")
+            case .custom(let text): text
             }
         }
     }

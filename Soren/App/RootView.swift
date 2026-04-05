@@ -241,6 +241,8 @@ private struct SorenFloatingPill: View {
         }
         .buttonStyle(.plain)
         .animation(.easeInOut(duration: 0.15), value: isActive)
+        .accessibilityLabel(tab.title)
+        .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : .isButton)
     }
 }
 

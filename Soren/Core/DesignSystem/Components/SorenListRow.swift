@@ -60,6 +60,7 @@ struct SorenListRow: View {
     var body: some View {
         HStack(spacing: Spacing.sm) {
             iconView
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: Spacing.xxxs) {
                 HStack(spacing: Spacing.xs) {
@@ -87,6 +88,23 @@ struct SorenListRow: View {
         }
         .padding(.vertical, Spacing.xs)
         .contentShape(Rectangle())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(rowAccessibilityLabel)
+    }
+
+    private var rowAccessibilityLabel: String {
+        var parts: [String] = [title]
+        if let badge { parts.append(badge.title) }
+        let fmt = NumberFormatter()
+        fmt.numberStyle = .currency
+        fmt.currencyCode = currencyCode
+        fmt.minimumFractionDigits = 0
+        fmt.maximumFractionDigits = 2
+        let amountStr = fmt.string(from: amount as NSDecimalNumber) ?? "\(amount) \(currencyCode)"
+        let cycleStr = cycle.map { " \($0.accessibilityText)" } ?? ""
+        parts.append("\(amountStr)\(cycleStr)")
+        if let subtitle { parts.append(subtitle) }
+        return parts.joined(separator: ", ")
     }
 
     @ViewBuilder
@@ -97,7 +115,7 @@ struct SorenListRow: View {
             Image(systemName: category.systemIconName)
                 .font(Typography.bodyMedium)
                 .foregroundStyle(.white)
-                .frame(width: 40, height: 40)
+                .frame(width: ProviderIcon.Size.medium.frame, height: ProviderIcon.Size.medium.frame)
                 .background(category.color.gradient, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
         }
     }

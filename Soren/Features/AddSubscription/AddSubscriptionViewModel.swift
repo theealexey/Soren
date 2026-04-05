@@ -126,11 +126,10 @@ final class AddSubscriptionViewModel {
         do {
             let rates = try await exchangeRateProvider.latestRates()
             guard let converted = rates.convert(amount, from: sourceCurrency, to: targetCurrency) else { return }
-
-            var rounded = Decimal()
-            var mutable = converted
-            NSDecimalRound(&rounded, &mutable, 2, .plain)
-            amountText = "\(rounded)"
+            var result = Decimal()
+            var source = converted
+            NSDecimalRound(&result, &source, 2, .plain)
+            amountText = result.description
         } catch {
             // Rates unavailable — leave amount as-is.
         }
@@ -160,9 +159,9 @@ final class AddSubscriptionViewModel {
 
     var canSave: Bool {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return false }
+        guard !trimmed.isEmpty, trimmed.count <= 255 else { return false }
         guard let amount = Decimal(string: amountText.replacingOccurrences(of: ",", with: ".")),
-              amount > 0 else { return false }
+              amount > 0, amount < 1_000_000_000 else { return false }
         return true
     }
 

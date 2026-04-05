@@ -74,14 +74,15 @@ struct LibraryView: View {
     // MARK: - Search Bar
 
     private func searchBar(_ vm: LibraryViewModel) -> some View {
-        HStack(spacing: Spacing.sm) {
+        @Bindable var vm = vm
+        return HStack(spacing: Spacing.sm) {
             Image(systemName: "magnifyingglass")
                 .font(Typography.body)
                 .foregroundStyle(ColorTokens.textTertiary)
 
             TextField(
                 String(localized: "Поиск подписок"),
-                text: Binding(get: { vm.searchText }, set: { vm.searchText = $0 })
+                text: $vm.searchText
             )
             .textFieldStyle(.plain)
             .font(Typography.body)

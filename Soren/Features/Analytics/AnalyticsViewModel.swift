@@ -141,8 +141,16 @@ final class AnalyticsViewModel {
             ?? item.monthlyEquivalent
     }
 
+    // Stored once to avoid unsafe Calendar.current access in async contexts.
+    private static let cal: Calendar = {
+        var c = Calendar(identifier: .gregorian)
+        c.locale = .current
+        c.timeZone = .current
+        return c
+    }()
+
     private func buildProjections(_ items: [RecurringItem], months: Int = 6) -> [MonthlyProjection] {
-        let cal = Calendar.current
+        let cal = Self.cal
         guard let monthStart = cal.date(from: cal.dateComponents([.year, .month], from: .now)) else { return [] }
 
         return (0..<months).compactMap { offset in
@@ -170,7 +178,7 @@ final class AnalyticsViewModel {
 
     /// Returns true if a billing cycle iteration of `item` falls within [start, end).
     private func hasCharge(_ item: RecurringItem, from start: Date, to end: Date) -> Bool {
-        let cal = Calendar.current
+        let cal = Self.cal
         let cycleMonths: Int
         switch item.billingCycle {
         case .quarterly:  cycleMonths = 3
