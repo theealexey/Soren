@@ -108,7 +108,7 @@ final class HomeViewModel {
 
             monthLabel   = Self.monthYearFormatter.string(from: now).capitalized
             let forecast = dailyTotals.values.reduce(Decimal(0), +)
-            forecastLabel = "\(formatted(amount: forecast, currency: currency)) forecast"
+            forecastLabel = "\(formatted(amount: forecast, currency: currency)) \(String(localized: "forecast"))"
 
             let nextItem = upcoming
                 .filter { $0.nextChargeDate >= now }
@@ -188,7 +188,7 @@ final class HomeViewModel {
         currency: String
     ) -> NextPaymentCalloutState {
         guard let item = nextItem else {
-            return .nextPayment(countdown: "", name: "", amountFormatted: "", additionalCount: 0)
+            return .noUpcoming
         }
         let sameDay = cachedItemsByDay[calendar.startOfDay(for: item.nextChargeDate)] ?? []
         return .nextPayment(
@@ -215,12 +215,16 @@ final class HomeViewModel {
 
     private func peakWeekRow(points: [BillingLandscapePoint], currency: String) -> InsightRowModel? {
         struct WeekBucket { var total: Decimal; var start: Date; var end: Date }
-        var weeks: [Int: WeekBucket] = [:]
+        // Key must include yearForWeekOfYear — weekOfYear alone collides at year boundaries
+        // (e.g. Dec 30 week-1 and Jan 3 week-1 map to the same Int).
+        struct WeekKey: Hashable { let year: Int; let week: Int }
+        var weeks: [WeekKey: WeekBucket] = [:]
 
         for point in points {
-            let week = calendar.component(.weekOfYear, from: point.date)
-            let existing = weeks[week]
-            weeks[week] = WeekBucket(
+            let comps = calendar.dateComponents([.weekOfYear, .yearForWeekOfYear], from: point.date)
+            let key = WeekKey(year: comps.yearForWeekOfYear ?? 0, week: comps.weekOfYear ?? 0)
+            let existing = weeks[key]
+            weeks[key] = WeekBucket(
                 total: (existing?.total ?? 0) + point.rawTotal,
                 start: min(existing?.start ?? point.date, point.date),
                 end:   max(existing?.end   ?? point.date, point.date)

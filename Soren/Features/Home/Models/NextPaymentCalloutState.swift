@@ -19,4 +19,7 @@ enum NextPaymentCalloutState: Equatable {
 
     /// User has tapped a zero-charge day.
     case emptyDay(formattedDate: String)
+
+    /// No upcoming charges exist in the 30-day window.
+    case noUpcoming
 }

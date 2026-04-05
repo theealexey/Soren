@@ -2,12 +2,13 @@ import SwiftUI
 
 // MARK: - Next Payment Callout View
 
-/// Renders all three states of NextPaymentCalloutState.
+/// Renders all four states of NextPaymentCalloutState.
 ///
 /// Layout contract:
 ///   • .nextPayment  — countdown + service name / trailing amount
 ///   • .selectedDay  — date header + charge list / trailing total
 ///   • .emptyDay     — date label + "No charges" note
+///   • .noUpcoming   — single muted line when no charges exist in the window
 ///
 /// Typography rules (per spec):
 ///   • Primary callout text (countdown / date)  → Typography.title
@@ -36,6 +37,9 @@ struct NextPaymentCalloutView: View {
 
             case let .emptyDay(formattedDate):
                 emptyDayLayout(formattedDate: formattedDate)
+
+            case .noUpcoming:
+                noUpcomingLayout()
             }
         }
         .padding(.horizontal, Spacing.lg)
@@ -116,6 +120,14 @@ struct NextPaymentCalloutView: View {
                 }
             }
         }
+    }
+
+    // MARK: - No Upcoming
+
+    private func noUpcomingLayout() -> some View {
+        Text(String(localized: "No upcoming charges"))
+            .font(Typography.title)
+            .foregroundStyle(theme.tertiaryText)
     }
 
     // MARK: - Empty Day
