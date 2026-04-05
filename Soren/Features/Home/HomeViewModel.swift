@@ -71,13 +71,15 @@ final class HomeViewModel {
         do {
             let currency = preferences.load().defaultCurrencyCode
             let now = Date.now
+            // Window starts at the beginning of today so charges scheduled at 00:00
+            // (or any earlier time today) are included. Exact Date.now would exclude them.
+            let windowStart = calendar.startOfDay(for: now)
             let windowDays = 30
 
-            let upcoming = try getUpcomingCharges.execute(days: windowDays, from: now)
+            let upcoming = try getUpcomingCharges.execute(days: windowDays, from: windowStart)
             let trials   = try getActiveTrials.execute()
 
             // Group by calendar day for landscape + selection lookup.
-            let startDay = calendar.startOfDay(for: now)
             let grouped: [Date: [RecurringItem]] = Dictionary(
                 grouping: upcoming,
                 by: { calendar.startOfDay(for: $0.nextChargeDate) }
@@ -90,7 +92,7 @@ final class HomeViewModel {
             let maxTotal = dailyTotals.values.max() ?? 1
 
             landscapePoints = (0..<windowDays).map { offset in
-                let day   = calendar.date(byAdding: .day, value: offset, to: startDay)!
+                let day   = calendar.date(byAdding: .day, value: offset, to: windowStart)!
                 let total = dailyTotals[day] ?? 0
                 let count = grouped[day]?.count ?? 0
                 let normalized: Double = maxTotal > 0
@@ -110,8 +112,9 @@ final class HomeViewModel {
             let forecast = dailyTotals.values.reduce(Decimal(0), +)
             forecastLabel = "\(formatted(amount: forecast, currency: currency)) \(String(localized: "forecast"))"
 
+            // Use windowStart (not now) so today's charges appear in the callout.
             let nextItem = upcoming
-                .filter { $0.nextChargeDate >= now }
+                .filter { $0.nextChargeDate >= windowStart }
                 .min { $0.nextChargeDate < $1.nextChargeDate }
             callout = defaultCallout(nextItem: nextItem, now: now, currency: currency)
 
@@ -175,7 +178,7 @@ final class HomeViewModel {
         let currency = preferences.load().defaultCurrencyCode
         let nextItem = cachedItemsByDay.values
             .flatMap { $0 }
-            .filter { $0.nextChargeDate >= now }
+            .filter { $0.nextChargeDate >= calendar.startOfDay(for: now) }
             .min { $0.nextChargeDate < $1.nextChargeDate }
         callout = defaultCallout(nextItem: nextItem, now: now, currency: currency)
     }
