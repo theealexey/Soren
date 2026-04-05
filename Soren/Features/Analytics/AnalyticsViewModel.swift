@@ -81,9 +81,8 @@ final class AnalyticsViewModel {
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
         exchangeRateProvider: (any ExchangeRateProvider)? = nil
     ) {
-        let repo = repositories.recurringItems
-        self.getDashboardSummary = GetDashboardSummary(repository: repo)
-        self.repository = repo
+        self.getDashboardSummary = GetDashboardSummary()
+        self.repository = repositories.recurringItems
         self.preferences = preferences
         self.exchangeRateProvider = exchangeRateProvider
     }
@@ -110,7 +109,8 @@ final class AnalyticsViewModel {
         error = nil
         do {
             let items = try repository.fetchActive()
-            summary = try getDashboardSummary.execute(
+            summary = getDashboardSummary.execute(
+                items: items,
                 targetCurrency: defaultCurrency,
                 rates: exchangeRates
             )

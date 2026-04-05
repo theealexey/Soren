@@ -30,20 +30,17 @@ struct DashboardSummary: Equatable, Sendable {
 
 // MARK: - Use Case
 
-/// Computes the dashboard financial summary from active recurring items.
-@MainActor
+/// Computes the dashboard financial summary from a pre-fetched item list.
+/// Pure computation — no repository access. Caller owns the single fetch.
 struct GetDashboardSummary {
 
-    private let repository: any RecurringItemRepository
-
-    init(repository: any RecurringItemRepository) {
-        self.repository = repository
-    }
-
-    /// Compute summary with currency conversion when rates are available.
-    func execute(targetCurrency: String? = nil, rates: ExchangeRates? = nil) throws -> DashboardSummary {
-        let items = try repository.fetchActive()
-
+    /// Compute summary with optional currency conversion.
+    /// - Parameter items: Active recurring items, fetched once by the caller.
+    func execute(
+        items: [RecurringItem],
+        targetCurrency: String? = nil,
+        rates: ExchangeRates? = nil
+    ) -> DashboardSummary {
         let currencies = Set(items.map(\.currencyCode))
         let isMixed = currencies.count > 1
         let hasRates = rates != nil && rates != .empty
