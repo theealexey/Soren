@@ -91,6 +91,7 @@ struct AnalyticsView: View {
             }
             .padding(.vertical, Spacing.md)
         }
+        .scrollIndicators(.hidden)
     }
 
     // MARK: - 1. Overview
