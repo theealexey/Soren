@@ -11,6 +11,12 @@ struct CalendarView: View {
     @Environment(\.navigateToItem) private var navigateToItem
     @State private var viewModel: CalendarViewModel?
 
+    /// Maximum width of the calendar content column.
+    /// Keeps day cells at a comfortable size on iPad and Mac — matching the
+    /// ~55-65 pt per cell cadence that feels natural on iPhone.
+    /// On any iPhone (max 430 pt wide) this cap is never reached.
+    private let calendarContentMaxWidth: CGFloat = 460
+
     var body: some View {
         Group {
             if let vm = viewModel {
@@ -50,6 +56,8 @@ struct CalendarView: View {
                     calendarGrid(vm)
                     selectedDaySection(vm)
                 }
+                .frame(maxWidth: calendarContentMaxWidth)
+                .frame(maxWidth: .infinity, alignment: .center)
             }
         }
     }
