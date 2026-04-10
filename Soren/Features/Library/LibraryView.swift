@@ -10,6 +10,12 @@ struct LibraryView: View {
     @Environment(\.navigateToItem) private var navigateToItem
     @State private var viewModel: LibraryViewModel?
 
+    /// Maximum width of the populated library content column.
+    /// Keeps the search bar, filter chips, summary row, and item list
+    /// visually cohesive on iPad and Mac rather than stretching to full screen width.
+    /// On any iPhone (max 430 pt wide) this cap is never reached.
+    private let libraryContentMaxWidth: CGFloat = 640
+
     var body: some View {
         Group {
             if let viewModel {
@@ -65,6 +71,8 @@ struct LibraryView: View {
                 }
             }
             .padding(.vertical, Spacing.md)
+            .frame(maxWidth: libraryContentMaxWidth)
+            .frame(maxWidth: .infinity, alignment: .center)
         }
         .refreshable {
             vm.load()
