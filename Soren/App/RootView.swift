@@ -11,6 +11,11 @@ struct RootView: View {
     @State private var visitedTabs: Set<AppTab> = [.overview]
     @State private var activeSheet: ActiveSheet?
 
+    /// Maximum width of the floating pill container (pill body + horizontal padding).
+    /// Prevents the pill from spanning the full screen width on iPad and Mac.
+    /// On any iPhone (max 430 pt wide) this cap is never reached.
+    private let floatingPillMaxWidth: CGFloat = 440
+
     /// Binding that marks a tab as visited before switching to it, ensuring both
     /// state mutations land in the same render cycle (no blank-frame flicker).
     private var tabBinding: Binding<AppTab> {
@@ -48,6 +53,8 @@ struct RootView: View {
             SorenFloatingPill(selectedTab: tabBinding)
                 .padding(.horizontal, Spacing.xl)
                 .padding(.bottom, Spacing.xs)
+                .frame(maxWidth: floatingPillMaxWidth)
+                .frame(maxWidth: .infinity, alignment: .center)
         }
         .environment(\.addSubscriptionAction, AddSubscriptionAction { activeSheet = .addSubscription })
         .environment(\.navigateToItem, NavigateToItemAction { activeSheet = .itemDetails($0) })
