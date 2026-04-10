@@ -106,7 +106,7 @@ schemes:
     build:
       targets:
         Soren: all
-        SorenWidgets: all
+        # SorenWidgets excluded until the widget milestone (app group + shared data layer)
         SorenTests: [test]
         SorenUITests: [test]
     run:

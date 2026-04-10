@@ -20,7 +20,7 @@ final class AddSubscriptionViewModel {
     var selectedTier: PlanTier?
     var title = ""
     var amountText = ""
-    var currencyCode = "RUB"
+    var currencyCode: String
     var billingCycle: BillingCycle = .monthly
     var category: ItemCategory = .other
     var itemType: ItemType = .subscription
@@ -39,19 +39,29 @@ final class AddSubscriptionViewModel {
     private let catalog: any ProviderCatalogRepository
     private let saveRecurringItem: SaveRecurringItem
     private let exchangeRateProvider: any ExchangeRateProvider
+    private let preferences: UserPreferencesRepository
 
     // MARK: - Init
 
-    init(catalog: any ProviderCatalogRepository, saveRecurringItem: SaveRecurringItem, exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider()) {
+    init(
+        catalog: any ProviderCatalogRepository,
+        saveRecurringItem: SaveRecurringItem,
+        exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider(),
+        preferences: UserPreferencesRepository = UserPreferencesRepository()
+    ) {
         self.catalog = catalog
         self.saveRecurringItem = saveRecurringItem
         self.exchangeRateProvider = exchangeRateProvider
+        self.preferences = preferences
+        self.currencyCode = preferences.load().defaultCurrencyCode
     }
 
     init(container: AppContainer) {
         self.catalog = container.providerCatalog
         self.saveRecurringItem = SaveRecurringItem(repository: container.repositories.recurringItems)
         self.exchangeRateProvider = container.exchangeRateProvider
+        self.preferences = container.preferences
+        self.currencyCode = container.preferences.load().defaultCurrencyCode
     }
 
     // MARK: - Load Providers
@@ -107,7 +117,7 @@ final class AddSubscriptionViewModel {
         selectedTier = nil
         title = ""
         amountText = ""
-        currencyCode = "RUB"
+        currencyCode = preferences.load().defaultCurrencyCode
         billingCycle = .monthly
         category = .other
         itemType = .subscription

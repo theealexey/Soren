@@ -7,6 +7,7 @@ import SwiftUI
 struct SubscriptionFormView: View {
     @Bindable var viewModel: AddSubscriptionViewModel
     @Environment(\.dismiss) private var dismiss
+    @State private var showSaveError = false
 
     var body: some View {
         Form {
@@ -44,6 +45,11 @@ struct SubscriptionFormView: View {
         }
         .onChange(of: viewModel.currencyCode) { old, new in
             Task { await viewModel.convertAmount(from: old, to: new) }
+        }
+        .alert(String(localized: "Не удалось сохранить"), isPresented: $showSaveError) {
+            Button(String(localized: "ОК"), role: .cancel) {}
+        } message: {
+            Text(viewModel.saveError?.localizedDescription ?? "")
         }
     }
 
@@ -116,6 +122,7 @@ struct SubscriptionFormView: View {
             dismiss()
         } catch {
             HapticEngine.error()
+            showSaveError = true
         }
     }
 

@@ -4,31 +4,32 @@ import Foundation
 // MARK: - Soren Model Container
 
 /// Central factory for the SwiftData ModelContainer.
-/// All @Model types are registered here — this is the single source of truth
-/// for the schema. New models must be added to `schema` below.
+/// Model types are declared in SorenSchemaVersions.swift.
+/// To add a new model: (1) create SorenSchemaV2 in SorenSchemaVersions.swift,
+/// (2) add a MigrationStage to SorenMigrationPlan.stages,
+/// (3) update `currentSchema` below.
 enum SorenModelContainer {
 
     // MARK: - Schema
 
-    /// All persistent model types in declaration order.
-    /// Order matters for schema migrations — do not rearrange arbitrarily.
-    static let schema = Schema([
-        SDRecurringItem.self,
-        SDPaymentRecord.self,
-        SDPaymentMethod.self,
-        SDReminderRule.self,
-    ])
+    /// Derived from the current versioned schema — do not list models here directly.
+    static let schema = Schema(SorenSchemaV1.models)
 
     // MARK: - Production Container
 
     /// Production container: data persisted to disk.
+    /// Uses SorenMigrationPlan so SwiftData can safely migrate existing stores
+    /// when the schema version advances.
     static func production() throws -> ModelContainer {
         let config = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
             allowsSave: true
         )
-        return try ModelContainer(for: schema, configurations: config)
+        return try ModelContainer(
+            migrationPlan: SorenMigrationPlan.self,
+            configurations: config
+        )
     }
 
     // MARK: - In-Memory Container (tests / previews)

@@ -49,20 +49,6 @@
                ReferencedContainer = "container:Soren.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "A83FAFCA0425E1DEC850BB9D"
-               BuildableName = "SorenWidgets.appex"
-               BlueprintName = "SorenWidgets"
-               ReferencedContainer = "container:Soren.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction

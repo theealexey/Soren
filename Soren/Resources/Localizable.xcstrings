@@ -132,7 +132,7 @@
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "−%1$@ %2$@/мес"
           }
         }
@@ -732,7 +732,7 @@
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "За %1$lld %2$@ до конца пробного"
           }
         }
@@ -748,7 +748,7 @@
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "За %1$lld %2$@ до списания"
           }
         }
@@ -2249,7 +2249,7 @@
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "Через %1$lld дн. — %2$@"
           }
         }

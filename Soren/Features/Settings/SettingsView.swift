@@ -2,8 +2,8 @@ import SwiftUI
 
 // MARK: - Settings View
 
-/// App settings: default currency, appearance, notification preferences.
-/// Presented as a sheet from gear icon on Home and Alerts screens.
+/// App settings: default currency and appearance.
+/// Presented as a sheet from the gear icon on Home and Alerts screens.
 struct SettingsView: View {
     @Environment(AppState.self) private var appState
     @State private var viewModel = SettingsViewModel()
@@ -16,11 +16,6 @@ struct SettingsView: View {
             generalSection(
                 currency: $vm.defaultCurrencyCode,
                 appearance: $appState.appearanceMode
-            )
-
-            notificationsSection(
-                chargeAlertDays: $vm.chargeAlertDays,
-                trialAlertDays: $vm.trialAlertDays
             )
 
             aboutSection
@@ -57,31 +52,6 @@ struct SettingsView: View {
                     Text(mode.displayName).tag(mode)
                 }
             }
-        }
-    }
-
-    // MARK: - Alert Thresholds
-
-    private func notificationsSection(
-        chargeAlertDays: Binding<Int>,
-        trialAlertDays: Binding<Int>
-    ) -> some View {
-        Section {
-            Stepper(
-                "До списания: \(viewModel.chargeAlertDays) дн.",
-                value: chargeAlertDays,
-                in: 1...14
-            )
-
-            Stepper(
-                "До конца триала: \(viewModel.trialAlertDays) дн.",
-                value: trialAlertDays,
-                in: 1...14
-            )
-        } header: {
-            Text("Напоминания об оплате")
-        } footer: {
-            Text("Soren покажет предупреждение за указанное количество дней до события.")
         }
     }
 

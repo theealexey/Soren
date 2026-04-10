@@ -14,34 +14,22 @@ final class SettingsViewModel {
         didSet { debouncedSave() }
     }
 
-    var chargeAlertDays: Int {
-        didSet { debouncedSave() }
-    }
-
-    var trialAlertDays: Int {
-        didSet { debouncedSave() }
-    }
-
     // MARK: - Dependencies
 
     private let repository: UserPreferencesRepository
 
-    /// Cancellable debounce task — prevents a UserDefaults write on every stepper tick.
+    /// Cancellable debounce task — coalesces rapid changes into a single UserDefaults write.
     private var saveTask: Task<Void, Never>?
 
     // MARK: - Init
 
     init(repository: UserPreferencesRepository = UserPreferencesRepository()) {
         self.repository = repository
-        let prefs = repository.load()
-        self.defaultCurrencyCode = prefs.defaultCurrencyCode
-        self.chargeAlertDays = prefs.chargeAlertDays
-        self.trialAlertDays = prefs.trialAlertDays
+        self.defaultCurrencyCode = repository.load().defaultCurrencyCode
     }
 
     // MARK: - Save
 
-    /// Coalesces rapid changes (e.g., stepper taps) into a single UserDefaults write.
     private func debouncedSave() {
         saveTask?.cancel()
         saveTask = Task { @MainActor [weak self] in
@@ -52,10 +40,13 @@ final class SettingsViewModel {
     }
 
     private func save() {
+        // Preserve the existing alert thresholds — they are consumed by the in-app
+        // Alerts tab and are not configurable from Settings in v1.
+        let current = repository.load()
         repository.save(UserPreferences(
             defaultCurrencyCode: defaultCurrencyCode,
-            chargeAlertDays: chargeAlertDays,
-            trialAlertDays: trialAlertDays
+            chargeAlertDays: current.chargeAlertDays,
+            trialAlertDays: current.trialAlertDays
         ))
     }
 
