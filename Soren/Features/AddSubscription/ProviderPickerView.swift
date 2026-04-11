@@ -6,6 +6,7 @@ import SwiftUI
 /// Shows popular services grid, searchable full catalog grouped by category.
 struct ProviderPickerView: View {
     @Bindable var viewModel: AddSubscriptionViewModel
+    @Environment(\.dismiss) private var dismiss
 
     /// Drives programmatic navigation to SubscriptionFormView.
     /// Set to true after viewModel state is fully prepared — eliminates the
@@ -40,6 +41,9 @@ struct ProviderPickerView: View {
         }
         .task {
             await viewModel.loadProviders()
+        }
+        .onChange(of: viewModel.isSaved) { _, saved in
+            if saved { dismiss() }
         }
     }
 
