@@ -81,16 +81,13 @@ struct RecurringItemFormFields: View {
 
     private var datesSection: some View {
         Section(String(localized: "Даты")) {
-            DatePicker(
-                String(localized: "Дата начала"),
-                selection: $startDate,
-                displayedComponents: .date
+            DatePickerRow(
+                label: String(localized: "Дата начала"),
+                selection: $startDate
             )
-
-            DatePicker(
-                String(localized: "Следующее списание"),
-                selection: $nextChargeDate,
-                displayedComponents: .date
+            DatePickerRow(
+                label: String(localized: "Следующее списание"),
+                selection: $nextChargeDate
             )
         }
     }
@@ -105,6 +102,60 @@ struct RecurringItemFormFields: View {
                 axis: .vertical
             )
             .lineLimit(3...6)
+        }
+    }
+}
+
+// MARK: - Date Picker Row
+
+/// A form row that displays a formatted date and opens a graphical date picker
+/// in a sheet. Dismisses automatically when a different date is selected.
+private struct DatePickerRow: View {
+    let label: String
+    @Binding var selection: Date
+    @State private var isPresented = false
+
+    var body: some View {
+        Button {
+            isPresented = true
+        } label: {
+            HStack {
+                Text(label)
+                    .foregroundStyle(ColorTokens.textPrimary)
+                Spacer()
+                Text(selection.formatted(date: .abbreviated, time: .omitted))
+                    .foregroundStyle(.tint)
+            }
+        }
+        .sheet(isPresented: $isPresented) {
+            NavigationStack {
+                DatePicker(
+                    label,
+                    selection: $selection,
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.graphical)
+                .padding(.horizontal, Spacing.md)
+                .onChange(of: selection) { _, _ in
+                    isPresented = false
+                }
+                .navigationTitle(label)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(String(localized: "Отмена")) {
+                            isPresented = false
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(String(localized: "Готово")) {
+                            isPresented = false
+                        }
+                    }
+                }
+            }
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
         }
     }
 }
