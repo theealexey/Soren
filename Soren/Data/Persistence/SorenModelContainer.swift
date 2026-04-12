@@ -18,18 +18,17 @@ enum SorenModelContainer {
     // MARK: - Production Container
 
     /// Production container: data persisted to disk.
-    /// Uses SorenMigrationPlan so SwiftData can safely migrate existing stores
-    /// when the schema version advances.
+    /// Uses ModelContainer(for:) to remain compatible with stores created before
+    /// migration-plan metadata was introduced. Re-introduce ModelContainer(migrationPlan:)
+    /// when SorenSchemaV2 is defined and all on-device stores have been opened at
+    /// least once under this build.
     static func production() throws -> ModelContainer {
         let config = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
             allowsSave: true
         )
-        return try ModelContainer(
-            migrationPlan: SorenMigrationPlan.self,
-            configurations: config
-        )
+        return try ModelContainer(for: schema, configurations: config)
     }
 
     // MARK: - In-Memory Container (tests / previews)
@@ -50,9 +49,13 @@ enum SorenModelContainer {
     /// Called when the store is corrupted (e.g., failed iCloud sync).
     /// After calling this, re-invoke `production()` for a fresh empty store.
     static func deleteProductionStore() {
+        let config = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: false,
+            allowsSave: true
+        )
+        let base = config.url
         let fm = FileManager.default
-        guard let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return }
-        let base = appSupport.appendingPathComponent("default.store", isDirectory: false)
         for suffix in ["", "-wal", "-shm"] {
             let url = suffix.isEmpty ? base : URL(fileURLWithPath: base.path + suffix)
             try? fm.removeItem(at: url)
