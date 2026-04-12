@@ -214,7 +214,7 @@ final class AddSubscriptionViewModel {
             currencyCode: currencyCode,
             billingCycle: billingCycle,
             startDate: startDate,
-            nextChargeDate: nextChargeDate,
+            nextChargeDate: isNextChargeDateManuallySet ? nextChargeDate : startDate,
             status: .active,
             usageStatus: usageStatus,
             note: note
