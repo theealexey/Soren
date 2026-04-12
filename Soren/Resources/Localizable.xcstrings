@@ -181,10 +181,24 @@
 
     },
     "forecast" : {
-
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "прогноз"
+          }
+        }
+      }
     },
     "In %lld days" : {
-
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Через %lld дн."
+          }
+        }
+      }
     },
     "No charges" : {
 
@@ -196,10 +210,24 @@
 
     },
     "Today" : {
-
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сегодня"
+          }
+        }
+      }
     },
     "Tomorrow" : {
-
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Завтра"
+          }
+        }
+      }
     },
     "Trial ending" : {
 
