@@ -69,7 +69,6 @@ final class HomeViewModel {
         selection = nil
 
         do {
-            let currency = preferences.load().defaultCurrencyCode
             let now = Date.now
             // Window starts at the beginning of today so charges scheduled at 00:00
             // (or any earlier time today) are included. Exact Date.now would exclude them.
@@ -78,6 +77,14 @@ final class HomeViewModel {
 
             let upcoming = try getUpcomingCharges.execute(days: windowDays, from: windowStart)
             let trials   = try getActiveTrials.execute()
+
+            // Use the items' own currency when all upcoming charges share one currency.
+            // Fall back to the user preference only for mixed-currency portfolios
+            // (proper cross-currency conversion is deferred work).
+            let upcomingCurrencies = Set(upcoming.map(\.currencyCode))
+            let currency = upcomingCurrencies.count == 1
+                ? upcomingCurrencies.first!
+                : preferences.load().defaultCurrencyCode
 
             // Group by calendar day for landscape + selection lookup.
             let grouped: [Date: [RecurringItem]] = Dictionary(
