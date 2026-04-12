@@ -284,7 +284,7 @@
 		AC765BF3D06C301257D5F0DD /* RecurringItemMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringItemMapper.swift; sourceTree = "<group>"; };
 		ADD575F86DA46DE5363CD92A /* FilterChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterChip.swift; sourceTree = "<group>"; };
 		AEBC8639DFC777ED725C07D3 /* ItemCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemCategory.swift; sourceTree = "<group>"; };
-		B0EC85B8B2D99C6E69C0ADB8 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		B0EC85B8B2D99C6E69C0ADB8 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		B159CB7446D97BCE3FBBE7AE /* AddSubscriptionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSubscriptionViewModel.swift; sourceTree = "<group>"; };
 		B6509B2ABE747FA5E800016D /* ItemDetailsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailsViewModel.swift; sourceTree = "<group>"; };
 		B698265EA94513CE0884AF37 /* RecurringItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringItem.swift; sourceTree = "<group>"; };
@@ -310,7 +310,7 @@
 		E0EDB960B1DC5C94E25CA286 /* ExchangeRateCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRateCacheTests.swift; sourceTree = "<group>"; };
 		E1BBC3EE63F2DC4F7A0ECAF6 /* SorenUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SorenUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E52D3F451BE12EB14780CCCD /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
-		E55A14CE84C8CD53BD4E3F1A /* Soren.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Soren.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E55A14CE84C8CD53BD4E3F1A /* Soren.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Soren.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E649AB3F110DA227AEAD1E55 /* PaymentMethodRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethodRepository.swift; sourceTree = "<group>"; };
 		E79BACA5D34B8EABAA21D9F5 /* UserPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPreferences.swift; sourceTree = "<group>"; };
 		E92B61286089312242D1542C /* BillingLandscapeContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillingLandscapeContainerView.swift; sourceTree = "<group>"; };
@@ -1077,9 +1077,6 @@
 						DevelopmentTeam = "";
 						TestTargetID = 309559632A4FD3FA5E61B85C;
 					};
-					309559632A4FD3FA5E61B85C = {
-						DevelopmentTeam = "";
-					};
 					A83FAFCA0425E1DEC850BB9D = {
 						DevelopmentTeam = "";
 					};
@@ -1389,7 +1386,11 @@
 				INFOPLIST_KEY_CFBundleDisplayName = SorenWidgets;
 				INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.alexey.soren.widgets;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -1404,7 +1405,11 @@
 				INFOPLIST_KEY_CFBundleDisplayName = SorenWidgets;
 				INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.alexey.soren.widgets;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -1418,6 +1423,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 9GUT847JBJ;
 				INFOPLIST_KEY_CFBundleDisplayName = Soren;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -1457,6 +1463,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 9GUT847JBJ;
 				INFOPLIST_KEY_CFBundleDisplayName = Soren;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
