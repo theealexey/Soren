@@ -24,8 +24,16 @@ final class AddSubscriptionViewModel {
     var billingCycle: BillingCycle = .monthly
     var category: ItemCategory = .other
     var itemType: ItemType = .subscription
-    var startDate = Date.now
+
+    var startDate = Date.now {
+        didSet {
+            guard !isNextChargeDateManuallySet else { return }
+            nextChargeDate = startDate
+        }
+    }
     var nextChargeDate = Date.now
+    private(set) var isNextChargeDateManuallySet = false
+
     var note = ""
     var usageStatus: UsageStatus = .unknown
 
@@ -121,10 +129,22 @@ final class AddSubscriptionViewModel {
         billingCycle = .monthly
         category = .other
         itemType = .subscription
+        isNextChargeDateManuallySet = false
         startDate = .now
-        nextChargeDate = .now
         note = ""
         usageStatus = .unknown
+    }
+
+    // MARK: - Next Charge Date
+
+    func setNextChargeDateManually(_ date: Date) {
+        nextChargeDate = date
+        isNextChargeDateManuallySet = true
+    }
+
+    func resetNextChargeToAutomatic() {
+        isNextChargeDateManuallySet = false
+        nextChargeDate = startDate
     }
 
     // MARK: - Currency Conversion
