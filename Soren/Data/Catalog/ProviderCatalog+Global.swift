@@ -22,6 +22,7 @@ extension ProviderCatalog {
               brandColorHex: "#FF0000", clearbitDomain: "youtube.com",
               plans: [
                   .init(id: "individual", name: "Individual", amount: 13.99, billingCycle: .monthly),
+                  .init(id: "individual_annual", name: "Individual (год)", amount: 159.99, billingCycle: .annual, features: "Экономия ~$8"),
                   .init(id: "family", name: "Family", amount: 22.99, billingCycle: .monthly, features: "До 5 участников"),
                   .init(id: "student", name: "Student", amount: 7.99, billingCycle: .monthly),
               ]),
@@ -34,6 +35,7 @@ extension ProviderCatalog {
                   .init(id: "standard_ads", name: "Standard с рекламой", amount: 9.99, billingCycle: .monthly),
                   .init(id: "standard", name: "Standard", amount: 15.99, billingCycle: .monthly, features: "Скачивание, без рекламы"),
                   .init(id: "premium", name: "Premium", amount: 19.99, billingCycle: .monthly, features: "4K HDR, Dolby Atmos, 4 экрана"),
+                  .init(id: "premium_annual", name: "Premium (год)", amount: 189.99, billingCycle: .annual, features: "4K HDR, Dolby Atmos, 4 экрана"),
               ]),
 
         .init(id: "hbo_max", displayName: "Max (HBO)", aliases: ["hbo", "max"],
@@ -42,8 +44,11 @@ extension ProviderCatalog {
               brandColorHex: "#002BE7", clearbitDomain: "max.com",
               plans: [
                   .init(id: "with_ads", name: "С рекламой", amount: 9.99, billingCycle: .monthly, features: "FHD, 2 экрана"),
+                  .init(id: "with_ads_annual", name: "С рекламой (год)", amount: 109.99, billingCycle: .annual, features: "FHD, 2 экрана"),
                   .init(id: "ad_free", name: "Без рекламы", amount: 15.99, billingCycle: .monthly, features: "FHD, 2 экрана"),
+                  .init(id: "ad_free_annual", name: "Без рекламы (год)", amount: 184.99, billingCycle: .annual, features: "FHD, 2 экрана"),
                   .init(id: "ultimate", name: "Ultimate", amount: 19.99, billingCycle: .monthly, features: "4K, 4 экрана, Dolby Atmos"),
+                  .init(id: "ultimate_annual", name: "Ultimate (год)", amount: 229.99, billingCycle: .annual, features: "4K, 4 экрана, Dolby Atmos"),
               ]),
 
         .init(id: "apple_tv_plus", displayName: "Apple TV+", aliases: ["apple tv", "эпл тв"],
@@ -52,6 +57,7 @@ extension ProviderCatalog {
               brandColorHex: "#000000", clearbitDomain: "apple.com",
               plans: [
                   .init(id: "monthly", name: "Monthly", amount: 9.99, billingCycle: .monthly),
+                  .init(id: "annual", name: "Annual", amount: 99.99, billingCycle: .annual, features: "Экономия ~$20"),
               ]),
 
         .init(id: "amazon_prime_video", displayName: "Amazon Prime Video", aliases: ["амазон", "prime video"],
@@ -119,6 +125,7 @@ extension ProviderCatalog {
               brandColorHex: "#A238FF", clearbitDomain: "deezer.com",
               plans: [
                   .init(id: "individual", name: "Individual", amount: 10.99, billingCycle: .monthly),
+                  .init(id: "individual_annual", name: "Individual (год)", amount: 107.99, billingCycle: .annual, features: "Экономия ~$24"),
                   .init(id: "duo", name: "Duo", amount: 14.99, billingCycle: .monthly, features: "2 аккаунта"),
                   .init(id: "family", name: "Family", amount: 17.99, billingCycle: .monthly, features: "До 6 участников"),
               ]),
@@ -160,8 +167,11 @@ extension ProviderCatalog {
               brandColorHex: "#4285F4", clearbitDomain: "google.com",
               plans: [
                   .init(id: "100gb", name: "100 ГБ", amount: 1.99, billingCycle: .monthly),
+                  .init(id: "100gb_annual", name: "100 ГБ (год)", amount: 19.99, billingCycle: .annual, features: "Экономия ~$4"),
                   .init(id: "200gb", name: "200 ГБ", amount: 2.99, billingCycle: .monthly),
+                  .init(id: "200gb_annual", name: "200 ГБ (год)", amount: 29.99, billingCycle: .annual, features: "Экономия ~$6"),
                   .init(id: "2tb", name: "2 ТБ", amount: 9.99, billingCycle: .monthly),
+                  .init(id: "2tb_annual", name: "2 ТБ (год)", amount: 99.99, billingCycle: .annual, features: "Экономия ~$20"),
                   .init(id: "5tb", name: "5 ТБ", amount: 24.99, billingCycle: .monthly),
                   .init(id: "10tb", name: "10 ТБ", amount: 49.99, billingCycle: .monthly),
               ]),
@@ -172,6 +182,7 @@ extension ProviderCatalog {
               brandColorHex: "#0061FF", clearbitDomain: "dropbox.com",
               plans: [
                   .init(id: "plus", name: "Plus", amount: 11.99, billingCycle: .monthly, features: "2 ТБ, 1 пользователь"),
+                  .init(id: "plus_annual", name: "Plus (год)", amount: 119.88, billingCycle: .annual, features: "2 ТБ, 1 пользователь"),
                   .init(id: "professional", name: "Professional", amount: 19.99, billingCycle: .monthly, features: "3 ТБ, eSign, расширенный поиск"),
               ]),
 
@@ -222,6 +233,7 @@ extension ProviderCatalog {
               brandColorHex: "#000000", clearbitDomain: "github.com",
               plans: [
                   .init(id: "individual", name: "Individual", amount: 10, billingCycle: .monthly),
+                  .init(id: "individual_annual", name: "Individual (год)", amount: 100, billingCycle: .annual),
                   .init(id: "business", name: "Business", amount: 19, billingCycle: .monthly, features: "Управление командой, политики"),
               ]),
 
@@ -294,7 +306,9 @@ extension ProviderCatalog {
               brandColorHex: "#D83B01", clearbitDomain: "microsoft.com",
               plans: [
                   .init(id: "personal", name: "Personal", amount: 6.99, billingCycle: .monthly, features: "1 ТБ, Office для 1 чел."),
+                  .init(id: "personal_annual", name: "Personal (год)", amount: 99.99, billingCycle: .annual, features: "1 ТБ, Office для 1 чел."),
                   .init(id: "family", name: "Family", amount: 9.99, billingCycle: .monthly, features: "До 6 чел., 1 ТБ каждому"),
+                  .init(id: "family_annual", name: "Family (год)", amount: 129.99, billingCycle: .annual, features: "До 6 чел., 1 ТБ каждому"),
               ]),
 
         .init(id: "1password", displayName: "1Password", aliases: ["ванпассворд"],
@@ -368,8 +382,11 @@ extension ProviderCatalog {
               brandColorHex: "#003087", clearbitDomain: "playstation.com",
               plans: [
                   .init(id: "essential", name: "Essential", amount: 9.99, billingCycle: .monthly, features: "2 игры/мес, онлайн мультиплеер"),
+                  .init(id: "essential_annual", name: "Essential (год)", amount: 79.99, billingCycle: .annual, features: "2 игры/мес, онлайн мультиплеер"),
                   .init(id: "extra", name: "Extra", amount: 14.99, billingCycle: .monthly, features: "Каталог 400+ игр"),
+                  .init(id: "extra_annual", name: "Extra (год)", amount: 134.99, billingCycle: .annual, features: "Каталог 400+ игр"),
                   .init(id: "premium", name: "Premium", amount: 17.99, billingCycle: .monthly, features: "Классика PS1–PS4, стриминг"),
+                  .init(id: "premium_annual", name: "Premium (год)", amount: 159.99, billingCycle: .annual, features: "Классика PS1–PS4, стриминг"),
               ]),
 
         .init(id: "xbox_gamepass", displayName: "Xbox Game Pass", aliases: ["геймпас", "game pass"],
@@ -398,6 +415,7 @@ extension ProviderCatalog {
               brandColorHex: "#0070C9", clearbitDomain: "apple.com",
               plans: [
                   .init(id: "monthly", name: "Monthly", amount: 6.99, billingCycle: .monthly, features: "200+ игр, до 6 чел."),
+                  .init(id: "annual", name: "Annual", amount: 49.99, billingCycle: .annual, features: "200+ игр, до 6 чел., экономия ~$34"),
               ]),
 
         // MARK: Health
