@@ -12,6 +12,10 @@ struct ProviderPickerView: View {
     /// Set to true after viewModel state is fully prepared — eliminates the
     /// simultaneousGesture + NavigationLink ordering race.
     @State private var isShowingForm = false
+    /// Incremented each time the form is opened so SwiftUI treats each
+    /// presentation as a distinct view, discarding any cached state from
+    /// the previous provider selection.
+    @State private var formPresentationID = 0
 
     private let columns = [
         GridItem(.flexible(), spacing: Spacing.sm),
@@ -38,6 +42,7 @@ struct ProviderPickerView: View {
         )
         .navigationDestination(isPresented: $isShowingForm) {
             SubscriptionFormView(viewModel: viewModel)
+                .id(formPresentationID)
         }
         .task {
             await viewModel.loadProviders()
@@ -52,6 +57,7 @@ struct ProviderPickerView: View {
     private var manualEntryButton: some View {
         Button {
             viewModel.startManualEntry()
+            formPresentationID += 1
             isShowingForm = true
         } label: {
             HStack(spacing: Spacing.sm) {
@@ -96,6 +102,7 @@ struct ProviderPickerView: View {
     private func popularProviderCard(_ provider: ProviderTemplate) -> some View {
         Button {
             viewModel.selectProvider(provider)
+            formPresentationID += 1
             isShowingForm = true
         } label: {
             VStack(spacing: Spacing.xs) {
@@ -126,6 +133,7 @@ struct ProviderPickerView: View {
                         ForEach(Array(group.providers.enumerated()), id: \.element.id) { index, provider in
                             Button {
                                 viewModel.selectProvider(provider)
+                                formPresentationID += 1
                                 isShowingForm = true
                             } label: {
                                 catalogRow(provider)
