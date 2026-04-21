@@ -166,4 +166,43 @@ extension RecurringItem {
     var daysUntilNextCharge: Int {
         Calendar.current.dateComponents([.day], from: .now, to: nextChargeDate).day ?? 0
     }
+
+    /// Display-layer effective next charge date.
+    ///
+    /// For active recurring subscriptions whose stored `nextChargeDate` has passed,
+    /// advances by `billingCycle` until the result is >= the start of `today`.
+    /// Does NOT mutate persisted state — call sites use this only for user-facing text.
+    ///
+    /// Non-rolling statuses (paused / cancelled / archived) and finite subscriptions
+    /// (`autoRenew == false`) return the stored date unchanged so their display
+    /// strings reflect the actual record rather than a computed future occurrence.
+    func effectiveNextChargeDate(
+        relativeTo today: Date = .now,
+        calendar: Calendar = .current
+    ) -> Date {
+        let startOfToday = calendar.startOfDay(for: today)
+
+        // Non-rolling statuses — return stored date as-is.
+        switch status {
+        case .paused, .cancelled, .archived:
+            return nextChargeDate
+        default:
+            break
+        }
+
+        // Already today or in the future — no rollover needed.
+        guard nextChargeDate < startOfToday else { return nextChargeDate }
+
+        // Finite subscriptions do not roll past their end date.
+        guard autoRenew else { return nextChargeDate }
+
+        // Advance one cycle at a time until we reach today or later.
+        var candidate = nextChargeDate
+        var iterations = 0
+        while candidate < startOfToday, iterations < 1_000 {
+            candidate = billingCycle.nextDate(after: candidate, calendar: calendar)
+            iterations += 1
+        }
+        return candidate
+    }
 }

@@ -40,7 +40,7 @@ enum RecurringItemFormatter {
 
     /// Formatted subtitle for upcoming charge rows.
     static func chargeSubtitle(for item: RecurringItem) -> String {
-        let days = item.daysUntilNextCharge
+        let days = daysFromToday(to: item.effectiveNextChargeDate())
         if days == 0 { return String(localized: "Списание сегодня") }
         if days == 1 { return String(localized: "Списание завтра") }
         if days < 0 { return String(localized: "Дата списания была \(abs(days)) дн. назад") }
@@ -57,12 +57,18 @@ enum RecurringItemFormatter {
         case .archived:
             return String(localized: "В архиве")
         default:
-            let days = item.daysUntilNextCharge
+            let days = daysFromToday(to: item.effectiveNextChargeDate())
             if days < 0 { return String(localized: "Дата списания была \(abs(days)) дн. назад") }
             if days == 0 { return String(localized: "Списание сегодня") }
             if days == 1 { return String(localized: "Списание завтра") }
             return String(localized: "Списание через \(days) дн.")
         }
+    }
+
+    // MARK: - Private helpers
+
+    private static func daysFromToday(to date: Date) -> Int {
+        Calendar.current.dateComponents([.day], from: .now, to: date).day ?? 0
     }
 
     // MARK: - Trial Display
