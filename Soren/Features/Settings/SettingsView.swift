@@ -22,6 +22,7 @@ struct SettingsView: View {
         }
         .scrollContentBackground(.hidden)
         .background(ColorTokens.background)
+        .background(AppearanceBridge(mode: appState.appearanceMode))
         .navigationTitle(String(localized: "Настройки"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -72,6 +73,44 @@ struct SettingsView: View {
                 Text(viewModel.buildNumber)
                     .foregroundStyle(ColorTokens.textSecondary)
             }
+        }
+    }
+}
+
+// MARK: - Appearance Bridge
+
+/// Forces the UINavigationController that hosts this sheet to update its
+/// overrideUserInterfaceStyle whenever AppearanceMode changes.
+///
+/// SwiftUI's .preferredColorScheme modifier only writes overrideUserInterfaceStyle
+/// at UINavigationController creation time and does not propagate live updates to
+/// an already-presented modal. Walking the responder chain and writing directly
+/// bypasses that limitation.
+private struct AppearanceBridge: UIViewRepresentable {
+    let mode: AppearanceMode
+
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        view.backgroundColor = .clear
+        view.isUserInteractionEnabled = false
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {
+        let style: UIUserInterfaceStyle = switch mode {
+        case .light:  .light
+        case .dark:   .dark
+        case .system: .unspecified
+        }
+        // Defer past the current SwiftUI render pass so the view is in the hierarchy.
+        DispatchQueue.main.async {
+            var topVC: UIViewController?
+            var responder: UIResponder? = uiView
+            while let r = responder {
+                if let vc = r as? UIViewController { topVC = vc }
+                responder = r.next
+            }
+            topVC?.overrideUserInterfaceStyle = style
         }
     }
 }
