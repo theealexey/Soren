@@ -95,8 +95,7 @@ struct RootView: View {
                 )
             }
         case .settings:
-            NavigationStack { SettingsView() }
-                .preferredColorScheme(appState.appearanceMode.colorScheme)
+            SettingsSheetContent()
         }
     }
 
@@ -341,6 +340,21 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .calendar:      "calendar"
         case .insights:      "chart.bar.fill"
         }
+    }
+}
+
+// MARK: - Settings Sheet Content
+
+/// Root view of the Settings sheet window.
+/// Owning `.preferredColorScheme` here — above the UINavigationController barrier —
+/// ensures the sheet window's overrideUserInterfaceStyle updates live whenever
+/// appState.appearanceMode changes while the sheet is open.
+private struct SettingsSheetContent: View {
+    @Environment(AppState.self) private var appState
+
+    var body: some View {
+        NavigationStack { SettingsView() }
+            .preferredColorScheme(appState.appearanceMode.colorScheme)
     }
 }
 

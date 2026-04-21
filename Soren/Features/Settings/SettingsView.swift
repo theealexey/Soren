@@ -22,7 +22,6 @@ struct SettingsView: View {
         }
         .scrollContentBackground(.hidden)
         .background(ColorTokens.background)
-        .preferredColorScheme(appState.appearanceMode.colorScheme)
         .navigationTitle(String(localized: "Настройки"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
