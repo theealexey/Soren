@@ -201,11 +201,14 @@ final class HomeViewModel {
             return .noUpcoming
         }
         let sameDay = cachedItemsByDay[calendar.startOfDay(for: item.nextChargeDate)] ?? []
+        // Show up to 3 names inline; overflow shown as "и ещё N".
+        let visibleNames = sameDay.prefix(3).map(\.title).joined(separator: " · ")
+        let overflow = max(0, sameDay.count - 3)
         return .nextPayment(
             countdown: countdownLabel(from: now, to: item.nextChargeDate),
-            name: item.title,
+            name: visibleNames.isEmpty ? item.title : visibleNames,
             amountFormatted: formatted(amount: item.amount, currency: item.currencyCode),
-            additionalCount: max(0, sameDay.count - 1)
+            additionalCount: overflow
         )
     }
 

@@ -74,7 +74,7 @@ struct NextPaymentCalloutView: View {
                 if additionalCount > 0 {
                     Text("·")
                         .foregroundStyle(theme.tertiaryText)
-                    Text("+\(additionalCount) more")
+                    Text("и ещё \(additionalCount)")
                         .foregroundStyle(theme.tertiaryText)
                 }
             }
@@ -114,7 +114,7 @@ struct NextPaymentCalloutView: View {
                 }
 
                 if selection.charges.count > 3 {
-                    Text("+\(selection.charges.count - 3) more")
+                    Text("и ещё \(selection.charges.count - 3)")
                         .font(Typography.footnote)
                         .foregroundStyle(theme.tertiaryText)
                 }

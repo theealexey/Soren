@@ -43,7 +43,7 @@ enum RecurringItemFormatter {
         let days = item.daysUntilNextCharge
         if days == 0 { return String(localized: "Списание сегодня") }
         if days == 1 { return String(localized: "Списание завтра") }
-        if days < 0 { return String(localized: "Просрочено на \(abs(days)) дн.") }
+        if days < 0 { return String(localized: "Дата списания была \(abs(days)) дн. назад") }
         return String(localized: "Через \(days) дн.")
     }
 
@@ -58,7 +58,7 @@ enum RecurringItemFormatter {
             return String(localized: "В архиве")
         default:
             let days = item.daysUntilNextCharge
-            if days < 0 { return String(localized: "Просрочено на \(abs(days)) дн.") }
+            if days < 0 { return String(localized: "Дата списания была \(abs(days)) дн. назад") }
             if days == 0 { return String(localized: "Списание сегодня") }
             if days == 1 { return String(localized: "Списание завтра") }
             return String(localized: "Списание через \(days) дн.")
