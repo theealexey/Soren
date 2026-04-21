@@ -16,6 +16,8 @@ struct RecurringItemFormFields: View {
     @Binding var itemType: ItemType
     @Binding var startDate: Date
     @Binding var nextChargeDate: Date
+    @Binding var autoRenew: Bool
+    @Binding var endDate: Date
     @Binding var note: String
     @Binding var usageStatus: UsageStatus
 
@@ -89,6 +91,13 @@ struct RecurringItemFormFields: View {
                 label: String(localized: "Следующее списание"),
                 selection: $nextChargeDate
             )
+            Toggle(String(localized: "Автопродление"), isOn: $autoRenew)
+            if !autoRenew {
+                DatePickerRow(
+                    label: String(localized: "Дата окончания"),
+                    selection: $endDate
+                )
+            }
         }
     }
 

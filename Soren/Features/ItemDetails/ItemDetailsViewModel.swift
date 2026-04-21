@@ -18,13 +18,25 @@ final class ItemDetailsViewModel {
     var editTitle = ""
     var editAmountText = ""
     var editCurrencyCode = "RUB"
-    var editBillingCycle: BillingCycle = .monthly
+    var editBillingCycle: BillingCycle = .monthly {
+        didSet { recomputeEditEndDateIfNeeded() }
+    }
     var editCategory: ItemCategory = .other
     var editItemType: ItemType = .subscription
     var editStartDate = Date.now
-    var editNextChargeDate = Date.now
+    var editNextChargeDate = Date.now {
+        didSet { recomputeEditEndDateIfNeeded() }
+    }
     var editNote = ""
     var editUsageStatus: UsageStatus = .unknown
+
+    // MARK: - Edit Lifecycle Fields
+
+    var editAutoRenew: Bool = true {
+        didSet { recomputeEditEndDateIfNeeded() }
+    }
+    var editEndDate: Date = .now
+    private(set) var isEditEndDateManuallySet = false
 
     // MARK: - Dependencies
 
@@ -41,19 +53,38 @@ final class ItemDetailsViewModel {
         self.exchangeRateProvider = exchangeRateProvider
     }
 
+    // MARK: - Edit End Date
+
+    func setEditEndDateManually(_ date: Date) {
+        editEndDate = date
+        isEditEndDateManuallySet = true
+    }
+
+    private func recomputeEditEndDateIfNeeded() {
+        guard !editAutoRenew, !isEditEndDateManuallySet else { return }
+        editEndDate = editBillingCycle.nextDate(after: editNextChargeDate)
+    }
+
     // MARK: - Edit Actions
 
     func startEditing() {
         editTitle = item.title
         editAmountText = item.amount.description   // locale-independent decimal string
         editCurrencyCode = item.currencyCode
-        editBillingCycle = item.billingCycle
         editCategory = item.category
         editItemType = item.itemType
         editStartDate = item.startDate
-        editNextChargeDate = item.nextChargeDate
         editNote = item.note
         editUsageStatus = item.usageStatus
+        // Lifecycle fields: set the manual-override flag before assigning cycle/date so
+        // their didSet handlers don't auto-fill an endDate for existing stored values.
+        isEditEndDateManuallySet = item.endDate != nil
+        editBillingCycle = item.billingCycle
+        editNextChargeDate = item.nextChargeDate
+        // Seed endDate: use stored value, or compute a sensible default for existing
+        // auto-renew items (unused unless the user switches autoRenew off).
+        editEndDate = item.endDate ?? item.billingCycle.nextDate(after: item.nextChargeDate)
+        editAutoRenew = item.autoRenew
         isEditing = true
     }
 
@@ -75,6 +106,8 @@ final class ItemDetailsViewModel {
         updated.itemType = editItemType
         updated.startDate = editStartDate
         updated.nextChargeDate = editNextChargeDate
+        updated.autoRenew = editAutoRenew
+        updated.endDate = editAutoRenew ? nil : editEndDate
         updated.note = editNote
         updated.usageStatus = editUsageStatus
 
@@ -131,6 +164,9 @@ final class ItemDetailsViewModel {
         guard !trimmed.isEmpty, trimmed.count <= 255 else { return false }
         guard let amount = Decimal(string: editAmountText.replacingOccurrences(of: ",", with: ".")),
               amount > 0, amount < 1_000_000_000 else { return false }
+        if !editAutoRenew {
+            guard editEndDate >= editNextChargeDate else { return false }
+        }
         return true
     }
 

@@ -68,6 +68,22 @@ extension BillingCycle {
     }
 }
 
+extension BillingCycle {
+    /// Returns a date advanced by exactly one billing cycle.
+    /// Uses calendar-aware arithmetic for month-based cycles so end-of-month
+    /// dates stay valid (e.g. Jan 31 + 1 month = Feb 28, not an invalid date).
+    func nextDate(after date: Date, calendar: Calendar = .current) -> Date {
+        switch self {
+        case .weekly:           calendar.date(byAdding: .day,   value: 7,    to: date) ?? date
+        case .monthly:          calendar.date(byAdding: .month, value: 1,    to: date) ?? date
+        case .quarterly:        calendar.date(byAdding: .month, value: 3,    to: date) ?? date
+        case .semiannual:       calendar.date(byAdding: .month, value: 6,    to: date) ?? date
+        case .annual:           calendar.date(byAdding: .year,  value: 1,    to: date) ?? date
+        case .custom(let days): calendar.date(byAdding: .day,   value: days, to: date) ?? date
+        }
+    }
+}
+
 extension BillingCycle: CaseIterable {
     /// `.custom` is intentionally excluded — it requires a companion days-input UI
     /// and cannot be represented as a simple Picker row. Use a dedicated custom-days editor instead.

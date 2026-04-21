@@ -19,6 +19,8 @@ struct ItemEditFormView: View {
                 itemType: $viewModel.editItemType,
                 startDate: $viewModel.editStartDate,
                 nextChargeDate: $viewModel.editNextChargeDate,
+                autoRenew: $viewModel.editAutoRenew,
+                endDate: editEndDateBinding,
                 note: $viewModel.editNote,
                 usageStatus: $viewModel.editUsageStatus
             )
@@ -46,6 +48,15 @@ struct ItemEditFormView: View {
         .onChange(of: viewModel.editCurrencyCode) { old, new in
             Task { await viewModel.convertAmount(from: old, to: new) }
         }
+    }
+
+    // MARK: - End Date Binding
+
+    private var editEndDateBinding: Binding<Date> {
+        Binding(
+            get: { viewModel.editEndDate },
+            set: { viewModel.setEditEndDateManually($0) }
+        )
     }
 
     // MARK: - Save

@@ -24,6 +24,8 @@ struct SubscriptionFormView: View {
                 itemType: $viewModel.itemType,
                 startDate: $viewModel.startDate,
                 nextChargeDate: $viewModel.nextChargeDate,
+                autoRenew: $viewModel.autoRenew,
+                endDate: endDateBinding,
                 note: $viewModel.note,
                 usageStatus: $viewModel.usageStatus
             )
@@ -48,6 +50,17 @@ struct SubscriptionFormView: View {
         } message: {
             Text(viewModel.saveError?.localizedDescription ?? "")
         }
+    }
+
+    // MARK: - End Date Binding
+
+    /// Routes the end-date setter through setEndDateManually so the ViewModel records
+    /// that the user has explicitly chosen a date and stops auto-filling on cycle changes.
+    private var endDateBinding: Binding<Date> {
+        Binding(
+            get: { viewModel.endDate },
+            set: { viewModel.setEndDateManually($0) }
+        )
     }
 
     // MARK: - Currency Binding
