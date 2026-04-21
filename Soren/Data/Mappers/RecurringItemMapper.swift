@@ -24,6 +24,8 @@ enum RecurringItemMapper {
             startDate: sd.startDate,
             nextChargeDate: sd.nextChargeDate,
             trialEndDate: sd.trialEndDate,
+            autoRenew: sd.autoRenew ?? true,   // nil = legacy record → treat as auto-renewing
+            endDate: sd.endDate,
             status: ItemStatus(rawValue: sd.statusRaw) ?? .active,
             usageStatus: UsageStatus(rawValue: sd.usageStatusRaw) ?? .unknown,
             paymentMethodID: sd.paymentMethodID,
@@ -55,6 +57,8 @@ enum RecurringItemMapper {
             startDate: domain.startDate,
             nextChargeDate: domain.nextChargeDate,
             trialEndDate: domain.trialEndDate,
+            autoRenew: domain.autoRenew,
+            endDate: domain.endDate,
             statusRaw: domain.status.rawValue,
             usageStatusRaw: domain.usageStatus.rawValue,
             paymentMethodID: domain.paymentMethodID,
@@ -86,6 +90,8 @@ enum RecurringItemMapper {
         sd.startDate = domain.startDate
         sd.nextChargeDate = domain.nextChargeDate
         sd.trialEndDate = domain.trialEndDate
+        sd.autoRenew = domain.autoRenew
+        sd.endDate = domain.endDate
         sd.statusRaw = domain.status.rawValue
         sd.usageStatusRaw = domain.usageStatus.rawValue
         sd.paymentMethodID = domain.paymentMethodID

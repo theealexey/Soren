@@ -38,6 +38,17 @@ final class SDRecurringItem {
     var nextChargeDate: Date
     var trialEndDate: Date?
 
+    // MARK: - Lifecycle
+
+    /// Stored as `Bool?` so that adding this column is a lightweight migration:
+    /// existing rows receive `nil`, which the mapper treats as `true` (legacy default).
+    /// New or re-saved rows always carry an explicit `true` or `false`.
+    var autoRenew: Bool?
+
+    /// Non-nil only for finite (autoRenew == false) subscriptions.
+    /// Always `nil` when autoRenew is true — enforced at the use-case save boundary.
+    var endDate: Date?
+
     // MARK: - State
 
     var statusRaw: String
@@ -85,6 +96,8 @@ final class SDRecurringItem {
         startDate: Date,
         nextChargeDate: Date,
         trialEndDate: Date?,
+        autoRenew: Bool? = nil,
+        endDate: Date? = nil,
         statusRaw: String,
         usageStatusRaw: String,
         paymentMethodID: UUID?,
@@ -110,6 +123,8 @@ final class SDRecurringItem {
         self.startDate = startDate
         self.nextChargeDate = nextChargeDate
         self.trialEndDate = trialEndDate
+        self.autoRenew = autoRenew
+        self.endDate = endDate
         self.statusRaw = statusRaw
         self.usageStatusRaw = usageStatusRaw
         self.paymentMethodID = paymentMethodID

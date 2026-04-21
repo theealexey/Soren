@@ -35,6 +35,16 @@ struct RecurringItem: Identifiable, Hashable, Sendable {
     var nextChargeDate: Date
     var trialEndDate: Date?
 
+    // MARK: - Lifecycle
+
+    /// When `true` (default) the subscription renews indefinitely until cancelled.
+    /// When `false`, the subscription terminates on `endDate` (which must be non-nil).
+    var autoRenew: Bool
+
+    /// The date after which no further charges occur.
+    /// Required when `autoRenew == false`; always `nil` when `autoRenew == true` (enforced at save boundary).
+    var endDate: Date?
+
     // MARK: - State
 
     var status: ItemStatus
@@ -77,6 +87,8 @@ struct RecurringItem: Identifiable, Hashable, Sendable {
         startDate: Date = .now,
         nextChargeDate: Date,
         trialEndDate: Date? = nil,
+        autoRenew: Bool = true,
+        endDate: Date? = nil,
         status: ItemStatus = .active,
         usageStatus: UsageStatus = .unknown,
         paymentMethodID: UUID? = nil,
@@ -102,6 +114,8 @@ struct RecurringItem: Identifiable, Hashable, Sendable {
         self.startDate = startDate
         self.nextChargeDate = nextChargeDate
         self.trialEndDate = trialEndDate
+        self.autoRenew = autoRenew
+        self.endDate = endDate
         self.status = status
         self.usageStatus = usageStatus
         self.paymentMethodID = paymentMethodID
