@@ -86,10 +86,10 @@ final class HomeViewModel {
                 ? upcomingCurrencies.first!
                 : preferences.load().defaultCurrencyCode
 
-            // Group by calendar day for landscape + selection lookup.
+            // Group by effective charge date so rolled-forward items land in the correct bucket.
             let grouped: [Date: [RecurringItem]] = Dictionary(
                 grouping: upcoming,
-                by: { calendar.startOfDay(for: $0.nextChargeDate) }
+                by: { calendar.startOfDay(for: $0.effectiveNextChargeDate()) }
             )
             cachedItemsByDay = grouped
 
@@ -119,10 +119,10 @@ final class HomeViewModel {
             let forecast = dailyTotals.values.reduce(Decimal(0), +)
             forecastLabel = "\(formatted(amount: forecast, currency: currency)) \(String(localized: "forecast"))"
 
-            // Use windowStart (not now) so today's charges appear in the callout.
+            // Use effective date so rolled-forward items rank correctly in the callout.
             let nextItem = upcoming
-                .filter { $0.nextChargeDate >= windowStart }
-                .min { $0.nextChargeDate < $1.nextChargeDate }
+                .filter { $0.effectiveNextChargeDate() >= windowStart }
+                .min { $0.effectiveNextChargeDate() < $1.effectiveNextChargeDate() }
             callout = defaultCallout(nextItem: nextItem, now: now, currency: currency)
 
             insights = buildInsights(
@@ -185,8 +185,8 @@ final class HomeViewModel {
         let currency = preferences.load().defaultCurrencyCode
         let nextItem = cachedItemsByDay.values
             .flatMap { $0 }
-            .filter { $0.nextChargeDate >= calendar.startOfDay(for: now) }
-            .min { $0.nextChargeDate < $1.nextChargeDate }
+            .filter { $0.effectiveNextChargeDate() >= calendar.startOfDay(for: now) }
+            .min { $0.effectiveNextChargeDate() < $1.effectiveNextChargeDate() }
         callout = defaultCallout(nextItem: nextItem, now: now, currency: currency)
     }
 
@@ -200,12 +200,12 @@ final class HomeViewModel {
         guard let item = nextItem else {
             return .noUpcoming
         }
-        let sameDay = cachedItemsByDay[calendar.startOfDay(for: item.nextChargeDate)] ?? []
+        let sameDay = cachedItemsByDay[calendar.startOfDay(for: item.effectiveNextChargeDate())] ?? []
         // Show up to 3 names inline; overflow shown as "и ещё N".
         let visibleNames = sameDay.prefix(3).map(\.title).joined(separator: " · ")
         let overflow = max(0, sameDay.count - 3)
         return .nextPayment(
-            countdown: countdownLabel(from: now, to: item.nextChargeDate),
+            countdown: countdownLabel(from: now, to: item.effectiveNextChargeDate()),
             name: visibleNames.isEmpty ? item.title : visibleNames,
             amountFormatted: formatted(amount: item.amount, currency: item.currencyCode),
             additionalCount: overflow
