@@ -162,6 +162,36 @@ extension RecurringItem {
         return Calendar.current.dateComponents([.day], from: .now, to: trialEnd).day
     }
 
+    // MARK: - Renewal Display
+
+    /// Display-layer classification of how this item's lifecycle will end.
+    /// Derived solely from `autoRenew`, `endDate`, and the current date.
+    /// Never mutates persisted state.
+    enum RenewalDisplay: Equatable {
+        case renewing                  // auto-renewal active; no end in sight
+        case endingSoon(daysLeft: Int) // finite subscription expiring within 30 days
+        case expired                   // finite subscription whose endDate has passed
+    }
+
+    var renewalDisplay: RenewalDisplay {
+        guard !autoRenew, let end = endDate else { return .renewing }
+        let cal  = Calendar.current
+        let days = cal.dateComponents(
+            [.day],
+            from: cal.startOfDay(for: .now),
+            to:   cal.startOfDay(for: end)
+        ).day ?? 0
+        if days < 0   { return .expired }
+        if days <= 30 { return .endingSoon(daysLeft: days) }
+        return .renewing
+    }
+
+    /// True when the item is a finite subscription whose end date has passed.
+    var isExpired: Bool {
+        if case .expired = renewalDisplay { return true }
+        return false
+    }
+
     /// Days until next charge. Negative if overdue.
     var daysUntilNextCharge: Int {
         Calendar.current.dateComponents([.day], from: .now, to: nextChargeDate).day ?? 0

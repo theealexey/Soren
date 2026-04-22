@@ -75,7 +75,10 @@ final class HomeViewModel {
             let windowStart = calendar.startOfDay(for: now)
             let windowDays = 30
 
+            // Expired finite subscriptions (autoRenew=false, endDate past) are excluded from
+            // the active forecast so they don't inflate upcoming totals or landscape bars.
             let upcoming = try getUpcomingCharges.execute(days: windowDays, from: windowStart)
+                .filter { !$0.isExpired }
             let trials   = try getActiveTrials.execute()
 
             // Use the items' own currency when all upcoming charges share one currency.

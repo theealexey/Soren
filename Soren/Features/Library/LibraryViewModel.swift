@@ -36,6 +36,40 @@ final class LibraryViewModel {
 
     var hasError: Bool { error != nil }
 
+    // MARK: - Sectioned Output
+
+    /// Structured sections for the Library list.
+    ///
+    /// When the user views all items without a search query, items are grouped into
+    /// up to three named sections: active, past (expired finite subs), and archived.
+    /// All other filter/search combinations return a single unnamed section so the
+    /// existing flat-list layout is preserved.
+    var sections: [LibrarySection] {
+        guard activeFilter == .all, searchText.isEmpty else {
+            return [LibrarySection(id: "main", title: nil, items: filteredItems)]
+        }
+        let active   = filteredItems.filter { !$0.isExpired }
+        let past     = filteredItems.filter {  $0.isExpired }
+        let archived = allItems.filter { $0.status == .archived }
+
+        let hasMixed = !past.isEmpty || !archived.isEmpty
+        var result: [LibrarySection] = []
+        if !active.isEmpty {
+            result.append(LibrarySection(
+                id: "active",
+                title: hasMixed ? String(localized: "Активные") : nil,
+                items: active
+            ))
+        }
+        if !past.isEmpty {
+            result.append(LibrarySection(id: "past", title: String(localized: "Завершённые"), items: past))
+        }
+        if !archived.isEmpty {
+            result.append(LibrarySection(id: "archived", title: String(localized: "Архив"), items: archived))
+        }
+        return result.isEmpty ? [LibrarySection(id: "empty", title: nil, items: [])] : result
+    }
+
     // MARK: - Dependencies
 
     private let getLibraryItems: GetLibraryItems
@@ -98,6 +132,16 @@ final class LibraryViewModel {
 
         let cats = Set(result.map(\.category))
         activeCategories = ItemCategory.allCases.filter { cats.contains($0) }
+    }
+}
+
+// MARK: - Library Section
+
+extension LibraryViewModel {
+    struct LibrarySection: Identifiable {
+        let id: String
+        let title: String?   // nil → no visible header
+        let items: [RecurringItem]
     }
 }
 

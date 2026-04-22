@@ -74,6 +74,20 @@ struct ItemDetailsView: View {
         RecurringItemFormatter.cycleLabel(for: viewModel.item.billingCycle)
     }
 
+    private var renewalInfo: (icon: String, value: String) {
+        switch viewModel.item.renewalDisplay {
+        case .renewing:
+            return ("arrow.clockwise", String(localized: "Автоматически"))
+        case .endingSoon(let days):
+            let text = days == 0
+                ? String(localized: "Истекает сегодня")
+                : String(localized: "Истекает через \(days) дн.")
+            return ("calendar.badge.minus", text)
+        case .expired:
+            return ("xmark.circle", String(localized: "Завершена"))
+        }
+    }
+
     private var statusColor: Color {
         switch viewModel.item.status {
         case .active:               ColorTokens.success
@@ -163,6 +177,14 @@ struct ItemDetailsView: View {
                         icon: "calendar",
                         label: "Следующее списание",
                         value: viewModel.formattedNextCharge
+                    )
+
+                    Divider().padding(.leading, infoRowInset)
+
+                    infoRow(
+                        icon: renewalInfo.icon,
+                        label: "Продление",
+                        value: renewalInfo.value
                     )
 
                     Divider().padding(.leading, infoRowInset)

@@ -197,33 +197,44 @@ struct LibraryView: View {
     // MARK: - Items List
 
     private func itemsList(_ vm: LibraryViewModel) -> some View {
-        PremiumCard {
-            VStack(spacing: 0) {
-                ForEach(Array(vm.filteredItems.enumerated()), id: \.element.id) { index, item in
-                    Button {
-                        navigateToItem(item)
-                    } label: {
-                        SorenListRow(
-                            title: item.title,
-                            subtitle: RecurringItemFormatter.subtitle(for: item),
-                            amount: item.amount,
-                            currency: item.currencyCode,
-                            cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
-                            providerTemplate: item.providerTemplate,
-                            category: item.category,
-                            badge: RecurringItemFormatter.badge(for: item)
-                        )
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            ForEach(vm.sections) { section in
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    if let title = section.title {
+                        SectionHeader(title)
+                            .padding(.horizontal, Spacing.lg)
                     }
-                    .buttonStyle(.plain)
 
-                    if index < vm.filteredItems.count - 1 {
-                        Divider()
-                            .padding(.leading, SorenListRow.dividerInset)
+                    PremiumCard {
+                        VStack(spacing: 0) {
+                            ForEach(Array(section.items.enumerated()), id: \.element.id) { index, item in
+                                Button {
+                                    navigateToItem(item)
+                                } label: {
+                                    SorenListRow(
+                                        title: item.title,
+                                        subtitle: RecurringItemFormatter.subtitle(for: item),
+                                        amount: item.amount,
+                                        currency: item.currencyCode,
+                                        cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
+                                        providerTemplate: item.providerTemplate,
+                                        category: item.category,
+                                        badge: RecurringItemFormatter.badge(for: item)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+
+                                if index < section.items.count - 1 {
+                                    Divider()
+                                        .padding(.leading, SorenListRow.dividerInset)
+                                }
+                            }
+                        }
                     }
+                    .padding(.horizontal, Spacing.lg)
                 }
             }
         }
-        .padding(.horizontal, Spacing.lg)
     }
 
     // MARK: - Sort Menu
