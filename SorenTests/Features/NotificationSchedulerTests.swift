@@ -186,6 +186,145 @@ struct NotificationSchedulerEligibilityTests {
     }
 }
 
+// MARK: - ChargeReminderOption Tests
+
+/// Pure unit tests for the `ChargeReminderOption` domain type.
+/// No scheduler or ViewModel instantiation needed.
+@Suite("ChargeReminderOption — alertDays and displayName")
+struct ChargeReminderOptionTests {
+
+    // MARK: - alertDays
+
+    @Test("never → alertDays is nil")
+    func neverIsNil() {
+        #expect(ChargeReminderOption.never.alertDays == nil)
+    }
+
+    @Test("sameDay → alertDays is 0")
+    func sameDayIsZero() {
+        #expect(ChargeReminderOption.sameDay.alertDays == 0)
+    }
+
+    @Test("oneDayBefore → alertDays is 1")
+    func oneDayBeforeIsOne() {
+        #expect(ChargeReminderOption.oneDayBefore.alertDays == 1)
+    }
+
+    @Test("threeDaysBefore → alertDays is 3")
+    func threeDaysBeforeIsThree() {
+        #expect(ChargeReminderOption.threeDaysBefore.alertDays == 3)
+    }
+
+    @Test("sevenDaysBefore → alertDays is 7")
+    func sevenDaysBeforeIsSeven() {
+        #expect(ChargeReminderOption.sevenDaysBefore.alertDays == 7)
+    }
+
+    // MARK: - Persistence round-trip
+
+    @Test("All cases round-trip through rawValue")
+    func rawValueRoundTrip() {
+        for option in ChargeReminderOption.allCases {
+            let decoded = ChargeReminderOption(rawValue: option.rawValue)
+            #expect(decoded == option, "Raw-value round-trip failed for \(option)")
+        }
+    }
+
+    @Test("Unknown rawValue returns nil (safe fallback in mapper)")
+    func unknownRawValueIsNil() {
+        #expect(ChargeReminderOption(rawValue: "twoWeeksBefore") == nil)
+    }
+
+    // MARK: - displayName
+
+    @Test("All cases have non-empty displayName")
+    func allDisplayNamesNonEmpty() {
+        for option in ChargeReminderOption.allCases {
+            #expect(!option.displayName.isEmpty, "displayName is empty for \(option)")
+        }
+    }
+
+    @Test("All displayNames are distinct")
+    func displayNamesDistinct() {
+        let names = ChargeReminderOption.allCases.map(\.displayName)
+        #expect(Set(names).count == names.count)
+    }
+}
+
+// MARK: - Scheduler respects per-item .never option (via ViewModel layer)
+
+/// Verifies that saving an item with `.never` reminder calls `schedule()` on the mock
+/// (which is correct — the real scheduler then internally cancels). Tests that
+/// `editChargeReminder` round-trips through `saveChanges()` correctly.
+@Suite("ItemDetailsViewModel — chargeReminder wiring")
+@MainActor
+struct ItemDetailsViewModelReminderWiringTests {
+
+    private func makeVM(
+        item:      RecurringItem,
+        scheduler: MockNotificationScheduler
+    ) throws -> ItemDetailsViewModel {
+        let container    = try SorenModelContainer.inMemory()
+        let repositories = RepositoryContainer(context: container.mainContext)
+        try repositories.recurringItems.save(item)
+        return ItemDetailsViewModel(
+            item:                  item,
+            repositories:          repositories,
+            exchangeRateProvider:  StaticExchangeRateProvider(),
+            notificationScheduler: scheduler
+        )
+    }
+
+    private func item(reminder: ChargeReminderOption) -> RecurringItem {
+        RecurringItem(
+            title:          "Spotify",
+            amount:         299,
+            nextChargeDate: Calendar.current.date(byAdding: .day, value: 10, to: .now)!,
+            chargeReminder: reminder
+        )
+    }
+
+    @Test("startEditing() seeds editChargeReminder from item")
+    func startEditingSeedsReminder() throws {
+        let mock = MockNotificationScheduler()
+        let vm   = try makeVM(item: item(reminder: .sevenDaysBefore), scheduler: mock)
+        vm.startEditing()
+        #expect(vm.editChargeReminder == .sevenDaysBefore)
+    }
+
+    @Test("saveChanges() persists editChargeReminder = .never")
+    func saveChangesNever() async throws {
+        let mock = MockNotificationScheduler()
+        let base = item(reminder: .threeDaysBefore)
+        let vm   = try makeVM(item: base, scheduler: mock)
+
+        vm.startEditing()
+        vm.editChargeReminder = .never
+        try vm.saveChanges()
+        await Task.yield()
+
+        // The scheduler's schedule() was invoked (real scheduler handles .never internally).
+        #expect(mock.scheduledIDs.contains(base.id))
+        // The persisted item carries the new option.
+        #expect(vm.item.chargeReminder == .never)
+    }
+
+    @Test("saveChanges() persists editChargeReminder = .sameDay")
+    func saveChangesSameDay() async throws {
+        let mock = MockNotificationScheduler()
+        let base = item(reminder: .threeDaysBefore)
+        let vm   = try makeVM(item: base, scheduler: mock)
+
+        vm.startEditing()
+        vm.editChargeReminder = .sameDay
+        try vm.saveChanges()
+        await Task.yield()
+
+        #expect(mock.scheduledIDs.contains(base.id))
+        #expect(vm.item.chargeReminder == .sameDay)
+    }
+}
+
 // MARK: - Mock Notification Scheduler
 
 /// Records scheduling calls without touching UNUserNotificationCenter.

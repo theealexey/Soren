@@ -22,7 +22,8 @@ struct ItemEditFormView: View {
                 autoRenew: $viewModel.editAutoRenew,
                 endDate: editEndDateBinding,
                 note: $viewModel.editNote,
-                usageStatus: $viewModel.editUsageStatus
+                usageStatus: $viewModel.editUsageStatus,
+                chargeReminder: $viewModel.editChargeReminder
             )
         }
         .scrollContentBackground(.hidden)

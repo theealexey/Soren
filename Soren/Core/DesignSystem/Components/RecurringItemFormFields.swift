@@ -20,11 +20,13 @@ struct RecurringItemFormFields: View {
     @Binding var endDate: Date
     @Binding var note: String
     @Binding var usageStatus: UsageStatus
+    @Binding var chargeReminder: ChargeReminderOption
 
     var body: some View {
         essentialsSection
         classificationSection
         datesSection
+        notificationsSection
         noteSection
     }
 
@@ -97,6 +99,18 @@ struct RecurringItemFormFields: View {
                     label: String(localized: "Дата окончания"),
                     selection: $endDate
                 )
+            }
+        }
+    }
+
+    // MARK: - Notifications
+
+    private var notificationsSection: some View {
+        Section(String(localized: "Уведомления")) {
+            Picker(String(localized: "Напомнить о списании"), selection: $chargeReminder) {
+                ForEach(ChargeReminderOption.allCases, id: \.self) { option in
+                    Text(option.displayName).tag(option)
+                }
             }
         }
     }

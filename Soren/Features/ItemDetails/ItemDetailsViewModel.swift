@@ -38,6 +38,8 @@ final class ItemDetailsViewModel {
     var editEndDate: Date = .now
     private(set) var isEditEndDateManuallySet = false
 
+    var editChargeReminder: ChargeReminderOption = .threeDaysBefore
+
     // MARK: - Dependencies
 
     private let updateRecurringItem: UpdateRecurringItem
@@ -92,6 +94,7 @@ final class ItemDetailsViewModel {
         // auto-renew items (unused unless the user switches autoRenew off).
         editEndDate = item.endDate ?? item.billingCycle.nextDate(after: item.nextChargeDate)
         editAutoRenew = item.autoRenew
+        editChargeReminder = item.chargeReminder
         isEditing = true
     }
 
@@ -115,6 +118,7 @@ final class ItemDetailsViewModel {
         updated.nextChargeDate = editNextChargeDate
         updated.autoRenew = editAutoRenew
         updated.endDate = editAutoRenew ? nil : editEndDate
+        updated.chargeReminder = editChargeReminder
         updated.note = editNote
         updated.usageStatus = editUsageStatus
 

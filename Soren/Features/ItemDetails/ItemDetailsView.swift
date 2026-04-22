@@ -218,6 +218,14 @@ struct ItemDetailsView: View {
                         label: "Валюта",
                         value: viewModel.item.currencyCode
                     )
+
+                    Divider().padding(.leading, infoRowInset)
+
+                    infoRow(
+                        icon: "bell",
+                        label: "Напоминание",
+                        value: viewModel.item.chargeReminder.displayName
+                    )
                 }
             }
         }

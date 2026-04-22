@@ -61,6 +61,7 @@ final class AddSubscriptionViewModel {
 
     var note = ""
     var usageStatus: UsageStatus = .unknown
+    var chargeReminder: ChargeReminderOption = .threeDaysBefore
 
     // MARK: - Save State
 
@@ -187,6 +188,7 @@ final class AddSubscriptionViewModel {
         endDate = .now
         note = ""
         usageStatus = .unknown
+        chargeReminder = .threeDaysBefore
     }
 
     // MARK: - Next Charge Date
@@ -300,6 +302,7 @@ final class AddSubscriptionViewModel {
             nextChargeDate: nextChargeDate,
             autoRenew: autoRenew,
             endDate: autoRenew ? nil : endDate,
+            chargeReminder: chargeReminder,
             status: .active,
             usageStatus: usageStatus,
             note: note

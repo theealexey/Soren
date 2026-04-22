@@ -45,6 +45,11 @@ struct RecurringItem: Identifiable, Hashable, Sendable {
     /// Required when `autoRenew == false`; always `nil` when `autoRenew == true` (enforced at save boundary).
     var endDate: Date?
 
+    // MARK: - Notifications
+
+    /// Per-subscription charge reminder timing chosen by the user.
+    var chargeReminder: ChargeReminderOption
+
     // MARK: - State
 
     var status: ItemStatus
@@ -89,6 +94,7 @@ struct RecurringItem: Identifiable, Hashable, Sendable {
         trialEndDate: Date? = nil,
         autoRenew: Bool = true,
         endDate: Date? = nil,
+        chargeReminder: ChargeReminderOption = .threeDaysBefore,
         status: ItemStatus = .active,
         usageStatus: UsageStatus = .unknown,
         paymentMethodID: UUID? = nil,
@@ -116,6 +122,7 @@ struct RecurringItem: Identifiable, Hashable, Sendable {
         self.trialEndDate = trialEndDate
         self.autoRenew = autoRenew
         self.endDate = endDate
+        self.chargeReminder = chargeReminder
         self.status = status
         self.usageStatus = usageStatus
         self.paymentMethodID = paymentMethodID

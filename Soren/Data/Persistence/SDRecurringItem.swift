@@ -49,6 +49,11 @@ final class SDRecurringItem {
     /// Always `nil` when autoRenew is true — enforced at the use-case save boundary.
     var endDate: Date?
 
+    /// `ChargeReminderOption.rawValue`. Lightweight migration: existing rows receive
+    /// `nil` (stored as optional), which the mapper treats as `.threeDaysBefore` to
+    /// preserve the behaviour users had before per-subscription timing was introduced.
+    var chargeReminderRaw: String?
+
     // MARK: - State
 
     var statusRaw: String
@@ -98,6 +103,7 @@ final class SDRecurringItem {
         trialEndDate: Date?,
         autoRenew: Bool? = nil,
         endDate: Date? = nil,
+        chargeReminderRaw: String? = nil,
         statusRaw: String,
         usageStatusRaw: String,
         paymentMethodID: UUID?,
@@ -125,6 +131,7 @@ final class SDRecurringItem {
         self.trialEndDate = trialEndDate
         self.autoRenew = autoRenew
         self.endDate = endDate
+        self.chargeReminderRaw = chargeReminderRaw
         self.statusRaw = statusRaw
         self.usageStatusRaw = usageStatusRaw
         self.paymentMethodID = paymentMethodID

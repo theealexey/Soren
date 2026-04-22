@@ -25,9 +25,11 @@ protocol NotificationScheduling: AnyObject, Sendable {
 /// Concrete implementation backed by `UNUserNotificationCenter`.
 ///
 /// Scheduling strategy for charge reminders:
-///   • Fire at 09:00 on the day that is `chargeAlertDays` before `effectiveNextChargeDate`.
-///   • If that date is already past, fire at the next available 09:00 (today if before
-///     09:00, tomorrow otherwise) — never silently drop the notification.
+///   • Fire at 09:00 on the day that is `item.chargeReminder.alertDays` before
+///     `effectiveNextChargeDate`. If that date is already past, fire at the next
+///     available 09:00 (today if before 09:00, tomorrow otherwise) — never silently
+///     drop the notification.
+///   • When `item.chargeReminder == .never`, any existing notification is cancelled.
 ///
 /// Identifier scheme (stable across reschedules):
 ///   `"soren.charge.<item-UUID>"`
@@ -36,18 +38,15 @@ final class NotificationScheduler: NotificationScheduling, @unchecked Sendable {
     // MARK: - Dependencies
 
     private let center: UNUserNotificationCenter
-    private let preferences: UserPreferencesRepository
     private let calendar: Calendar
 
     // MARK: - Init
 
     init(
         center: UNUserNotificationCenter = .current(),
-        preferences: UserPreferencesRepository = UserPreferencesRepository(),
         calendar: Calendar = .current
     ) {
         self.center = center
-        self.preferences = preferences
         self.calendar = calendar
     }
 
@@ -59,13 +58,18 @@ final class NotificationScheduler: NotificationScheduling, @unchecked Sendable {
             return
         }
 
+        // User chose "Never" for this subscription — ensure no pending notification.
+        guard let alertDays = item.chargeReminder.alertDays else {
+            await cancel(for: item.id)
+            return
+        }
+
         guard await requestAuthorizationIfNeeded() else { return }
 
-        let chargeAlertDays = preferences.load().chargeAlertDays
-        let chargeDate      = item.effectiveNextChargeDate()
-        let fireDate        = Self.computeFireDate(
+        let chargeDate = item.effectiveNextChargeDate()
+        let fireDate   = Self.computeFireDate(
             chargeDate:      chargeDate,
-            chargeAlertDays: chargeAlertDays,
+            chargeAlertDays: alertDays,
             now:             Date.now,
             calendar:        calendar
         )
@@ -75,10 +79,10 @@ final class NotificationScheduler: NotificationScheduling, @unchecked Sendable {
         //  UNUserNotificationCenter, but explicit removal keeps intent clear).
         center.removePendingNotificationRequests(withIdentifiers: [chargeIdentifier(for: item.id)])
 
-        let content        = makeContent(item: item, chargeDate: chargeDate, chargeAlertDays: chargeAlertDays)
-        let components     = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
-        let trigger        = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
-        let request        = UNNotificationRequest(
+        let content    = makeContent(item: item, chargeDate: chargeDate, chargeAlertDays: alertDays)
+        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
+        let trigger    = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        let request    = UNNotificationRequest(
             identifier: chargeIdentifier(for: item.id),
             content:    content,
             trigger:    trigger

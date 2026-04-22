@@ -160,7 +160,8 @@
 		F9534EA4A7CB1B4E854AC5D7 /* PaymentRecordRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F2D1730D9BADDD2F0A7C46A /* PaymentRecordRepository.swift */; };
 		FA9135CE43C789E1B16B94B3 /* InsightCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70A687720E7EE01306933D07 /* InsightCardTests.swift */; };
 		FE548706BBCCCB3AAB49E9A9 /* SupportedCurrencyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08812B98439C0712AFCA46D6 /* SupportedCurrencyTests.swift */; };
-/* End PBXBuildFile section */
+		B2C3D4E5F6A7B8C9D0E1F2A3 /* ChargeReminderOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* ChargeReminderOption.swift */; };
+		/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		CD29CBA13E99225408C5E2CC /* PBXContainerItemProxy */ = {
@@ -337,7 +338,8 @@
 		FCEF5B74B2E1B0B2BC44B6B0 /* SorenApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SorenApp.swift; sourceTree = "<group>"; };
 		FD1994F3779CF81744936E03 /* PaymentRecordMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentRecordMapper.swift; sourceTree = "<group>"; };
 		FDA0E9CE1CF93B8F5C95A797 /* AppContainer+AnalyticsFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppContainer+AnalyticsFactory.swift"; sourceTree = "<group>"; };
-/* End PBXFileReference section */
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* ChargeReminderOption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChargeReminderOption.swift; sourceTree = "<group>"; };
+		/* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		014DA37A1409675DBDCF4251 /* Extensions */ = {
@@ -622,6 +624,7 @@
 				2A9B8583A80D8BD6F90A301D /* PlanTier.swift */,
 				EAC69E24F7112B4A8F468D2D /* ProviderTemplate.swift */,
 				B698265EA94513CE0884AF37 /* RecurringItem.swift */,
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* ChargeReminderOption.swift */,
 				80918D4746AD2EF6165BD1F7 /* ReminderRule.swift */,
 				37EB3BB46B0020447F7E9CB0 /* SupportedCurrency.swift */,
 				E79BACA5D34B8EABAA21D9F5 /* UserPreferences.swift */,
@@ -1222,6 +1225,7 @@
 				0B0F17015B71292BB90DC1E5 /* RecurringItemFormFields.swift in Sources */,
 				42F8B50D7C256BA73B7A0466 /* RecurringItemFormatter.swift in Sources */,
 				3B7DDC902C1948E2B1BADA98 /* NotificationScheduler.swift in Sources */,
+				B2C3D4E5F6A7B8C9D0E1F2A3 /* ChargeReminderOption.swift in Sources */,
 				D3FDAAE8713DC3970947E010 /* RecurringItemMapper.swift in Sources */,
 				33E19E039BEEA816734656AB /* RecurringItemRepository.swift in Sources */,
 				B6B49575DA39529E4BCD86CE /* ReminderRule.swift in Sources */,

@@ -27,7 +27,8 @@ struct SubscriptionFormView: View {
                 autoRenew: $viewModel.autoRenew,
                 endDate: endDateBinding,
                 note: $viewModel.note,
-                usageStatus: $viewModel.usageStatus
+                usageStatus: $viewModel.usageStatus,
+                chargeReminder: $viewModel.chargeReminder
             )
         }
         .scrollContentBackground(.hidden)

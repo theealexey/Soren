@@ -24,7 +24,7 @@ final class AppContainer {
         self.providerCatalog = InMemoryProviderCatalogRepository()
         self.preferences = prefs
         self.exchangeRateProvider = OpenExchangeRateProvider()
-        self.notificationScheduler = NotificationScheduler(preferences: prefs)
+        self.notificationScheduler = NotificationScheduler()
     }
 
     /// For SwiftUI Previews and tests — fully in-memory, no disk persistence.
