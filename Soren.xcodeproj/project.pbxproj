@@ -161,6 +161,7 @@
 		FA9135CE43C789E1B16B94B3 /* InsightCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70A687720E7EE01306933D07 /* InsightCardTests.swift */; };
 		FE548706BBCCCB3AAB49E9A9 /* SupportedCurrencyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08812B98439C0712AFCA46D6 /* SupportedCurrencyTests.swift */; };
 		B2C3D4E5F6A7B8C9D0E1F2A3 /* ChargeReminderOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* ChargeReminderOption.swift */; };
+				D4E5F6A7B8C9D0E1F2A3B4C5 /* UserPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6A7B8C9D0E1F2A3B4 /* UserPreferencesTests.swift */; };
 		/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -339,6 +340,7 @@
 		FD1994F3779CF81744936E03 /* PaymentRecordMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentRecordMapper.swift; sourceTree = "<group>"; };
 		FDA0E9CE1CF93B8F5C95A797 /* AppContainer+AnalyticsFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppContainer+AnalyticsFactory.swift"; sourceTree = "<group>"; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* ChargeReminderOption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChargeReminderOption.swift; sourceTree = "<group>"; };
+				C3D4E5F6A7B8C9D0E1F2A3B4 /* UserPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPreferencesTests.swift; sourceTree = "<group>"; };
 		/* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -692,6 +694,7 @@
 				042695C7057463B3D9AB304B /* HomeViewModelTests.swift */,
 				AABC1234567890ABCDEF0001 /* NextChargeDateSuggestionTests.swift */,
 				FAFD834548BC45CF9EA06E44 /* NotificationSchedulerTests.swift */,
+				C3D4E5F6A7B8C9D0E1F2A3B4 /* UserPreferencesTests.swift */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -1279,6 +1282,8 @@
 			files = (
 				AABC1234567890ABCDEF0002 /* NextChargeDateSuggestionTests.swift in Sources */,
 				0E7AF3CC42CE41B9AF6AFAA5 /* NotificationSchedulerTests.swift in Sources */,
+				D4E5F6A7B8C9D0E1F2A3B4C5 /* UserPreferencesTests.swift in Sources */,
+				D4E5F6A7B8C9D0E1F2A3B4C5 /* UserPreferencesTests.swift in Sources */,
 				C3502270C48B6F7C7C802509 /* AddSubscriptionTierTests.swift in Sources */,
 				E9CBF6DF558DD865FFA2D11C /* AmountLabelTests.swift in Sources */,
 				C495539F7E533ACA7ABF6162 /* BillingCycleEncoderTests.swift in Sources */,

@@ -6,11 +6,13 @@ import Foundation
 /// Stored in UserDefaults, not SwiftData (lightweight key-value, not domain data).
 struct UserPreferences: Sendable {
     var defaultCurrencyCode: String
+    var defaultChargeReminder: ChargeReminderOption
     var chargeAlertDays: Int
     var trialAlertDays: Int
 
     static let `default` = UserPreferences(
         defaultCurrencyCode: "RUB",
+        defaultChargeReminder: .threeDaysBefore,
         chargeAlertDays: 3,
         trialAlertDays: 3
     )

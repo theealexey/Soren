@@ -14,6 +14,10 @@ final class SettingsViewModel {
         didSet { debouncedSave() }
     }
 
+    var defaultChargeReminder: ChargeReminderOption {
+        didSet { debouncedSave() }
+    }
+
     // MARK: - Dependencies
 
     private let repository: UserPreferencesRepository
@@ -25,7 +29,9 @@ final class SettingsViewModel {
 
     init(repository: UserPreferencesRepository = UserPreferencesRepository()) {
         self.repository = repository
-        self.defaultCurrencyCode = repository.load().defaultCurrencyCode
+        let prefs = repository.load()
+        self.defaultCurrencyCode  = prefs.defaultCurrencyCode
+        self.defaultChargeReminder = prefs.defaultChargeReminder
     }
 
     // MARK: - Save
@@ -44,9 +50,10 @@ final class SettingsViewModel {
         // Alerts tab and are not configurable from Settings in v1.
         let current = repository.load()
         repository.save(UserPreferences(
-            defaultCurrencyCode: defaultCurrencyCode,
-            chargeAlertDays: current.chargeAlertDays,
-            trialAlertDays: current.trialAlertDays
+            defaultCurrencyCode:  defaultCurrencyCode,
+            defaultChargeReminder: defaultChargeReminder,
+            chargeAlertDays:      current.chargeAlertDays,
+            trialAlertDays:       current.trialAlertDays
         ))
     }
 

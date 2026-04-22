@@ -14,8 +14,9 @@ struct SettingsView: View {
         @Bindable var appState = appState
         Form {
             generalSection(
-                currency: $vm.defaultCurrencyCode,
-                appearance: $appState.appearanceMode
+                currency:       $vm.defaultCurrencyCode,
+                appearance:     $appState.appearanceMode,
+                chargeReminder: $vm.defaultChargeReminder
             )
 
             aboutSection
@@ -39,9 +40,11 @@ struct SettingsView: View {
 
     // MARK: - General
 
+    @ViewBuilder
     private func generalSection(
-        currency: Binding<String>,
-        appearance: Binding<AppearanceMode>
+        currency:       Binding<String>,
+        appearance:     Binding<AppearanceMode>,
+        chargeReminder: Binding<ChargeReminderOption>
     ) -> some View {
         Section("Основное") {
             Picker("Валюта по умолчанию", selection: currency) {
@@ -53,6 +56,14 @@ struct SettingsView: View {
             Picker("Внешний вид", selection: appearance) {
                 ForEach(AppearanceMode.allCases, id: \.self) { mode in
                     Text(mode.displayName).tag(mode)
+                }
+            }
+        }
+
+        Section("Уведомления") {
+            Picker("Напоминание по умолчанию", selection: chargeReminder) {
+                ForEach(ChargeReminderOption.allCases, id: \.self) { option in
+                    Text(option.displayName).tag(option)
                 }
             }
         }

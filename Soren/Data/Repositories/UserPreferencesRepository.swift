@@ -16,9 +16,10 @@ struct UserPreferencesRepository {
     // MARK: - Keys
 
     private enum Key {
-        static let defaultCurrency = "soren.defaultCurrency"
-        static let chargeAlertDays = "soren.chargeAlertDays"
-        static let trialAlertDays  = "soren.trialAlertDays"
+        static let defaultCurrency      = "soren.defaultCurrency"
+        static let defaultChargeReminder = "soren.defaultChargeReminder"
+        static let chargeAlertDays      = "soren.chargeAlertDays"
+        static let trialAlertDays       = "soren.trialAlertDays"
     }
 
     // MARK: - Load
@@ -27,6 +28,9 @@ struct UserPreferencesRepository {
         let fallback = UserPreferences.default
 
         let currency = defaults.string(forKey: Key.defaultCurrency) ?? fallback.defaultCurrencyCode
+
+        let chargeReminder = defaults.string(forKey: Key.defaultChargeReminder)
+            .flatMap(ChargeReminderOption.init) ?? fallback.defaultChargeReminder
 
         let chargeDays = defaults.object(forKey: Key.chargeAlertDays) != nil
             ? defaults.integer(forKey: Key.chargeAlertDays)
@@ -38,6 +42,7 @@ struct UserPreferencesRepository {
 
         return UserPreferences(
             defaultCurrencyCode: currency,
+            defaultChargeReminder: chargeReminder,
             chargeAlertDays: chargeDays,
             trialAlertDays: trialDays
         )
@@ -46,8 +51,9 @@ struct UserPreferencesRepository {
     // MARK: - Save
 
     func save(_ prefs: UserPreferences) {
-        defaults.set(prefs.defaultCurrencyCode, forKey: Key.defaultCurrency)
-        defaults.set(prefs.chargeAlertDays, forKey: Key.chargeAlertDays)
-        defaults.set(prefs.trialAlertDays, forKey: Key.trialAlertDays)
+        defaults.set(prefs.defaultCurrencyCode,           forKey: Key.defaultCurrency)
+        defaults.set(prefs.defaultChargeReminder.rawValue, forKey: Key.defaultChargeReminder)
+        defaults.set(prefs.chargeAlertDays,                forKey: Key.chargeAlertDays)
+        defaults.set(prefs.trialAlertDays,                 forKey: Key.trialAlertDays)
     }
 }

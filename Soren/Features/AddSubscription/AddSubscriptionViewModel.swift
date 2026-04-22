@@ -61,7 +61,9 @@ final class AddSubscriptionViewModel {
 
     var note = ""
     var usageStatus: UsageStatus = .unknown
-    var chargeReminder: ChargeReminderOption = .threeDaysBefore
+    /// Seeded from `UserPreferences.defaultChargeReminder` at init time.
+    /// The user can override it per-subscription in the form before saving.
+    var chargeReminder: ChargeReminderOption
 
     // MARK: - Save State
 
@@ -90,7 +92,9 @@ final class AddSubscriptionViewModel {
         self.exchangeRateProvider = exchangeRateProvider
         self.preferences = preferences
         self.notificationScheduler = notificationScheduler
-        self.currencyCode = preferences.load().defaultCurrencyCode
+        let prefs = preferences.load()
+        self.currencyCode   = prefs.defaultCurrencyCode
+        self.chargeReminder = prefs.defaultChargeReminder
         // didSet observers don't fire during init — seed the suggestion explicitly.
         self.nextChargeDate = Self.suggestNextChargeDate(from: .now, cycle: .monthly)
     }
@@ -101,7 +105,9 @@ final class AddSubscriptionViewModel {
         self.exchangeRateProvider = container.exchangeRateProvider
         self.preferences = container.preferences
         self.notificationScheduler = container.notificationScheduler
-        self.currencyCode = container.preferences.load().defaultCurrencyCode
+        let prefs = container.preferences.load()
+        self.currencyCode   = prefs.defaultCurrencyCode
+        self.chargeReminder = prefs.defaultChargeReminder
         // didSet observers don't fire during init — seed the suggestion explicitly.
         self.nextChargeDate = Self.suggestNextChargeDate(from: .now, cycle: .monthly)
     }
@@ -188,7 +194,7 @@ final class AddSubscriptionViewModel {
         endDate = .now
         note = ""
         usageStatus = .unknown
-        chargeReminder = .threeDaysBefore
+        chargeReminder = preferences.load().defaultChargeReminder
     }
 
     // MARK: - Next Charge Date
