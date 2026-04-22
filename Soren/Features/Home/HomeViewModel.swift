@@ -120,7 +120,7 @@ final class HomeViewModel {
 
             monthLabel   = Self.monthYearFormatter.string(from: now).capitalized
             let forecast = dailyTotals.values.reduce(Decimal(0), +)
-            forecastLabel = "\(formatted(amount: forecast, currency: currency)) \(String(localized: "forecast"))"
+            forecastLabel = "\(formatted(amount: forecast, currency: currency)) \(String(localized: "прогноз"))"
 
             // Use effective date so rolled-forward items rank correctly in the callout.
             let nextItem = upcoming
@@ -252,7 +252,7 @@ final class HomeViewModel {
 
         return InsightRowModel(
             id: .peak,
-            label: String(localized: "Peak week"),
+            label: String(localized: "Пик расходов"),
             value: formatRange(peak.start, peak.end),
             amount: formatted(amount: peak.total, currency: currency),
             valueRole: .standard
@@ -284,7 +284,7 @@ final class HomeViewModel {
 
         return InsightRowModel(
             id: .quiet,
-            label: String(localized: "Clear runway"),
+            label: String(localized: "Свободный период"),
             value: formatRange(start, end),
             amount: nil,
             valueRole: .quiet
@@ -301,7 +301,7 @@ final class HomeViewModel {
 
         return InsightRowModel(
             id: .trial,
-            label: String(localized: "Trial ending"),
+            label: String(localized: "Пробный период"),
             value: "\(item.title) · \(Self.dayFormatter.string(from: end))",
             amount: nil,
             valueRole: .warning
@@ -326,9 +326,9 @@ final class HomeViewModel {
     private func countdownLabel(from: Date, to: Date) -> String {
         let days = calendar.dateComponents([.day], from: from, to: to).day ?? 0
         switch days {
-        case 0:  return String(localized: "Today")
-        case 1:  return String(localized: "Tomorrow")
-        default: return String(localized: "In \(days) days")
+        case 0:  return String(localized: "Сегодня")
+        case 1:  return String(localized: "Завтра")
+        default: return String(localized: "Через \(days) дн.")
         }
     }
 

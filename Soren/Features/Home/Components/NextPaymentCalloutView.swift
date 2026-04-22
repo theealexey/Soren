@@ -125,7 +125,7 @@ struct NextPaymentCalloutView: View {
     // MARK: - No Upcoming
 
     private func noUpcomingLayout() -> some View {
-        Text(String(localized: "No upcoming charges"))
+        Text(String(localized: "Нет предстоящих списаний"))
             .font(Typography.title)
             .foregroundStyle(theme.tertiaryText)
     }
@@ -138,7 +138,7 @@ struct NextPaymentCalloutView: View {
                 .font(Typography.title)
                 .foregroundStyle(theme.primaryText)
 
-            Text(String(localized: "No charges"))
+            Text(String(localized: "Нет списаний"))
                 .font(Typography.caption)
                 .foregroundStyle(theme.tertiaryText)
         }
