@@ -22,7 +22,12 @@ final class AddSubscriptionViewModel {
     var amountText = ""
     var currencyCode: String
     var billingCycle: BillingCycle = .monthly {
-        didSet { recomputeEndDateIfNeeded() }
+        didSet {
+            if !isNextChargeDateManuallySet {
+                nextChargeDate = Self.suggestNextChargeDate(from: startDate, cycle: billingCycle)
+            }
+            recomputeEndDateIfNeeded()
+        }
     }
     var category: ItemCategory = .other
     var itemType: ItemType = .subscription
@@ -30,7 +35,7 @@ final class AddSubscriptionViewModel {
     var startDate = Date.now {
         didSet {
             guard !isNextChargeDateManuallySet else { return }
-            nextChargeDate = startDate
+            nextChargeDate = Self.suggestNextChargeDate(from: startDate, cycle: billingCycle)
         }
     }
     var nextChargeDate = Date.now {
@@ -82,6 +87,8 @@ final class AddSubscriptionViewModel {
         self.exchangeRateProvider = exchangeRateProvider
         self.preferences = preferences
         self.currencyCode = preferences.load().defaultCurrencyCode
+        // didSet observers don't fire during init — seed the suggestion explicitly.
+        self.nextChargeDate = Self.suggestNextChargeDate(from: .now, cycle: .monthly)
     }
 
     init(container: AppContainer) {
@@ -90,6 +97,8 @@ final class AddSubscriptionViewModel {
         self.exchangeRateProvider = container.exchangeRateProvider
         self.preferences = container.preferences
         self.currencyCode = container.preferences.load().defaultCurrencyCode
+        // didSet observers don't fire during init — seed the suggestion explicitly.
+        self.nextChargeDate = Self.suggestNextChargeDate(from: .now, cycle: .monthly)
     }
 
     // MARK: - End Date
@@ -127,6 +136,7 @@ final class AddSubscriptionViewModel {
         selectedTier = nil
         title = provider.displayName
         currencyCode = provider.suggestedCurrencyCode
+        isNextChargeDateManuallySet = false   // let billingCycle.didSet re-suggest below
         billingCycle = provider.suggestedCycle
         category = provider.category
         itemType = provider.itemType
@@ -141,6 +151,7 @@ final class AddSubscriptionViewModel {
     func selectTier(_ tier: PlanTier) {
         selectedTier = tier
         amountText = tier.amount.description   // .description is locale-independent unlike "\(decimal)"
+        isNextChargeDateManuallySet = false    // let billingCycle.didSet re-suggest below
         billingCycle = tier.billingCycle
         if let override = tier.currencyCode {
             currencyCode = override
@@ -183,7 +194,31 @@ final class AddSubscriptionViewModel {
 
     func resetNextChargeToAutomatic() {
         isNextChargeDateManuallySet = false
-        nextChargeDate = startDate
+        nextChargeDate = Self.suggestNextChargeDate(from: startDate, cycle: billingCycle)
+    }
+
+    /// Suggests the next charge date for the Add form.
+    ///
+    /// Contract:
+    /// - If `startDate` is in the future, the first charge hasn't happened yet —
+    ///   return `startDate` unchanged.
+    /// - Otherwise, advance by `cycle` repeatedly until the candidate is strictly
+    ///   after `today`, giving the upcoming occurrence for a subscription that
+    ///   started in the past or exactly on today.
+    ///
+    /// Pure / referentially transparent — never mutates ViewModel state.
+    nonisolated static func suggestNextChargeDate(
+        from startDate: Date,
+        cycle: BillingCycle,
+        today: Date = .now,
+        calendar: Calendar = .current
+    ) -> Date {
+        guard startDate <= today else { return startDate }
+        var candidate = startDate
+        repeat {
+            candidate = cycle.nextDate(after: candidate, calendar: calendar)
+        } while candidate <= today
+        return candidate
     }
 
     // MARK: - Currency Conversion
@@ -234,8 +269,7 @@ final class AddSubscriptionViewModel {
         // Mirror R2: end date must not precede the next charge date.
         // The use-case will also enforce this, but disabling Save early gives immediate feedback.
         if !autoRenew {
-            let effectiveNext = isNextChargeDateManuallySet ? nextChargeDate : startDate
-            guard endDate >= effectiveNext else { return false }
+            guard endDate >= nextChargeDate else { return false }
         }
         return true
     }
@@ -249,7 +283,6 @@ final class AddSubscriptionViewModel {
             throw SaveRecurringItem.ValidationError.invalidAmount
         }
 
-        let effectiveNextChargeDate = isNextChargeDateManuallySet ? nextChargeDate : startDate
         let item = RecurringItem(
             title: title.trimmingCharacters(in: .whitespacesAndNewlines),
             providerID: selectedProvider?.id,
@@ -260,7 +293,7 @@ final class AddSubscriptionViewModel {
             currencyCode: currencyCode,
             billingCycle: billingCycle,
             startDate: startDate,
-            nextChargeDate: effectiveNextChargeDate,
+            nextChargeDate: nextChargeDate,
             autoRenew: autoRenew,
             endDate: autoRenew ? nil : endDate,
             status: .active,

@@ -23,7 +23,7 @@ struct SubscriptionFormView: View {
                 category: $viewModel.category,
                 itemType: $viewModel.itemType,
                 startDate: $viewModel.startDate,
-                nextChargeDate: $viewModel.nextChargeDate,
+                nextChargeDate: nextChargeDateBinding,
                 autoRenew: $viewModel.autoRenew,
                 endDate: endDateBinding,
                 note: $viewModel.note,
@@ -50,6 +50,17 @@ struct SubscriptionFormView: View {
         } message: {
             Text(viewModel.saveError?.localizedDescription ?? "")
         }
+    }
+
+    // MARK: - Next Charge Date Binding
+
+    /// Routes the next-charge-date setter through setNextChargeDateManually so the ViewModel
+    /// records a manual override and stops auto-suggesting on subsequent startDate / billingCycle changes.
+    private var nextChargeDateBinding: Binding<Date> {
+        Binding(
+            get: { viewModel.nextChargeDate },
+            set: { viewModel.setNextChargeDateManually($0) }
+        )
     }
 
     // MARK: - End Date Binding

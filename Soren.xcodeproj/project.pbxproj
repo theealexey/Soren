@@ -125,6 +125,7 @@
 		BB2BC37DC78284972F9B9A95 /* SwiftDataRecurringItemRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1EF2A40A99AD1C124022D0 /* SwiftDataRecurringItemRepository.swift */; };
 		BC67F03FFAAF36667E671F79 /* AppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 704603302FD9C648B425E8B6 /* AppContainer.swift */; };
 		BFA6C1162A0E01994BDF61BA /* ItemType.swift in Sources */ = {isa = PBXBuildFile; fileRef = A241AE4DF892153A82322147 /* ItemType.swift */; };
+		AABC1234567890ABCDEF0002 /* NextChargeDateSuggestionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABC1234567890ABCDEF0001 /* NextChargeDateSuggestionTests.swift */; };
 		C3502270C48B6F7C7C802509 /* AddSubscriptionTierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C260B954C3104C784E92C46 /* AddSubscriptionTierTests.swift */; };
 		C48971AE7A9316BBDD5F065C /* InMemoryProviderCatalogRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00327FFEEF7A9E012FB10737 /* InMemoryProviderCatalogRepository.swift */; };
 		C495539F7E533ACA7ABF6162 /* BillingCycleEncoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06BA485D3333CD7B7F8EF598 /* BillingCycleEncoderTests.swift */; };
@@ -268,6 +269,7 @@
 		829AF2823E0062D5A87CC9F2 /* AlertsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertsView.swift; sourceTree = "<group>"; };
 		83E9DF3D4E0331FB4D1B57BD /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		8C260B954C3104C784E92C46 /* AddSubscriptionTierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSubscriptionTierTests.swift; sourceTree = "<group>"; };
+		AABC1234567890ABCDEF0001 /* NextChargeDateSuggestionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextChargeDateSuggestionTests.swift; sourceTree = "<group>"; };
 		92BFCE661AC196D1C9B137BB /* ItemDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailsView.swift; sourceTree = "<group>"; };
 		92E29D870CC86C4EB8CE6C2A /* NextPaymentCalloutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextPaymentCalloutView.swift; sourceTree = "<group>"; };
 		931E5E8447CB6EBE61776031 /* SwiftDataPaymentMethodRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDataPaymentMethodRepository.swift; sourceTree = "<group>"; };
@@ -688,6 +690,7 @@
 			children = (
 				8C260B954C3104C784E92C46 /* AddSubscriptionTierTests.swift */,
 				042695C7057463B3D9AB304B /* HomeViewModelTests.swift */,
+				AABC1234567890ABCDEF0001 /* NextChargeDateSuggestionTests.swift */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -1263,6 +1266,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AABC1234567890ABCDEF0002 /* NextChargeDateSuggestionTests.swift in Sources */,
 				C3502270C48B6F7C7C802509 /* AddSubscriptionTierTests.swift in Sources */,
 				E9CBF6DF558DD865FFA2D11C /* AmountLabelTests.swift in Sources */,
 				C495539F7E533ACA7ABF6162 /* BillingCycleEncoderTests.swift in Sources */,
