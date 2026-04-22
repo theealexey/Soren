@@ -12,16 +12,19 @@ final class AppContainer {
     let providerCatalog: any ProviderCatalogRepository
     let preferences: UserPreferencesRepository
     let exchangeRateProvider: any ExchangeRateProvider
+    let notificationScheduler: NotificationScheduler
 
     /// Incremented whenever recurring items are mutated.
     /// Views observe this to know when to reload their ViewModels.
     var itemsVersion: Int = 0
 
     init(modelContext: ModelContext) {
+        let prefs = UserPreferencesRepository()
         self.repositories = RepositoryContainer(context: modelContext)
         self.providerCatalog = InMemoryProviderCatalogRepository()
-        self.preferences = UserPreferencesRepository()
+        self.preferences = prefs
         self.exchangeRateProvider = OpenExchangeRateProvider()
+        self.notificationScheduler = NotificationScheduler(preferences: prefs)
     }
 
     /// For SwiftUI Previews and tests — fully in-memory, no disk persistence.
@@ -29,11 +32,13 @@ final class AppContainer {
         repositories: RepositoryContainer,
         providerCatalog: any ProviderCatalogRepository = InMemoryProviderCatalogRepository(),
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
-        exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider()
+        exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider(),
+        notificationScheduler: NotificationScheduler = NotificationScheduler()
     ) {
         self.repositories = repositories
         self.providerCatalog = providerCatalog
         self.preferences = preferences
         self.exchangeRateProvider = exchangeRateProvider
+        self.notificationScheduler = notificationScheduler
     }
 }

@@ -43,14 +43,21 @@ final class ItemDetailsViewModel {
     private let updateRecurringItem: UpdateRecurringItem
     private let deleteRecurringItem: DeleteRecurringItem
     private let exchangeRateProvider: any ExchangeRateProvider
+    private let notificationScheduler: (any NotificationScheduling)?
 
     // MARK: - Init
 
-    init(item: RecurringItem, repositories: RepositoryContainer, exchangeRateProvider: any ExchangeRateProvider) {
+    init(
+        item: RecurringItem,
+        repositories: RepositoryContainer,
+        exchangeRateProvider: any ExchangeRateProvider,
+        notificationScheduler: (any NotificationScheduling)? = nil
+    ) {
         self.item = item
         self.updateRecurringItem = UpdateRecurringItem(repository: repositories.recurringItems)
         self.deleteRecurringItem = DeleteRecurringItem(repository: repositories.recurringItems)
         self.exchangeRateProvider = exchangeRateProvider
+        self.notificationScheduler = notificationScheduler
     }
 
     // MARK: - Edit End Date
@@ -114,6 +121,13 @@ final class ItemDetailsViewModel {
         // Use the returned copy — it carries the updatedAt stamp set by the use case.
         item = try updateRecurringItem.execute(updated)
         isEditing = false
+
+        // Reschedule: any field that affects the fire date (title, amount, nextChargeDate,
+        // billingCycle) may have changed. Cancel + re-add is the safest approach.
+        if let scheduler = notificationScheduler {
+            let saved = item
+            Task { await scheduler.schedule(for: saved) }
+        }
     }
 
     // MARK: - Status Actions
@@ -122,6 +136,19 @@ final class ItemDetailsViewModel {
         var updated = item
         updated.status = item.status == .paused ? .active : .paused
         item = try updateRecurringItem.execute(updated)
+
+        if let scheduler = notificationScheduler {
+            let saved = item
+            Task {
+                if saved.status == .paused {
+                    // Paused — no further charges expected; cancel the reminder.
+                    await scheduler.cancel(for: saved.id)
+                } else {
+                    // Resumed — treat as a newly active item and reschedule.
+                    await scheduler.schedule(for: saved)
+                }
+            }
+        }
     }
 
     func archive() throws {
@@ -129,11 +156,21 @@ final class ItemDetailsViewModel {
         updated.status = .archived
         updated.archivedAt = .now
         item = try updateRecurringItem.execute(updated)
+
+        if let scheduler = notificationScheduler {
+            let itemID = item.id
+            Task { await scheduler.cancel(for: itemID) }
+        }
     }
 
     func delete() throws {
-        try deleteRecurringItem.execute(id: item.id)
+        let itemID = item.id
+        try deleteRecurringItem.execute(id: itemID)
         isDeleted = true
+
+        if let scheduler = notificationScheduler {
+            Task { await scheduler.cancel(for: itemID) }
+        }
     }
 
     // MARK: - Currency Conversion

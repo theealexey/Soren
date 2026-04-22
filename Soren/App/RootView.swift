@@ -84,7 +84,8 @@ struct RootView: View {
                     viewModel: ItemDetailsViewModel(
                         item: item,
                         repositories: container.repositories,
-                        exchangeRateProvider: container.exchangeRateProvider
+                        exchangeRateProvider: container.exchangeRateProvider,
+                        notificationScheduler: container.notificationScheduler
                     )
                 )
             }
