@@ -106,7 +106,7 @@ struct LibraryView: View {
                 summaryBar(vm)
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: Spacing.sm, leading: 0, bottom: 0, trailing: 0))
+                    .listRowInsets(EdgeInsets(top: Spacing.md, leading: 0, bottom: Spacing.xs, trailing: 0))
 
                 // Subscription sections with swipe-to-delete
                 ForEach(vm.sections) { section in
@@ -189,8 +189,8 @@ struct LibraryView: View {
             }
         }
         .padding(.horizontal, Spacing.sm)
-        .padding(.vertical, Spacing.xs)
-        .background(ColorTokens.surfaceElevated, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+        .padding(.vertical, Spacing.sm)
+        .background(ColorTokens.surfaceElevated, in: RoundedRectangle(cornerRadius: CornerRadius.large))
         .padding(.horizontal, Spacing.lg)
     }
 
@@ -198,7 +198,7 @@ struct LibraryView: View {
 
     private func filterChips(_ vm: LibraryViewModel) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: Spacing.xs) {
+            HStack(spacing: Spacing.xxs) {
                 ForEach(LibraryViewModel.StatusFilter.allCases) { filter in
                     let count = vm.filterCounts[filter] ?? 0
                     let isSelected = vm.activeFilter == filter
@@ -223,8 +223,8 @@ struct LibraryView: View {
                                     .foregroundStyle(isSelected ? .white.opacity(0.8) : ColorTokens.textTertiary)
                             }
                         }
-                        .padding(.horizontal, Spacing.sm)
-                        .padding(.vertical, Spacing.xs)
+                        .padding(.horizontal, Spacing.xs)
+                        .padding(.vertical, Spacing.xxs)
                         .foregroundStyle(isSelected ? .white : ColorTokens.textSecondary)
                         .background(
                             isSelected
