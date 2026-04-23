@@ -310,12 +310,21 @@ final class HomeViewModel {
 
     // MARK: - Formatting helpers
 
+    private static var currencyFormatters: [String: NumberFormatter] = [:]
+
     private func formatted(amount: Decimal, currency: String) -> String {
-        let f = NumberFormatter()
-        f.numberStyle       = .currency
-        f.currencyCode      = currency
-        f.maximumFractionDigits = 2
-        f.minimumFractionDigits = 0
+        let f: NumberFormatter
+        if let cached = Self.currencyFormatters[currency] {
+            f = cached
+        } else {
+            let new = NumberFormatter()
+            new.numberStyle         = .currency
+            new.currencyCode        = currency
+            new.maximumFractionDigits = 2
+            new.minimumFractionDigits = 0
+            Self.currencyFormatters[currency] = new
+            f = new
+        }
         return f.string(for: amount) ?? "\(amount)"
     }
 

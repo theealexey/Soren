@@ -195,12 +195,21 @@ final class NotificationScheduler: NotificationScheduling, @unchecked Sendable {
         }
     }
 
+    private var currencyFormatters: [String: NumberFormatter] = [:]
+
+    private func currencyFormatter(for code: String) -> NumberFormatter {
+        if let cached = currencyFormatters[code] { return cached }
+        let f = NumberFormatter()
+        f.numberStyle         = .currency
+        f.currencyCode        = code
+        f.maximumFractionDigits = 2
+        f.minimumFractionDigits = 0
+        currencyFormatters[code] = f
+        return f
+    }
+
     private func notificationBody(amount: Decimal, currency: String, chargeDate: Date) -> String {
-        let formatter                 = NumberFormatter()
-        formatter.numberStyle         = .currency
-        formatter.currencyCode        = currency
-        formatter.maximumFractionDigits = 2
-        formatter.minimumFractionDigits = 0
+        let formatter    = currencyFormatter(for: currency)
         let amountString = formatter.string(for: amount) ?? "\(amount)"
         let dateString   = chargeDate.formatted(.dateTime.day().month())
         return "\(amountString) · \(dateString)"

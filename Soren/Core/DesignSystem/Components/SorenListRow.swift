@@ -92,14 +92,23 @@ struct SorenListRow: View {
         .accessibilityLabel(rowAccessibilityLabel)
     }
 
+    private static var currencyFormatters: [String: NumberFormatter] = [:]
+
+    private static func currencyFormatter(for code: String) -> NumberFormatter {
+        if let cached = currencyFormatters[code] { return cached }
+        let f = NumberFormatter()
+        f.numberStyle         = .currency
+        f.currencyCode        = code
+        f.minimumFractionDigits = 0
+        f.maximumFractionDigits = 2
+        currencyFormatters[code] = f
+        return f
+    }
+
     private var rowAccessibilityLabel: String {
         var parts: [String] = [title]
         if let badge { parts.append(badge.title) }
-        let fmt = NumberFormatter()
-        fmt.numberStyle = .currency
-        fmt.currencyCode = currencyCode
-        fmt.minimumFractionDigits = 0
-        fmt.maximumFractionDigits = 2
+        let fmt = Self.currencyFormatter(for: currencyCode)
         let amountStr = fmt.string(from: amount as NSDecimalNumber) ?? "\(amount) \(currencyCode)"
         let cycleStr = cycle.map { " \($0.accessibilityText)" } ?? ""
         parts.append("\(amountStr)\(cycleStr)")
