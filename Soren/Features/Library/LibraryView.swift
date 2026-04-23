@@ -106,7 +106,7 @@ struct LibraryView: View {
                 summaryBar(vm)
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: Spacing.md, leading: 0, bottom: Spacing.xs, trailing: 0))
+                    .listRowInsets(EdgeInsets(top: Spacing.lg, leading: 0, bottom: Spacing.xs, trailing: 0))
 
                 // Subscription sections with swipe-to-delete
                 ForEach(vm.sections) { section in
@@ -188,9 +188,13 @@ struct LibraryView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, Spacing.sm)
-        .padding(.vertical, Spacing.sm)
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, Spacing.md)
         .background(ColorTokens.surfaceElevated, in: RoundedRectangle(cornerRadius: CornerRadius.large))
+        .overlay {
+            RoundedRectangle(cornerRadius: CornerRadius.large)
+                .strokeBorder(ColorTokens.separator.opacity(0.4), lineWidth: 0.5)
+        }
         .padding(.horizontal, Spacing.lg)
     }
 
@@ -208,13 +212,15 @@ struct LibraryView: View {
                         HapticEngine.selection()
                     } label: {
                         HStack(spacing: Spacing.xxs) {
-                            if let icon = filter.icon {
+                            // Icon only shown when this chip is active — keeps unselected chips
+                            // light text-only pills; the icon makes the selected state pop.
+                            if let icon = filter.icon, isSelected {
                                 Image(systemName: icon)
                                     .font(Typography.overline)
                             }
 
                             Text(filter.title)
-                                .font(Typography.captionMedium)
+                                .font(Typography.footnote)
 
                             if count > 0 && filter != .all {
                                 Text(verbatim: "\(count)")
@@ -252,11 +258,11 @@ struct LibraryView: View {
     private func summaryBar(_ vm: LibraryViewModel) -> some View {
         HStack {
             Text(verbatim: "\(vm.filteredItems.count)")
-                .font(Typography.bodyMedium)
+                .font(Typography.captionMedium)
                 .foregroundStyle(ColorTokens.textPrimary)
             + Text(" ")
             + Text(pluralSubscription(vm.filteredItems.count))
-                .font(Typography.body)
+                .font(Typography.caption)
                 .foregroundStyle(ColorTokens.textSecondary)
 
             Spacer()
