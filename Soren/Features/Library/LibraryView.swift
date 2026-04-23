@@ -189,7 +189,7 @@ struct LibraryView: View {
             }
         }
         .padding(.horizontal, Spacing.md)
-        .padding(.vertical, Spacing.md)
+        .padding(.vertical, Spacing.xs)
         .background(ColorTokens.surfaceElevated, in: RoundedRectangle(cornerRadius: CornerRadius.large))
         .overlay {
             RoundedRectangle(cornerRadius: CornerRadius.large)
