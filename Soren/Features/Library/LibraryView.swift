@@ -91,7 +91,7 @@ struct LibraryView: View {
                 summaryBar(vm)
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: Spacing.sm, leading: 0, bottom: Spacing.xs, trailing: 0))
+                    .listRowInsets(EdgeInsets(top: Spacing.xs, leading: 0, bottom: Spacing.xxs, trailing: 0))
 
                 // Subscription sections with swipe-to-delete
                 ForEach(vm.sections) { section in
@@ -156,7 +156,7 @@ struct LibraryView: View {
                 searchBar(vm)
                 filterChips(vm)
             }
-            .padding(.top, Spacing.sm)
+            .padding(.top, Spacing.md)
             .background(ColorTokens.background)
         }
     }
