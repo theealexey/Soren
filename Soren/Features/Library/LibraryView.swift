@@ -84,29 +84,30 @@ struct LibraryView: View {
         List {
             // Search bar — transparent row; the helper already applies .padding(.horizontal, Spacing.lg)
             // so leading/trailing insets are zeroed to avoid double-indentation.
+            // All transparent rows use leading: 0 / trailing: 0 so the row spans full list
+            // width. Each helper applies .padding(.horizontal, Spacing.lg) = 20pt internally,
+            // establishing the same 20pt horizontal anchor as item rows' listRowInsets(leading:
+            // Spacing.lg). One shared grid across search, chips, summary, and subscription card.
             searchBar(vm)
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: Spacing.md, leading: 0, bottom: 0, trailing: 0))
+                .listRowInsets(EdgeInsets(top: Spacing.sm, leading: 0, bottom: 0, trailing: 0))
 
-            // Filter chips — transparent row; the inner ScrollView already applies
-            // .padding(.horizontal, Spacing.lg), so insets stay zero.
             filterChips(vm)
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: Spacing.sm, leading: 0, bottom: 0, trailing: 0))
+                .listRowInsets(EdgeInsets(top: Spacing.xs, leading: 0, bottom: 0, trailing: 0))
 
             if vm.filteredItems.isEmpty {
                 noResults(vm)
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: Spacing.sm, leading: 0, bottom: 0, trailing: 0))
+                    .listRowInsets(EdgeInsets(top: Spacing.xs, leading: 0, bottom: 0, trailing: 0))
             } else {
-                // Summary bar — same rule: helper owns .padding(.horizontal, Spacing.lg).
                 summaryBar(vm)
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: Spacing.lg, leading: 0, bottom: Spacing.xs, trailing: 0))
+                    .listRowInsets(EdgeInsets(top: Spacing.sm, leading: 0, bottom: Spacing.xs, trailing: 0))
 
                 // Subscription sections with swipe-to-delete
                 ForEach(vm.sections) { section in
@@ -201,7 +202,7 @@ struct LibraryView: View {
             RoundedRectangle(cornerRadius: CornerRadius.large)
                 .strokeBorder(ColorTokens.separator.opacity(0.4), lineWidth: 0.5)
         }
-        .padding(.horizontal, Spacing.md)
+        .padding(.horizontal, Spacing.lg)
     }
 
     // MARK: - Filter Chips
@@ -241,7 +242,7 @@ struct LibraryView: View {
                         .background(
                             isSelected
                                 ? AnyShapeStyle(ColorTokens.accent)
-                                : AnyShapeStyle(ColorTokens.surfaceElevated),
+                                : AnyShapeStyle(Color.clear),
                             in: Capsule()
                         )
                         .overlay(
@@ -255,7 +256,7 @@ struct LibraryView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, Spacing.md)
+            .padding(.horizontal, Spacing.lg)
         }
     }
 
@@ -284,7 +285,7 @@ struct LibraryView: View {
 
             sortMenu(vm)
         }
-        .padding(.horizontal, Spacing.md)
+        .padding(.horizontal, Spacing.lg)
     }
 
     // MARK: - Sort Menu
