@@ -82,43 +82,31 @@ struct LibraryView: View {
 
     private func populatedLibrary(_ vm: LibraryViewModel) -> some View {
         List {
-            // Search bar — floats on background without card chrome
+            // Search bar — transparent row; the helper already applies .padding(.horizontal, Spacing.lg)
+            // so leading/trailing insets are zeroed to avoid double-indentation.
             searchBar(vm)
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(
-                    top: Spacing.md,
-                    leading: Spacing.lg,
-                    bottom: 0,
-                    trailing: Spacing.lg
-                ))
+                .listRowInsets(EdgeInsets(top: Spacing.md, leading: 0, bottom: 0, trailing: 0))
 
-            // Filter chips — floats on background without card chrome
+            // Filter chips — transparent row; the inner ScrollView already applies
+            // .padding(.horizontal, Spacing.lg), so insets stay zero.
             filterChips(vm)
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(
-                    top: Spacing.sm,
-                    leading: 0,
-                    bottom: 0,
-                    trailing: 0
-                ))
+                .listRowInsets(EdgeInsets(top: Spacing.sm, leading: 0, bottom: 0, trailing: 0))
 
             if vm.filteredItems.isEmpty {
                 noResults(vm)
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: Spacing.sm, leading: 0, bottom: 0, trailing: 0))
             } else {
-                // Summary bar — floats on background without card chrome
+                // Summary bar — same rule: helper owns .padding(.horizontal, Spacing.lg).
                 summaryBar(vm)
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(
-                        top: Spacing.sm,
-                        leading: Spacing.lg,
-                        bottom: 0,
-                        trailing: Spacing.lg
-                    ))
+                    .listRowInsets(EdgeInsets(top: Spacing.sm, leading: 0, bottom: 0, trailing: 0))
 
                 // Subscription sections with swipe-to-delete
                 ForEach(vm.sections) { section in
@@ -152,13 +140,19 @@ struct LibraryView: View {
                         if let title = section.title {
                             SectionHeader(title)
                                 .textCase(nil)
-                                .padding(.leading, -Spacing.xs)
+                                .listRowInsets(EdgeInsets(
+                                    top: Spacing.sm,
+                                    leading: Spacing.lg,
+                                    bottom: Spacing.xs,
+                                    trailing: Spacing.lg
+                                ))
                         }
                     }
                 }
             }
         }
         .listStyle(.insetGrouped)
+        .listSectionSpacing(.compact)
         .scrollContentBackground(.hidden)
         .background(ColorTokens.background)
         .refreshable {
