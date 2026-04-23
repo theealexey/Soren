@@ -9,6 +9,7 @@ struct LibraryView: View {
     @Environment(\.addSubscriptionAction) private var addSubscription
     @Environment(\.navigateToItem) private var navigateToItem
     @State private var viewModel: LibraryViewModel?
+    @State private var pendingDeleteItem: RecurringItem?
 
     /// Maximum width of the populated library content column.
     /// Keeps the search bar, filter chips, summary row, and item list
@@ -27,12 +28,36 @@ struct LibraryView: View {
         .background(ColorTokens.background)
         .task {
             guard viewModel == nil else { return }
-            let vm = LibraryViewModel(repositories: container.repositories, preferences: container.preferences)
+            let vm = LibraryViewModel(
+                repositories: container.repositories,
+                preferences: container.preferences,
+                notificationScheduler: container.notificationScheduler
+            )
             self.viewModel = vm
             vm.load()
         }
         .onChange(of: container.itemsVersion) { _, _ in
             viewModel?.load()
+        }
+        .alert(
+            "Удалить подписку?",
+            isPresented: Binding(
+                get: { pendingDeleteItem != nil },
+                set: { if !$0 { pendingDeleteItem = nil } }
+            )
+        ) {
+            Button("Удалить", role: .destructive) {
+                if let item = pendingDeleteItem {
+                    viewModel?.deleteItem(item)
+                    container.itemsVersion += 1
+                }
+                pendingDeleteItem = nil
+            }
+            Button("Отмена", role: .cancel) { pendingDeleteItem = nil }
+        } message: {
+            if let item = pendingDeleteItem {
+                Text("«\(item.title)» будет удалена без возможности восстановления.")
+            }
         }
     }
 
@@ -56,24 +81,86 @@ struct LibraryView: View {
     // MARK: - Populated Library
 
     private func populatedLibrary(_ vm: LibraryViewModel) -> some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: Spacing.md) {
-                searchBar(vm)
+        List {
+            // Search bar — floats on background without card chrome
+            searchBar(vm)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(
+                    top: Spacing.md,
+                    leading: Spacing.lg,
+                    bottom: 0,
+                    trailing: Spacing.lg
+                ))
 
-                filterChips(vm)
+            // Filter chips — floats on background without card chrome
+            filterChips(vm)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(
+                    top: Spacing.sm,
+                    leading: 0,
+                    bottom: 0,
+                    trailing: 0
+                ))
 
+            if vm.filteredItems.isEmpty {
+                noResults(vm)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            } else {
+                // Summary bar — floats on background without card chrome
                 summaryBar(vm)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(
+                        top: Spacing.sm,
+                        leading: Spacing.lg,
+                        bottom: 0,
+                        trailing: Spacing.lg
+                    ))
 
-                if vm.filteredItems.isEmpty {
-                    noResults(vm)
-                } else {
-                    itemsList(vm)
+                // Subscription sections with swipe-to-delete
+                ForEach(vm.sections) { section in
+                    Section {
+                        ForEach(section.items) { item in
+                            Button {
+                                navigateToItem(item)
+                            } label: {
+                                SorenListRow(
+                                    title: item.title,
+                                    subtitle: RecurringItemFormatter.subtitle(for: item),
+                                    amount: item.amount,
+                                    currency: item.currencyCode,
+                                    cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
+                                    providerTemplate: item.providerTemplate,
+                                    category: item.category,
+                                    badge: RecurringItemFormatter.badge(for: item)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .listRowBackground(ColorTokens.surface)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    pendingDeleteItem = item
+                                } label: {
+                                    Label("Удалить", systemImage: "trash.fill")
+                                }
+                            }
+                        }
+                    } header: {
+                        if let title = section.title {
+                            SectionHeader(title)
+                                .textCase(nil)
+                                .padding(.leading, -Spacing.xs)
+                        }
+                    }
                 }
             }
-            .padding(.vertical, Spacing.md)
-            .frame(maxWidth: libraryContentMaxWidth)
-            .frame(maxWidth: .infinity, alignment: .center)
         }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(ColorTokens.background)
         .refreshable {
             vm.load()
         }
@@ -192,49 +279,6 @@ struct LibraryView: View {
             sortMenu(vm)
         }
         .padding(.horizontal, Spacing.lg)
-    }
-
-    // MARK: - Items List
-
-    private func itemsList(_ vm: LibraryViewModel) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            ForEach(vm.sections) { section in
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    if let title = section.title {
-                        SectionHeader(title)
-                            .padding(.horizontal, Spacing.lg)
-                    }
-
-                    PremiumCard {
-                        VStack(spacing: 0) {
-                            ForEach(Array(section.items.enumerated()), id: \.element.id) { index, item in
-                                Button {
-                                    navigateToItem(item)
-                                } label: {
-                                    SorenListRow(
-                                        title: item.title,
-                                        subtitle: RecurringItemFormatter.subtitle(for: item),
-                                        amount: item.amount,
-                                        currency: item.currencyCode,
-                                        cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
-                                        providerTemplate: item.providerTemplate,
-                                        category: item.category,
-                                        badge: RecurringItemFormatter.badge(for: item)
-                                    )
-                                }
-                                .buttonStyle(.plain)
-
-                                if index < section.items.count - 1 {
-                                    Divider()
-                                        .padding(.leading, SorenListRow.dividerInset)
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, Spacing.lg)
-                }
-            }
-        }
     }
 
     // MARK: - Sort Menu

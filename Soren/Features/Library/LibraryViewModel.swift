@@ -73,18 +73,33 @@ final class LibraryViewModel {
     // MARK: - Dependencies
 
     private let getLibraryItems: GetLibraryItems
+    private let deleteRecurringItem: DeleteRecurringItem
     private let preferences: UserPreferencesRepository
+    private let notificationScheduler: (any NotificationScheduling)?
 
     // MARK: - Init
 
-    init(getLibraryItems: GetLibraryItems, preferences: UserPreferencesRepository = UserPreferencesRepository()) {
+    init(
+        getLibraryItems: GetLibraryItems,
+        deleteRecurringItem: DeleteRecurringItem,
+        preferences: UserPreferencesRepository = UserPreferencesRepository(),
+        notificationScheduler: (any NotificationScheduling)? = nil
+    ) {
         self.getLibraryItems = getLibraryItems
+        self.deleteRecurringItem = deleteRecurringItem
         self.preferences = preferences
+        self.notificationScheduler = notificationScheduler
     }
 
-    init(repositories: RepositoryContainer, preferences: UserPreferencesRepository = UserPreferencesRepository()) {
+    init(
+        repositories: RepositoryContainer,
+        preferences: UserPreferencesRepository = UserPreferencesRepository(),
+        notificationScheduler: (any NotificationScheduling)? = nil
+    ) {
         self.getLibraryItems = GetLibraryItems(repository: repositories.recurringItems)
+        self.deleteRecurringItem = DeleteRecurringItem(repository: repositories.recurringItems)
         self.preferences = preferences
+        self.notificationScheduler = notificationScheduler
     }
 
     // MARK: - Actions
@@ -98,6 +113,24 @@ final class LibraryViewModel {
             recompute()
         } catch {
             self.error = error
+        }
+    }
+
+    /// Deletes `item` from persistent storage and removes it from the local list immediately
+    /// (optimistic update). The notification is cancelled fire-and-forget.
+    /// On failure the error state is set and the list is reloaded to restore consistency.
+    func deleteItem(_ item: RecurringItem) {
+        do {
+            try deleteRecurringItem.execute(id: item.id)
+            allItems.removeAll { $0.id == item.id }
+            recompute()
+            if let scheduler = notificationScheduler {
+                let itemID = item.id
+                Task { await scheduler.cancel(for: itemID) }
+            }
+        } catch {
+            self.error = error
+            load()   // restore list state on unexpected failure
         }
     }
 
