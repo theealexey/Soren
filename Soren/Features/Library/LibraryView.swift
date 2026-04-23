@@ -202,7 +202,7 @@ struct LibraryView: View {
             RoundedRectangle(cornerRadius: CornerRadius.large)
                 .strokeBorder(ColorTokens.separator.opacity(0.4), lineWidth: 0.5)
         }
-        .padding(.horizontal, Spacing.lg)
+        .padding(.horizontal, Spacing.md)
     }
 
     // MARK: - Filter Chips
