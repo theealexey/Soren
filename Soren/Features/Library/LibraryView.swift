@@ -129,9 +129,9 @@ struct LibraryView: View {
                             .buttonStyle(.plain)
                             .listRowBackground(ColorTokens.surface)
                             .listRowInsets(EdgeInsets(
-                                top: 0,
+                                top: Spacing.xxs,
                                 leading: Spacing.lg,
-                                bottom: 0,
+                                bottom: Spacing.xxs,
                                 trailing: Spacing.lg
                             ))
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -201,7 +201,7 @@ struct LibraryView: View {
             RoundedRectangle(cornerRadius: CornerRadius.large)
                 .strokeBorder(ColorTokens.separator.opacity(0.4), lineWidth: 0.5)
         }
-        .padding(.horizontal, Spacing.lg)
+        .padding(.horizontal, Spacing.md)
     }
 
     // MARK: - Filter Chips
@@ -255,7 +255,7 @@ struct LibraryView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, Spacing.lg)
+            .padding(.horizontal, Spacing.md)
         }
     }
 
@@ -284,7 +284,7 @@ struct LibraryView: View {
 
             sortMenu(vm)
         }
-        .padding(.horizontal, Spacing.lg)
+        .padding(.horizontal, Spacing.md)
     }
 
     // MARK: - Sort Menu
