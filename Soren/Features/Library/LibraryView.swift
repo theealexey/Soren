@@ -82,11 +82,6 @@ struct LibraryView: View {
 
     private func populatedLibrary(_ vm: LibraryViewModel) -> some View {
         List {
-            filterChips(vm)
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: Spacing.xxs, leading: 0, bottom: 0, trailing: 0))
-
             if vm.filteredItems.isEmpty {
                 noResults(vm)
                     .listRowBackground(Color.clear)
@@ -154,13 +149,15 @@ struct LibraryView: View {
         .refreshable {
             vm.load()
         }
-        // Search bar lives outside the List so it shares the screen coordinate system
-        // with the .insetGrouped card frames — no compound-inset guesswork needed.
+        // Search + chips live outside the List as one compact block so both share the
+        // screen coordinate system with the .insetGrouped card frames.
         .safeAreaInset(edge: .top, spacing: 0) {
-            searchBar(vm)
-                .padding(.top, Spacing.md)
-                .padding(.bottom, Spacing.xxs)
-                .background(ColorTokens.background)
+            VStack(spacing: Spacing.xs) {
+                searchBar(vm)
+                filterChips(vm)
+            }
+            .padding(.top, Spacing.sm)
+            .background(ColorTokens.background)
         }
     }
 
