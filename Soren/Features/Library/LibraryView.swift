@@ -82,17 +82,6 @@ struct LibraryView: View {
 
     private func populatedLibrary(_ vm: LibraryViewModel) -> some View {
         List {
-            // Search bar — transparent row; the helper already applies .padding(.horizontal, Spacing.lg)
-            // so leading/trailing insets are zeroed to avoid double-indentation.
-            // All transparent rows use leading: 0 / trailing: 0 so the row spans full list
-            // width. Each helper applies .padding(.horizontal, Spacing.lg) = 20pt internally,
-            // establishing the same 20pt horizontal anchor as item rows' listRowInsets(leading:
-            // Spacing.lg). One shared grid across search, chips, summary, and subscription card.
-            searchBar(vm)
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: Spacing.sm, leading: 0, bottom: 0, trailing: 0))
-
             filterChips(vm)
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
@@ -165,6 +154,14 @@ struct LibraryView: View {
         .refreshable {
             vm.load()
         }
+        // Search bar lives outside the List so it shares the screen coordinate system
+        // with the .insetGrouped card frames — no compound-inset guesswork needed.
+        .safeAreaInset(edge: .top, spacing: 0) {
+            searchBar(vm)
+                .padding(.top, Spacing.sm)
+                .padding(.bottom, Spacing.xs)
+                .background(ColorTokens.background)
+        }
     }
 
     // MARK: - Search Bar
@@ -202,7 +199,7 @@ struct LibraryView: View {
             RoundedRectangle(cornerRadius: CornerRadius.large)
                 .strokeBorder(ColorTokens.separator.opacity(0.4), lineWidth: 0.5)
         }
-        .padding(.horizontal, Spacing.md)
+        .padding(.horizontal, Spacing.lg)
     }
 
     // MARK: - Filter Chips
