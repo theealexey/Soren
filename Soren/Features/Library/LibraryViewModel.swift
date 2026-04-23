@@ -33,42 +33,9 @@ final class LibraryViewModel {
     private(set) var filterCounts: [StatusFilter: Int] = [:]
     private(set) var filteredMonthlyTotal: Decimal = .zero
     private(set) var activeCategories: [ItemCategory] = []
+    private(set) var sections: [LibrarySection] = []
 
     var hasError: Bool { error != nil }
-
-    // MARK: - Sectioned Output
-
-    /// Structured sections for the Library list.
-    ///
-    /// When the user views all items without a search query, items are grouped into
-    /// up to three named sections: active, past (expired finite subs), and archived.
-    /// All other filter/search combinations return a single unnamed section so the
-    /// existing flat-list layout is preserved.
-    var sections: [LibrarySection] {
-        guard activeFilter == .all, searchText.isEmpty else {
-            return [LibrarySection(id: "main", title: nil, items: filteredItems)]
-        }
-        let active   = filteredItems.filter { !$0.isExpired }
-        let past     = filteredItems.filter {  $0.isExpired }
-        let archived = allItems.filter { $0.status == .archived }
-
-        let hasMixed = !past.isEmpty || !archived.isEmpty
-        var result: [LibrarySection] = []
-        if !active.isEmpty {
-            result.append(LibrarySection(
-                id: "active",
-                title: hasMixed ? String(localized: "Активные") : nil,
-                items: active
-            ))
-        }
-        if !past.isEmpty {
-            result.append(LibrarySection(id: "past", title: String(localized: "Завершённые"), items: past))
-        }
-        if !archived.isEmpty {
-            result.append(LibrarySection(id: "archived", title: String(localized: "Архив"), items: archived))
-        }
-        return result.isEmpty ? [LibrarySection(id: "empty", title: nil, items: [])] : result
-    }
 
     // MARK: - Dependencies
 
@@ -165,6 +132,37 @@ final class LibraryViewModel {
 
         let cats = Set(result.map(\.category))
         activeCategories = ItemCategory.allCases.filter { cats.contains($0) }
+
+        // 4. Sections — computed once per state change, not per render.
+        //
+        // When the user views all items without a search query, items are grouped into
+        // up to three named sections: active, past (expired finite subs), and archived.
+        // All other filter/search combinations produce a single unnamed section so the
+        // flat-list layout is preserved.
+        if activeFilter == .all, searchText.isEmpty {
+            let active   = result.filter { !$0.isExpired }
+            let past     = result.filter {  $0.isExpired }
+            let archived = allItems.filter { $0.status == .archived }
+
+            let hasMixed = !past.isEmpty || !archived.isEmpty
+            var built: [LibrarySection] = []
+            if !active.isEmpty {
+                built.append(LibrarySection(
+                    id: "active",
+                    title: hasMixed ? String(localized: "Активные") : nil,
+                    items: active
+                ))
+            }
+            if !past.isEmpty {
+                built.append(LibrarySection(id: "past", title: String(localized: "Завершённые"), items: past))
+            }
+            if !archived.isEmpty {
+                built.append(LibrarySection(id: "archived", title: String(localized: "Архив"), items: archived))
+            }
+            sections = built.isEmpty ? [LibrarySection(id: "empty", title: nil, items: [])] : built
+        } else {
+            sections = [LibrarySection(id: "main", title: nil, items: result)]
+        }
     }
 }
 
