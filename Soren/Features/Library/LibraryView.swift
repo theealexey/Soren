@@ -85,7 +85,7 @@ struct LibraryView: View {
             filterChips(vm)
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: Spacing.xs, leading: 0, bottom: 0, trailing: 0))
+                .listRowInsets(EdgeInsets(top: Spacing.xxs, leading: 0, bottom: 0, trailing: 0))
 
             if vm.filteredItems.isEmpty {
                 noResults(vm)
@@ -158,8 +158,8 @@ struct LibraryView: View {
         // with the .insetGrouped card frames — no compound-inset guesswork needed.
         .safeAreaInset(edge: .top, spacing: 0) {
             searchBar(vm)
-                .padding(.top, Spacing.sm)
-                .padding(.bottom, Spacing.xs)
+                .padding(.top, Spacing.md)
+                .padding(.bottom, Spacing.xxs)
                 .background(ColorTokens.background)
         }
     }
