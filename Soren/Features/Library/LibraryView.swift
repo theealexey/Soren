@@ -128,6 +128,12 @@ struct LibraryView: View {
                             }
                             .buttonStyle(.plain)
                             .listRowBackground(ColorTokens.surface)
+                            .listRowInsets(EdgeInsets(
+                                top: 0,
+                                leading: Spacing.lg,
+                                bottom: 0,
+                                trailing: Spacing.lg
+                            ))
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button(role: .destructive) {
                                     pendingDeleteItem = item
