@@ -108,9 +108,9 @@ struct LibraryView: View {
                             .buttonStyle(.plain)
                             .listRowBackground(ColorTokens.surface)
                             .listRowInsets(EdgeInsets(
-                                top: Spacing.xxs,
+                                top: Spacing.xs,
                                 leading: Spacing.lg,
-                                bottom: Spacing.xxs,
+                                bottom: Spacing.xs,
                                 trailing: Spacing.lg
                             ))
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
