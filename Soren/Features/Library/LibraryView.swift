@@ -126,7 +126,7 @@ struct LibraryView: View {
                             SectionHeader(title)
                                 .textCase(nil)
                                 .listRowInsets(EdgeInsets(
-                                    top: Spacing.xxxs,
+                                    top: Spacing.sm,
                                     leading: Spacing.lg,
                                     bottom: Spacing.xxxs,
                                     trailing: Spacing.lg
