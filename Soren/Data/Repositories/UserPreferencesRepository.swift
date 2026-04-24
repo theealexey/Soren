@@ -16,11 +16,10 @@ struct UserPreferencesRepository {
     // MARK: - Keys
 
     private enum Key {
-        static let defaultCurrency      = "soren.defaultCurrency"
+        static let defaultCurrency       = "soren.defaultCurrency"
         static let defaultChargeReminder = "soren.defaultChargeReminder"
-        static let defaultTrialReminder  = "soren.defaultTrialReminder"
-        static let chargeAlertDays      = "soren.chargeAlertDays"
-        static let trialAlertDays       = "soren.trialAlertDays"
+        static let chargeAlertDays       = "soren.chargeAlertDays"
+        static let trialAlertDays        = "soren.trialAlertDays"
     }
 
     // MARK: - Load
@@ -33,9 +32,6 @@ struct UserPreferencesRepository {
         let chargeReminder = defaults.string(forKey: Key.defaultChargeReminder)
             .flatMap(ChargeReminderOption.init) ?? fallback.defaultChargeReminder
 
-        let trialReminder = defaults.string(forKey: Key.defaultTrialReminder)
-            .flatMap(TrialReminderOption.init) ?? fallback.defaultTrialReminder
-
         let chargeDays = defaults.object(forKey: Key.chargeAlertDays) != nil
             ? defaults.integer(forKey: Key.chargeAlertDays)
             : fallback.chargeAlertDays
@@ -47,7 +43,6 @@ struct UserPreferencesRepository {
         return UserPreferences(
             defaultCurrencyCode: currency,
             defaultChargeReminder: chargeReminder,
-            defaultTrialReminder: trialReminder,
             chargeAlertDays: chargeDays,
             trialAlertDays: trialDays
         )
@@ -58,7 +53,6 @@ struct UserPreferencesRepository {
     func save(_ prefs: UserPreferences) {
         defaults.set(prefs.defaultCurrencyCode,            forKey: Key.defaultCurrency)
         defaults.set(prefs.defaultChargeReminder.rawValue, forKey: Key.defaultChargeReminder)
-        defaults.set(prefs.defaultTrialReminder.rawValue,  forKey: Key.defaultTrialReminder)
         defaults.set(prefs.chargeAlertDays,                forKey: Key.chargeAlertDays)
         defaults.set(prefs.trialAlertDays,                 forKey: Key.trialAlertDays)
     }

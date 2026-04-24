@@ -64,10 +64,9 @@ final class AddSubscriptionViewModel {
     /// Seeded from `UserPreferences.defaultChargeReminder` at init time.
     /// The user can override it per-subscription in the form before saving.
     var chargeReminder: ChargeReminderOption
-    /// Seeded from `UserPreferences.defaultTrialReminder` (defaults to `.never`).
-    /// Only relevant when the item has a trialEndDate; hidden in the Add form since
-    /// trialEndDate is not currently configurable from the Add flow.
-    var trialReminder: TrialReminderOption
+    /// Always `.never` in the Add flow — no trialEndDate field exists here yet,
+    /// so the trial reminder picker is permanently hidden (showsTrialReminder: false).
+    var trialReminder: TrialReminderOption = .never
 
     // MARK: - Save State
 
@@ -99,7 +98,6 @@ final class AddSubscriptionViewModel {
         let prefs = preferences.load()
         self.currencyCode   = prefs.defaultCurrencyCode
         self.chargeReminder = prefs.defaultChargeReminder
-        self.trialReminder  = prefs.defaultTrialReminder
         // didSet observers don't fire during init — seed the suggestion explicitly.
         self.nextChargeDate = Self.suggestNextChargeDate(from: .now, cycle: .monthly)
     }
@@ -113,7 +111,6 @@ final class AddSubscriptionViewModel {
         let prefs = container.preferences.load()
         self.currencyCode   = prefs.defaultCurrencyCode
         self.chargeReminder = prefs.defaultChargeReminder
-        self.trialReminder  = prefs.defaultTrialReminder
         // didSet observers don't fire during init — seed the suggestion explicitly.
         self.nextChargeDate = Self.suggestNextChargeDate(from: .now, cycle: .monthly)
     }

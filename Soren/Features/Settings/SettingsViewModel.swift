@@ -50,11 +50,10 @@ final class SettingsViewModel {
         // Alerts tab and are not configurable from Settings in v1.
         let current = repository.load()
         repository.save(UserPreferences(
-            defaultCurrencyCode:  defaultCurrencyCode,
+            defaultCurrencyCode:   defaultCurrencyCode,
             defaultChargeReminder: defaultChargeReminder,
-            defaultTrialReminder: current.defaultTrialReminder,
-            chargeAlertDays:      current.chargeAlertDays,
-            trialAlertDays:       current.trialAlertDays
+            chargeAlertDays:       current.chargeAlertDays,
+            trialAlertDays:        current.trialAlertDays
         ))
     }
 
