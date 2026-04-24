@@ -209,19 +209,28 @@ final class AddSubscriptionViewModel {
         nextChargeDate = Self.suggestNextChargeDate(from: startDate, cycle: billingCycle)
     }
 
-    /// Suggests the next charge date for the Add form.
+    /// Suggests the next charge date for the Add and Edit forms.
     ///
     /// Contract:
-    /// - If `startDate` is in the future, the first charge hasn't happened yet —
-    ///   return `startDate` unchanged.
+    /// - If `startDate`'s calendar day is after today's calendar day, the first charge
+    ///   hasn't happened yet — return `startDate` unchanged.
     /// - Otherwise, advance by `cycle` at least once (so startDate itself is never
-    ///   returned as the "next" charge) and keep advancing while the candidate is
-    ///   still before `today`. Today counts as a valid next-charge day.
+    ///   returned as the "next" charge) and keep advancing while the candidate's
+    ///   calendar day is still before today's calendar day. Today counts as a
+    ///   valid next-charge day.
     ///
     /// Examples (cycle = monthly, today = Apr 24):
     ///   startDate Apr 24 → May 24   (started today; next bill is one cycle later)
     ///   startDate Mar 24 → Apr 24   (one cycle in the past; next bill is today)
     ///   startDate Feb 24 → Apr 24   (two cycles in the past; skip Mar, land on Apr)
+    ///
+    /// Day-granular comparison is load-bearing. `DatePicker` writes dates at 00:00
+    /// while `today = .now` captures the current wall-clock moment. A raw `<`
+    /// comparison on the full Date treats `Apr 24 00:00 < Apr 24 15:00` as true
+    /// and advances one cycle too many — reproducing the on-device bug where
+    /// changing startDate to Mar 24 still yielded May 24 instead of Apr 24.
+    /// Normalizing both sides through `calendar.startOfDay(for:)` pins the
+    /// comparison to calendar days regardless of the current hour.
     ///
     /// Pure / referentially transparent — never mutates ViewModel state.
     nonisolated static func suggestNextChargeDate(
@@ -230,11 +239,13 @@ final class AddSubscriptionViewModel {
         today: Date = .now,
         calendar: Calendar = .current
     ) -> Date {
-        guard startDate <= today else { return startDate }
+        let startDay = calendar.startOfDay(for: startDate)
+        let todayDay = calendar.startOfDay(for: today)
+        guard startDay <= todayDay else { return startDate }
         var candidate = startDate
         repeat {
             candidate = cycle.nextDate(after: candidate, calendar: calendar)
-        } while candidate < today
+        } while calendar.startOfDay(for: candidate) < todayDay
         return candidate
     }
 

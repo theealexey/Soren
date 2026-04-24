@@ -59,14 +59,19 @@ struct NextChargeDateSuggestionTests {
         #expect(result == future)
     }
 
-    @Test("startDate exactly one second in the future: returns startDate unchanged")
-    func startDateOneSecondAhead() {
-        // today has hour=12; use hour=13 to be clearly > today
+    @Test("startDate later today than `today`: same calendar day → treated as 'started today'")
+    func startDateLaterSameDayAsToday() {
+        // today has hour=12; startDate at hour=13 is a later moment but the SAME
+        // calendar day. Day-granular comparison treats this as "started today",
+        // so the contract says advance one full cycle — not "return unchanged".
+        // This is the new contract enforced by the startOfDay normalization; the
+        // old timestamp-granular contract would have returned startDate unchanged.
         var comps = DateComponents()
         comps.year = 2026; comps.month = 4; comps.day = 22; comps.hour = 13
-        let slightlyFuture = calendar.date(from: comps)!
-        let result = suggest(from: slightlyFuture, cycle: .monthly)
-        #expect(result == slightlyFuture)
+        let laterToday = calendar.date(from: comps)!
+        let result = suggest(from: laterToday, cycle: .monthly)
+        // Advance one cycle from laterToday → May 22 at hour=13.
+        #expect(calendar.isDate(result, inSameDayAs: date(2026, 5, 22)))
     }
 
     // MARK: - Start Date == Today (first charge is next cycle)
@@ -181,5 +186,68 @@ struct NextChargeDateSuggestionTests {
             let result = suggest(from: start, cycle: .monthly)
             #expect(result >= today, "result \(result) must be >= today for start \(start)")
         }
+    }
+
+    // MARK: - Time-of-day regression (on-device bug)
+    //
+    // The device reproduction that motivated the day-granular fix:
+    //   • today = Apr 24 at 15:00 (any time in the afternoon)
+    //   • startDate = Mar 24 at 00:00 (DatePicker writes dates at midnight)
+    //   • monthly cycle
+    //
+    // Naïve `candidate < today` compared Apr 24 00:00 < Apr 24 15:00 → true,
+    // advancing to May 24. Correct behavior is Apr 24, because both sides
+    // refer to the same calendar day.
+
+    private func dateAt(_ year: Int, _ month: Int, _ day: Int, hour: Int) -> Date {
+        var comps = DateComponents()
+        comps.year = year; comps.month = month; comps.day = day
+        comps.hour = hour
+        return calendar.date(from: comps)!
+    }
+
+    @Test("today at 15:00, startDate at midnight one cycle ago → lands on today")
+    func todayAfternoonStartMidnightOneCycleAgo() {
+        let todayAfternoon = dateAt(2026, 4, 22, hour: 15)
+        let startMidnight  = dateAt(2026, 3, 22, hour: 0)
+        let result = AddSubscriptionViewModel.suggestNextChargeDate(
+            from: startMidnight, cycle: .monthly, today: todayAfternoon, calendar: calendar
+        )
+        // Expect Apr 22 (any time-of-day) — NOT May 22.
+        #expect(calendar.isDate(result, inSameDayAs: dateAt(2026, 4, 22, hour: 0)))
+    }
+
+    @Test("today at 23:59, startDate at 06:00 same day-of-cycle two cycles ago → today")
+    func todayLateEveningStartMorningTwoCyclesAgo() {
+        let todayLate = dateAt(2026, 4, 22, hour: 23)
+        let startEarly = dateAt(2026, 2, 22, hour: 6)
+        let result = AddSubscriptionViewModel.suggestNextChargeDate(
+            from: startEarly, cycle: .monthly, today: todayLate, calendar: calendar
+        )
+        #expect(calendar.isDate(result, inSameDayAs: dateAt(2026, 4, 22, hour: 0)))
+    }
+
+    @Test("today at 00:00, startDate at 23:59 same day → future by time, same day → startDate unchanged")
+    func startDateLaterSameDay() {
+        // DatePicker behavior edge: startDate picked at end-of-day, today is start-of-day.
+        // Calendar-day comparison says startDay == todayDay → proceed, advance one cycle.
+        // This is the "started today" branch.
+        let todayMidnight = dateAt(2026, 4, 22, hour: 0)
+        let startLate = dateAt(2026, 4, 22, hour: 23)
+        let result = AddSubscriptionViewModel.suggestNextChargeDate(
+            from: startLate, cycle: .monthly, today: todayMidnight, calendar: calendar
+        )
+        // Advance one cycle: May 22 (time-of-day preserved by nextDate, but day is what matters).
+        #expect(calendar.isDate(result, inSameDayAs: dateAt(2026, 5, 22, hour: 0)))
+    }
+
+    @Test("today at 15:00, startDate tomorrow at midnight → unchanged (future)")
+    func tomorrowAtMidnightReturnsUnchanged() {
+        let todayAfternoon = dateAt(2026, 4, 22, hour: 15)
+        let tomorrowMidnight = dateAt(2026, 4, 23, hour: 0)
+        let result = AddSubscriptionViewModel.suggestNextChargeDate(
+            from: tomorrowMidnight, cycle: .monthly, today: todayAfternoon, calendar: calendar
+        )
+        #expect(result == tomorrowMidnight)
     }
 }
