@@ -88,12 +88,6 @@ struct LibraryView: View {
                     .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets(top: Spacing.xs, leading: 0, bottom: 0, trailing: 0))
             } else {
-                summaryBar(vm)
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: Spacing.xs, leading: 0, bottom: Spacing.xxs, trailing: 0))
-
-                // Subscription sections with swipe-to-delete
                 ForEach(vm.sections) { section in
                     Section {
                         ForEach(section.items) { item in
@@ -149,14 +143,18 @@ struct LibraryView: View {
         .refreshable {
             vm.load()
         }
-        // Search + chips live outside the List as one compact block so both share the
-        // screen coordinate system with the .insetGrouped card frames.
+        // Entire header block lives outside the List: search + chips + summary share
+        // one VStack so vertical rhythm is governed by a single layout system.
+        // The List contains only subscription card sections (plus the empty-state row).
         .safeAreaInset(edge: .top, spacing: 0) {
             VStack(spacing: Spacing.xs) {
                 searchBar(vm)
                 filterChips(vm)
+                if !vm.filteredItems.isEmpty {
+                    summaryBar(vm)
+                }
             }
-            .padding(.top, Spacing.md)
+            .padding(.top, Spacing.sm)
             .background(ColorTokens.background)
         }
     }
