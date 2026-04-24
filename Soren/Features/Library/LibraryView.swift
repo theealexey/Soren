@@ -126,7 +126,7 @@ struct LibraryView: View {
                             SectionHeader(title)
                                 .textCase(nil)
                                 .listRowInsets(EdgeInsets(
-                                    top: Spacing.sm,
+                                    top: Spacing.xxxs,
                                     leading: Spacing.lg,
                                     bottom: Spacing.xs,
                                     trailing: Spacing.lg
@@ -148,14 +148,19 @@ struct LibraryView: View {
         // one VStack so vertical rhythm is governed by a single layout system.
         // The List contains only subscription card sections (plus the empty-state row).
         .safeAreaInset(edge: .top, spacing: 0) {
+            // VStack spacing controls chips→summary (kept at sm = 12pt, small-to-medium).
+            // searchBar adds an extra .padding(.bottom, xxs) on top of the VStack gap
+            // to get the larger search→chips separation (12 + 4 = 16pt) without splitting
+            // the children into multiple containers.
             VStack(spacing: Spacing.sm) {
                 searchBar(vm)
+                    .padding(.bottom, Spacing.xxs)
                 filterChips(vm)
                 if !vm.filteredItems.isEmpty {
                     summaryBar(vm)
                 }
             }
-            .padding(.top, Spacing.md)
+            .padding(.top, Spacing.lg)
             .background(ColorTokens.background)
         }
     }
