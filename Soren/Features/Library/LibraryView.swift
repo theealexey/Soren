@@ -128,7 +128,7 @@ struct LibraryView: View {
                                 .listRowInsets(EdgeInsets(
                                     top: Spacing.xxxs,
                                     leading: Spacing.lg,
-                                    bottom: Spacing.xs,
+                                    bottom: Spacing.xxxs,
                                     trailing: Spacing.lg
                                 ))
                         }
@@ -154,13 +154,13 @@ struct LibraryView: View {
             // the children into multiple containers.
             VStack(spacing: Spacing.sm) {
                 searchBar(vm)
-                    .padding(.bottom, Spacing.xxs)
+                    .padding(.bottom, Spacing.xs)
                 filterChips(vm)
                 if !vm.filteredItems.isEmpty {
                     summaryBar(vm)
                 }
             }
-            .padding(.top, Spacing.lg)
+            .padding(.top, Spacing.lg + Spacing.xxs)
             .background(ColorTokens.background)
         }
     }
