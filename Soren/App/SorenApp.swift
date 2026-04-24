@@ -4,6 +4,7 @@ import SwiftData
 @main
 struct SorenApp: App {
     @State private var appState = AppState()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
@@ -20,6 +21,11 @@ struct SorenApp: App {
                 }
             }
             .preferredColorScheme(appState.appearanceMode.colorScheme)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                appState.appContainer?.notificationRefreshCoordinator.didBecomeActive()
+            }
         }
     }
 }

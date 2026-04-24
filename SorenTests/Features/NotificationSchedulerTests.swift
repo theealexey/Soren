@@ -333,10 +333,17 @@ final class MockNotificationScheduler: NotificationScheduling, @unchecked Sendab
     private(set) var scheduledIDs: [UUID] = []
     private(set) var cancelledIDs: [UUID] = []
     private(set) var cancelAllCallCount = 0
+    private(set) var rescheduleAllCallCount = 0
+    private(set) var lastRescheduledItems: [RecurringItem] = []
 
     func schedule(for item: RecurringItem) async { scheduledIDs.append(item.id) }
     func cancel(for itemID: UUID) async          { cancelledIDs.append(itemID) }
     func cancelAll() async                       { cancelAllCallCount += 1 }
+
+    func rescheduleAll(items: [RecurringItem]) async {
+        rescheduleAllCallCount += 1
+        lastRescheduledItems = items
+    }
 }
 
 // MARK: - ViewModel Wiring Tests

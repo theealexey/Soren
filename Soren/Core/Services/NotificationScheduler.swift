@@ -20,6 +20,12 @@ protocol NotificationScheduling: AnyObject, Sendable {
 
     /// Cancels every pending and delivered notification issued by Soren.
     func cancelAll() async
+
+    /// Removes all pending Soren notification identifiers, then reschedules
+    /// notifications for the provided items. Ineligible items (paused, archived,
+    /// cancelled, expired, `.never` reminder) are handled by `schedule(for:)`.
+    /// Call on foreground activation to self-heal stale or dropped notifications.
+    func rescheduleAll(items: [RecurringItem]) async
 }
 
 // MARK: - Notification Scheduler
@@ -147,6 +153,23 @@ final class NotificationScheduler: NotificationScheduling, @unchecked Sendable {
     func cancelAll() async {
         center.removeAllPendingNotificationRequests()
         center.removeAllDeliveredNotifications()
+    }
+
+    func rescheduleAll(items: [RecurringItem]) async {
+        // Remove every pending notification owned by Soren before rebuilding.
+        // This covers identifiers for items that were deleted, had their dates
+        // changed, or had their reminder option switched off between launches.
+        let pending = await center.pendingNotificationRequests()
+        let sorenIDs = pending.map(\.identifier).filter { $0.hasPrefix("soren.") }
+        if !sorenIDs.isEmpty {
+            center.removePendingNotificationRequests(withIdentifiers: sorenIDs)
+        }
+
+        // Reschedule for every item. schedule(for:) handles eligibility internally:
+        // ineligible items (paused, archived, cancelled, expired, .never) are skipped.
+        for item in items {
+            await schedule(for: item)
+        }
     }
 
     // MARK: - Eligibility
