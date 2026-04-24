@@ -58,6 +58,7 @@
 		NFRC234567890ABCDEF0002 /* NotificationRefreshCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = NFRC234567890ABCDEF0001 /* NotificationRefreshCoordinator.swift */; };
 		NFRC234567890ABCDEF0004 /* NotificationRescheduleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = NFRC234567890ABCDEF0003 /* NotificationRescheduleTests.swift */; };
 		LSDB234567890ABCDEF0002 /* LibrarySearchDebounceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LSDB234567890ABCDEF0001 /* LibrarySearchDebounceTests.swift */; };
+		GUPC234567890ABCDEF0002 /* GetUpcomingChargesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = GUPC234567890ABCDEF0001 /* GetUpcomingChargesTests.swift */; };
 		3C5D0047E7D4DC39ADD5FC7C /* NextPaymentCalloutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92E29D870CC86C4EB8CE6C2A /* NextPaymentCalloutView.swift */; };
 		3E2C15DCA2F42CC6D125237B /* UsageStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08466B38DFF515E50A44F77D /* UsageStatus.swift */; };
 		3E6405A4F0A59A5EF54A5056 /* GetUpcomingCharges.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AE23A399CED2B38971BCB57 /* GetUpcomingCharges.swift */; };
@@ -220,6 +221,7 @@
 		NFRC234567890ABCDEF0001 /* NotificationRefreshCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationRefreshCoordinator.swift; sourceTree = "<group>"; };
 		NFRC234567890ABCDEF0003 /* NotificationRescheduleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationRescheduleTests.swift; sourceTree = "<group>"; };
 		LSDB234567890ABCDEF0001 /* LibrarySearchDebounceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrarySearchDebounceTests.swift; sourceTree = "<group>"; };
+		GUPC234567890ABCDEF0001 /* GetUpcomingChargesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetUpcomingChargesTests.swift; sourceTree = "<group>"; };
 		264F2714A6B7E0174F18E1FF /* ExchangeRatesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRatesTests.swift; sourceTree = "<group>"; };
 		2A9B8583A80D8BD6F90A301D /* PlanTier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanTier.swift; sourceTree = "<group>"; };
 		2B0E4355CE761328C61F5EE0 /* RepositoryContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryContainer.swift; sourceTree = "<group>"; };
@@ -720,6 +722,7 @@
 				TRIAL234567890ABCDEF0003 /* TrialReminderSchedulerTests.swift */,
 				NFRC234567890ABCDEF0003 /* NotificationRescheduleTests.swift */,
 				LSDB234567890ABCDEF0001 /* LibrarySearchDebounceTests.swift */,
+				GUPC234567890ABCDEF0001 /* GetUpcomingChargesTests.swift */,
 				C3D4E5F6A7B8C9D0E1F2A3B4 /* UserPreferencesTests.swift */,
 			);
 			path = Features;
@@ -1306,6 +1309,7 @@
 				0E7AF3CC42CE41B9AF6AFAA5 /* NotificationSchedulerTests.swift in Sources */,
 				NFRC234567890ABCDEF0004 /* NotificationRescheduleTests.swift in Sources */,
 				LSDB234567890ABCDEF0002 /* LibrarySearchDebounceTests.swift in Sources */,
+				GUPC234567890ABCDEF0002 /* GetUpcomingChargesTests.swift in Sources */,
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* UserPreferencesTests.swift in Sources */,
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* UserPreferencesTests.swift in Sources */,
 				C3502270C48B6F7C7C802509 /* AddSubscriptionTierTests.swift in Sources */,
