@@ -11,13 +11,13 @@ final class LibraryViewModel {
     // MARK: - User Input State (trigger recompute on change)
 
     var searchText: String = "" {
-        didSet { if oldValue != searchText { recompute() } }
+        didSet { if oldValue != searchText { scheduleSearch() } }
     }
     var activeFilter: StatusFilter = .all {
-        didSet { if oldValue != activeFilter { recompute() } }
+        didSet { if oldValue != activeFilter { cancelPendingSearch(); recompute() } }
     }
     var sortOrder: SortOrder = .nextCharge {
-        didSet { if oldValue != sortOrder { recompute() } }
+        didSet { if oldValue != sortOrder { cancelPendingSearch(); recompute() } }
     }
 
     // MARK: - Data State
@@ -43,6 +43,30 @@ final class LibraryViewModel {
     private let deleteRecurringItem: DeleteRecurringItem
     private let preferences: UserPreferencesRepository
     private let notificationScheduler: (any NotificationScheduling)?
+    private let searchDebounceDelay: Duration
+
+    // MARK: - Search Debounce
+
+    private var searchTask: Task<Void, Never>?
+
+    /// Cancels the previous pending search task and schedules a fresh recompute
+    /// after `searchDebounceDelay`. Rapid keystrokes collapse into a single pass.
+    private func scheduleSearch() {
+        searchTask?.cancel()
+        let delay = searchDebounceDelay
+        searchTask = Task { [weak self] in
+            try? await Task.sleep(for: delay)
+            guard !Task.isCancelled else { return }
+            self?.recompute()
+        }
+    }
+
+    /// Cancels any pending debounced search task. Called when filter or sort
+    /// changes so those immediate recomputes include the current searchText.
+    private func cancelPendingSearch() {
+        searchTask?.cancel()
+        searchTask = nil
+    }
 
     // MARK: - Init
 
@@ -50,23 +74,27 @@ final class LibraryViewModel {
         getLibraryItems: GetLibraryItems,
         deleteRecurringItem: DeleteRecurringItem,
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
-        notificationScheduler: (any NotificationScheduling)? = nil
+        notificationScheduler: (any NotificationScheduling)? = nil,
+        searchDebounceDelay: Duration = .milliseconds(150)
     ) {
         self.getLibraryItems = getLibraryItems
         self.deleteRecurringItem = deleteRecurringItem
         self.preferences = preferences
         self.notificationScheduler = notificationScheduler
+        self.searchDebounceDelay = searchDebounceDelay
     }
 
     init(
         repositories: RepositoryContainer,
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
-        notificationScheduler: (any NotificationScheduling)? = nil
+        notificationScheduler: (any NotificationScheduling)? = nil,
+        searchDebounceDelay: Duration = .milliseconds(150)
     ) {
         self.getLibraryItems = GetLibraryItems(repository: repositories.recurringItems)
         self.deleteRecurringItem = DeleteRecurringItem(repository: repositories.recurringItems)
         self.preferences = preferences
         self.notificationScheduler = notificationScheduler
+        self.searchDebounceDelay = searchDebounceDelay
     }
 
     // MARK: - Actions
