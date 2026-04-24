@@ -19,14 +19,34 @@ final class ItemDetailsViewModel {
     var editAmountText = ""
     var editCurrencyCode = "RUB"
     var editBillingCycle: BillingCycle = .monthly {
-        didSet { recomputeEditEndDateIfNeeded() }
+        didSet {
+            if !isEditNextChargeDateManuallySet {
+                editNextChargeDate = AddSubscriptionViewModel.suggestNextChargeDate(
+                    from: editStartDate, cycle: editBillingCycle
+                )
+            }
+            recomputeEditEndDateIfNeeded()
+        }
     }
     var editCategory: ItemCategory = .other
     var editItemType: ItemType = .subscription
-    var editStartDate = Date.now
+    var editStartDate = Date.now {
+        didSet {
+            guard !isEditNextChargeDateManuallySet else { return }
+            editNextChargeDate = AddSubscriptionViewModel.suggestNextChargeDate(
+                from: editStartDate, cycle: editBillingCycle
+            )
+        }
+    }
     var editNextChargeDate = Date.now {
         didSet { recomputeEditEndDateIfNeeded() }
     }
+    /// True once the user explicitly picks a next-charge date from the edit form,
+    /// or once `startEditing()` seeds the form from a stored item (the stored value
+    /// is treated as manually committed so cycle/startDate changes don't clobber it
+    /// on first load). Reset via `resetEditNextChargeToAutomatic()` if we ever add
+    /// that affordance.
+    private(set) var isEditNextChargeDateManuallySet = false
     var editNote = ""
     var editUsageStatus: UsageStatus = .unknown
 
@@ -62,6 +82,15 @@ final class ItemDetailsViewModel {
         self.notificationScheduler = notificationScheduler
     }
 
+    // MARK: - Edit Next Charge Date
+
+    /// Called by the next-charge-date binding in the edit form to record a user-chosen date.
+    /// Once called, auto-fill stops updating editNextChargeDate for changes to cycle or startDate.
+    func setEditNextChargeDateManually(_ date: Date) {
+        editNextChargeDate = date
+        isEditNextChargeDateManuallySet = true
+    }
+
     // MARK: - Edit End Date
 
     func setEditEndDateManually(_ date: Date) {
@@ -82,18 +111,27 @@ final class ItemDetailsViewModel {
         editCurrencyCode = item.currencyCode
         editCategory = item.category
         editItemType = item.itemType
-        editStartDate = item.startDate
         editNote = item.note
         editUsageStatus = item.usageStatus
         // Lifecycle fields: set the manual-override flag before assigning cycle/date so
-        // their didSet handlers don't auto-fill an endDate for existing stored values.
+        // their didSet handlers don't auto-fill endDate/nextChargeDate for existing stored
+        // values. Stored nextChargeDate is treated as manually committed — otherwise
+        // assigning editStartDate / editBillingCycle below would auto-suggest a new
+        // nextChargeDate and silently overwrite the user's persisted date on form open.
         isEditEndDateManuallySet = item.endDate != nil
+        isEditNextChargeDateManuallySet = true
+        editStartDate = item.startDate
         editBillingCycle = item.billingCycle
         editNextChargeDate = item.nextChargeDate
         // Seed endDate: use stored value, or compute a sensible default for existing
         // auto-renew items (unused unless the user switches autoRenew off).
         editEndDate = item.endDate ?? item.billingCycle.nextDate(after: item.nextChargeDate)
         editAutoRenew = item.autoRenew
+        // Release the manual-override flag now that seed is complete. Subsequent
+        // startDate / billingCycle changes made by the user in this session will
+        // auto-recompute nextChargeDate — until the user explicitly picks one via
+        // the date binding, at which point setEditNextChargeDateManually re-locks it.
+        isEditNextChargeDateManuallySet = false
         editChargeReminder = item.chargeReminder
         isEditing = true
     }

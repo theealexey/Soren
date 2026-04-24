@@ -18,7 +18,7 @@ struct ItemEditFormView: View {
                 category: $viewModel.editCategory,
                 itemType: $viewModel.editItemType,
                 startDate: $viewModel.editStartDate,
-                nextChargeDate: $viewModel.editNextChargeDate,
+                nextChargeDate: editNextChargeDateBinding,
                 autoRenew: $viewModel.editAutoRenew,
                 endDate: editEndDateBinding,
                 note: $viewModel.editNote,
@@ -49,6 +49,17 @@ struct ItemEditFormView: View {
         .onChange(of: viewModel.editCurrencyCode) { old, new in
             Task { await viewModel.convertAmount(from: old, to: new) }
         }
+    }
+
+    // MARK: - Next Charge Date Binding
+
+    /// Routes the next-charge-date setter through setEditNextChargeDateManually so
+    /// subsequent startDate / billingCycle changes will not overwrite the user's pick.
+    private var editNextChargeDateBinding: Binding<Date> {
+        Binding(
+            get: { viewModel.editNextChargeDate },
+            set: { viewModel.setEditNextChargeDateManually($0) }
+        )
     }
 
     // MARK: - End Date Binding
