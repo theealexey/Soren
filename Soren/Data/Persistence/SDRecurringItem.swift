@@ -54,6 +54,11 @@ final class SDRecurringItem {
     /// preserve the behaviour users had before per-subscription timing was introduced.
     var chargeReminderRaw: String?
 
+    /// `TrialReminderOption.rawValue`. Optional column for lightweight migration:
+    /// existing rows receive `nil`, which the mapper treats as `.never` (safe default —
+    /// trial notifications are opt-in).
+    var trialReminderRaw: String?
+
     // MARK: - State
 
     var statusRaw: String
@@ -104,6 +109,7 @@ final class SDRecurringItem {
         autoRenew: Bool? = nil,
         endDate: Date? = nil,
         chargeReminderRaw: String? = nil,
+        trialReminderRaw: String? = nil,
         statusRaw: String,
         usageStatusRaw: String,
         paymentMethodID: UUID?,
@@ -132,6 +138,7 @@ final class SDRecurringItem {
         self.autoRenew = autoRenew
         self.endDate = endDate
         self.chargeReminderRaw = chargeReminderRaw
+        self.trialReminderRaw = trialReminderRaw
         self.statusRaw = statusRaw
         self.usageStatusRaw = usageStatusRaw
         self.paymentMethodID = paymentMethodID

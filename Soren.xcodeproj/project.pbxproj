@@ -119,6 +119,8 @@
 		AA352B3877CD5BBC689F8CFF /* ItemDetailsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6509B2ABE747FA5E800016D /* ItemDetailsViewModel.swift */; };
 		AABC1234567890ABCDEF0002 /* NextChargeDateSuggestionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABC1234567890ABCDEF0001 /* NextChargeDateSuggestionTests.swift */; };
 		AABC1234567890ABCDEF0004 /* ItemDetailsEditFormTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABC1234567890ABCDEF0003 /* ItemDetailsEditFormTests.swift */; };
+		TRIAL234567890ABCDEF0002 /* TrialReminderOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRIAL234567890ABCDEF0001 /* TrialReminderOption.swift */; };
+		TRIAL234567890ABCDEF0004 /* TrialReminderSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRIAL234567890ABCDEF0003 /* TrialReminderSchedulerTests.swift */; };
 		AB35672A60CFCDCB614C95A4 /* SwiftDataPaymentMethodRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931E5E8447CB6EBE61776031 /* SwiftDataPaymentMethodRepository.swift */; };
 		AC6A5E7E150DA4F36FC64642 /* AppearanceMode+SwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE3B6CE90A1085CAD36539E5 /* AppearanceMode+SwiftUI.swift */; };
 		AE87E4DBEC8756BF60319FD3 /* ExchangeRateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5C46E050399632FDE7B0454 /* ExchangeRateProvider.swift */; };
@@ -289,6 +291,8 @@
 		AA75DA9D8213E0F85264205F /* SorenListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SorenListRow.swift; sourceTree = "<group>"; };
 		AABC1234567890ABCDEF0001 /* NextChargeDateSuggestionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextChargeDateSuggestionTests.swift; sourceTree = "<group>"; };
 		AABC1234567890ABCDEF0003 /* ItemDetailsEditFormTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailsEditFormTests.swift; sourceTree = "<group>"; };
+		TRIAL234567890ABCDEF0001 /* TrialReminderOption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrialReminderOption.swift; sourceTree = "<group>"; };
+		TRIAL234567890ABCDEF0003 /* TrialReminderSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrialReminderSchedulerTests.swift; sourceTree = "<group>"; };
 		AAF14B2678835A6D1F6ECF96 /* MotionTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionTokens.swift; sourceTree = "<group>"; };
 		AAF4482E70BA6CA589647812 /* ItemEditFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemEditFormView.swift; sourceTree = "<group>"; };
 		ABC90BA9C0E1E720BACD159A /* GetActiveTrials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetActiveTrials.swift; sourceTree = "<group>"; };
@@ -629,6 +633,7 @@
 				EAC69E24F7112B4A8F468D2D /* ProviderTemplate.swift */,
 				B698265EA94513CE0884AF37 /* RecurringItem.swift */,
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* ChargeReminderOption.swift */,
+				TRIAL234567890ABCDEF0001 /* TrialReminderOption.swift */,
 				80918D4746AD2EF6165BD1F7 /* ReminderRule.swift */,
 				37EB3BB46B0020447F7E9CB0 /* SupportedCurrency.swift */,
 				E79BACA5D34B8EABAA21D9F5 /* UserPreferences.swift */,
@@ -705,6 +710,7 @@
 				AABC1234567890ABCDEF0001 /* NextChargeDateSuggestionTests.swift */,
 				AABC1234567890ABCDEF0003 /* ItemDetailsEditFormTests.swift */,
 				FAFD834548BC45CF9EA06E44 /* NotificationSchedulerTests.swift */,
+				TRIAL234567890ABCDEF0003 /* TrialReminderSchedulerTests.swift */,
 				C3D4E5F6A7B8C9D0E1F2A3B4 /* UserPreferencesTests.swift */,
 			);
 			path = Features;
@@ -1232,6 +1238,7 @@
 				42F8B50D7C256BA73B7A0466 /* RecurringItemFormatter.swift in Sources */,
 				3B7DDC902C1948E2B1BADA98 /* NotificationScheduler.swift in Sources */,
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* ChargeReminderOption.swift in Sources */,
+				TRIAL234567890ABCDEF0002 /* TrialReminderOption.swift in Sources */,
 				D3FDAAE8713DC3970947E010 /* RecurringItemMapper.swift in Sources */,
 				33E19E039BEEA816734656AB /* RecurringItemRepository.swift in Sources */,
 				B6B49575DA39529E4BCD86CE /* ReminderRule.swift in Sources */,
@@ -1285,6 +1292,7 @@
 			files = (
 				AABC1234567890ABCDEF0002 /* NextChargeDateSuggestionTests.swift in Sources */,
 				AABC1234567890ABCDEF0004 /* ItemDetailsEditFormTests.swift in Sources */,
+				TRIAL234567890ABCDEF0004 /* TrialReminderSchedulerTests.swift in Sources */,
 				0E7AF3CC42CE41B9AF6AFAA5 /* NotificationSchedulerTests.swift in Sources */,
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* UserPreferencesTests.swift in Sources */,
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* UserPreferencesTests.swift in Sources */,

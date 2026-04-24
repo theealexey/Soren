@@ -52,6 +52,7 @@ final class SettingsViewModel {
         repository.save(UserPreferences(
             defaultCurrencyCode:  defaultCurrencyCode,
             defaultChargeReminder: defaultChargeReminder,
+            defaultTrialReminder: current.defaultTrialReminder,
             chargeAlertDays:      current.chargeAlertDays,
             trialAlertDays:       current.trialAlertDays
         ))

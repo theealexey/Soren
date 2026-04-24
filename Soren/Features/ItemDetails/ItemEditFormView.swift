@@ -23,7 +23,9 @@ struct ItemEditFormView: View {
                 endDate: editEndDateBinding,
                 note: $viewModel.editNote,
                 usageStatus: $viewModel.editUsageStatus,
-                chargeReminder: $viewModel.editChargeReminder
+                chargeReminder: $viewModel.editChargeReminder,
+                trialReminder: $viewModel.editTrialReminder,
+                showsTrialReminder: viewModel.item.trialEndDate != nil
             )
         }
         .scrollContentBackground(.hidden)

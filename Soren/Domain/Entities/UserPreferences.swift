@@ -7,12 +7,14 @@ import Foundation
 struct UserPreferences: Sendable {
     var defaultCurrencyCode: String
     var defaultChargeReminder: ChargeReminderOption
+    var defaultTrialReminder: TrialReminderOption
     var chargeAlertDays: Int
     var trialAlertDays: Int
 
     static let `default` = UserPreferences(
         defaultCurrencyCode: "RUB",
         defaultChargeReminder: .threeDaysBefore,
+        defaultTrialReminder: .never,
         chargeAlertDays: 3,
         trialAlertDays: 3
     )

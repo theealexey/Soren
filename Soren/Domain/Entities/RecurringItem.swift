@@ -50,6 +50,10 @@ struct RecurringItem: Identifiable, Hashable, Sendable {
     /// Per-subscription charge reminder timing chosen by the user.
     var chargeReminder: ChargeReminderOption
 
+    /// Per-subscription trial-end reminder timing chosen by the user.
+    /// Defaults to `.never` — users opt in when they actually want a trial warning.
+    var trialReminder: TrialReminderOption
+
     // MARK: - State
 
     var status: ItemStatus
@@ -95,6 +99,7 @@ struct RecurringItem: Identifiable, Hashable, Sendable {
         autoRenew: Bool = true,
         endDate: Date? = nil,
         chargeReminder: ChargeReminderOption = .threeDaysBefore,
+        trialReminder: TrialReminderOption = .never,
         status: ItemStatus = .active,
         usageStatus: UsageStatus = .unknown,
         paymentMethodID: UUID? = nil,
@@ -123,6 +128,7 @@ struct RecurringItem: Identifiable, Hashable, Sendable {
         self.autoRenew = autoRenew
         self.endDate = endDate
         self.chargeReminder = chargeReminder
+        self.trialReminder = trialReminder
         self.status = status
         self.usageStatus = usageStatus
         self.paymentMethodID = paymentMethodID

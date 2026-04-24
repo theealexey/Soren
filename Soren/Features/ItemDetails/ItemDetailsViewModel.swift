@@ -59,6 +59,7 @@ final class ItemDetailsViewModel {
     private(set) var isEditEndDateManuallySet = false
 
     var editChargeReminder: ChargeReminderOption = .threeDaysBefore
+    var editTrialReminder: TrialReminderOption = .never
 
     // MARK: - Dependencies
 
@@ -133,6 +134,7 @@ final class ItemDetailsViewModel {
         // the date binding, at which point setEditNextChargeDateManually re-locks it.
         isEditNextChargeDateManuallySet = false
         editChargeReminder = item.chargeReminder
+        editTrialReminder  = item.trialReminder
         isEditing = true
     }
 
@@ -157,6 +159,7 @@ final class ItemDetailsViewModel {
         updated.autoRenew = editAutoRenew
         updated.endDate = editAutoRenew ? nil : editEndDate
         updated.chargeReminder = editChargeReminder
+        updated.trialReminder  = editTrialReminder
         updated.note = editNote
         updated.usageStatus = editUsageStatus
 

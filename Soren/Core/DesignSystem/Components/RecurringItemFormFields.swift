@@ -21,6 +21,10 @@ struct RecurringItemFormFields: View {
     @Binding var note: String
     @Binding var usageStatus: UsageStatus
     @Binding var chargeReminder: ChargeReminderOption
+    @Binding var trialReminder: TrialReminderOption
+    /// When `true`, a second picker for the trial-end reminder is shown.
+    /// Pass `trialEndDate != nil` from the parent so the row is only visible for trial items.
+    let showsTrialReminder: Bool
 
     var body: some View {
         essentialsSection
@@ -110,6 +114,13 @@ struct RecurringItemFormFields: View {
             Picker(String(localized: "Напомнить о списании"), selection: $chargeReminder) {
                 ForEach(ChargeReminderOption.allCases, id: \.self) { option in
                     Text(option.displayName).tag(option)
+                }
+            }
+            if showsTrialReminder {
+                Picker(String(localized: "Напомнить об окончании пробного"), selection: $trialReminder) {
+                    ForEach(TrialReminderOption.allCases, id: \.self) { option in
+                        Text(option.displayName).tag(option)
+                    }
                 }
             }
         }

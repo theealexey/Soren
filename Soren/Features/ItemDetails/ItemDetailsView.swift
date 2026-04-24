@@ -226,6 +226,16 @@ struct ItemDetailsView: View {
                         label: "Напоминание",
                         value: viewModel.item.chargeReminder.displayName
                     )
+
+                    if viewModel.item.trialEndDate != nil {
+                        Divider().padding(.leading, infoRowInset)
+
+                        infoRow(
+                            icon: "bell.badge",
+                            label: "Напоминание о пробном",
+                            value: viewModel.item.trialReminder.displayName
+                        )
+                    }
                 }
             }
         }
@@ -237,23 +247,25 @@ struct ItemDetailsView: View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             SectionHeader(String(localized: "Стоимость"))
 
-            HStack(spacing: Spacing.sm) {
-                PremiumCard(.elevated) {
-                    StatBlock(
-                        title: "В месяц",
-                        amount: viewModel.item.monthlyEquivalent,
-                        currency: viewModel.item.currencyCode,
-                        amountSize: .large
-                    )
-                }
+            Grid(horizontalSpacing: Spacing.sm) {
+                GridRow {
+                    PremiumCard(.elevated) {
+                        StatBlock(
+                            title: "В месяц",
+                            amount: viewModel.item.monthlyEquivalent,
+                            currency: viewModel.item.currencyCode,
+                            amountSize: .large
+                        )
+                    }
 
-                PremiumCard(.elevated) {
-                    StatBlock(
-                        title: "В год",
-                        amount: viewModel.item.annualEquivalent,
-                        currency: viewModel.item.currencyCode,
-                        amountSize: .large
-                    )
+                    PremiumCard(.elevated) {
+                        StatBlock(
+                            title: "В год",
+                            amount: viewModel.item.annualEquivalent,
+                            currency: viewModel.item.currencyCode,
+                            amountSize: .large
+                        )
+                    }
                 }
             }
         }

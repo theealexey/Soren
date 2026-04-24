@@ -28,7 +28,9 @@ struct SubscriptionFormView: View {
                 endDate: endDateBinding,
                 note: $viewModel.note,
                 usageStatus: $viewModel.usageStatus,
-                chargeReminder: $viewModel.chargeReminder
+                chargeReminder: $viewModel.chargeReminder,
+                trialReminder: $viewModel.trialReminder,
+                showsTrialReminder: false
             )
         }
         .scrollContentBackground(.hidden)

@@ -1106,11 +1106,31 @@
     "Напоминание" : {
 
     },
+    "Напоминание о пробном" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trial reminder"
+          }
+        }
+      }
+    },
     "Напоминание по умолчанию" : {
 
     },
     "Напомнить о списании" : {
 
+    },
+    "Напомнить об окончании пробного" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notify before trial ends"
+          }
+        }
+      }
     },
     "Настройки" : {
       "localizations" : {
@@ -1437,6 +1457,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cancelled"
+          }
+        }
+      }
+    },
+    "Отмените, если не хотите списания" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel it if you don't want to be charged"
           }
         }
       }
@@ -1796,6 +1826,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Trial Period"
+          }
+        }
+      }
+    },
+    "Пробный период «%@» заканчивается завтра" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trial for \"%@\" ends tomorrow"
+          }
+        }
+      }
+    },
+    "Пробный период «%@» заканчивается сегодня" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trial for \"%@\" ends today"
+          }
+        }
+      }
+    },
+    "Пробный период «%1$@» заканчивается через %2$@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trial for \"%1$@\" ends in %2$@"
           }
         }
       }
