@@ -138,6 +138,7 @@ struct LibraryView: View {
         }
         .listStyle(.insetGrouped)
         .listSectionSpacing(.compact)
+        .contentMargins(.top, 0, for: .scrollContent)
         .scrollContentBackground(.hidden)
         .background(ColorTokens.background)
         .refreshable {
@@ -147,14 +148,14 @@ struct LibraryView: View {
         // one VStack so vertical rhythm is governed by a single layout system.
         // The List contains only subscription card sections (plus the empty-state row).
         .safeAreaInset(edge: .top, spacing: 0) {
-            VStack(spacing: Spacing.xs) {
+            VStack(spacing: Spacing.sm) {
                 searchBar(vm)
                 filterChips(vm)
                 if !vm.filteredItems.isEmpty {
                     summaryBar(vm)
                 }
             }
-            .padding(.top, Spacing.sm)
+            .padding(.top, Spacing.md)
             .background(ColorTokens.background)
         }
     }
