@@ -263,28 +263,40 @@ struct CalendarView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, Spacing.xl)
             } else {
-                PremiumCard {
-                    VStack(spacing: 0) {
-                        ForEach(Array(charges.enumerated()), id: \.element.id) { idx, item in
-                            Button { navigateToItem(item) } label: {
-                                SorenListRow(
-                                    title: item.title,
-                                    subtitle: item.providerName == item.title ? nil : item.providerName,
-                                    amount: item.amount,
-                                    currency: item.currencyCode,
-                                    cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
-                                    providerTemplate: item.providerTemplate,
-                                    category: item.category
-                                )
-                            }
-                            .buttonStyle(.plain)
+                // Inline card mirrors Library row geometry so the Calendar list reads at
+                // the same compact visual scale. SorenListRow is shared with Library, so
+                // icon/typography/inner spacing already match — only per-row padding and
+                // the surrounding card chrome needed to tighten. Not using PremiumCard
+                // here: its fixed Spacing.md (16pt) jacket makes the row stack feel
+                // heavier than a Library list.
+                VStack(spacing: 0) {
+                    ForEach(Array(charges.enumerated()), id: \.element.id) { idx, item in
+                        Button { navigateToItem(item) } label: {
+                            SorenListRow(
+                                title: item.title,
+                                subtitle: item.providerName == item.title ? nil : item.providerName,
+                                amount: item.amount,
+                                currency: item.currencyCode,
+                                cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
+                                providerTemplate: item.providerTemplate,
+                                category: item.category
+                            )
+                            .padding(.vertical, Spacing.xs)
+                            .padding(.horizontal, Spacing.lg)
+                        }
+                        .buttonStyle(.plain)
 
-                            if idx < charges.count - 1 {
-                                Divider()
-                                    .padding(.leading, SorenListRow.dividerInset)
-                            }
+                        if idx < charges.count - 1 {
+                            Divider()
+                                .padding(.leading, Spacing.lg + SorenListRow.dividerInset)
                         }
                     }
+                }
+                .background(ColorTokens.surface)
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
+                .overlay {
+                    RoundedRectangle(cornerRadius: CornerRadius.large)
+                        .strokeBorder(ColorTokens.separator.opacity(0.5), lineWidth: 0.5)
                 }
                 .padding(.horizontal, Spacing.lg)
             }
