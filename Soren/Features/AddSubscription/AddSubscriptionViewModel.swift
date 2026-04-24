@@ -214,9 +214,14 @@ final class AddSubscriptionViewModel {
     /// Contract:
     /// - If `startDate` is in the future, the first charge hasn't happened yet —
     ///   return `startDate` unchanged.
-    /// - Otherwise, advance by `cycle` repeatedly until the candidate is strictly
-    ///   after `today`, giving the upcoming occurrence for a subscription that
-    ///   started in the past or exactly on today.
+    /// - Otherwise, advance by `cycle` at least once (so startDate itself is never
+    ///   returned as the "next" charge) and keep advancing while the candidate is
+    ///   still before `today`. Today counts as a valid next-charge day.
+    ///
+    /// Examples (cycle = monthly, today = Apr 24):
+    ///   startDate Apr 24 → May 24   (started today; next bill is one cycle later)
+    ///   startDate Mar 24 → Apr 24   (one cycle in the past; next bill is today)
+    ///   startDate Feb 24 → Apr 24   (two cycles in the past; skip Mar, land on Apr)
     ///
     /// Pure / referentially transparent — never mutates ViewModel state.
     nonisolated static func suggestNextChargeDate(
@@ -229,7 +234,7 @@ final class AddSubscriptionViewModel {
         var candidate = startDate
         repeat {
             candidate = cycle.nextDate(after: candidate, calendar: calendar)
-        } while candidate <= today
+        } while candidate < today
         return candidate
     }
 

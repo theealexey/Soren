@@ -9,7 +9,8 @@ import Foundation
 // Contract:
 //   • startDate > today  → return startDate unchanged
 //   • startDate == today → advance by one cycle (today is already "the start date", first charge is next cycle)
-//   • startDate < today  → advance by N cycles until candidate > today
+//   • startDate < today  → advance by at least one cycle, then keep advancing while
+//                          candidate < today. Today counts as a valid next-charge day.
 
 @Suite("AddSubscriptionViewModel — suggestNextChargeDate")
 struct NextChargeDateSuggestionTests {
@@ -114,41 +115,46 @@ struct NextChargeDateSuggestionTests {
 
     // MARK: - Past Start Date (N cycles needed)
 
-    @Test("startDate 1 month ago: monthly needs 1 advance")
-    func startDate1MonthAgoMonthly() {
-        let start = date(2026, 3, 22)    // today - 31 days
+    @Test("startDate exactly 1 cycle ago: candidate lands on today, which is valid")
+    func startDate1MonthAgoMonthlyLandsOnToday() {
+        let start = date(2026, 3, 22)    // today - 1 month
         let result = suggest(from: start, cycle: .monthly)
-        let expected = date(2026, 4, 22) // start + 1m = today, so advance again → May 22
-        // start + 1 month = Apr 22 = today (not strictly after), so advance again
-        #expect(result == date(2026, 5, 22))
+        // Mar 22 + 1m = Apr 22 = today → candidate is NOT < today, stop.
+        // Today is a valid next-charge day.
+        #expect(result == date(2026, 4, 22))
     }
 
-    @Test("startDate 2 months ago: monthly needs 2 advances")
+    @Test("startDate 2 months ago: monthly needs 2 advances, lands past today")
     func startDate2MonthsAgoMonthly() {
         let start = date(2026, 2, 22)
         let result = suggest(from: start, cycle: .monthly)
-        // Feb 22 + 1m = Mar 22 ≤ today → advance
-        // Mar 22 + 1m = Apr 22 ≤ today → advance
-        // Apr 22 + 1m = May 22 > today ✓
-        #expect(result == date(2026, 5, 22))
+        // Feb 22 + 1m = Mar 22 < today → advance
+        // Mar 22 + 1m = Apr 22 = today → stop
+        #expect(result == date(2026, 4, 22))
     }
 
-    @Test("startDate 13 months ago: annual needs 1 advance from 1 year ago")
-    func startDate13MonthsAgoAnnual() {
-        let start = date(2025, 3, 22)
+    @Test("startDate ~13 months ago: annual lands on today")
+    func startDate1YearAgoAnnual() {
+        let start = date(2025, 4, 22)
         let result = suggest(from: start, cycle: .annual)
-        // Mar 22 2025 + 1yr = Mar 22 2026 ≤ today → advance
-        // Mar 22 2026 + 1yr = Mar 22 2027 > today ✓
-        #expect(result == date(2027, 3, 22))
+        // Apr 22 2025 + 1yr = Apr 22 2026 = today → stop
+        #expect(result == date(2026, 4, 22))
     }
 
-    @Test("startDate 6 months ago: semiannual needs 1 advance")
+    @Test("startDate 6 months ago: semiannual lands on today")
     func startDate6MonthsAgoSemiannual() {
         let start = date(2025, 10, 22)
         let result = suggest(from: start, cycle: .semiannual)
-        // Oct 22 2025 + 6m = Apr 22 2026 = today ≤ today → advance
-        // Apr 22 2026 + 6m = Oct 22 2026 > today ✓
-        #expect(result == date(2026, 10, 22))
+        // Oct 22 2025 + 6m = Apr 22 2026 = today → stop
+        #expect(result == date(2026, 4, 22))
+    }
+
+    @Test("startDate 3 months ago: monthly advances past today (stale start)")
+    func startDate3MonthsAgoMonthly() {
+        let start = date(2026, 1, 22)
+        let result = suggest(from: start, cycle: .monthly)
+        // Jan 22 → Feb 22 → Mar 22 → Apr 22 = today → stop
+        #expect(result == date(2026, 4, 22))
     }
 
     // MARK: - Calendar edge cases
@@ -156,14 +162,15 @@ struct NextChargeDateSuggestionTests {
     @Test("January 31 + 1 month → February end-of-month (calendar-aware)")
     func jan31MonthlyEndOfMonth() {
         let jan31 = date(2026, 1, 31)
-        // today = Apr 22 so Jan 31 + 1m = Feb 28 ≤ today, Feb 28 + 1m = Mar 28 ≤ today,
-        // Mar 28 + 1m = Apr 28 > today ✓
+        // Jan 31 + 1m = Feb 28 < today → advance
+        // Feb 28 + 1m = Mar 28 < today → advance
+        // Mar 28 + 1m = Apr 28 ≥ today → stop
         let result = suggest(from: jan31, cycle: .monthly)
         #expect(result == date(2026, 4, 28))
     }
 
-    @Test("Result is always strictly after today")
-    func resultIsStrictlyAfterToday() {
+    @Test("Result is always >= today (never in the past)")
+    func resultIsNotInThePast() {
         let starts: [Date] = [
             date(2020, 1, 1),
             date(2025, 4, 22),
@@ -172,7 +179,7 @@ struct NextChargeDateSuggestionTests {
         ]
         for start in starts {
             let result = suggest(from: start, cycle: .monthly)
-            #expect(result > today, "result \(result) must be > today for start \(start)")
+            #expect(result >= today, "result \(result) must be >= today for start \(start)")
         }
     }
 }
