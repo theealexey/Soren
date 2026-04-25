@@ -78,7 +78,10 @@ final class ItemDetailsViewModel {
     ) {
         self.item = item
         self.updateRecurringItem = UpdateRecurringItem(repository: repositories.recurringItems)
-        self.deleteRecurringItem = DeleteRecurringItem(repository: repositories.recurringItems)
+        self.deleteRecurringItem = DeleteRecurringItem(
+            repository: repositories.recurringItems,
+            notificationScheduler: notificationScheduler
+        )
         self.exchangeRateProvider = exchangeRateProvider
         self.notificationScheduler = notificationScheduler
     }
@@ -208,14 +211,9 @@ final class ItemDetailsViewModel {
         }
     }
 
-    func delete() throws {
-        let itemID = item.id
-        try deleteRecurringItem.execute(id: itemID)
+    func delete() async throws {
+        try await deleteRecurringItem.execute(id: item.id)
         isDeleted = true
-
-        if let scheduler = notificationScheduler {
-            Task { await scheduler.cancel(for: itemID) }
-        }
     }
 
     // MARK: - Currency Conversion

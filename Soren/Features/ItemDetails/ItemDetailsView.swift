@@ -407,11 +407,13 @@ struct ItemDetailsView: View {
     }
 
     private func deleteAndDismiss() {
-        do {
-            try viewModel.delete()
-            HapticEngine.success()
-        } catch {
-            HapticEngine.error()
+        Task {
+            do {
+                try await viewModel.delete()
+                HapticEngine.success()
+            } catch {
+                HapticEngine.error()
+            }
         }
     }
 }

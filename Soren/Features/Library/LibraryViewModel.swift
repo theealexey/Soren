@@ -42,7 +42,6 @@ final class LibraryViewModel {
     private let getLibraryItems: GetLibraryItems
     private let deleteRecurringItem: DeleteRecurringItem
     private let preferences: UserPreferencesRepository
-    private let notificationScheduler: (any NotificationScheduling)?
     private let searchDebounceDelay: Duration
 
     // MARK: - Search Debounce
@@ -74,13 +73,11 @@ final class LibraryViewModel {
         getLibraryItems: GetLibraryItems,
         deleteRecurringItem: DeleteRecurringItem,
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
-        notificationScheduler: (any NotificationScheduling)? = nil,
         searchDebounceDelay: Duration = .milliseconds(150)
     ) {
         self.getLibraryItems = getLibraryItems
         self.deleteRecurringItem = deleteRecurringItem
         self.preferences = preferences
-        self.notificationScheduler = notificationScheduler
         self.searchDebounceDelay = searchDebounceDelay
     }
 
@@ -91,9 +88,11 @@ final class LibraryViewModel {
         searchDebounceDelay: Duration = .milliseconds(150)
     ) {
         self.getLibraryItems = GetLibraryItems(repository: repositories.recurringItems)
-        self.deleteRecurringItem = DeleteRecurringItem(repository: repositories.recurringItems)
+        self.deleteRecurringItem = DeleteRecurringItem(
+            repository: repositories.recurringItems,
+            notificationScheduler: notificationScheduler
+        )
         self.preferences = preferences
-        self.notificationScheduler = notificationScheduler
         self.searchDebounceDelay = searchDebounceDelay
     }
 
@@ -112,20 +111,18 @@ final class LibraryViewModel {
     }
 
     /// Deletes `item` from persistent storage and removes it from the local list immediately
-    /// (optimistic update). The notification is cancelled fire-and-forget.
-    /// On failure the error state is set and the list is reloaded to restore consistency.
+    /// (optimistic update). The notification is cancelled by the use case as part of the
+    /// same async operation. On failure the error state is set and the list is reloaded.
     func deleteItem(_ item: RecurringItem) {
-        do {
-            try deleteRecurringItem.execute(id: item.id)
-            allItems.removeAll { $0.id == item.id }
-            recompute()
-            if let scheduler = notificationScheduler {
-                let itemID = item.id
-                Task { await scheduler.cancel(for: itemID) }
+        Task {
+            do {
+                try await deleteRecurringItem.execute(id: item.id)
+                allItems.removeAll { $0.id == item.id }
+                recompute()
+            } catch {
+                self.error = error
+                load()   // restore list state on unexpected failure
             }
-        } catch {
-            self.error = error
-            load()   // restore list state on unexpected failure
         }
     }
 

@@ -119,6 +119,7 @@
 		A1AB6B7D0E4482DFAADEBDA7 /* InsightRowModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C42771862F4B5EC7E6C3C7 /* InsightRowModel.swift */; };
 		A1B2C3D4E5F601234567891B /* LifecycleInvariantTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F601234567890A /* LifecycleInvariantTests.swift */; };
 		SRIT234567890ABCDEF0002 /* SaveRecurringItemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRIT234567890ABCDEF0001 /* SaveRecurringItemTests.swift */; };
+		DRIT234567890ABCDEF0002 /* DeleteRecurringItemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DRIT234567890ABCDEF0001 /* DeleteRecurringItemTests.swift */; };
 		A6E5CF39F847ECCF37EA9C4A /* SpacingTokenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5110E3C6D5E26466595C387D /* SpacingTokenTests.swift */; };
 		A8700790E0B2220E043C2E6B /* ListRowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E994CDE5B3934412FBC152E /* ListRowTests.swift */; };
 		AA352B3877CD5BBC689F8CFF /* ItemDetailsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6509B2ABE747FA5E800016D /* ItemDetailsViewModel.swift */; };
@@ -293,6 +294,7 @@
 		A02EF7C7AC416F7F58020CA5 /* AnalyticsScreenState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsScreenState.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F601234567890A /* LifecycleInvariantTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifecycleInvariantTests.swift; sourceTree = "<group>"; };
 		SRIT234567890ABCDEF0001 /* SaveRecurringItemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveRecurringItemTests.swift; sourceTree = "<group>"; };
+		DRIT234567890ABCDEF0001 /* DeleteRecurringItemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteRecurringItemTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* ChargeReminderOption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChargeReminderOption.swift; sourceTree = "<group>"; };
 		A241AE4DF892153A82322147 /* ItemType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemType.swift; sourceTree = "<group>"; };
 		A24F4A666D09CE7D6B730480 /* PaymentMethodMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethodMapper.swift; sourceTree = "<group>"; };
@@ -457,6 +459,7 @@
 				25CFC227D504CBB0F5C2BEEC /* GetDashboardSummaryConversionTests.swift */,
 				A1B2C3D4E5F601234567890A /* LifecycleInvariantTests.swift */,
 				SRIT234567890ABCDEF0001 /* SaveRecurringItemTests.swift */,
+				DRIT234567890ABCDEF0001 /* DeleteRecurringItemTests.swift */,
 				FB0CDC0B809B3C76636A90D2 /* ProviderTemplateTests.swift */,
 				5D5A3EC78A790E61CAD07A89 /* RecurringItemTests.swift */,
 				08812B98439C0712AFCA46D6 /* SupportedCurrencyTests.swift */,
@@ -1333,6 +1336,7 @@
 				8CC360A1C0260A232B0A59EE /* RecurringItemMapperTests.swift in Sources */,
 				A1B2C3D4E5F601234567891B /* LifecycleInvariantTests.swift in Sources */,
 				SRIT234567890ABCDEF0002 /* SaveRecurringItemTests.swift in Sources */,
+				DRIT234567890ABCDEF0002 /* DeleteRecurringItemTests.swift in Sources */,
 				1388A547869A2A2BA95CC8D7 /* RecurringItemTests.swift in Sources */,
 				10126122552F3B43A5DFC2DE /* RepositoryTests.swift in Sources */,
 				7707C4BFF9F47651CDDC2C3D /* SorenTests.swift in Sources */,

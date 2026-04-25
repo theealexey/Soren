@@ -394,12 +394,21 @@ struct ItemDetailsViewModelNotificationWiringTests {
 
     @Test("delete() cancels the notification")
     func deleteCancels() async throws {
-        let mock = MockNotificationScheduler()
-        let item = activeItem()
-        let vm   = try makeVM(item: item, scheduler: mock)
+        let mock         = MockNotificationScheduler()
+        let item         = activeItem()
+        // Inline setup keeps the ModelContainer alive through the async suspension
+        // in vm.delete() → execute(id:) → await scheduler.cancel(for:).
+        let container    = try SorenModelContainer.inMemory()
+        let repositories = RepositoryContainer(context: container.mainContext)
+        try repositories.recurringItems.save(item)
+        let vm = ItemDetailsViewModel(
+            item:                  item,
+            repositories:          repositories,
+            exchangeRateProvider:  StaticExchangeRateProvider(),
+            notificationScheduler: mock
+        )
 
-        try vm.delete()
-        await Task.yield()
+        try await vm.delete()
 
         #expect(mock.cancelledIDs.contains(item.id))
     }
