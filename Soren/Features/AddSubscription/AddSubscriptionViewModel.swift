@@ -79,7 +79,6 @@ final class AddSubscriptionViewModel {
     private let saveRecurringItem: SaveRecurringItem
     private let exchangeRateProvider: any ExchangeRateProvider
     private let preferences: UserPreferencesRepository
-    private let notificationScheduler: (any NotificationScheduling)?
 
     // MARK: - Init
 
@@ -87,14 +86,12 @@ final class AddSubscriptionViewModel {
         catalog: any ProviderCatalogRepository,
         saveRecurringItem: SaveRecurringItem,
         exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider(),
-        preferences: UserPreferencesRepository = UserPreferencesRepository(),
-        notificationScheduler: (any NotificationScheduling)? = nil
+        preferences: UserPreferencesRepository = UserPreferencesRepository()
     ) {
         self.catalog = catalog
         self.saveRecurringItem = saveRecurringItem
         self.exchangeRateProvider = exchangeRateProvider
         self.preferences = preferences
-        self.notificationScheduler = notificationScheduler
         let prefs = preferences.load()
         self.currencyCode   = prefs.defaultCurrencyCode
         self.chargeReminder = prefs.defaultChargeReminder
@@ -327,13 +324,6 @@ final class AddSubscriptionViewModel {
         } catch {
             saveError = error
             throw error
-        }
-
-        // Schedule a charge reminder for the newly saved item.
-        // Fire-and-forget: notification scheduling is best-effort and must never
-        // surface an error to the user or block the save flow.
-        if let scheduler = notificationScheduler {
-            Task { await scheduler.schedule(for: item) }
         }
     }
 }

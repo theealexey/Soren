@@ -94,10 +94,12 @@ struct RootView: View {
                 ProviderPickerView(
                     viewModel: AddSubscriptionViewModel(
                         catalog: container.providerCatalog,
-                        saveRecurringItem: SaveRecurringItem(repository: container.repositories.recurringItems),
+                        saveRecurringItem: SaveRecurringItem(
+                            repository: container.repositories.recurringItems,
+                            notificationScheduler: container.notificationScheduler
+                        ),
                         exchangeRateProvider: container.exchangeRateProvider,
-                        preferences: container.preferences,
-                        notificationScheduler: container.notificationScheduler
+                        preferences: container.preferences
                     )
                 )
             }

@@ -3,19 +3,33 @@ import Foundation
 // MARK: - Use Case: Save Recurring Item
 
 /// Validates and persists a new recurring item.
+///
+/// If a `notificationScheduler` is provided it is invoked after a successful
+/// repository write. Scheduling is fire-and-forget: failures are silently
+/// swallowed so they never block or surface an error to the caller.
 @MainActor
 struct SaveRecurringItem {
 
     private let repository: any RecurringItemRepository
+    private let notificationScheduler: (any NotificationScheduling)?
 
-    init(repository: any RecurringItemRepository) {
+    init(
+        repository: any RecurringItemRepository,
+        notificationScheduler: (any NotificationScheduling)? = nil
+    ) {
         self.repository = repository
+        self.notificationScheduler = notificationScheduler
     }
 
     func execute(_ item: RecurringItem) throws {
         let normalized = normalize(item)
         try validate(normalized)
         try repository.save(normalized)
+        // Scheduling is best-effort: spawned after a confirmed successful write,
+        // so a validation or persistence failure cannot trigger a spurious notification.
+        if let scheduler = notificationScheduler {
+            Task { await scheduler.schedule(for: normalized) }
+        }
     }
 
     // MARK: - Write-time normalization
