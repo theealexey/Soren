@@ -103,16 +103,12 @@ private struct OpenERResponse: Decodable {
 
 // MARK: - Errors
 
-enum ExchangeRateError: Error, LocalizedError {
+/// Typed failures from the exchange-rate networking layer.
+/// Localized user-facing messages, if ever needed, must be produced
+/// by a formatter in the presentation layer — not here.
+enum ExchangeRateError: Error {
     case serverError
     case noRatesAvailable
-
-    var errorDescription: String? {
-        switch self {
-        case .serverError: String(localized: "Ошибка получения курсов валют")
-        case .noRatesAvailable: String(localized: "Курсы валют недоступны")
-        }
-    }
 }
 
 // MARK: - Static Provider for Previews
