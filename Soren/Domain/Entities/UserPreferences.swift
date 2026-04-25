@@ -24,12 +24,4 @@ enum AppearanceMode: String, Codable, CaseIterable, Sendable {
     case system
     case light
     case dark
-
-    var displayName: String {
-        switch self {
-        case .system: String(localized: "Системная")
-        case .light:  String(localized: "Светлая")
-        case .dark:   String(localized: "Тёмная")
-        }
-    }
 }

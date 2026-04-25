@@ -10,4 +10,13 @@ extension AppearanceMode {
         case .dark:   .dark
         }
     }
+
+    /// Localized label shown in the Appearance Picker in Settings.
+    var displayName: String {
+        switch self {
+        case .system: String(localized: "Системная")
+        case .light:  String(localized: "Светлая")
+        case .dark:   String(localized: "Тёмная")
+        }
+    }
 }
