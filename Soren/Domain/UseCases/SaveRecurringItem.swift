@@ -71,7 +71,9 @@ struct SaveRecurringItem {
 // MARK: - Validation Error
 
 extension SaveRecurringItem {
-    enum ValidationError: LocalizedError {
+    /// Typed validation failures.  Localized user-facing messages are produced
+    /// by ValidationErrorFormatter in the presentation layer — not here.
+    enum ValidationError: Error {
         case emptyTitle
         case invalidAmount
         /// R1: autoRenew == false but no end date supplied.
@@ -80,20 +82,5 @@ extension SaveRecurringItem {
         case endDateBeforeNextCharge
         /// R3: start date is later than the end date.
         case startDateAfterEndDate
-
-        var errorDescription: String? {
-            switch self {
-            case .emptyTitle:
-                String(localized: "Укажите название подписки")
-            case .invalidAmount:
-                String(localized: "Сумма должна быть больше нуля")
-            case .missingEndDate:
-                String(localized: "Укажите дату окончания подписки")
-            case .endDateBeforeNextCharge:
-                String(localized: "Дата окончания не может быть раньше следующего списания")
-            case .startDateAfterEndDate:
-                String(localized: "Дата начала не может быть позже даты окончания")
-            }
-        }
     }
 }

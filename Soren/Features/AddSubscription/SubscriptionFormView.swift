@@ -51,7 +51,7 @@ struct SubscriptionFormView: View {
         .alert(String(localized: "Не удалось сохранить"), isPresented: $showSaveError) {
             Button(String(localized: "ОК"), role: .cancel) {}
         } message: {
-            Text(viewModel.saveError?.localizedDescription ?? "")
+            Text(viewModel.saveErrorMessage ?? "")
         }
     }
 

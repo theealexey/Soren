@@ -73,6 +73,17 @@ final class AddSubscriptionViewModel {
     private(set) var saveError: Error?
     private(set) var isSaved = false
 
+    /// Localized message for the most recent save failure, mapped through
+    /// ValidationErrorFormatter.  Returns nil for non-validation errors —
+    /// the alert title already communicates that something went wrong.
+    var saveErrorMessage: String? {
+        guard let error = saveError else { return nil }
+        if let ve = error as? SaveRecurringItem.ValidationError {
+            return ValidationErrorFormatter.localizedMessage(for: ve)
+        }
+        return nil
+    }
+
     // MARK: - Dependencies
 
     private let catalog: any ProviderCatalogRepository

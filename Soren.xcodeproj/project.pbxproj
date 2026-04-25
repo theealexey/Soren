@@ -45,6 +45,7 @@
 		2FF3082DDA2DD4B47E915831 /* SorenModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D87F6D00CB43C4EEAD6FD3F7 /* SorenModelContainer.swift */; };
 		2FF6249CCB6AFA96A0C691BE /* GetLibraryItems.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DDCE10FBEA592108BF24705 /* GetLibraryItems.swift */; };
 		304A7F25315CD714E9E1D57E /* RecurringItemFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0700A634ECA523A4A7F78A62 /* RecurringItemFormatterTests.swift */; };
+		36AA42A6B4534E0DAC9E3E16 /* ValidationErrorFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AFB4E7F848245FCABDA4BF5 /* ValidationErrorFormatterTests.swift */; };
 		3185C5DD77457E44D73D7463 /* ProviderTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAC69E24F7112B4A8F468D2D /* ProviderTemplate.swift */; };
 		318BC245F0A0CE7EEBD2F869 /* ItemCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEBC8639DFC777ED725C07D3 /* ItemCategory.swift */; };
 		33E19E039BEEA816734656AB /* RecurringItemRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3442B666B8433A69DB9762E2 /* RecurringItemRepository.swift */; };
@@ -64,6 +65,7 @@
 		3E6405A4F0A59A5EF54A5056 /* GetUpcomingCharges.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AE23A399CED2B38971BCB57 /* GetUpcomingCharges.swift */; };
 		40B9AED4D39EF8E91FE3ADAE /* PaymentMethodRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = E649AB3F110DA227AEAD1E55 /* PaymentMethodRepository.swift */; };
 		42F8B50D7C256BA73B7A0466 /* RecurringItemFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 311318194B8656243E68001D /* RecurringItemFormatter.swift */; };
+		0868A7E625AE43B3A5903A0C /* ValidationErrorFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F15CD2AA93E44FBD849DF8EE /* ValidationErrorFormatter.swift */; };
 		4400522E9CF5B4E98536CBF3 /* LandscapeGestureOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A90895A6DB5B8C47EE8C2893 /* LandscapeGestureOverlay.swift */; };
 		446776A4B4A8B61EACD9791E /* MotionTokenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B50D4B434DAA34DC9657942 /* MotionTokenTests.swift */; };
 		45D8007054C0DC0DC22CEF7E /* OpenExchangeRateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF6E3294064040757EF1F48 /* OpenExchangeRateProvider.swift */; };
@@ -202,6 +204,8 @@
 		065C3A6652CA332D4B3CFEA6 /* AppContainer+HomeFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppContainer+HomeFactory.swift"; sourceTree = "<group>"; };
 		06BA485D3333CD7B7F8EF598 /* BillingCycleEncoderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillingCycleEncoderTests.swift; sourceTree = "<group>"; };
 		0700A634ECA523A4A7F78A62 /* RecurringItemFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringItemFormatterTests.swift; sourceTree = "<group>"; };
+		4AFB4E7F848245FCABDA4BF5 /* ValidationErrorFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationErrorFormatterTests.swift; sourceTree = "<group>"; };
+		F15CD2AA93E44FBD849DF8EE /* ValidationErrorFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationErrorFormatter.swift; sourceTree = "<group>"; };
 		0730D410421B54FB89BDF8AA /* Shadows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shadows.swift; sourceTree = "<group>"; };
 		08466B38DFF515E50A44F77D /* UsageStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageStatus.swift; sourceTree = "<group>"; };
 		08812B98439C0712AFCA46D6 /* SupportedCurrencyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportedCurrencyTests.swift; sourceTree = "<group>"; };
@@ -863,6 +867,7 @@
 			children = (
 				BF99DB7F322CD045D657B971 /* InsightsBuilder.swift */,
 				311318194B8656243E68001D /* RecurringItemFormatter.swift */,
+				F15CD2AA93E44FBD849DF8EE /* ValidationErrorFormatter.swift */,
 			);
 			path = Formatters;
 			sourceTree = "<group>";
@@ -928,6 +933,7 @@
 			isa = PBXGroup;
 			children = (
 				0700A634ECA523A4A7F78A62 /* RecurringItemFormatterTests.swift */,
+				4AFB4E7F848245FCABDA4BF5 /* ValidationErrorFormatterTests.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -1257,6 +1263,7 @@
 				61F023309389D0FAAB60DBFB /* RecurringItem.swift in Sources */,
 				0B0F17015B71292BB90DC1E5 /* RecurringItemFormFields.swift in Sources */,
 				42F8B50D7C256BA73B7A0466 /* RecurringItemFormatter.swift in Sources */,
+				0868A7E625AE43B3A5903A0C /* ValidationErrorFormatter.swift in Sources */,
 				3B7DDC902C1948E2B1BADA98 /* NotificationScheduler.swift in Sources */,
 				NFRC234567890ABCDEF0002 /* NotificationRefreshCoordinator.swift in Sources */,
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* ChargeReminderOption.swift in Sources */,
@@ -1336,6 +1343,7 @@
 				800E374C5E3AD6DB70E259B9 /* ProviderCatalogTests.swift in Sources */,
 				38573EFEB02724F5145B9B3B /* ProviderTemplateTests.swift in Sources */,
 				304A7F25315CD714E9E1D57E /* RecurringItemFormatterTests.swift in Sources */,
+				36AA42A6B4534E0DAC9E3E16 /* ValidationErrorFormatterTests.swift in Sources */,
 				8CC360A1C0260A232B0A59EE /* RecurringItemMapperTests.swift in Sources */,
 				A1B2C3D4E5F601234567891B /* LifecycleInvariantTests.swift in Sources */,
 				SRIT234567890ABCDEF0002 /* SaveRecurringItemTests.swift in Sources */,
