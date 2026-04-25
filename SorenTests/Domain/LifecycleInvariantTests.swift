@@ -95,11 +95,11 @@ struct LifecycleInvariantTests {
     }
 
     @Test("R1 Update: finite subscription without endDate is rejected")
-    func r1UpdateRejectsFiniteWithNoEndDate() throws {
+    func r1UpdateRejectsFiniteWithNoEndDate() async throws {
         let (uc, _) = try makeUpdateUseCase()
         let item = makeItem(autoRenew: false, nextChargeDate: .now, endDate: nil)
-        #expect(throws: UpdateRecurringItem.ValidationError.missingEndDate) {
-            try uc.execute(item)
+        await #expect(throws: UpdateRecurringItem.ValidationError.missingEndDate) {
+            try await uc.execute(item)
         }
     }
 
@@ -117,13 +117,13 @@ struct LifecycleInvariantTests {
     }
 
     @Test("R2 Update: endDate one day before nextChargeDate is rejected")
-    func r2UpdateRejectsEndDateBeforeNextCharge() throws {
+    func r2UpdateRejectsEndDateBeforeNextCharge() async throws {
         let (uc, _) = try makeUpdateUseCase()
         let next = Date.now
         let end  = Calendar.current.date(byAdding: .day, value: -1, to: next)!
         let item = makeItem(autoRenew: false, nextChargeDate: next, endDate: end)
-        #expect(throws: UpdateRecurringItem.ValidationError.endDateBeforeNextCharge) {
-            try uc.execute(item)
+        await #expect(throws: UpdateRecurringItem.ValidationError.endDateBeforeNextCharge) {
+            try await uc.execute(item)
         }
     }
 
@@ -150,14 +150,14 @@ struct LifecycleInvariantTests {
     }
 
     @Test("R3 Update: startDate one day after endDate is rejected")
-    func r3UpdateRejectsStartDateAfterEndDate() throws {
+    func r3UpdateRejectsStartDateAfterEndDate() async throws {
         let (uc, _) = try makeUpdateUseCase()
         let next  = Date.now
         let end   = Calendar.current.date(byAdding: .day, value: 30, to: next)!
         let start = Calendar.current.date(byAdding: .day, value: 31, to: next)!
         let item  = makeItem(autoRenew: false, startDate: start, nextChargeDate: next, endDate: end)
-        #expect(throws: UpdateRecurringItem.ValidationError.startDateAfterEndDate) {
-            try uc.execute(item)
+        await #expect(throws: UpdateRecurringItem.ValidationError.startDateAfterEndDate) {
+            try await uc.execute(item)
         }
     }
 
@@ -188,28 +188,22 @@ struct LifecycleInvariantTests {
     }
 
     @Test("Normalization: autoRenew=true clears endDate before persistence (Update)")
-    func normalizationClearsEndDateOnUpdate() throws {
-        let (uc, repo) = try makeUpdateUseCase()
+    func normalizationClearsEndDateOnUpdate() async throws {
+        // Inline container setup keeps it alive through the async suspension in execute().
+        let seedContainer = try SorenModelContainer.inMemory()
+        let seedRepo      = SwiftDataRecurringItemRepository(context: seedContainer.mainContext)
 
-        // Seed: start with a valid finite item
-        let container = try SorenModelContainer.inMemory()
-        let seedRepo  = SwiftDataRecurringItemRepository(context: container.mainContext)
-        let seedUC    = UpdateRecurringItem(repository: seedRepo)
-
-        // Re-create uc against the same repo for this test
         let end  = Calendar.current.date(byAdding: .day, value: 30, to: .now)!
         var item = makeItem(autoRenew: false, nextChargeDate: .now, endDate: end)
 
-        // Save finite item first via repository directly (bypassing use case)
-        let seedContainer2 = try SorenModelContainer.inMemory()
-        let seedRepo2 = SwiftDataRecurringItemRepository(context: seedContainer2.mainContext)
-        let saveUC    = SaveRecurringItem(repository: seedRepo2)
+        // Persist the finite item first so the update use case can find and mutate it.
+        let saveUC = SaveRecurringItem(repository: seedRepo)
         try saveUC.execute(item)
 
-        // Now re-enable auto-renew (with stale endDate still set on struct)
+        // Now re-enable auto-renew (with stale endDate still set on struct).
         item.autoRenew = true   // endDate still non-nil on the struct at this point
-        let updateUC = UpdateRecurringItem(repository: seedRepo2)
-        let result = try updateUC.execute(item)
+        let updateUC = UpdateRecurringItem(repository: seedRepo)
+        let result = try await updateUC.execute(item)
 
         #expect(result.autoRenew == true)
         #expect(result.endDate == nil)   // normalization must have cleared it

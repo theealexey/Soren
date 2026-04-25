@@ -294,14 +294,22 @@ struct ItemDetailsViewModelReminderWiringTests {
 
     @Test("saveChanges() persists editChargeReminder = .never")
     func saveChangesNever() async throws {
-        let mock = MockNotificationScheduler()
-        let base = item(reminder: .threeDaysBefore)
-        let vm   = try makeVM(item: base, scheduler: mock)
+        let mock         = MockNotificationScheduler()
+        let base         = item(reminder: .threeDaysBefore)
+        // Inline container keeps it alive through the await in saveChanges() → execute().
+        let container    = try SorenModelContainer.inMemory()
+        let repositories = RepositoryContainer(context: container.mainContext)
+        try repositories.recurringItems.save(base)
+        let vm = ItemDetailsViewModel(
+            item:                  base,
+            repositories:          repositories,
+            exchangeRateProvider:  StaticExchangeRateProvider(),
+            notificationScheduler: mock
+        )
 
         vm.startEditing()
         vm.editChargeReminder = .never
-        try vm.saveChanges()
-        await Task.yield()
+        try await vm.saveChanges()
 
         // The scheduler's schedule() was invoked (real scheduler handles .never internally).
         #expect(mock.scheduledIDs.contains(base.id))
@@ -311,14 +319,22 @@ struct ItemDetailsViewModelReminderWiringTests {
 
     @Test("saveChanges() persists editChargeReminder = .sameDay")
     func saveChangesSameDay() async throws {
-        let mock = MockNotificationScheduler()
-        let base = item(reminder: .threeDaysBefore)
-        let vm   = try makeVM(item: base, scheduler: mock)
+        let mock         = MockNotificationScheduler()
+        let base         = item(reminder: .threeDaysBefore)
+        // Inline container keeps it alive through the await in saveChanges() → execute().
+        let container    = try SorenModelContainer.inMemory()
+        let repositories = RepositoryContainer(context: container.mainContext)
+        try repositories.recurringItems.save(base)
+        let vm = ItemDetailsViewModel(
+            item:                  base,
+            repositories:          repositories,
+            exchangeRateProvider:  StaticExchangeRateProvider(),
+            notificationScheduler: mock
+        )
 
         vm.startEditing()
         vm.editChargeReminder = .sameDay
-        try vm.saveChanges()
-        await Task.yield()
+        try await vm.saveChanges()
 
         #expect(mock.scheduledIDs.contains(base.id))
         #expect(vm.item.chargeReminder == .sameDay)
@@ -351,26 +367,12 @@ final class MockNotificationScheduler: NotificationScheduling, @unchecked Sendab
 /// Verifies ItemDetailsViewModel drives the notification scheduler correctly
 /// for each lifecycle action.
 ///
-/// Tests are `async` so that `await Task.yield()` flushes the fire-and-forget
-/// Tasks spawned inside the ViewModel before we assert on the mock.
+/// All action methods are now `async throws` with direct `await` — no fire-and-forget
+/// Tasks or `Task.yield()` synchronization tricks needed. Each test inlines its
+/// ModelContainer so it stays alive through async suspension points.
 @Suite("ItemDetailsViewModel — notification wiring")
 @MainActor
 struct ItemDetailsViewModelNotificationWiringTests {
-
-    private func makeVM(
-        item:      RecurringItem,
-        scheduler: MockNotificationScheduler
-    ) throws -> ItemDetailsViewModel {
-        let container    = try SorenModelContainer.inMemory()
-        let repositories = RepositoryContainer(context: container.mainContext)
-        try repositories.recurringItems.save(item)
-        return ItemDetailsViewModel(
-            item:                  item,
-            repositories:          repositories,
-            exchangeRateProvider:  StaticExchangeRateProvider(),
-            notificationScheduler: scheduler
-        )
-    }
 
     private func activeItem() -> RecurringItem {
         RecurringItem(
@@ -380,16 +382,25 @@ struct ItemDetailsViewModelNotificationWiringTests {
         )
     }
 
-    @Test("archive() cancels the notification")
+    @Test("archive() triggers schedule(for:) which cancels ineligible notifications")
     func archiveCancels() async throws {
-        let mock = MockNotificationScheduler()
-        let item = activeItem()
-        let vm   = try makeVM(item: item, scheduler: mock)
+        let mock         = MockNotificationScheduler()
+        let item         = activeItem()
+        let container    = try SorenModelContainer.inMemory()
+        let repositories = RepositoryContainer(context: container.mainContext)
+        try repositories.recurringItems.save(item)
+        let vm = ItemDetailsViewModel(
+            item:                  item,
+            repositories:          repositories,
+            exchangeRateProvider:  StaticExchangeRateProvider(),
+            notificationScheduler: mock
+        )
 
-        try vm.archive()
-        await Task.yield()   // flush the fire-and-forget Task
+        try await vm.archive()
 
-        #expect(mock.cancelledIDs.contains(item.id))
+        // Mock records schedule() call; the real scheduler would cancel internally.
+        let scheduledID = mock.scheduledIDs.last
+        #expect(scheduledID == item.id)
     }
 
     @Test("delete() cancels the notification")
@@ -413,27 +424,43 @@ struct ItemDetailsViewModelNotificationWiringTests {
         #expect(mock.cancelledIDs.contains(item.id))
     }
 
-    @Test("togglePause() on an active item cancels the notification")
+    @Test("togglePause() on an active item triggers schedule(for:) which cancels")
     func pauseCancels() async throws {
-        let mock = MockNotificationScheduler()
-        let item = activeItem()
-        let vm   = try makeVM(item: item, scheduler: mock)
+        let mock         = MockNotificationScheduler()
+        let item         = activeItem()
+        let container    = try SorenModelContainer.inMemory()
+        let repositories = RepositoryContainer(context: container.mainContext)
+        try repositories.recurringItems.save(item)
+        let vm = ItemDetailsViewModel(
+            item:                  item,
+            repositories:          repositories,
+            exchangeRateProvider:  StaticExchangeRateProvider(),
+            notificationScheduler: mock
+        )
 
-        try vm.togglePause()   // active → paused
-        await Task.yield()
+        try await vm.togglePause()   // active → paused
 
-        #expect(mock.cancelledIDs.contains(item.id))
+        // Mock records schedule() call; the real scheduler cancels for paused items internally.
+        let scheduledID = mock.scheduledIDs.last
+        #expect(scheduledID == item.id)
     }
 
     @Test("togglePause() on a paused item reschedules the notification")
     func resumeSchedules() async throws {
-        let mock      = MockNotificationScheduler()
-        var pausedItem = activeItem()
+        let mock         = MockNotificationScheduler()
+        var pausedItem   = activeItem()
         pausedItem.status = .paused
-        let vm        = try makeVM(item: pausedItem, scheduler: mock)
+        let container    = try SorenModelContainer.inMemory()
+        let repositories = RepositoryContainer(context: container.mainContext)
+        try repositories.recurringItems.save(pausedItem)
+        let vm = ItemDetailsViewModel(
+            item:                  pausedItem,
+            repositories:          repositories,
+            exchangeRateProvider:  StaticExchangeRateProvider(),
+            notificationScheduler: mock
+        )
 
-        try vm.togglePause()   // paused → active
-        await Task.yield()
+        try await vm.togglePause()   // paused → active
 
         #expect(mock.scheduledIDs.contains(pausedItem.id))
     }

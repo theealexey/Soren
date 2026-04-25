@@ -196,57 +196,75 @@ struct ItemDetailsViewModelTrialReminderTests {
     }
 
     @Test("saveChanges persists editTrialReminder = .threeDaysBefore")
-    func saveChangesTrialReminder() throws {
-        let vm = try makeVM(item: makeItem(trialReminder: .never))
+    func saveChangesTrialReminder() async throws {
+        let item      = makeItem(trialReminder: .never)
+        let container = try SorenModelContainer.inMemory()
+        let repos     = RepositoryContainer(context: container.mainContext)
+        try repos.recurringItems.save(item)
+        let vm = ItemDetailsViewModel(
+            item:                  item,
+            repositories:          repos,
+            exchangeRateProvider:  StaticExchangeRateProvider(),
+            notificationScheduler: MockNotificationScheduler()
+        )
         vm.startEditing()
         vm.editTrialReminder = .threeDaysBefore
-        try vm.saveChanges()
+        try await vm.saveChanges()
         #expect(vm.item.trialReminder == .threeDaysBefore)
     }
 
     @Test("saveChanges persists editTrialReminder = .never")
-    func saveChangesTrialReminderNever() throws {
-        let vm = try makeVM(item: makeItem(trialReminder: .oneDayBefore))
+    func saveChangesTrialReminderNever() async throws {
+        let item      = makeItem(trialReminder: .oneDayBefore)
+        let container = try SorenModelContainer.inMemory()
+        let repos     = RepositoryContainer(context: container.mainContext)
+        try repos.recurringItems.save(item)
+        let vm = ItemDetailsViewModel(
+            item:                  item,
+            repositories:          repos,
+            exchangeRateProvider:  StaticExchangeRateProvider(),
+            notificationScheduler: MockNotificationScheduler()
+        )
         vm.startEditing()
         vm.editTrialReminder = .never
-        try vm.saveChanges()
+        try await vm.saveChanges()
         #expect(vm.item.trialReminder == .never)
     }
 
     @Test("schedule(for:) called on saveChanges")
     func saveChangesSchedulesCalled() async throws {
-        let mock = MockNotificationScheduler()
-        let item = makeItem(trialReminder: .threeDaysBefore)
-        let repos = try makeRepositories()
+        let mock      = MockNotificationScheduler()
+        let item      = makeItem(trialReminder: .threeDaysBefore)
+        let container = try SorenModelContainer.inMemory()
+        let repos     = RepositoryContainer(context: container.mainContext)
         try repos.recurringItems.save(item)
         let vm = ItemDetailsViewModel(
-            item: item,
-            repositories: repos,
-            exchangeRateProvider: StaticExchangeRateProvider(),
+            item:                  item,
+            repositories:          repos,
+            exchangeRateProvider:  StaticExchangeRateProvider(),
             notificationScheduler: mock
         )
         vm.startEditing()
         vm.editTrialReminder = .sameDay
-        try vm.saveChanges()
-        await Task.yield()
+        try await vm.saveChanges()
         #expect(mock.scheduledIDs.contains(item.id))
     }
 
-    @Test("cancel(for:) called on archive — removes both charge and trial identifiers")
+    @Test("schedule(for:) called on archive — real scheduler cancels both identifiers internally")
     func archiveCancelsBoth() async throws {
-        let mock = MockNotificationScheduler()
-        let item = makeItem(trialReminder: .threeDaysBefore)
-        let repos = try makeRepositories()
+        let mock      = MockNotificationScheduler()
+        let item      = makeItem(trialReminder: .threeDaysBefore)
+        let container = try SorenModelContainer.inMemory()
+        let repos     = RepositoryContainer(context: container.mainContext)
         try repos.recurringItems.save(item)
         let vm = ItemDetailsViewModel(
-            item: item,
-            repositories: repos,
-            exchangeRateProvider: StaticExchangeRateProvider(),
+            item:                  item,
+            repositories:          repos,
+            exchangeRateProvider:  StaticExchangeRateProvider(),
             notificationScheduler: mock
         )
-        try vm.archive()
-        await Task.yield()
-        // cancel(for:) is called once; the real scheduler removes both identifiers internally.
-        #expect(mock.cancelledIDs.contains(item.id))
+        try await vm.archive()
+        // Mock records schedule() call; real scheduler cancels both identifiers internally.
+        #expect(mock.scheduledIDs.contains(item.id))
     }
 }

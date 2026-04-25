@@ -76,12 +76,14 @@ struct ItemEditFormView: View {
     // MARK: - Save
 
     private func saveAndDismiss() {
-        do {
-            try viewModel.saveChanges()
-            HapticEngine.success()
-            dismiss()
-        } catch {
-            HapticEngine.error()
+        Task {
+            do {
+                try await viewModel.saveChanges()
+                HapticEngine.success()
+                dismiss()
+            } catch {
+                HapticEngine.error()
+            }
         }
     }
 

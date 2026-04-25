@@ -7,19 +7,32 @@ import Foundation
 struct UpdateRecurringItem {
 
     private let repository: any RecurringItemRepository
+    private let notificationScheduler: (any NotificationScheduling)?
 
-    init(repository: any RecurringItemRepository) {
+    init(
+        repository: any RecurringItemRepository,
+        notificationScheduler: (any NotificationScheduling)? = nil
+    ) {
         self.repository = repository
+        self.notificationScheduler = notificationScheduler
     }
 
-    /// Normalizes, validates, stamps `updatedAt`, and persists.
+    /// Normalizes, validates, stamps `updatedAt`, persists, and reschedules the notification.
+    ///
+    /// The scheduler's `schedule(for:)` handles all eligibility cases internally —
+    /// it cancels the existing notification for paused, archived, cancelled, or
+    /// `.never`-reminder items, so no branching by status is needed here.
+    ///
     /// Returns the saved copy with `updatedAt` set to the current time.
     @discardableResult
-    func execute(_ item: RecurringItem) throws -> RecurringItem {
+    func execute(_ item: RecurringItem) async throws -> RecurringItem {
         var normalized = normalize(item)
         try validate(normalized)
         normalized.updatedAt = .now
         try repository.update(normalized)
+        if let scheduler = notificationScheduler {
+            await scheduler.schedule(for: normalized)
+        }
         return normalized
     }
 

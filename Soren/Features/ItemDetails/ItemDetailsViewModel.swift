@@ -66,7 +66,6 @@ final class ItemDetailsViewModel {
     private let updateRecurringItem: UpdateRecurringItem
     private let deleteRecurringItem: DeleteRecurringItem
     private let exchangeRateProvider: any ExchangeRateProvider
-    private let notificationScheduler: (any NotificationScheduling)?
 
     // MARK: - Init
 
@@ -77,13 +76,15 @@ final class ItemDetailsViewModel {
         notificationScheduler: (any NotificationScheduling)? = nil
     ) {
         self.item = item
-        self.updateRecurringItem = UpdateRecurringItem(repository: repositories.recurringItems)
+        self.updateRecurringItem = UpdateRecurringItem(
+            repository: repositories.recurringItems,
+            notificationScheduler: notificationScheduler
+        )
         self.deleteRecurringItem = DeleteRecurringItem(
             repository: repositories.recurringItems,
             notificationScheduler: notificationScheduler
         )
         self.exchangeRateProvider = exchangeRateProvider
-        self.notificationScheduler = notificationScheduler
     }
 
     // MARK: - Edit Next Charge Date
@@ -145,7 +146,7 @@ final class ItemDetailsViewModel {
         isEditing = false
     }
 
-    func saveChanges() throws {
+    func saveChanges() async throws {
         guard let amount = Decimal(string: editAmountText.replacingOccurrences(of: ",", with: ".")) else {
             throw UpdateRecurringItem.ValidationError.invalidAmount
         }
@@ -167,48 +168,26 @@ final class ItemDetailsViewModel {
         updated.usageStatus = editUsageStatus
 
         // Use the returned copy — it carries the updatedAt stamp set by the use case.
-        item = try updateRecurringItem.execute(updated)
+        // The use case also reschedules the notification directly after a successful persist.
+        item = try await updateRecurringItem.execute(updated)
         isEditing = false
-
-        // Reschedule: any field that affects the fire date (title, amount, nextChargeDate,
-        // billingCycle) may have changed. Cancel + re-add is the safest approach.
-        if let scheduler = notificationScheduler {
-            let saved = item
-            Task { await scheduler.schedule(for: saved) }
-        }
     }
 
     // MARK: - Status Actions
 
-    func togglePause() throws {
+    func togglePause() async throws {
         var updated = item
         updated.status = item.status == .paused ? .active : .paused
-        item = try updateRecurringItem.execute(updated)
-
-        if let scheduler = notificationScheduler {
-            let saved = item
-            Task {
-                if saved.status == .paused {
-                    // Paused — no further charges expected; cancel the reminder.
-                    await scheduler.cancel(for: saved.id)
-                } else {
-                    // Resumed — treat as a newly active item and reschedule.
-                    await scheduler.schedule(for: saved)
-                }
-            }
-        }
+        // The scheduler handles eligibility: it cancels for paused items, reschedules for active.
+        item = try await updateRecurringItem.execute(updated)
     }
 
-    func archive() throws {
+    func archive() async throws {
         var updated = item
         updated.status = .archived
         updated.archivedAt = .now
-        item = try updateRecurringItem.execute(updated)
-
-        if let scheduler = notificationScheduler {
-            let itemID = item.id
-            Task { await scheduler.cancel(for: itemID) }
-        }
+        // The scheduler cancels automatically because archived items are ineligible.
+        item = try await updateRecurringItem.execute(updated)
     }
 
     func delete() async throws {

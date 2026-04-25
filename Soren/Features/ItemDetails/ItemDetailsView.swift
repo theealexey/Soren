@@ -322,10 +322,12 @@ struct ItemDetailsView: View {
                 icon: viewModel.item.status == .paused ? "play.fill" : "pause.fill",
                 color: ColorTokens.warning
             ) {
-                do {
-                    try viewModel.togglePause()
-                    HapticEngine.selection()
-                } catch { HapticEngine.error() }
+                Task {
+                    do {
+                        try await viewModel.togglePause()
+                        HapticEngine.selection()
+                    } catch { HapticEngine.error() }
+                }
             }
 
             if viewModel.item.status != .archived {
@@ -334,10 +336,12 @@ struct ItemDetailsView: View {
                     icon: "archivebox",
                     color: ColorTokens.textSecondary
                 ) {
-                    do {
-                        try viewModel.archive()
-                        HapticEngine.selection()
-                    } catch { HapticEngine.error() }
+                    Task {
+                        do {
+                            try await viewModel.archive()
+                            HapticEngine.selection()
+                        } catch { HapticEngine.error() }
+                    }
                 }
             }
 
