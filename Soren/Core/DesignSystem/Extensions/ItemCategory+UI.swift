@@ -2,9 +2,32 @@ import SwiftUI
 
 // MARK: - Item Category UI Properties
 
-/// Presentation-layer extension mapping domain categories to visual tokens.
-/// Keeps the Domain layer free of SwiftUI dependencies.
+/// Presentation-layer extension mapping domain categories to visual tokens and localized names.
+/// Keeps the Domain layer free of SwiftUI and String(localized:) dependencies.
 extension ItemCategory {
+
+    /// Localized name shown in Pickers, section headers, and detail rows.
+    var displayName: String {
+        switch self {
+        case .video:        String(localized: "Видео")
+        case .music:        String(localized: "Музыка")
+        case .books:        String(localized: "Книги")
+        case .cloud:        String(localized: "Облако")
+        case .productivity: String(localized: "Продуктивность")
+        case .aiTools:      String(localized: "AI-инструменты")
+        case .shopping:     String(localized: "Покупки")
+        case .banking:      String(localized: "Банки и экосистемы")
+        case .mobile:       String(localized: "Мобильный")
+        case .internet:     String(localized: "Интернет и ЖКХ")
+        case .health:       String(localized: "Здоровье")
+        case .games:        String(localized: "Игры")
+        case .vpn:          String(localized: "VPN и безопасность")
+        case .food:         String(localized: "Еда и доставка")
+        case .education:    String(localized: "Образование")
+        case .creators:     String(localized: "Креаторы и донаты")
+        case .other:        String(localized: "Другое")
+        }
+    }
 
     /// SF Symbol name for this category.
     var systemIconName: String {

@@ -132,6 +132,11 @@
 		TRIAL234567890ABCDEF0004 /* TrialReminderSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRIAL234567890ABCDEF0003 /* TrialReminderSchedulerTests.swift */; };
 		AB35672A60CFCDCB614C95A4 /* SwiftDataPaymentMethodRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931E5E8447CB6EBE61776031 /* SwiftDataPaymentMethodRepository.swift */; };
 		AC6A5E7E150DA4F36FC64642 /* AppearanceMode+SwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE3B6CE90A1085CAD36539E5 /* AppearanceMode+SwiftUI.swift */; };
+		D4BD0EC0E81B4ADE810BF129 /* BillingCycle+Display.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DB9DCF14BF3408283B60532 /* BillingCycle+Display.swift */; };
+		FE32AEDD601543F6B9C21BF2 /* ItemStatus+Display.swift in Sources */ = {isa = PBXBuildFile; fileRef = A601FBB67CA5409E91C017A3 /* ItemStatus+Display.swift */; };
+		850427BF1CD24378AD7F00F3 /* ItemType+Display.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED4CEE0587A8424188258937 /* ItemType+Display.swift */; };
+		EDB1A5CDD77546479BFE6D9D /* UsageStatus+Display.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A1A37C8750C4425A16DE9E1 /* UsageStatus+Display.swift */; };
+		CC1CE625724C4012A321DA95 /* PaymentMethodType+Display.swift in Sources */ = {isa = PBXBuildFile; fileRef = 388CB7FF5DC641C4BAE31CC3 /* PaymentMethodType+Display.swift */; };
 		AE87E4DBEC8756BF60319FD3 /* ExchangeRateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5C46E050399632FDE7B0454 /* ExchangeRateProvider.swift */; };
 		B0B92A81FC0E0D9E361E30DA /* HomeScreenState.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1829C587899C7C72F7ABF5 /* HomeScreenState.swift */; };
 		B2C3D4E5F6A7B8C9D0E1F2A3 /* ChargeReminderOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* ChargeReminderOption.swift */; };
@@ -327,6 +332,11 @@
 		BC57DBA9A5801A488865A4AA /* UpdateRecurringItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateRecurringItem.swift; sourceTree = "<group>"; };
 		BE0FB55547E3EC178EADC11B /* SorenTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SorenTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		BE3B6CE90A1085CAD36539E5 /* AppearanceMode+SwiftUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppearanceMode+SwiftUI.swift"; sourceTree = "<group>"; };
+		3DB9DCF14BF3408283B60532 /* BillingCycle+Display.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BillingCycle+Display.swift"; sourceTree = "<group>"; };
+		A601FBB67CA5409E91C017A3 /* ItemStatus+Display.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ItemStatus+Display.swift"; sourceTree = "<group>"; };
+		ED4CEE0587A8424188258937 /* ItemType+Display.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ItemType+Display.swift"; sourceTree = "<group>"; };
+		5A1A37C8750C4425A16DE9E1 /* UsageStatus+Display.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UsageStatus+Display.swift"; sourceTree = "<group>"; };
+		388CB7FF5DC641C4BAE31CC3 /* PaymentMethodType+Display.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PaymentMethodType+Display.swift"; sourceTree = "<group>"; };
 		BF99DB7F322CD045D657B971 /* InsightsBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightsBuilder.swift; sourceTree = "<group>"; };
 		C2B7E500333C0C94A5166480 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
 		C3D4E5F6A7B8C9D0E1F2A3B4 /* UserPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPreferencesTests.swift; sourceTree = "<group>"; };
@@ -435,6 +445,11 @@
 			isa = PBXGroup;
 			children = (
 				BE3B6CE90A1085CAD36539E5 /* AppearanceMode+SwiftUI.swift */,
+				3DB9DCF14BF3408283B60532 /* BillingCycle+Display.swift */,
+				A601FBB67CA5409E91C017A3 /* ItemStatus+Display.swift */,
+				ED4CEE0587A8424188258937 /* ItemType+Display.swift */,
+				5A1A37C8750C4425A16DE9E1 /* UsageStatus+Display.swift */,
+				388CB7FF5DC641C4BAE31CC3 /* PaymentMethodType+Display.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -1192,7 +1207,12 @@
 				C69C3476C2F7A36F5F94EC54 /* AppThemeKey.swift in Sources */,
 				0304D391A4D32450161A19AD /* AppThemeModifier.swift in Sources */,
 				AC6A5E7E150DA4F36FC64642 /* AppearanceMode+SwiftUI.swift in Sources */,
+				D4BD0EC0E81B4ADE810BF129 /* BillingCycle+Display.swift in Sources */,
 				747917FE51A83E20934C9492 /* BillingCycle.swift in Sources */,
+				FE32AEDD601543F6B9C21BF2 /* ItemStatus+Display.swift in Sources */,
+				850427BF1CD24378AD7F00F3 /* ItemType+Display.swift in Sources */,
+				EDB1A5CDD77546479BFE6D9D /* UsageStatus+Display.swift in Sources */,
+				CC1CE625724C4012A321DA95 /* PaymentMethodType+Display.swift in Sources */,
 				9DBDEE86A8B720BC7A20DA10 /* BillingLandscapeChartView.swift in Sources */,
 				806854FCC83DC208E64A7D0A /* BillingLandscapeContainerView.swift in Sources */,
 				63C42BE31C36308D42C83DFC /* BillingLandscapePoint.swift in Sources */,

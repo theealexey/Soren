@@ -11,17 +11,6 @@ enum PaymentMethodType: String, Codable, CaseIterable, Sendable {
 }
 
 extension PaymentMethodType {
-    var displayName: String {
-        switch self {
-        case .bankCard:       String(localized: "Банковская карта")
-        case .appleID:        "Apple ID"
-        case .mobileBilling:  String(localized: "Счёт оператора")
-        case .bankAccount:    String(localized: "Расчётный счёт")
-        case .cash:           String(localized: "Наличные / вручную")
-        case .unknown:        String(localized: "Не указан")
-        }
-    }
-
     var systemIconName: String {
         switch self {
         case .bankCard:       "creditcard.fill"

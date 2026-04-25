@@ -31,20 +31,6 @@ enum ItemStatus: String, Codable, CaseIterable, Sendable {
 }
 
 extension ItemStatus {
-    var displayName: String {
-        switch self {
-        case .active:    String(localized: "Активна")
-        case .dueSoon:   String(localized: "Скоро списание")
-        case .dueToday:  String(localized: "Списание сегодня")
-        case .overdue:   String(localized: "Просрочена")
-        case .trial:     String(localized: "Пробный период")
-        case .failed:    String(localized: "Ошибка оплаты")
-        case .cancelled: String(localized: "Отменена")
-        case .paused:    String(localized: "Пауза")
-        case .archived:  String(localized: "В архиве")
-        }
-    }
-
     /// Whether this item contributes to monthly/yearly totals.
     var countsInTotals: Bool {
         switch self {

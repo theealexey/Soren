@@ -26,18 +26,6 @@ enum ItemType: String, Codable, CaseIterable, Sendable {
 }
 
 extension ItemType {
-    var displayName: String {
-        switch self {
-        case .subscription:     String(localized: "Подписка")
-        case .membership:       String(localized: "Членство")
-        case .mobilePlan:       String(localized: "Тариф")
-        case .utilityBill:      String(localized: "ЖКХ / Услуги")
-        case .ecosystemBundle:  String(localized: "Экосистема")
-        case .trial:            String(localized: "Пробный период")
-        case .otherRecurring:   String(localized: "Прочее")
-        }
-    }
-
     var systemIconName: String {
         switch self {
         case .subscription:     "sparkles"
