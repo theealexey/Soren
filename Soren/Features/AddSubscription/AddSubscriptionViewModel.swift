@@ -102,19 +102,6 @@ final class AddSubscriptionViewModel {
         self.nextChargeDate = Self.suggestNextChargeDate(from: .now, cycle: .monthly)
     }
 
-    init(container: AppContainer) {
-        self.catalog = container.providerCatalog
-        self.saveRecurringItem = SaveRecurringItem(repository: container.repositories.recurringItems)
-        self.exchangeRateProvider = container.exchangeRateProvider
-        self.preferences = container.preferences
-        self.notificationScheduler = container.notificationScheduler
-        let prefs = container.preferences.load()
-        self.currencyCode   = prefs.defaultCurrencyCode
-        self.chargeReminder = prefs.defaultChargeReminder
-        // didSet observers don't fire during init — seed the suggestion explicitly.
-        self.nextChargeDate = Self.suggestNextChargeDate(from: .now, cycle: .monthly)
-    }
-
     // MARK: - End Date
 
     /// Called by the end-date binding in the form view to record a user-chosen date.

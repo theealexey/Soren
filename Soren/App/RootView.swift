@@ -92,7 +92,13 @@ struct RootView: View {
         case .addSubscription:
             NavigationStack {
                 ProviderPickerView(
-                    viewModel: AddSubscriptionViewModel(container: container)
+                    viewModel: AddSubscriptionViewModel(
+                        catalog: container.providerCatalog,
+                        saveRecurringItem: SaveRecurringItem(repository: container.repositories.recurringItems),
+                        exchangeRateProvider: container.exchangeRateProvider,
+                        preferences: container.preferences,
+                        notificationScheduler: container.notificationScheduler
+                    )
                 )
             }
         case .settings:
