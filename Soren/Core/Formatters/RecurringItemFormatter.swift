@@ -91,11 +91,12 @@ enum RecurringItemFormatter {
         return .info
     }
 
-    /// Russian pluralization for "пробный период" count label.
-    static func pluralTrial(_ count: Int) -> String {
-        let mod10 = count % 10
-        let mod100 = count % 100
-        if mod10 == 1 && mod100 != 11 { return String(localized: "пробный") }
-        return String(localized: "пробных")
+    /// Plural-aware label for a trial count chip.
+    ///
+    /// Uses xcstrings CLDR rules — `count` drives plural category selection.
+    /// Returns the full "N word" string (e.g. "1 пробный", "3 пробных", "1 trial"),
+    /// intended for use as the chip's `value:` parameter with `label: ""`.
+    static func trialCountLabel(count: Int) -> String {
+        String(localized: "\(count) пробных")
     }
 }

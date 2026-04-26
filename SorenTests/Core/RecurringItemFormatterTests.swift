@@ -207,16 +207,58 @@ struct RecurringItemFormatterTests {
         #expect(RecurringItemFormatter.trialSeverity(for: info) == .info)
     }
 
-    // MARK: - pluralTrial
+    // MARK: - trialCountLabel
 
-    @Test("pluralTrial follows Russian grammar rules")
-    func pluralTrialRussian() {
-        #expect(RecurringItemFormatter.pluralTrial(1) == "пробный")
-        #expect(RecurringItemFormatter.pluralTrial(2) == "пробных")
-        #expect(RecurringItemFormatter.pluralTrial(5) == "пробных")
-        #expect(RecurringItemFormatter.pluralTrial(11) == "пробных")
-        #expect(RecurringItemFormatter.pluralTrial(21) == "пробный")
-        #expect(RecurringItemFormatter.pluralTrial(111) == "пробных")
+    @Test("trialCountLabel is non-empty and contains digit for all meaningful counts")
+    func trialCountLabelNonEmpty() {
+        // The full string includes the count: "1 пробный", "5 пробных", "1 trial", etc.
+        for count in [1, 2, 5, 11, 21, 111] {
+            let label = RecurringItemFormatter.trialCountLabel(count: count)
+            #expect(!label.isEmpty, "trialCountLabel is empty for count=\(count)")
+            #expect(label.contains("\(count)"), "trialCountLabel missing digit for count=\(count)")
+        }
+    }
+
+    @Test("trialCountLabel does not contain raw format specifier (xcstrings key resolved)")
+    func trialCountLabelNoRawSpecifier() {
+        for count in [1, 2, 5, 11] {
+            let label = RecurringItemFormatter.trialCountLabel(count: count)
+            #expect(!label.contains("%lld"), "label contains raw %lld for count=\(count)")
+            #expect(!label.contains("%@"),   "label contains raw %@ for count=\(count)")
+        }
+    }
+
+    @Test("trialCountLabel count=1 and count=2 differ (one vs few/many)")
+    func trialCountLabelOneVsMany() {
+        // RU: count=1 → "1 пробный" (one), count=2 → "2 пробных" (few).
+        // EN: count=1 → "1 trial"   (one), count=2 → "2 trials"  (other).
+        // Either way, the word part must differ — proving CLDR plural selection fires.
+        let one = RecurringItemFormatter.trialCountLabel(count: 1)
+        let two = RecurringItemFormatter.trialCountLabel(count: 2)
+        #expect(one != two, "count=1 and count=2 produce the same string — plural selection may be broken")
+    }
+
+    @Test("trialCountLabel count=2 and count=5 match (few and many use same adjective form)")
+    func trialCountLabelFewEqualsMany() {
+        // RU: both 2 (few) and 5 (many) → "пробных".
+        // EN: both 2 (other) and 5 (other) → "trials".
+        // Verify no accidental split between the two non-singular categories.
+        let two  = RecurringItemFormatter.trialCountLabel(count: 2)
+        let five = RecurringItemFormatter.trialCountLabel(count: 5)
+        // Strip leading digit+space to compare word parts only (locale-agnostic)
+        let wordTwo  = two.drop(while:  { $0.isNumber }).drop(while: { $0 == " " })
+        let wordFive = five.drop(while: { $0.isNumber }).drop(while: { $0 == " " })
+        #expect(wordTwo == wordFive, "count=2 and count=5 word parts differ — unexpected few/many split")
+    }
+
+    @Test("trialCountLabel teen case (11) uses same form as 5 (many in Russian)")
+    func trialCountLabelTeenCase() {
+        // Russian: 11 → "many" (пробных), same as 5. Teens are exempt from "few" rule.
+        let eleven = RecurringItemFormatter.trialCountLabel(count: 11)
+        let five   = RecurringItemFormatter.trialCountLabel(count: 5)
+        let wordEleven = eleven.drop(while: { $0.isNumber }).drop(while: { $0 == " " })
+        let wordFive   = five.drop(while:   { $0.isNumber }).drop(while: { $0 == " " })
+        #expect(wordEleven == wordFive, "count=11 and count=5 word parts differ — teen CLDR rule may be broken")
     }
 }
 

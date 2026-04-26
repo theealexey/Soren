@@ -4,6 +4,58 @@
     "": {},
     " ": {},
     "·": {},
+    "%lld пробных": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld trial"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld trials"
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld пробных"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld пробных"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld пробный"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld пробных"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "«%@» будет удалена без возможности восстановления.": {
       "localizations": {
         "en": {
@@ -1907,6 +1959,7 @@
       }
     },
     "пробный": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2057,6 +2110,7 @@
       }
     },
     "пробных": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {

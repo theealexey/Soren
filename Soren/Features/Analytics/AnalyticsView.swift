@@ -130,8 +130,8 @@ struct AnalyticsView: View {
                 if state.summary.activeTrialCount > 0 {
                     metricChip(
                         icon: "clock",
-                        value: "\(state.summary.activeTrialCount)",
-                        label: String(localized: "пробных")
+                        value: RecurringItemFormatter.trialCountLabel(count: state.summary.activeTrialCount),
+                        label: ""
                     )
                 }
 
