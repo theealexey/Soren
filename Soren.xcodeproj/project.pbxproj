@@ -1167,7 +1167,7 @@
 				};
 			};
 			buildConfigurationList = 8FE72A6CB40EED380B59977A /* Build configuration list for PBXProject "Soren" */;
-			developmentRegion = en;
+			developmentRegion = ru;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				Base,
@@ -1365,7 +1365,6 @@
 				NFRC234567890ABCDEF0004 /* NotificationRescheduleTests.swift in Sources */,
 				LSDB234567890ABCDEF0002 /* LibrarySearchDebounceTests.swift in Sources */,
 				GUPC234567890ABCDEF0002 /* GetUpcomingChargesTests.swift in Sources */,
-				D4E5F6A7B8C9D0E1F2A3B4C5 /* UserPreferencesTests.swift in Sources */,
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* UserPreferencesTests.swift in Sources */,
 				C3502270C48B6F7C7C802509 /* AddSubscriptionTierTests.swift in Sources */,
 				E9CBF6DF558DD865FFA2D11C /* AmountLabelTests.swift in Sources */,

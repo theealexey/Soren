@@ -18,6 +18,12 @@
     "«%@» списывается сегодня": {},
     "«%@» списывается через %@": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"%1$@\" is charging in %2$@"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "new",
@@ -460,7 +466,16 @@
         }
       }
     },
-    "Все подписки и настройки будут удалены без возможности восстановления.": {},
+    "Все подписки и настройки будут удалены без возможности восстановления.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All subscriptions and settings will be permanently deleted."
+          }
+        }
+      }
+    },
     "Все рекуррентные платежи в одном месте": {
       "localizations": {
         "en": {
@@ -1257,7 +1272,16 @@
         }
       }
     },
-    "Не удалось открыть базу данных. Возможно, файл был повреждён во время синхронизации iCloud.": {},
+    "Не удалось открыть базу данных. Возможно, файл был повреждён во время синхронизации iCloud.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to open the database. The file may have been corrupted during iCloud sync."
+          }
+        }
+      }
+    },
     "Не удалось сохранить": {},
     "Не указан": {
       "localizations": {
@@ -1881,6 +1905,12 @@
     },
     "Пробный период «%@» заканчивается через %@": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"%1$@\" trial ends in %2$@"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "new",
@@ -2401,7 +2431,16 @@
       },
       "extractionState": "stale"
     },
-    "Хранилище недоступно": {},
+    "Хранилище недоступно": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Storage Unavailable"
+          }
+        }
+      }
+    },
     "Центр управления подписками": {
       "extractionState": "stale",
       "localizations": {
