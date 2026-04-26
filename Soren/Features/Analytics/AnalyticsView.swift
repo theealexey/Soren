@@ -130,8 +130,7 @@ struct AnalyticsView: View {
                 if state.summary.activeTrialCount > 0 {
                     metricChip(
                         icon: "clock",
-                        value: RecurringItemFormatter.trialCountLabel(count: state.summary.activeTrialCount),
-                        label: ""
+                        text: RecurringItemFormatter.trialCountLabel(count: state.summary.activeTrialCount)
                     )
                 }
 
@@ -148,6 +147,7 @@ struct AnalyticsView: View {
         }
     }
 
+    /// Two-part chip: bold numeric value + regular noun label (e.g. "5 активных").
     private func metricChip(
         icon: String,
         value: String,
@@ -161,6 +161,29 @@ struct AnalyticsView: View {
                 .font(Typography.captionMedium)
             Text(verbatim: label)
                 .font(Typography.caption)
+        }
+        .foregroundStyle(isWarning ? ColorTokens.warning : ColorTokens.textSecondary)
+        .padding(.horizontal, Spacing.sm)
+        .padding(.vertical, Spacing.xxs)
+        .background(
+            (isWarning ? ColorTokens.warning : ColorTokens.textSecondary).opacity(0.1),
+            in: Capsule()
+        )
+    }
+
+    /// Single-text chip: icon + one pre-composed localized string (e.g. "3 пробных").
+    /// Use when the localized string already encodes count and noun together via CLDR
+    /// plural rules, so no separate label field is needed.
+    private func metricChip(
+        icon: String,
+        text: String,
+        isWarning: Bool = false
+    ) -> some View {
+        HStack(spacing: Spacing.xxs) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .medium))
+            Text(verbatim: text)
+                .font(Typography.captionMedium)
         }
         .foregroundStyle(isWarning ? ColorTokens.warning : ColorTokens.textSecondary)
         .padding(.horizontal, Spacing.sm)
