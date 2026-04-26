@@ -37,6 +37,9 @@ struct AmountLabel: View {
                 .font(size.font)
                 .foregroundStyle(tint ?? ColorTokens.textPrimary)
                 .contentTransition(.numericText(value: Double(truncating: amount as NSDecimalNumber)))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .allowsTightening(true)
 
             if let cycle {
                 Text(cycle.label)
@@ -55,7 +58,7 @@ struct AmountLabel: View {
         return "\(formatted) \(cycle.accessibilityText)"
     }
 
-    private var formattedAmount: String {
+    var formattedAmount: String {
         Self.formatter(for: currencyCode).string(
             from: amount as NSDecimalNumber
         ) ?? "\(amount)"

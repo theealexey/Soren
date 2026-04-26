@@ -1,6 +1,31 @@
 {
   "images" : [
     {
+      "filename" : "white.jpg",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "size" : "1024x1024"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "black.jpg",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "size" : "1024x1024"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "tinted"
+        }
+      ],
+      "filename" : "EE228959-FF2C-4FA6-99B7-F40BB2181F36.jpg",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"

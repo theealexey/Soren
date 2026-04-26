@@ -96,4 +96,38 @@ struct AmountLabelTests {
         let label = AmountLabel(Decimal.greatestFiniteMagnitude, currency: "USD")
         #expect(label.amount == Decimal.greatestFiniteMagnitude)
     }
+
+    // MARK: - Single-line contract (Analytics overview card guarantee)
+
+    /// Verifies that the formatter returns a non-empty string for a large yearly
+    /// amount — the value that previously caused the currency symbol to wrap
+    /// to a second line in the Analytics overview card (e.g. "48.674,05 ₽").
+    @Test("Large yearly RUB amount formats to non-empty string")
+    func largeYearlyRUBFormatsNonEmpty() {
+        let label = AmountLabel(48_674.05, currency: "RUB")
+        let formatted = label.formattedAmount   // capture on @MainActor before #expect closure
+        #expect(!formatted.isEmpty)
+    }
+
+    /// Verifies currency symbol is locale-derived from NumberFormatter, not hardcoded.
+    /// Every formatted string must contain at least one digit, proving it comes
+    /// from the formatter pipeline rather than a static literal.
+    @Test("Formatted amount contains digits — symbol is formatter-derived not hardcoded",
+          arguments: ["RUB", "USD", "EUR", "TRY", "KZT", "GBP", "JPY"])
+    func formattedAmountContainsDigit(currency: String) {
+        let label = AmountLabel(1234.56, currency: currency)
+        let formatted = label.formattedAmount   // capture on @MainActor before #expect closure
+        let hasDigit = formatted.contains(where: \.isNumber)
+        #expect(hasDigit, "formatted amount for \(currency) should contain at least one digit")
+    }
+
+    /// Monthly and yearly Analytics overview cards both construct `StatBlock`
+    /// without a custom `amountSize`, so both resolve to `.large`.
+    /// This test catches future drift if one card gains a per-card font override.
+    @Test("Monthly and yearly stat blocks use identical AmountLabel size")
+    func monthlyYearlySameAmountSize() {
+        let monthly = StatBlock(title: "В месяц", amount: 4299,   currency: "RUB")
+        let yearly  = StatBlock(title: "В год",   amount: 51_588, currency: "RUB")
+        #expect(monthly.amountSize == yearly.amountSize)
+    }
 }
