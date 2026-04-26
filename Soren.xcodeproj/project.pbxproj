@@ -58,6 +58,7 @@
 		3B7DDC902C1948E2B1BADA98 /* NotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2641A8E44A4D49288D1CA435 /* NotificationScheduler.swift */; };
 		NFRC234567890ABCDEF0002 /* NotificationRefreshCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = NFRC234567890ABCDEF0001 /* NotificationRefreshCoordinator.swift */; };
 		NFRC234567890ABCDEF0004 /* NotificationRescheduleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = NFRC234567890ABCDEF0003 /* NotificationRescheduleTests.swift */; };
+		NSTL234567890ABCDEF0004 /* NotificationSchedulerTitleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = NSTL234567890ABCDEF0003 /* NotificationSchedulerTitleTests.swift */; };
 		LSDB234567890ABCDEF0002 /* LibrarySearchDebounceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LSDB234567890ABCDEF0001 /* LibrarySearchDebounceTests.swift */; };
 		GUPC234567890ABCDEF0002 /* GetUpcomingChargesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = GUPC234567890ABCDEF0001 /* GetUpcomingChargesTests.swift */; };
 		3C5D0047E7D4DC39ADD5FC7C /* NextPaymentCalloutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92E29D870CC86C4EB8CE6C2A /* NextPaymentCalloutView.swift */; };
@@ -237,6 +238,7 @@
 		2641A8E44A4D49288D1CA435 /* NotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationScheduler.swift; sourceTree = "<group>"; };
 		NFRC234567890ABCDEF0001 /* NotificationRefreshCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationRefreshCoordinator.swift; sourceTree = "<group>"; };
 		NFRC234567890ABCDEF0003 /* NotificationRescheduleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationRescheduleTests.swift; sourceTree = "<group>"; };
+		NSTL234567890ABCDEF0003 /* NotificationSchedulerTitleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSchedulerTitleTests.swift; sourceTree = "<group>"; };
 		LSDB234567890ABCDEF0001 /* LibrarySearchDebounceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrarySearchDebounceTests.swift; sourceTree = "<group>"; };
 		GUPC234567890ABCDEF0001 /* GetUpcomingChargesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetUpcomingChargesTests.swift; sourceTree = "<group>"; };
 		264F2714A6B7E0174F18E1FF /* ExchangeRatesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRatesTests.swift; sourceTree = "<group>"; };
@@ -762,6 +764,7 @@
 				AABC1234567890ABCDEF0001 /* NextChargeDateSuggestionTests.swift */,
 				AABC1234567890ABCDEF0003 /* ItemDetailsEditFormTests.swift */,
 				FAFD834548BC45CF9EA06E44 /* NotificationSchedulerTests.swift */,
+				NSTL234567890ABCDEF0003 /* NotificationSchedulerTitleTests.swift */,
 				TRIAL234567890ABCDEF0003 /* TrialReminderSchedulerTests.swift */,
 				NFRC234567890ABCDEF0003 /* NotificationRescheduleTests.swift */,
 				LSDB234567890ABCDEF0001 /* LibrarySearchDebounceTests.swift */,
@@ -1362,6 +1365,7 @@
 				AABC1234567890ABCDEF0004 /* ItemDetailsEditFormTests.swift in Sources */,
 				TRIAL234567890ABCDEF0004 /* TrialReminderSchedulerTests.swift in Sources */,
 				0E7AF3CC42CE41B9AF6AFAA5 /* NotificationSchedulerTests.swift in Sources */,
+				NSTL234567890ABCDEF0004 /* NotificationSchedulerTitleTests.swift in Sources */,
 				NFRC234567890ABCDEF0004 /* NotificationRescheduleTests.swift in Sources */,
 				LSDB234567890ABCDEF0002 /* LibrarySearchDebounceTests.swift in Sources */,
 				GUPC234567890ABCDEF0002 /* GetUpcomingChargesTests.swift in Sources */,

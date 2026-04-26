@@ -17,6 +17,7 @@
     "«%@» списывается завтра": {},
     "«%@» списывается сегодня": {},
     "«%@» списывается через %@": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -28,6 +29,58 @@
           "stringUnit": {
             "state": "new",
             "value": "«%1$@» списывается через %2$@"
+          }
+        }
+      }
+    },
+    "«%@» списывается через %lld дней": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "\"%1$@\" is charging in %2$lld day"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "\"%1$@\" is charging in %2$lld days"
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "«%1$@» списывается через %2$lld дня"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "«%1$@» списывается через %2$lld дней"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "«%1$@» списывается через %2$lld день"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "«%1$@» списывается через %2$lld дней"
+                }
+              }
+            }
           }
         }
       }
@@ -1904,6 +1957,7 @@
       }
     },
     "Пробный период «%@» заканчивается через %@": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1915,6 +1969,58 @@
           "stringUnit": {
             "state": "new",
             "value": "Пробный период «%1$@» заканчивается через %2$@"
+          }
+        }
+      }
+    },
+    "Пробный период «%@» заканчивается через %lld дней": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "\"%1$@\" trial ends in %2$lld day"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "\"%1$@\" trial ends in %2$lld days"
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Пробный период «%1$@» заканчивается через %2$lld дня"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Пробный период «%1$@» заканчивается через %2$lld дней"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Пробный период «%1$@» заканчивается через %2$lld день"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Пробный период «%1$@» заканчивается через %2$lld дней"
+                }
+              }
+            }
           }
         }
       }

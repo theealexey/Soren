@@ -248,21 +248,21 @@ final class NotificationScheduler: NotificationScheduling, @unchecked Sendable {
 
     private func makeChargeContent(item: RecurringItem, chargeDate: Date, chargeAlertDays: Int) -> UNMutableNotificationContent {
         let content   = UNMutableNotificationContent()
-        content.title = chargeTitle(itemTitle: item.title, chargeAlertDays: chargeAlertDays)
+        content.title = Self.chargeTitle(itemTitle: item.title, chargeAlertDays: chargeAlertDays)
         content.body  = chargeBody(amount: item.amount, currency: item.currencyCode, chargeDate: chargeDate)
         content.sound = .default
         return content
     }
 
-    private func chargeTitle(itemTitle: String, chargeAlertDays: Int) -> String {
+    /// Pure title builder — `nonisolated static` for direct unit-test access.
+    static func chargeTitle(itemTitle: String, chargeAlertDays: Int) -> String {
         switch chargeAlertDays {
         case 0:
             return String(localized: "«\(itemTitle)» списывается сегодня")
         case 1:
             return String(localized: "«\(itemTitle)» списывается завтра")
         default:
-            let days = pluralDays(chargeAlertDays)
-            return String(localized: "«\(itemTitle)» списывается через \(days)")
+            return String(localized: "«\(itemTitle)» списывается через \(chargeAlertDays) дней")
         }
     }
 
@@ -290,32 +290,22 @@ final class NotificationScheduler: NotificationScheduling, @unchecked Sendable {
 
     private func makeTrialContent(item: RecurringItem, trialAlertDays: Int) -> UNMutableNotificationContent {
         let content   = UNMutableNotificationContent()
-        content.title = trialTitle(itemTitle: item.title, trialAlertDays: trialAlertDays)
+        content.title = Self.trialTitle(itemTitle: item.title, trialAlertDays: trialAlertDays)
         content.body  = String(localized: "Отмените, если не хотите списания")
         content.sound = .default
         return content
     }
 
-    private func trialTitle(itemTitle: String, trialAlertDays: Int) -> String {
+    /// Pure title builder — `nonisolated static` for direct unit-test access.
+    static func trialTitle(itemTitle: String, trialAlertDays: Int) -> String {
         switch trialAlertDays {
         case 0:
             return String(localized: "Пробный период «\(itemTitle)» заканчивается сегодня")
         case 1:
             return String(localized: "Пробный период «\(itemTitle)» заканчивается завтра")
         default:
-            let days = pluralDays(trialAlertDays)
-            return String(localized: "Пробный период «\(itemTitle)» заканчивается через \(days)")
+            return String(localized: "Пробный период «\(itemTitle)» заканчивается через \(trialAlertDays) дней")
         }
-    }
-
-    // MARK: - Russian day pluralization
-
-    private func pluralDays(_ n: Int) -> String {
-        let mod10  = n % 10
-        let mod100 = n % 100
-        if mod10 == 1 && mod100 != 11 { return "\(n) день" }
-        if (2...4).contains(mod10) && !(12...14).contains(mod100) { return "\(n) дня" }
-        return "\(n) дней"
     }
 
     // MARK: - Identifiers
