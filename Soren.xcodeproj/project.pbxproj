@@ -135,6 +135,7 @@
 		AC6A5E7E150DA4F36FC64642 /* AppearanceMode+SwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE3B6CE90A1085CAD36539E5 /* AppearanceMode+SwiftUI.swift */; };
 		1892A245B11C4178925AC5DC /* ChargeReminderOption+Display.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D7501AEAA94EB2A86792DB /* ChargeReminderOption+Display.swift */; };
 		9CAF1DD713EB48D9B6270EFC /* ReminderRule+Display.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA6EDE5B5A2A4881B427E239 /* ReminderRule+Display.swift */; };
+		A9501501159940CAB0478276 /* SupportedCurrency+Display.swift in Sources */ = {isa = PBXBuildFile; fileRef = 938F010448134B439FE9B1D1 /* SupportedCurrency+Display.swift */; };
 		76C6A3A44993405E8B2B314D /* TrialReminderOption+Display.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09B1856B5F154EE296F07A8B /* TrialReminderOption+Display.swift */; };
 		D4BD0EC0E81B4ADE810BF129 /* BillingCycle+Display.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DB9DCF14BF3408283B60532 /* BillingCycle+Display.swift */; };
 		FE32AEDD601543F6B9C21BF2 /* ItemStatus+Display.swift in Sources */ = {isa = PBXBuildFile; fileRef = A601FBB67CA5409E91C017A3 /* ItemStatus+Display.swift */; };
@@ -338,6 +339,7 @@
 		BE0FB55547E3EC178EADC11B /* SorenTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SorenTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		BE3B6CE90A1085CAD36539E5 /* AppearanceMode+SwiftUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppearanceMode+SwiftUI.swift"; sourceTree = "<group>"; };
 		BA6EDE5B5A2A4881B427E239 /* ReminderRule+Display.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ReminderRule+Display.swift"; sourceTree = "<group>"; };
+		938F010448134B439FE9B1D1 /* SupportedCurrency+Display.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SupportedCurrency+Display.swift"; sourceTree = "<group>"; };
 		63D7501AEAA94EB2A86792DB /* ChargeReminderOption+Display.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChargeReminderOption+Display.swift"; sourceTree = "<group>"; };
 		09B1856B5F154EE296F07A8B /* TrialReminderOption+Display.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TrialReminderOption+Display.swift"; sourceTree = "<group>"; };
 		3DB9DCF14BF3408283B60532 /* BillingCycle+Display.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BillingCycle+Display.swift"; sourceTree = "<group>"; };
@@ -461,6 +463,7 @@
 				63D7501AEAA94EB2A86792DB /* ChargeReminderOption+Display.swift */,
 				09B1856B5F154EE296F07A8B /* TrialReminderOption+Display.swift */,
 				BA6EDE5B5A2A4881B427E239 /* ReminderRule+Display.swift */,
+				938F010448134B439FE9B1D1 /* SupportedCurrency+Display.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -1222,6 +1225,7 @@
 				1892A245B11C4178925AC5DC /* ChargeReminderOption+Display.swift in Sources */,
 				76C6A3A44993405E8B2B314D /* TrialReminderOption+Display.swift in Sources */,
 				9CAF1DD713EB48D9B6270EFC /* ReminderRule+Display.swift in Sources */,
+				A9501501159940CAB0478276 /* SupportedCurrency+Display.swift in Sources */,
 				D4BD0EC0E81B4ADE810BF129 /* BillingCycle+Display.swift in Sources */,
 				747917FE51A83E20934C9492 /* BillingCycle.swift in Sources */,
 				FE32AEDD601543F6B9C21BF2 /* ItemStatus+Display.swift in Sources */,

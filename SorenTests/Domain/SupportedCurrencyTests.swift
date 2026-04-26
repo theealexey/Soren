@@ -60,6 +60,23 @@ struct SupportedCurrencyTests {
         }
     }
 
+    @Test("localizedName is non-empty for all catalog currencies")
+    func localizedNameNonEmpty() {
+        for currency in SupportedCurrency.all {
+            #expect(!currency.localizedName.isEmpty,
+                    "\(currency.code) produced an empty localizedName")
+        }
+    }
+
+    @Test("name is locale-neutral English — no non-ASCII characters (guards against String(localized:))")
+    func nameIsLocaleNeutral() {
+        for currency in SupportedCurrency.all {
+            let isAsciiOnly = currency.name.unicodeScalars.allSatisfy { $0.value < 128 }
+            #expect(isAsciiOnly,
+                    "\(currency.code).name '\(currency.name)' contains non-ASCII — was String(localized:) used?")
+        }
+    }
+
     @Test("ID matches code (Identifiable conformance)")
     func idMatchesCode() {
         for currency in SupportedCurrency.all {
