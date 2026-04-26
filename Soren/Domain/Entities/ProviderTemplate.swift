@@ -18,27 +18,11 @@ struct ProviderTemplate: Identifiable, Hashable, Sendable {
     var iconAssetName: String?
     /// Hex brand color (e.g. "#E50914" for Netflix). Used for letter-mark icons.
     var brandColorHex: String?
-    /// Domain used to fetch the logo from Clearbit (e.g. "netflix.com", "yandex.ru").
+    /// Domain used for remote logo resolution (e.g. "netflix.com", "yandex.ru").
+    /// Pass to `ProviderLogoResolver.logoURLs(for:)` to obtain fetch URLs.
     var clearbitDomain: String?
     /// Available pricing tiers. Empty means no predefined plans.
     var plans: [PlanTier]
-
-    /// Ordered list of logo URLs to try: Clearbit (best quality) → Google favicon fallback.
-    /// LogoLoader attempts them in order and returns the first successful response.
-    var logoURLs: [URL] {
-        guard let domain = clearbitDomain else { return [] }
-        var urls: [URL] = []
-        if let clearbit = URL(string: "https://logo.clearbit.com/\(domain)?size=256") {
-            urls.append(clearbit)
-        }
-        // Google favicon as reliable fallback (always available, no auth)
-        let googlePath = "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON"
-            + "&fallback_opts=TYPE,SIZE,URL&url=https://\(domain)&size=256"
-        if let google = URL(string: googlePath) {
-            urls.append(google)
-        }
-        return urls
-    }
 
     /// Whether this provider has predefined plan tiers.
     var hasPlanTiers: Bool { !plans.isEmpty }

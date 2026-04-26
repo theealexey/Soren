@@ -62,10 +62,11 @@ struct ProviderIcon: View {
     // MARK: - Init (Provider-based)
 
     init(provider: ProviderTemplate, size: Size = .medium) {
+        let logoURLs = ProviderLogoResolver.logoURLs(for: provider)
         if let assetName = Self.bundledAssetName(for: provider) {
             self.content = .asset(assetName)
-        } else if !provider.logoURLs.isEmpty {
-            self.content = .remoteLogo(provider.logoURLs, provider)
+        } else if !logoURLs.isEmpty {
+            self.content = .remoteLogo(logoURLs, provider)
         } else if let hex = provider.brandColorHex {
             self.content = .letterMark(provider.letterMark, Color(hex: hex))
         } else {

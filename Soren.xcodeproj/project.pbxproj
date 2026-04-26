@@ -67,6 +67,7 @@
 		40B9AED4D39EF8E91FE3ADAE /* PaymentMethodRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = E649AB3F110DA227AEAD1E55 /* PaymentMethodRepository.swift */; };
 		42F8B50D7C256BA73B7A0466 /* RecurringItemFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 311318194B8656243E68001D /* RecurringItemFormatter.swift */; };
 		0868A7E625AE43B3A5903A0C /* ValidationErrorFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F15CD2AA93E44FBD849DF8EE /* ValidationErrorFormatter.swift */; };
+		PLRB890ABCDEF1234567890A /* ProviderLogoResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = PLRF890ABCDEF1234567890A /* ProviderLogoResolver.swift */; };
 		4400522E9CF5B4E98536CBF3 /* LandscapeGestureOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A90895A6DB5B8C47EE8C2893 /* LandscapeGestureOverlay.swift */; };
 		446776A4B4A8B61EACD9791E /* MotionTokenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B50D4B434DAA34DC9657942 /* MotionTokenTests.swift */; };
 		45D8007054C0DC0DC22CEF7E /* OpenExchangeRateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF6E3294064040757EF1F48 /* OpenExchangeRateProvider.swift */; };
@@ -217,6 +218,7 @@
 		0700A634ECA523A4A7F78A62 /* RecurringItemFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringItemFormatterTests.swift; sourceTree = "<group>"; };
 		4AFB4E7F848245FCABDA4BF5 /* ValidationErrorFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationErrorFormatterTests.swift; sourceTree = "<group>"; };
 		F15CD2AA93E44FBD849DF8EE /* ValidationErrorFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationErrorFormatter.swift; sourceTree = "<group>"; };
+		PLRF890ABCDEF1234567890A /* ProviderLogoResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderLogoResolver.swift; sourceTree = "<group>"; };
 		0730D410421B54FB89BDF8AA /* Shadows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shadows.swift; sourceTree = "<group>"; };
 		08466B38DFF515E50A44F77D /* UsageStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageStatus.swift; sourceTree = "<group>"; };
 		08812B98439C0712AFCA46D6 /* SupportedCurrencyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportedCurrencyTests.swift; sourceTree = "<group>"; };
@@ -901,6 +903,7 @@
 				BF99DB7F322CD045D657B971 /* InsightsBuilder.swift */,
 				311318194B8656243E68001D /* RecurringItemFormatter.swift */,
 				F15CD2AA93E44FBD849DF8EE /* ValidationErrorFormatter.swift */,
+				PLRF890ABCDEF1234567890A /* ProviderLogoResolver.swift */,
 			);
 			path = Formatters;
 			sourceTree = "<group>";
@@ -1306,6 +1309,7 @@
 				0B0F17015B71292BB90DC1E5 /* RecurringItemFormFields.swift in Sources */,
 				42F8B50D7C256BA73B7A0466 /* RecurringItemFormatter.swift in Sources */,
 				0868A7E625AE43B3A5903A0C /* ValidationErrorFormatter.swift in Sources */,
+				PLRB890ABCDEF1234567890A /* ProviderLogoResolver.swift in Sources */,
 				3B7DDC902C1948E2B1BADA98 /* NotificationScheduler.swift in Sources */,
 				NFRC234567890ABCDEF0002 /* NotificationRefreshCoordinator.swift in Sources */,
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* ChargeReminderOption.swift in Sources */,
