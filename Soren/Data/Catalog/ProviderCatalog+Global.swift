@@ -11,9 +11,10 @@ extension ProviderCatalog {
               tags: ["streaming", "popular"], managementURL: URL(string: "https://www.netflix.com/account"),
               brandColorHex: "#E50914", clearbitDomain: "netflix.com",
               plans: [
-                  .init(id: "standard_ads", name: "Standard с рекламой", amount: 7.99, billingCycle: .monthly, features: "1080p, 2 экрана"),
-                  .init(id: "standard", name: "Standard", amount: 15.49, billingCycle: .monthly, features: "1080p, 2 экрана, скачивание"),
-                  .init(id: "premium", name: "Premium", amount: 22.99, billingCycle: .monthly, features: "4K HDR, 4 экрана"),
+                  // US prices as of March 2026
+                  .init(id: "standard_ads", name: "Standard с рекламой", amount: 8.99, billingCycle: .monthly, features: "1080p, 2 экрана"),
+                  .init(id: "standard", name: "Standard", amount: 19.99, billingCycle: .monthly, features: "1080p, 2 экрана, скачивание"),
+                  .init(id: "premium", name: "Premium", amount: 26.99, billingCycle: .monthly, features: "4K HDR, 4 экрана"),
               ]),
 
         .init(id: "youtube_premium", displayName: "YouTube Premium", aliases: ["ютуб", "youtube"],
@@ -21,10 +22,11 @@ extension ProviderCatalog {
               tags: ["streaming", "ad-free", "popular"],
               brandColorHex: "#FF0000", clearbitDomain: "youtube.com",
               plans: [
-                  .init(id: "individual", name: "Individual", amount: 13.99, billingCycle: .monthly),
-                  .init(id: "individual_annual", name: "Individual (год)", amount: 159.99, billingCycle: .annual, features: "Экономия ~$8"),
-                  .init(id: "family", name: "Family", amount: 22.99, billingCycle: .monthly, features: "До 5 участников"),
-                  .init(id: "student", name: "Student", amount: 7.99, billingCycle: .monthly),
+                  // US prices raised April 2026
+                  .init(id: "individual", name: "Individual", amount: 15.99, billingCycle: .monthly),
+                  .init(id: "individual_annual", name: "Individual (год)", amount: 159.99, billingCycle: .annual, features: "Экономия ~$32"),
+                  .init(id: "family", name: "Family", amount: 26.99, billingCycle: .monthly, features: "До 5 участников"),
+                  .init(id: "student", name: "Student", amount: 8.99, billingCycle: .monthly),
               ]),
 
         .init(id: "disney_plus", displayName: "Disney+", aliases: ["дисней"],
@@ -32,10 +34,10 @@ extension ProviderCatalog {
               tags: ["streaming"],
               brandColorHex: "#113CCF", clearbitDomain: "disneyplus.com",
               plans: [
-                  .init(id: "standard_ads", name: "Standard с рекламой", amount: 9.99, billingCycle: .monthly),
-                  .init(id: "standard", name: "Standard", amount: 15.99, billingCycle: .monthly, features: "Скачивание, без рекламы"),
-                  .init(id: "premium", name: "Premium", amount: 19.99, billingCycle: .monthly, features: "4K HDR, Dolby Atmos, 4 экрана"),
-                  .init(id: "premium_annual", name: "Premium (год)", amount: 189.99, billingCycle: .annual, features: "4K HDR, Dolby Atmos, 4 экрана"),
+                  // US simplified to 2 tiers as of late 2025; both include 4K HDR
+                  .init(id: "with_ads", name: "С рекламой", amount: 11.99, billingCycle: .monthly, features: "4K HDR, реклама"),
+                  .init(id: "standard", name: "Standard (без рекламы)", amount: 18.99, billingCycle: .monthly, features: "4K HDR, 4 экрана, скачивание"),
+                  .init(id: "standard_annual", name: "Standard (год)", amount: 189.99, billingCycle: .annual, features: "4K HDR, 4 экрана"),
               ]),
 
         .init(id: "hbo_max", displayName: "Max (HBO)", aliases: ["hbo", "max"],
@@ -43,11 +45,12 @@ extension ProviderCatalog {
               tags: ["streaming"],
               brandColorHex: "#002BE7", clearbitDomain: "max.com",
               plans: [
-                  .init(id: "with_ads", name: "С рекламой", amount: 9.99, billingCycle: .monthly, features: "FHD, 2 экрана"),
+                  // US prices as of 2026
+                  .init(id: "with_ads", name: "С рекламой", amount: 10.99, billingCycle: .monthly, features: "FHD, 2 экрана"),
                   .init(id: "with_ads_annual", name: "С рекламой (год)", amount: 109.99, billingCycle: .annual, features: "FHD, 2 экрана"),
-                  .init(id: "ad_free", name: "Без рекламы", amount: 15.99, billingCycle: .monthly, features: "FHD, 2 экрана"),
+                  .init(id: "ad_free", name: "Без рекламы", amount: 18.49, billingCycle: .monthly, features: "FHD, 2 экрана"),
                   .init(id: "ad_free_annual", name: "Без рекламы (год)", amount: 184.99, billingCycle: .annual, features: "FHD, 2 экрана"),
-                  .init(id: "ultimate", name: "Ultimate", amount: 19.99, billingCycle: .monthly, features: "4K, 4 экрана, Dolby Atmos"),
+                  .init(id: "ultimate", name: "Ultimate", amount: 22.99, billingCycle: .monthly, features: "4K, 4 экрана, Dolby Atmos"),
                   .init(id: "ultimate_annual", name: "Ultimate (год)", amount: 229.99, billingCycle: .annual, features: "4K, 4 экрана, Dolby Atmos"),
               ]),
 
@@ -56,8 +59,9 @@ extension ProviderCatalog {
               tags: ["streaming", "apple"],
               brandColorHex: "#000000", clearbitDomain: "apple.com",
               plans: [
-                  .init(id: "monthly", name: "Monthly", amount: 9.99, billingCycle: .monthly),
-                  .init(id: "annual", name: "Annual", amount: 99.99, billingCycle: .annual, features: "Экономия ~$20"),
+                  // Price raised to $12.99/month in August 2025
+                  .init(id: "monthly", name: "Monthly", amount: 12.99, billingCycle: .monthly),
+                  .init(id: "annual", name: "Annual", amount: 99.99, billingCycle: .annual, features: "Экономия ~$56"),
               ]),
 
         .init(id: "amazon_prime_video", displayName: "Amazon Prime Video", aliases: ["амазон", "prime video"],
@@ -93,10 +97,11 @@ extension ProviderCatalog {
               tags: ["music", "streaming", "popular"],
               brandColorHex: "#1DB954", clearbitDomain: "spotify.com",
               plans: [
-                  .init(id: "individual", name: "Individual", amount: 11.99, billingCycle: .monthly),
-                  .init(id: "duo", name: "Duo", amount: 16.99, billingCycle: .monthly, features: "2 аккаунта"),
-                  .init(id: "family", name: "Family", amount: 19.99, billingCycle: .monthly, features: "До 6 участников"),
-                  .init(id: "student", name: "Student", amount: 5.99, billingCycle: .monthly),
+                  // US prices raised January 2026
+                  .init(id: "individual", name: "Individual", amount: 12.99, billingCycle: .monthly),
+                  .init(id: "duo", name: "Duo", amount: 18.99, billingCycle: .monthly, features: "2 аккаунта"),
+                  .init(id: "family", name: "Family", amount: 21.99, billingCycle: .monthly, features: "До 6 участников"),
+                  .init(id: "student", name: "Student", amount: 6.99, billingCycle: .monthly),
               ]),
 
         .init(id: "apple_music", displayName: "Apple Music", aliases: ["эпл мьюзик"],
@@ -114,9 +119,9 @@ extension ProviderCatalog {
               tags: ["music", "hifi"],
               brandColorHex: "#000000", clearbitDomain: "tidal.com",
               plans: [
-                  .init(id: "hifi", name: "HiFi", amount: 10.99, billingCycle: .monthly, features: "Lossless FLAC"),
-                  .init(id: "hifi_plus", name: "HiFi+", amount: 19.99, billingCycle: .monthly, features: "HiRes, Dolby Atmos, Sony 360"),
-                  .init(id: "family", name: "Family HiFi", amount: 16.99, billingCycle: .monthly, features: "До 6 участников"),
+                  // HiFi and HiFi+ merged into a single plan (April 2024)
+                  .init(id: "individual", name: "Individual", amount: 10.99, billingCycle: .monthly, features: "Lossless, HiRes 24-bit, Dolby Atmos"),
+                  .init(id: "family", name: "Family", amount: 16.99, billingCycle: .monthly, features: "До 6 участников"),
               ]),
 
         .init(id: "deezer", displayName: "Deezer", aliases: ["дизер"],
@@ -202,9 +207,12 @@ extension ProviderCatalog {
               tags: ["ai", "popular"],
               brandColorHex: "#10A37F", clearbitDomain: "openai.com",
               plans: [
+                  // Go ($8) and Pro-100 ($100) added in 2026
+                  .init(id: "go", name: "Go", amount: 8, billingCycle: .monthly, features: "Базовый доступ к моделям"),
                   .init(id: "plus", name: "Plus", amount: 20, billingCycle: .monthly),
-                  .init(id: "team", name: "Team", amount: 25, billingCycle: .monthly, features: "Расширенные лимиты"),
-                  .init(id: "pro", name: "Pro", amount: 200, billingCycle: .monthly, features: "Безлимитный доступ"),
+                  .init(id: "team", name: "Business", amount: 25, billingCycle: .monthly, features: "Расширенные лимиты, управление"),
+                  .init(id: "pro_100", name: "Pro", amount: 100, billingCycle: .monthly, features: "5× лимиты Plus, продвинутые модели"),
+                  .init(id: "pro", name: "Pro Max", amount: 200, billingCycle: .monthly, features: "20× лимиты Plus, безлимитный доступ"),
               ]),
 
         .init(id: "claude_pro", displayName: "Claude Pro", aliases: ["клод", "anthropic"],
@@ -213,7 +221,8 @@ extension ProviderCatalog {
               brandColorHex: "#D97757", clearbitDomain: "anthropic.com",
               plans: [
                   .init(id: "pro", name: "Pro", amount: 20, billingCycle: .monthly),
-                  .init(id: "max", name: "Max", amount: 100, billingCycle: .monthly, features: "Расширенные лимиты, приоритет"),
+                  .init(id: "max_5x", name: "Max (5×)", amount: 100, billingCycle: .monthly, features: "5× лимиты Pro, приоритет"),
+                  .init(id: "max_20x", name: "Max (20×)", amount: 200, billingCycle: .monthly, features: "20× лимиты Pro"),
               ]),
 
         .init(id: "midjourney", displayName: "Midjourney", aliases: ["миджорни"],
@@ -232,8 +241,10 @@ extension ProviderCatalog {
               tags: ["ai", "dev"],
               brandColorHex: "#000000", clearbitDomain: "github.com",
               plans: [
-                  .init(id: "individual", name: "Individual", amount: 10, billingCycle: .monthly),
-                  .init(id: "individual_annual", name: "Individual (год)", amount: 100, billingCycle: .annual),
+                  // Copilot Pro+ ($39/mo) added 2025; annual Copilot Pro = $100/year
+                  .init(id: "individual", name: "Copilot Pro", amount: 10, billingCycle: .monthly),
+                  .init(id: "individual_annual", name: "Copilot Pro (год)", amount: 100, billingCycle: .annual),
+                  .init(id: "pro_plus", name: "Copilot Pro+", amount: 39, billingCycle: .monthly, features: "Расширенные модели, большие контексты"),
                   .init(id: "business", name: "Business", amount: 19, billingCycle: .monthly, features: "Управление командой, политики"),
               ]),
 
@@ -316,8 +327,9 @@ extension ProviderCatalog {
               tags: ["security", "passwords"],
               brandColorHex: "#0572EC", clearbitDomain: "1password.com",
               plans: [
-                  .init(id: "individual", name: "Individual", amount: 2.99, billingCycle: .monthly),
-                  .init(id: "families", name: "Families", amount: 4.99, billingCycle: .monthly, features: "До 5 участников"),
+                  // Prices raised March 27, 2026
+                  .init(id: "individual", name: "Individual", amount: 3.99, billingCycle: .monthly),
+                  .init(id: "families", name: "Families", amount: 5.99, billingCycle: .monthly, features: "До 5 участников"),
               ]),
 
         .init(id: "canva", displayName: "Canva Pro", aliases: ["канва"],
@@ -334,8 +346,9 @@ extension ProviderCatalog {
               tags: ["design", "creative"],
               brandColorHex: "#FF0000", clearbitDomain: "adobe.com",
               plans: [
-                  .init(id: "photography", name: "Photography", amount: 9.99, billingCycle: .monthly, features: "Lightroom + Photoshop, 20 ГБ"),
-                  .init(id: "all_apps", name: "All Apps", amount: 54.99, billingCycle: .monthly, features: "Все 20+ приложений, 100 ГБ"),
+                  // "All Apps" renamed to "Creative Cloud Pro" on August 1, 2025
+                  .init(id: "photography", name: "Photography", amount: 19.99, billingCycle: .monthly, features: "Lightroom + Photoshop, 20 ГБ"),
+                  .init(id: "all_apps", name: "Creative Cloud Pro", amount: 69.99, billingCycle: .monthly, features: "Все 20+ приложений, 100 ГБ"),
               ]),
 
         .init(id: "telegram_premium", displayName: "Telegram Premium",
@@ -346,8 +359,8 @@ extension ProviderCatalog {
               plans: [
                   .init(id: "monthly", name: "Monthly", amount: 4.99, billingCycle: .monthly,
                         features: "Файлы до 4 ГБ, без рекламы, Premium-стикеры"),
-                  .init(id: "annual", name: "Annual", amount: 29.99, billingCycle: .annual,
-                        features: "~$2.50/мес"),
+                  .init(id: "annual", name: "Annual", amount: 35.99, billingCycle: .annual,
+                        features: "~$3/мес"),
               ]),
 
         // MARK: VPN & Security
@@ -356,7 +369,8 @@ extension ProviderCatalog {
               tags: ["vpn", "popular"],
               brandColorHex: "#4687FF", clearbitDomain: "nordvpn.com",
               plans: [
-                  .init(id: "monthly", name: "Monthly", amount: 13.99, billingCycle: .monthly, features: "6 устройств"),
+                  // Basic tier reference prices (US 2026)
+                  .init(id: "monthly", name: "Monthly", amount: 12.99, billingCycle: .monthly, features: "6 устройств"),
                   .init(id: "annual", name: "Annual", amount: 59.88, billingCycle: .annual, features: "~$4.99/мес"),
               ]),
 
@@ -406,9 +420,10 @@ extension ProviderCatalog {
               tags: ["gaming", "microsoft"],
               brandColorHex: "#107C10", clearbitDomain: "xbox.com",
               plans: [
+                  // Ultimate dropped from $29.99 to $22.99 on April 21, 2026
                   .init(id: "core", name: "Core", amount: 9.99, billingCycle: .monthly, features: "Онлайн + 25 классических игр"),
                   .init(id: "standard", name: "Standard", amount: 14.99, billingCycle: .monthly, features: "Каталог PC + Console"),
-                  .init(id: "ultimate", name: "Ultimate", amount: 19.99, billingCycle: .monthly, features: "PC + Console + EA Play + Cloud"),
+                  .init(id: "ultimate", name: "Ultimate", amount: 22.99, billingCycle: .monthly, features: "PC + Console + EA Play + Cloud"),
               ]),
 
         .init(id: "nintendo_online", displayName: "Nintendo Switch Online", aliases: ["нинтендо"],
@@ -464,8 +479,11 @@ extension ProviderCatalog {
               tags: ["language"],
               brandColorHex: "#58CC02", clearbitDomain: "duolingo.com",
               plans: [
-                  .init(id: "super_monthly", name: "Super", amount: 6.99, billingCycle: .monthly, features: "Без рекламы, безлимитные жизни"),
-                  .init(id: "super_annual", name: "Super (год)", amount: 79.99, billingCycle: .annual),
+                  // US prices as of 2026; Duolingo Max added (AI roleplay + video calls)
+                  .init(id: "super_monthly", name: "Super", amount: 12.99, billingCycle: .monthly, features: "Без рекламы, безлимитные жизни"),
+                  .init(id: "super_annual", name: "Super (год)", amount: 83.99, billingCycle: .annual),
+                  .init(id: "max_monthly", name: "Max", amount: 29.99, billingCycle: .monthly, features: "Super + AI roleplay, видео-звонки"),
+                  .init(id: "max_annual", name: "Max (год)", amount: 168, billingCycle: .annual, features: "Super + AI roleplay, видео-звонки"),
                   .init(id: "family", name: "Family", amount: 119.99, billingCycle: .annual, features: "До 6 участников"),
               ]),
 
@@ -552,15 +570,15 @@ extension ProviderCatalog {
               managementURL: URL(string: "https://www.meta.com/verified"),
               brandColorHex: "#0866FF", clearbitDomain: "meta.com",
               plans: [
-                  // US reference prices; actual price varies by region and platform.
+                  // US reference prices per profile; verified at meta.com/meta-verified April 2026
                   .init(id: "standard", name: "Standard", amount: 14.99, billingCycle: .monthly,
                         features: "Verified badge, поддержка аккаунта"),
-                  .init(id: "plus", name: "Plus", amount: 29.99, billingCycle: .monthly,
-                        features: "Standard + продвижение профиля"),
-                  .init(id: "premium", name: "Premium", amount: 59.99, billingCycle: .monthly,
-                        features: "Plus + Stars, эксклюзивные стикеры"),
-                  .init(id: "max", name: "Max", amount: 299, billingCycle: .monthly,
-                        features: "Полный пакет монетизации"),
+                  .init(id: "plus", name: "Plus", amount: 49.99, billingCycle: .monthly,
+                        features: "Standard + продвижение профиля, ссылки в Reels"),
+                  .init(id: "premium", name: "Premium", amount: 149.99, billingCycle: .monthly,
+                        features: "Plus + Stars, эксклюзивные стикеры, монетизация"),
+                  .init(id: "max", name: "Max", amount: 499.99, billingCycle: .monthly,
+                        features: "Полный пакет монетизации и поддержки"),
               ]),
 
         .init(id: "x_premium", displayName: "X Premium",
@@ -570,7 +588,7 @@ extension ProviderCatalog {
               managementURL: URL(string: "https://x.com/settings/premium"),
               brandColorHex: "#000000", clearbitDomain: "x.com",
               plans: [
-                  // US reference prices at x.com/i/premium.
+                  // US prices at x.com/i/premium; Premium+ doubled in Feb 2025 (Grok 3)
                   .init(id: "basic_monthly", name: "Basic", amount: 3, billingCycle: .monthly),
                   .init(id: "basic_annual", name: "Basic (год)", amount: 32, billingCycle: .annual,
                         features: "~$2.67/мес"),
@@ -578,10 +596,10 @@ extension ProviderCatalog {
                         features: "Синяя галочка, расширенные посты"),
                   .init(id: "premium_annual", name: "Premium (год)", amount: 84, billingCycle: .annual,
                         features: "~$7/мес, синяя галочка"),
-                  .init(id: "premium_plus_monthly", name: "Premium+", amount: 16, billingCycle: .monthly,
-                        features: "Приоритет в ленте, без рекламы"),
-                  .init(id: "premium_plus_annual", name: "Premium+ (год)", amount: 168, billingCycle: .annual,
-                        features: "~$14/мес, без рекламы"),
+                  .init(id: "premium_plus_monthly", name: "Premium+", amount: 40, billingCycle: .monthly,
+                        features: "Grok 3, приоритет в ленте, без рекламы"),
+                  .init(id: "premium_plus_annual", name: "Premium+ (год)", amount: 395, billingCycle: .annual,
+                        features: "~$32.92/мес, Grok 3, без рекламы"),
               ]),
 
         .init(id: "discord_nitro", displayName: "Discord Nitro",
