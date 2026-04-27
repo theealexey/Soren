@@ -1,6 +1,15 @@
 import Foundation
 
 // MARK: - Russian Market Providers
+//
+// ЦЕНОВАЯ ПОЛИТИКА / PRICING POLICY
+// Все суммы — справочные значения для российского рынка на момент составления каталога.
+// Реальные цены зависят от акций, региона, даты подписки и изменений тарифов сервисов.
+// Пользователь должен проверить и скорректировать сумму после добавления.
+//
+// All amounts are Russian-market reference values at the time the catalog was authored.
+// Actual prices depend on promotions, region, subscription date, and service tariff changes.
+// Users are expected to verify and correct the amount after adding a subscription.
 
 extension ProviderCatalog {
 

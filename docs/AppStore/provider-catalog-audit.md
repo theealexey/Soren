@@ -5,6 +5,57 @@
 
 ---
 
+## Pricing Policy
+
+> **Default plan amounts are reference values only — not guaranteed prices.**
+
+Subscription pricing is volatile. Services raise prices 1–4× per year, offer regional
+promotions, and charge different amounts via web vs. App Store (Apple adds ~30% on top).
+This catalog cannot represent every user's actual charge.
+
+### What the defaults are
+
+- **US-market reference prices** for global providers, verified at the time of the audit.
+- **Russian-market reference prices** for Russian providers, in RUB, accurate at time of authoring.
+
+### What the defaults are NOT
+
+- Universal prices valid in every country.
+- App Store prices (those carry Apple's platform fee and vary by App Store territory).
+- Guaranteed current prices — subscription costs change frequently.
+
+### User expectation
+
+When a user adds a subscription from the catalog, the pre-filled amount is a **starting suggestion only**. The UI should make it easy to edit. Users are responsible for entering the amount actually charged to their card.
+
+### Providers with no default amounts (amount = 0)
+
+These providers have plan tier names defined (so the user can identify which tier they're on),
+but no default price — because no reliable single price exists:
+
+| Provider | Reason |
+|----------|--------|
+| **Meta Verified** | Per-profile business pricing; varies dramatically by country and platform. iOS App Store price ≠ web price. |
+| **Telegram Premium** | Official FAQ states: *"price depends on your country and region."* |
+| **Grindr** | App Store-only subscription; price set per App Store territory. |
+| **Hornet** | App Store-only subscription; price set per App Store territory. |
+| **Patreon, Twitch, YouTube Memberships, Ko-fi, Buy Me a Coffee, Substack, OnlyFans** | Creator-set; no fixed price by definition. |
+
+### Providers with most-stable reference prices
+
+These prices are controlled by the publishing company globally and change infrequently:
+
+- **Apple ecosystem** — iCloud+, Apple Music, Apple TV+, Apple Arcade, Apple Fitness+, Apple One
+- **Developer tools** — ChatGPT (OpenAI), Claude Pro (Anthropic), Midjourney, GitHub Copilot, Cursor, Perplexity
+- **Platform tools** — Microsoft 365, 1Password, Nintendo Switch Online, Mullvad VPN
+
+### Update cadence recommendation
+
+Re-audit global providers every 6 months or after any major service announcement.
+Re-audit Russian providers every 3 months (RUB-denominated services change more frequently).
+
+---
+
 ## Summary
 
 | Metric | Count |
@@ -16,6 +67,7 @@
 | New plan tiers added | 7 |
 | Confirmed correct | 31 |
 | Unverified (owner confirmation needed) | 18 |
+| **Prices zeroed (no reliable default)** | **2 (Meta Verified, Telegram Premium)** |
 
 ---
 

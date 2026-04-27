@@ -1,6 +1,14 @@
 import Foundation
 
 // MARK: - Global Providers
+//
+// PRICING POLICY
+// All plan amounts are US-market reference prices only.
+// Actual charges vary by country, App Store territory, payment method,
+// promotional pricing, and whether the subscription is purchased on web
+// vs. through Apple/Google (which add a platform fee on top).
+// These values serve as convenient starting points — users are expected
+// to verify and correct their actual amount when adding a subscription.
 
 extension ProviderCatalog {
 
@@ -357,10 +365,12 @@ extension ProviderCatalog {
               tags: ["messaging", "communication"],
               brandColorHex: "#2CA5E0", clearbitDomain: "telegram.org",
               plans: [
-                  .init(id: "monthly", name: "Monthly", amount: 4.99, billingCycle: .monthly,
+                  // Telegram FAQ: "price depends on your country and region."
+                  // No universal default; users must enter their actual charge.
+                  .init(id: "monthly", name: "Monthly", amount: 0, billingCycle: .monthly,
                         features: "Файлы до 4 ГБ, без рекламы, Premium-стикеры"),
-                  .init(id: "annual", name: "Annual", amount: 35.99, billingCycle: .annual,
-                        features: "~$3/мес"),
+                  .init(id: "annual", name: "Annual", amount: 0, billingCycle: .annual,
+                        features: "Файлы до 4 ГБ, без рекламы, Premium-стикеры"),
               ]),
 
         // MARK: VPN & Security
@@ -570,14 +580,16 @@ extension ProviderCatalog {
               managementURL: URL(string: "https://www.meta.com/verified"),
               brandColorHex: "#0866FF", clearbitDomain: "meta.com",
               plans: [
-                  // US reference prices per profile; verified at meta.com/meta-verified April 2026
-                  .init(id: "standard", name: "Standard", amount: 14.99, billingCycle: .monthly,
+                  // Prices are per-profile, US-web only, and vary significantly by country
+                  // and platform (iOS App Store adds ~30%). No reliable default exists.
+                  // Users must enter their actual charged amount.
+                  .init(id: "standard", name: "Standard", amount: 0, billingCycle: .monthly,
                         features: "Verified badge, поддержка аккаунта"),
-                  .init(id: "plus", name: "Plus", amount: 49.99, billingCycle: .monthly,
+                  .init(id: "plus", name: "Plus", amount: 0, billingCycle: .monthly,
                         features: "Standard + продвижение профиля, ссылки в Reels"),
-                  .init(id: "premium", name: "Premium", amount: 149.99, billingCycle: .monthly,
+                  .init(id: "premium", name: "Premium", amount: 0, billingCycle: .monthly,
                         features: "Plus + Stars, эксклюзивные стикеры, монетизация"),
-                  .init(id: "max", name: "Max", amount: 499.99, billingCycle: .monthly,
+                  .init(id: "max", name: "Max", amount: 0, billingCycle: .monthly,
                         features: "Полный пакет монетизации и поддержки"),
               ]),
 
