@@ -212,4 +212,88 @@ struct ProviderCatalogSearchTests {
         #expect(results.allSatisfy { $0.category == .video })
         #expect(results.count >= 5)  // Netflix, YouTube, Disney+, HBO, Apple TV+, RU services
     }
+
+    // MARK: - Social & Creator Platform Search
+
+    @Test("Search 'Instagram' finds Meta Verified (alias)")
+    func searchInstagramFindsMetaVerified() async {
+        let results = await repo.search(query: "instagram")
+        #expect(results.contains { $0.id == "meta_verified" },
+                "Expected 'meta_verified' in results for query 'instagram'")
+    }
+
+    @Test("Search 'Facebook' finds Meta Verified (alias)")
+    func searchFacebookFindsMetaVerified() async {
+        let results = await repo.search(query: "facebook")
+        #expect(results.contains { $0.id == "meta_verified" })
+    }
+
+    @Test("Search 'Twitter' finds X Premium (alias)")
+    func searchTwitterFindsXPremium() async {
+        let results = await repo.search(query: "twitter")
+        #expect(results.contains { $0.id == "x_premium" },
+                "Expected 'x_premium' in results for query 'twitter'")
+    }
+
+    @Test("Search 'Twitter Blue' finds X Premium (alias)")
+    func searchTwitterBlueFindsXPremium() async {
+        let results = await repo.search(query: "twitter blue")
+        #expect(results.contains { $0.id == "x_premium" })
+    }
+
+    @Test("Search 'X Premium' finds X Premium (displayName)")
+    func searchXPremiumDisplayName() async {
+        let results = await repo.search(query: "x premium")
+        #expect(results.contains { $0.id == "x_premium" })
+    }
+
+    @Test("Search 'Telegram' finds Telegram Premium (alias)")
+    func searchTelegramFindsPremium() async {
+        let results = await repo.search(query: "telegram")
+        #expect(results.contains { $0.id == "telegram_premium" })
+    }
+
+    @Test("Search 'Discord' finds Discord Nitro (alias)")
+    func searchDiscordFindsNitro() async {
+        let results = await repo.search(query: "discord")
+        #expect(results.contains { $0.id == "discord_nitro" })
+    }
+
+    @Test("Search 'Reddit' finds Reddit Premium (alias)")
+    func searchRedditFindsPremium() async {
+        let results = await repo.search(query: "reddit")
+        #expect(results.contains { $0.id == "reddit_premium" })
+    }
+
+    // MARK: - Dating App Search
+
+    @Test("Search 'Grindr' finds Grindr (displayName)")
+    func searchGrindrFindsGrindr() async {
+        let results = await repo.search(query: "grindr")
+        #expect(results.contains { $0.id == "grindr" })
+    }
+
+    @Test("Search 'Grindr XTRA' finds Grindr (alias)")
+    func searchGrindrXTRAFindsGrindr() async {
+        let results = await repo.search(query: "grindr xtra")
+        #expect(results.contains { $0.id == "grindr" })
+    }
+
+    @Test("Search 'XTRA' finds Grindr via partial alias match")
+    func searchXTRAFindsGrindr() async {
+        let results = await repo.search(query: "xtra")
+        #expect(results.contains { $0.id == "grindr" })
+    }
+
+    @Test("Search 'Hornet' finds Hornet (displayName)")
+    func searchHornetFindsHornet() async {
+        let results = await repo.search(query: "hornet")
+        #expect(results.contains { $0.id == "hornet" })
+    }
+
+    @Test("Search 'Hornet Premium' finds Hornet (alias)")
+    func searchHornetPremiumFindsHornet() async {
+        let results = await repo.search(query: "hornet premium")
+        #expect(results.contains { $0.id == "hornet" })
+    }
 }

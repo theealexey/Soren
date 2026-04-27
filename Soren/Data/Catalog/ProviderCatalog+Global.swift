@@ -338,6 +338,18 @@ extension ProviderCatalog {
                   .init(id: "all_apps", name: "All Apps", amount: 54.99, billingCycle: .monthly, features: "Все 20+ приложений, 100 ГБ"),
               ]),
 
+        .init(id: "telegram_premium", displayName: "Telegram Premium",
+              aliases: ["телеграм", "telegram"],
+              category: .productivity, suggestedCurrencyCode: "USD", region: .global,
+              tags: ["messaging", "communication"],
+              brandColorHex: "#2CA5E0", clearbitDomain: "telegram.org",
+              plans: [
+                  .init(id: "monthly", name: "Monthly", amount: 4.99, billingCycle: .monthly,
+                        features: "Файлы до 4 ГБ, без рекламы, Premium-стикеры"),
+                  .init(id: "annual", name: "Annual", amount: 29.99, billingCycle: .annual,
+                        features: "~$2.50/мес"),
+              ]),
+
         // MARK: VPN & Security
         .init(id: "nordvpn", displayName: "NordVPN", aliases: ["норд"],
               category: .vpn, suggestedCurrencyCode: "USD", region: .global,
@@ -529,6 +541,94 @@ extension ProviderCatalog {
               category: .creators, suggestedCurrencyCode: "USD", region: .global,
               tags: ["creators"],
               brandColorHex: "#00AFF0", clearbitDomain: "onlyfans.com"),
+
+        // MARK: Social & Creator Platforms
+
+        .init(id: "meta_verified", displayName: "Meta Verified",
+              aliases: ["instagram", "facebook", "meta", "verified",
+                        "инстаграм", "фейсбук", "мета"],
+              category: .creators, suggestedCurrencyCode: "USD", region: .global,
+              tags: ["social", "creator", "verified"],
+              managementURL: URL(string: "https://www.meta.com/verified"),
+              brandColorHex: "#0866FF", clearbitDomain: "meta.com",
+              plans: [
+                  // US reference prices; actual price varies by region and platform.
+                  .init(id: "standard", name: "Standard", amount: 14.99, billingCycle: .monthly,
+                        features: "Verified badge, поддержка аккаунта"),
+                  .init(id: "plus", name: "Plus", amount: 29.99, billingCycle: .monthly,
+                        features: "Standard + продвижение профиля"),
+                  .init(id: "premium", name: "Premium", amount: 59.99, billingCycle: .monthly,
+                        features: "Plus + Stars, эксклюзивные стикеры"),
+                  .init(id: "max", name: "Max", amount: 299, billingCycle: .monthly,
+                        features: "Полный пакет монетизации"),
+              ]),
+
+        .init(id: "x_premium", displayName: "X Premium",
+              aliases: ["x", "twitter", "twitter blue", "твиттер", "твиттер блю", "premium+"],
+              category: .creators, suggestedCurrencyCode: "USD", region: .global,
+              tags: ["social", "creator", "twitter"],
+              managementURL: URL(string: "https://x.com/settings/premium"),
+              brandColorHex: "#000000", clearbitDomain: "x.com",
+              plans: [
+                  // US reference prices at x.com/i/premium.
+                  .init(id: "basic_monthly", name: "Basic", amount: 3, billingCycle: .monthly),
+                  .init(id: "basic_annual", name: "Basic (год)", amount: 32, billingCycle: .annual,
+                        features: "~$2.67/мес"),
+                  .init(id: "premium_monthly", name: "Premium", amount: 8, billingCycle: .monthly,
+                        features: "Синяя галочка, расширенные посты"),
+                  .init(id: "premium_annual", name: "Premium (год)", amount: 84, billingCycle: .annual,
+                        features: "~$7/мес, синяя галочка"),
+                  .init(id: "premium_plus_monthly", name: "Premium+", amount: 16, billingCycle: .monthly,
+                        features: "Приоритет в ленте, без рекламы"),
+                  .init(id: "premium_plus_annual", name: "Premium+ (год)", amount: 168, billingCycle: .annual,
+                        features: "~$14/мес, без рекламы"),
+              ]),
+
+        .init(id: "discord_nitro", displayName: "Discord Nitro",
+              aliases: ["дискорд", "discord"],
+              category: .creators, suggestedCurrencyCode: "USD", region: .global,
+              tags: ["gaming", "community", "communication"],
+              managementURL: URL(string: "https://discord.com/settings/premium"),
+              brandColorHex: "#5865F2", clearbitDomain: "discord.com",
+              plans: [
+                  .init(id: "basic_monthly", name: "Nitro Basic", amount: 2.99, billingCycle: .monthly,
+                        features: "Custom emoji, анимированный аватар"),
+                  .init(id: "basic_annual", name: "Nitro Basic (год)", amount: 29.99, billingCycle: .annual,
+                        features: "~$2.50/мес"),
+                  .init(id: "nitro_monthly", name: "Nitro", amount: 9.99, billingCycle: .monthly,
+                        features: "2 буста, файлы 500 МБ, HD-стриминг"),
+                  .init(id: "nitro_annual", name: "Nitro (год)", amount: 99.99, billingCycle: .annual,
+                        features: "~$8.33/мес, 2 буста"),
+              ]),
+
+        .init(id: "reddit_premium", displayName: "Reddit Premium",
+              aliases: ["реддит"],
+              category: .creators, suggestedCurrencyCode: "USD", region: .global,
+              tags: ["community", "social"],
+              managementURL: URL(string: "https://www.reddit.com/premium"),
+              brandColorHex: "#FF4500", clearbitDomain: "reddit.com",
+              plans: [
+                  .init(id: "monthly", name: "Monthly", amount: 5.99, billingCycle: .monthly,
+                        features: "Без рекламы, 700 монет/мес"),
+                  .init(id: "annual", name: "Annual", amount: 49.99, billingCycle: .annual,
+                        features: "~$4.17/мес"),
+              ]),
+
+        // MARK: Dating
+
+        // Plans omitted — subscription prices vary significantly by region and App Store territory.
+        // Users should enter their actual price when adding.
+        .init(id: "grindr", displayName: "Grindr",
+              aliases: ["grindr xtra", "grindr unlimited", "гриндер"],
+              category: .other, suggestedCurrencyCode: "USD", region: .global,
+              tags: ["dating", "social", "lgbtq"],
+              brandColorHex: "#F5A623", clearbitDomain: "grindr.com"),
+
+        .init(id: "hornet", displayName: "Hornet",
+              aliases: ["hornet plus", "hornet premium", "hornet max", "хорнет"],
+              category: .other, suggestedCurrencyCode: "USD", region: .global,
+              tags: ["dating", "social", "lgbtq"],
+              brandColorHex: "#EE3124", clearbitDomain: "hornet.com"),
 
         // MARK: Apple Bundles
         .init(id: "apple_one", displayName: "Apple One", aliases: ["эпл ван"],
