@@ -38,3 +38,6 @@ Secrets/
 *.ipa
 *.dSYM.zip
 *.dSYM
+
+# Local AI assistant / tooling config
+.claude/
