@@ -20,13 +20,21 @@ struct TierChipView: View {
                 .font(Typography.captionMedium)
                 .foregroundStyle(isSelected ? .white : ColorTokens.textPrimary)
 
-            AmountLabel(
-                tier.amount,
-                currency: tier.currencyCode ?? currencyCode,
-                size: .small,
-                cycle: cycleLabel,
-                tint: isSelected ? .white : nil
-            )
+            if tier.amount == 0 {
+                // No reliable default price — prompt the user to enter their actual charge.
+                Text(String(localized: "Введите цену"))
+                    .font(Typography.caption)
+                    .italic()
+                    .foregroundStyle(isSelected ? .white.opacity(0.65) : ColorTokens.textTertiary)
+            } else {
+                AmountLabel(
+                    tier.amount,
+                    currency: tier.currencyCode ?? currencyCode,
+                    size: .small,
+                    cycle: cycleLabel,
+                    tint: isSelected ? .white : nil
+                )
+            }
 
             if let features = tier.features {
                 Text(features)

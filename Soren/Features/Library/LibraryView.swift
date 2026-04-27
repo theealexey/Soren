@@ -31,7 +31,8 @@ struct LibraryView: View {
             let vm = LibraryViewModel(
                 repositories: container.repositories,
                 preferences: container.preferences,
-                notificationScheduler: container.notificationScheduler
+                notificationScheduler: container.notificationScheduler,
+                exchangeRateProvider: container.exchangeRateProvider
             )
             self.viewModel = vm
             vm.load()

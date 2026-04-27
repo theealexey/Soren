@@ -42,7 +42,13 @@ final class LibraryViewModel {
     private let getLibraryItems: GetLibraryItems
     private let deleteRecurringItem: DeleteRecurringItem
     private let preferences: UserPreferencesRepository
+    private let exchangeRateProvider: any ExchangeRateProvider
     private let searchDebounceDelay: Duration
+
+    /// Rates fetched in the background after load(); used by recompute() to convert
+    /// foreign-currency monthly equivalents to the user's defaultCurrency.
+    /// nil until the first successful fetch (first render uses raw amounts as fallback).
+    private var cachedRates: ExchangeRates?
 
     // MARK: - Search Debounce
 
@@ -73,11 +79,13 @@ final class LibraryViewModel {
         getLibraryItems: GetLibraryItems,
         deleteRecurringItem: DeleteRecurringItem,
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
+        exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider(),
         searchDebounceDelay: Duration = .milliseconds(150)
     ) {
         self.getLibraryItems = getLibraryItems
         self.deleteRecurringItem = deleteRecurringItem
         self.preferences = preferences
+        self.exchangeRateProvider = exchangeRateProvider
         self.searchDebounceDelay = searchDebounceDelay
     }
 
@@ -85,6 +93,7 @@ final class LibraryViewModel {
         repositories: RepositoryContainer,
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
         notificationScheduler: (any NotificationScheduling)? = nil,
+        exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider(),
         searchDebounceDelay: Duration = .milliseconds(150)
     ) {
         self.getLibraryItems = GetLibraryItems(repository: repositories.recurringItems)
@@ -93,6 +102,7 @@ final class LibraryViewModel {
             notificationScheduler: notificationScheduler
         )
         self.preferences = preferences
+        self.exchangeRateProvider = exchangeRateProvider
         self.searchDebounceDelay = searchDebounceDelay
     }
 
@@ -105,6 +115,16 @@ final class LibraryViewModel {
             allItems = try getLibraryItems.execute()
             isLoaded = true
             recompute()
+            // Kick off rate fetch in background; recompute again once rates land.
+            // OpenExchangeRateProvider serves from its 3-tier cache (memory → disk → network),
+            // so subsequent calls after the first are typically instant.
+            Task { [weak self] in
+                guard let self else { return }
+                if let rates = try? await self.exchangeRateProvider.latestRates() {
+                    self.cachedRates = rates
+                    self.recompute()
+                }
+            }
         } catch {
             self.error = error
         }
@@ -151,9 +171,19 @@ final class LibraryViewModel {
         filteredItems = result
 
         // 3. Monthly total and active categories derived from the filtered result.
+        // Items in foreign currencies are converted to defaultCurrency using cachedRates.
+        // When rates are unavailable for a given pair, the raw amount is used as a
+        // fallback — consistent with GetDashboardSummary behaviour.
         filteredMonthlyTotal = result
             .filter(\.status.countsInTotals)
-            .reduce(.zero) { $0 + $1.monthlyEquivalent }
+            .reduce(.zero) { sum, item in
+                let monthly = item.monthlyEquivalent
+                guard item.currencyCode != defaultCurrency else { return sum + monthly }
+                guard let rates = cachedRates,
+                      let converted = rates.convert(monthly, from: item.currencyCode, to: defaultCurrency)
+                else { return sum + monthly }
+                return sum + converted
+            }
 
         let cats = Set(result.map(\.category))
         activeCategories = ItemCategory.allCases.filter { cats.contains($0) }

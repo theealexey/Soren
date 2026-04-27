@@ -159,7 +159,11 @@ final class AddSubscriptionViewModel {
 
     func selectTier(_ tier: PlanTier) {
         selectedTier = tier
-        amountText = tier.amount.description   // .description is locale-independent unlike "\(decimal)"
+        // A zero amount means no reliable default price exists for this tier
+        // (e.g. Meta Verified — regional / platform-variable pricing).
+        // Clear the field so the user sees an empty input and knows to fill it in,
+        // rather than seeing "0" with a silently disabled Save button.
+        amountText = tier.amount == 0 ? "" : tier.amount.description
         isNextChargeDateManuallySet = false    // let billingCycle.didSet re-suggest below
         billingCycle = tier.billingCycle
         if let override = tier.currencyCode {
