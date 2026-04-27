@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soren — Support &amp; Privacy Policy</title>
+  <meta name="description" content="Support and Privacy Policy for Soren — subscription and recurring payment tracker.">
+  <meta name="robots" content="noindex, nofollow">
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Tokens ── */
+    :root {
+      --bg:           #f7f7f5;
+      --surface:      #ffffff;
+      --text-primary: #111111;
+      --text-body:    #444444;
+      --text-muted:   #888888;
+      --border:       #e4e4e0;
+      --accent:       #111111;
+      --radius:       10px;
+      --max:          660px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:           #111111;
+        --surface:      #1c1c1e;
+        --text-primary: #f2f2f0;
+        --text-body:    #aaaaaa;
+        --text-muted:   #666666;
+        --border:       #2c2c2e;
+        --accent:       #f2f2f0;
+      }
+    }
+
+    /* ── Base ── */
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+                   "Helvetica Neue", Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.65;
+      color: var(--text-body);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ── Layout ── */
+    .wrap {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* ── Header ── */
+    .site-header {
+      padding: 56px 0 36px;
+    }
+
+    .site-header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      color: var(--text-primary);
+    }
+
+    .site-header p {
+      margin-top: 4px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    /* ── Nav ── */
+    .site-nav {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 0;
+    }
+
+    .site-nav ul {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 0;
+    }
+
+    .site-nav li { display: flex; align-items: center; }
+
+    .site-nav li + li::before {
+      content: "·";
+      margin: 0 10px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .site-nav a {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.12s;
+    }
+
+    .site-nav a:hover { color: var(--text-primary); }
+
+    /* ── Sections ── */
+    section {
+      padding: 44px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    section:last-of-type { border-bottom: none; }
+
+    .section-eyebrow {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 18px;
+    }
+
+    /* ── Headings ── */
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      color: var(--text-primary);
+      margin-bottom: 22px;
+    }
+
+    h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-top: 30px;
+      margin-bottom: 8px;
+    }
+
+    /* ── Prose ── */
+    p {
+      font-size: 15px;
+      color: var(--text-body);
+      margin-bottom: 12px;
+    }
+
+    p:last-child { margin-bottom: 0; }
+
+    .meta {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 22px;
+    }
+
+    /* ── FAQ ── */
+    .faq { margin-top: 22px; }
+
+    .faq-item { margin-bottom: 22px; }
+    .faq-item:last-child { margin-bottom: 0; }
+
+    .faq-q {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 5px;
+    }
+
+    .faq-a {
+      font-size: 15px;
+      color: var(--text-body);
+    }
+
+    /* ── Lists ── */
+    ul.prose-list {
+      margin: 10px 0 12px 18px;
+      font-size: 15px;
+      color: var(--text-body);
+    }
+
+    ul.prose-list li { margin-bottom: 5px; }
+    ul.prose-list li:last-child { margin-bottom: 0; }
+
+    /* ── Table ── */
+    .table-scroll {
+      overflow-x: auto;
+      margin: 16px 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 10px 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 10px 14px;
+      color: var(--text-body);
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── Links ── */
+    a { color: var(--text-primary); }
+
+    .email-link {
+      font-weight: 500;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .email-link:hover { text-decoration: underline; }
+
+    /* ── Language divider ── */
+    .lang-sep {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 36px 0 4px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .lang-sep::before,
+    .lang-sep::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Footer ── */
+    .site-footer {
+      padding: 32px 0 52px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      .site-header { padding: 40px 0 28px; }
+      h2 { font-size: 18px; }
+      section { padding: 36px 0; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ───────────── Header ───────────── -->
+  <header class="site-header">
+    <h1>Soren</h1>
+    <p>Subscription &amp; Recurring Payment Tracker</p>
+  </header>
+
+  <!-- ───────────── Nav ───────────── -->
+  <nav class="site-nav" aria-label="Page sections">
+    <ul>
+      <li><a href="#support-en">Support</a></li>
+      <li><a href="#privacy-en">Privacy Policy</a></li>
+      <li><a href="#support-ru">Поддержка</a></li>
+      <li><a href="#privacy-ru">Конфиденциальность</a></li>
+    </ul>
+  </nav>
+
+  <!-- ══════════════════════════════════
+       ENGLISH SUPPORT
+  ══════════════════════════════════ -->
+  <section id="support-en">
+    <p class="section-eyebrow">English</p>
+    <h2>Support</h2>
+
+    <p><strong>Questions or issues?</strong><br>
+    Contact us at <a class="email-link" href="mailto:[YOUR_EMAIL]">[YOUR_EMAIL]</a><br>
+    We typically respond within a few business days.</p>
+
+    <h3>Frequently Asked Questions</h3>
+
+    <div class="faq">
+
+      <div class="faq-item">
+        <p class="faq-q">How do I add a subscription?</p>
+        <p class="faq-a">Tap the <strong>+</strong> button on any screen. Choose a service from the catalog or enter the details manually.</p>
+      </div>
+
+      <div class="faq-item">
+        <p class="faq-q">How do I edit or delete a subscription?</p>
+        <p class="faq-a">Tap any subscription in your list to open its detail view. Use the edit button to make changes, or scroll to the bottom to delete it.</p>
+      </div>
+
+      <div class="faq-item">
+        <p class="faq-q">How do I get charge reminders?</p>
+        <p class="faq-a">When adding or editing a subscription, choose a reminder timing: on the charge day, or 1, 3, or 7 days before. Soren will send a local notification at 9:00 AM on the selected day. Make sure notifications are enabled for Soren in iOS Settings.</p>
+      </div>
+
+      <div class="faq-item">
+        <p class="faq-q">Why is the currency conversion not updating?</p>
+        <p class="faq-a">Exchange rates are fetched from a free third-party service (open.er-api.com) and cached locally. If the app is offline or the service is unavailable, Soren uses the most recently cached rates. Rates are not guaranteed to be real-time.</p>
+      </div>
+
+      <div class="faq-item">
+        <p class="faq-q">How do I delete all my data?</p>
+        <p class="faq-a">Delete the Soren app from your device. This permanently removes all subscription records, preferences, and cached data stored by the app.</p>
+      </div>
+
+      <div class="faq-item">
+        <p class="faq-q">Does Soren back up my data?</p>
+        <p class="faq-a">Soren stores all data locally on your device. If iCloud Backup is enabled in iOS Settings and Soren is included, your device backup may contain app data — this is managed by iOS, not by Soren.</p>
+      </div>
+
+      <div class="faq-item">
+        <p class="faq-q">Does Soren sync across devices?</p>
+        <p class="faq-a">No. Soren does not have an account system or cross-device sync in this version.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════
+       ENGLISH PRIVACY POLICY
+  ══════════════════════════════════ -->
+  <section id="privacy-en">
+    <p class="section-eyebrow">English</p>
+    <h2>Privacy Policy</h2>
+    <p class="meta">Last updated: [DATE]</p>
+
+    <h3>Overview</h3>
+    <p>Soren is a subscription tracking app. Your subscription records are stored locally on your device. The developer does not collect, store, or sell your personal data.</p>
+
+    <h3>Data Stored on Your Device</h3>
+    <p>Soren stores the following data locally on your device:</p>
+    <ul class="prose-list">
+      <li>Subscription records you create (name, amount, currency, billing cycle, dates, notes, tags, status)</li>
+      <li>App preferences (default currency, appearance mode, reminder settings)</li>
+      <li>Cached exchange rates for offline use</li>
+    </ul>
+    <p>This data is not transmitted to the developer or to any server controlled by the developer.</p>
+
+    <h3>No Account Required</h3>
+    <p>Soren does not require you to create an account or sign in. There is no registration, no login, and no user profile.</p>
+
+    <h3>Third-Party Network Requests</h3>
+    <p>To provide certain features, Soren makes requests to the following external services. These requests do not include your subscription data.</p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>Purpose</th>
+            <th>Data sent</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>open.er-api.com</td>
+            <td>Currency exchange rates</td>
+            <td>None beyond a standard HTTP request</td>
+          </tr>
+          <tr>
+            <td>logo.clearbit.com</td>
+            <td>Provider logo images</td>
+            <td>Service domain name (e.g. "netflix.com")</td>
+          </tr>
+          <tr>
+            <td>t1.gstatic.com</td>
+            <td>Provider logo fallback</td>
+            <td>Service domain name</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>As with any network request, your device's IP address is visible to these services as part of normal internet communication. These services are not controlled by the developer. Their own privacy policies apply.</p>
+
+    <h3>Local Notifications</h3>
+    <p>Soren may send local notifications to remind you of upcoming charges or expiring trial periods. These are generated entirely on your device. No notification content is sent to any server.</p>
+
+    <h3>No Analytics, No Ads, No Tracking</h3>
+    <p>Soren does not include any advertising, analytics, crash reporting, or tracking SDK. The developer does not track your usage of the app.</p>
+
+    <h3>Data Deletion</h3>
+    <p>To delete all data stored by Soren, delete the app from your device. This removes all locally stored subscription records, preferences, and cached data.</p>
+
+    <h3>Children</h3>
+    <p>Soren does not knowingly collect any information from anyone, including children.</p>
+
+    <h3>Changes to This Policy</h3>
+    <p>If this policy changes materially, the updated version will be posted at this URL with a revised date.</p>
+
+    <h3>Contact</h3>
+    <p>Questions about privacy: <a class="email-link" href="mailto:[YOUR_EMAIL]">[YOUR_EMAIL]</a></p>
+  </section>
+
+  <!-- ───────────── Language divider ───────────── -->
+  <div class="lang-sep" aria-hidden="true">Русская версия</div>
+
+  <!-- ══════════════════════════════════
+       RUSSIAN SUPPORT
+  ══════════════════════════════════ -->
+  <section id="support-ru" lang="ru">
+    <p class="section-eyebrow">Русский</p>
+    <h2>Поддержка</h2>
+
+    <p><strong>Есть вопрос или проблема?</strong><br>
+    Напишите нам: <a class="email-link" href="mailto:[YOUR_EMAIL]">[YOUR_EMAIL]</a><br>
+    Мы обычно отвечаем в течение нескольких рабочих дней.</p>
+
+    <h3>Частые вопросы</h3>
+
+    <div class="faq">
+
+      <div class="faq-item">
+        <p class="faq-q">Как добавить подписку?</p>
+        <p class="faq-a">Нажмите кнопку <strong>+</strong> на любом экране. Выберите сервис из каталога или введите данные вручную.</p>
+      </div>
+
+      <div class="faq-item">
+        <p class="faq-q">Как изменить или удалить подписку?</p>
+        <p class="faq-a">Нажмите на подписку в списке, чтобы открыть карточку. Используйте кнопку редактирования для изменений или прокрутите вниз, чтобы удалить.</p>
+      </div>
+
+      <div class="faq-item">
+        <p class="faq-q">Как настроить напоминание о списании?</p>
+        <p class="faq-a">При добавлении или редактировании подписки выберите время напоминания: в день платежа или за 1, 3 или 7 дней до него. Soren отправит локальное уведомление в 9:00 утра выбранного дня. Убедитесь, что уведомления для Soren разрешены в настройках iPhone.</p>
+      </div>
+
+      <div class="faq-item">
+        <p class="faq-q">Почему курс валют не обновляется?</p>
+        <p class="faq-a">Курсы загружаются из стороннего бесплатного сервиса (open.er-api.com) и сохраняются на устройстве. Если нет интернета или сервис недоступен, Soren использует последние сохранённые курсы. Актуальность курсов не гарантируется.</p>
+      </div>
+
+      <div class="faq-item">
+        <p class="faq-q">Как удалить все данные?</p>
+        <p class="faq-a">Удалите приложение Soren с устройства. Это безвозвратно удалит все сохранённые подписки, настройки и кешированные данные.</p>
+      </div>
+
+      <div class="faq-item">
+        <p class="faq-q">Сохраняет ли Soren резервную копию данных?</p>
+        <p class="faq-a">Soren хранит все данные локально на устройстве. Если в настройках iOS включено резервное копирование iCloud и Soren добавлен в список приложений для резервного копирования, данные приложения могут попасть в резервную копию устройства. Это управляется iOS, а не Soren.</p>
+      </div>
+
+      <div class="faq-item">
+        <p class="faq-q">Есть ли синхронизация между устройствами?</p>
+        <p class="faq-a">Нет. В текущей версии Soren не имеет учётной записи и синхронизации между устройствами.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════
+       RUSSIAN PRIVACY POLICY
+  ══════════════════════════════════ -->
+  <section id="privacy-ru" lang="ru">
+    <p class="section-eyebrow">Русский</p>
+    <h2>Политика конфиденциальности</h2>
+    <p class="meta">Последнее обновление: [ДАТА]</p>
+
+    <h3>Кратко</h3>
+    <p>Soren — трекер подписок. Данные о ваших подписках хранятся локально на устройстве. Разработчик не собирает, не хранит и не продаёт ваши личные данные.</p>
+
+    <h3>Данные, хранящиеся на устройстве</h3>
+    <p>Soren хранит следующие данные локально на вашем устройстве:</p>
+    <ul class="prose-list">
+      <li>созданные вами записи о подписках (название, сумма, валюта, цикл, даты, заметки, теги, статус);</li>
+      <li>настройки приложения (валюта по умолчанию, тема, параметры напоминаний);</li>
+      <li>кешированные курсы валют для работы офлайн.</li>
+    </ul>
+    <p>Эти данные не передаются разработчику и не отправляются ни на какой сервер, контролируемый разработчиком.</p>
+
+    <h3>Без регистрации</h3>
+    <p>Soren не требует создания учётной записи или входа. Регистрации, логина и профиля пользователя нет.</p>
+
+    <h3>Запросы к сторонним сервисам</h3>
+    <p>Для работы некоторых функций Soren обращается к следующим внешним сервисам. Данные ваших подписок при этом не передаются.</p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Сервис</th>
+            <th>Назначение</th>
+            <th>Что передаётся</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>open.er-api.com</td>
+            <td>Курсы валют</td>
+            <td>Только стандартный HTTP-запрос</td>
+          </tr>
+          <tr>
+            <td>logo.clearbit.com</td>
+            <td>Логотипы сервисов</td>
+            <td>Доменное имя сервиса (например, «netflix.com»)</td>
+          </tr>
+          <tr>
+            <td>t1.gstatic.com</td>
+            <td>Запасной источник логотипов</td>
+            <td>Доменное имя сервиса</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>При любом сетевом запросе IP-адрес устройства становится виден принимающему серверу — это стандартное поведение интернет-соединения. Перечисленные сервисы не контролируются разработчиком. К ним применяется их собственная политика конфиденциальности.</p>
+
+    <h3>Локальные уведомления</h3>
+    <p>Soren может отправлять локальные уведомления с напоминаниями о предстоящих списаниях или окончании пробного периода. Уведомления формируются непосредственно на устройстве. Их содержимое не отправляется ни на какой сервер.</p>
+
+    <h3>Без рекламы, аналитики и слежки</h3>
+    <p>Soren не содержит рекламных SDK, аналитических систем, инструментов отслеживания сбоев или трекинга. Разработчик не отслеживает вашу активность в приложении.</p>
+
+    <h3>Удаление данных</h3>
+    <p>Чтобы удалить все данные Soren, удалите приложение с устройства. Это безвозвратно удалит все записи о подписках, настройки и кешированные данные.</p>
+
+    <h3>Дети</h3>
+    <p>Soren не предназначен для сбора каких-либо данных от пользователей любого возраста.</p>
+
+    <h3>Изменения политики</h3>
+    <p>При существенных изменениях обновлённая версия будет опубликована по этому адресу с новой датой.</p>
+
+    <h3>Контакт</h3>
+    <p>Вопросы о конфиденциальности: <a class="email-link" href="mailto:[YOUR_EMAIL]">[YOUR_EMAIL]</a></p>
+  </section>
+
+  <!-- ───────────── Footer ───────────── -->
+  <footer class="site-footer">
+    <p>Soren &nbsp;·&nbsp; [YEAR]</p>
+  </footer>
+
+</div>
+</body>
+</html>
