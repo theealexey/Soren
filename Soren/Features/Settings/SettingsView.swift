@@ -8,6 +8,9 @@ struct SettingsView: View {
     @Environment(AppState.self) private var appState
     @State private var viewModel = SettingsViewModel()
     @Environment(\.dismiss) private var dismiss
+    #if DEBUG
+    @Environment(AppContainer.self) private var container
+    #endif
 
     var body: some View {
         @Bindable var vm = viewModel
@@ -20,6 +23,10 @@ struct SettingsView: View {
             )
 
             aboutSection
+
+            #if DEBUG
+            developerSection
+            #endif
         }
         .scrollContentBackground(.hidden)
         .background(ColorTokens.background)
@@ -69,6 +76,32 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: - Developer (DEBUG only)
+
+    #if DEBUG
+    /// Seed / clear controls for App Store screenshot sessions.
+    /// Compiled out entirely in Release builds.
+    private var developerSection: some View {
+        let seeder = DemoDataSeeder(
+            repositories: container.repositories,
+            preferences: container.preferences
+        )
+        return Section("Разработка") {
+            Button("Загрузить демо-данные") {
+                try? seeder.seed()
+                container.itemsVersion += 1
+            }
+            .disabled(seeder.isDemoDataPresent)
+
+            Button("Очистить демо-данные", role: .destructive) {
+                try? seeder.clear()
+                container.itemsVersion += 1
+            }
+            .disabled(!seeder.isDemoDataPresent)
+        }
+    }
+    #endif
+
     // MARK: - About
 
     private var aboutSection: some View {
@@ -96,5 +129,8 @@ struct SettingsView: View {
     NavigationStack {
         SettingsView()
             .environment(AppState())
+            .environment(
+                AppContainer(modelContext: try! SorenModelContainer.inMemory().mainContext)
+            )
     }
 }
