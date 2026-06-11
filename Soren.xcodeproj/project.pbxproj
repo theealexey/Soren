@@ -58,6 +58,7 @@
 		39ED98B74969F7EB0C26D7F8 /* SorenSchemaVersions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9876CEEF8945568154B43B6 /* SorenSchemaVersions.swift */; };
 		3A84C7CF0E76A7DE7C8B4500 /* SectionHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 323D31D8EF35B87ADA825188 /* SectionHeader.swift */; };
 		3C5D0047E7D4DC39ADD5FC7C /* NextPaymentCalloutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92E29D870CC86C4EB8CE6C2A /* NextPaymentCalloutView.swift */; };
+		0F55A42D3EB1479099F9A949 /* UpcomingChargesSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82F5E6AFCD8B44D89D0A1250 /* UpcomingChargesSectionView.swift */; };
 		3E2C15DCA2F42CC6D125237B /* UsageStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08466B38DFF515E50A44F77D /* UsageStatus.swift */; };
 		3E6405A4F0A59A5EF54A5056 /* GetUpcomingCharges.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AE23A399CED2B38971BCB57 /* GetUpcomingCharges.swift */; };
 		40B9AED4D39EF8E91FE3ADAE /* PaymentMethodRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = E649AB3F110DA227AEAD1E55 /* PaymentMethodRepository.swift */; };
@@ -323,6 +324,7 @@
 		8CEEF7B37513315DE9DE3C6C /* NextChargeDateSuggestionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextChargeDateSuggestionTests.swift; sourceTree = "<group>"; };
 		92BFCE661AC196D1C9B137BB /* ItemDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailsView.swift; sourceTree = "<group>"; };
 		92E29D870CC86C4EB8CE6C2A /* NextPaymentCalloutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextPaymentCalloutView.swift; sourceTree = "<group>"; };
+		82F5E6AFCD8B44D89D0A1250 /* UpcomingChargesSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpcomingChargesSectionView.swift; sourceTree = "<group>"; };
 		931E5E8447CB6EBE61776031 /* SwiftDataPaymentMethodRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDataPaymentMethodRepository.swift; sourceTree = "<group>"; };
 		948A56E413765945A9D3956F /* AmountLabelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmountLabelTests.swift; sourceTree = "<group>"; };
 		96C23F0287FFE6BD2405D175 /* ProviderCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderCatalog.swift; sourceTree = "<group>"; };
@@ -609,6 +611,7 @@
 				57873BA346E10B8B5B7DC616 /* LandscapeAxisView.swift */,
 				A90895A6DB5B8C47EE8C2893 /* LandscapeGestureOverlay.swift */,
 				92E29D870CC86C4EB8CE6C2A /* NextPaymentCalloutView.swift */,
+				82F5E6AFCD8B44D89D0A1250 /* UpcomingChargesSectionView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -1384,6 +1387,7 @@
 				C475D04EB2439B9892B73704 /* TrialReminderOption+Display.swift in Sources */,
 				80A081FE42E035CA4D9737DF /* TrialReminderOption.swift in Sources */,
 				E01CF41ECC10C2676A49E5E3 /* Typography.swift in Sources */,
+				0F55A42D3EB1479099F9A949 /* UpcomingChargesSectionView.swift in Sources */,
 				7DD6FE8A922F18C39103772D /* UpdateRecurringItem.swift in Sources */,
 				7FF0A808F18C22F63634C8FE /* UsageStatus+Display.swift in Sources */,
 				3E2C15DCA2F42CC6D125237B /* UsageStatus.swift in Sources */,

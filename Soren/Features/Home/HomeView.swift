@@ -81,6 +81,9 @@ struct HomeView: View {
                     InsightSectionView(insights: vm.insights)
                         .padding(.bottom, Spacing.xl)
                 }
+
+                UpcomingChargesSectionView(items: vm.upcomingCharges)
+                    .padding(.bottom, Spacing.xl)
             }
         }
         .scrollIndicators(.hidden)

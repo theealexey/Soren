@@ -469,7 +469,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Upcoming Charges"
+            "value" : "Upcoming charges"
           }
         }
       }
@@ -1059,6 +1059,9 @@
         }
       }
     },
+    "Загрузить демо-данные" : {
+
+    },
     "Загрузка..." : {
       "localizations" : {
         "en" : {
@@ -1517,6 +1520,16 @@
         }
       }
     },
+    "Нет ближайших списаний" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No upcoming charges"
+          }
+        }
+      }
+    },
     "Нет данных" : {
       "localizations" : {
         "en" : {
@@ -1711,6 +1724,9 @@
       }
     },
     "Отменить" : {
+
+    },
+    "Очистить демо-данные" : {
 
     },
     "Ошибка" : {
@@ -2308,6 +2324,9 @@
           }
         }
       }
+    },
+    "Разработка" : {
+
     },
     "Расчётный счёт" : {
       "localizations" : {

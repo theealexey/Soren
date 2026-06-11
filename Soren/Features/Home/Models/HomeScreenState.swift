@@ -11,6 +11,7 @@ struct HomeScreenState {
     let landscapePoints: [BillingLandscapePoint]
     let callout: NextPaymentCalloutState
     let insights: [InsightRowModel]
+    let upcomingCharges: [RecurringItem]
     let isLoaded: Bool
     let hasError: Bool
 }

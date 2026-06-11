@@ -62,6 +62,7 @@ struct HomeViewModelTests {
         #expect(vm.landscapePoints.count == 30)
         #expect(vm.landscapePoints.allSatisfy { $0.chargeCount == 0 })
         #expect(vm.insights.isEmpty)
+        #expect(vm.upcomingCharges.isEmpty)
     }
 
     // MARK: - Landscape Charges
@@ -167,6 +168,98 @@ struct HomeViewModelTests {
 
         // Past items may or may not appear depending on repository logic
         // The key test: ViewModel doesn't crash on negative daysUntilNextCharge
+        #expect(vm.isLoaded)
+        #expect(!vm.hasError)
+    }
+
+    // MARK: - Upcoming Charges Section
+
+    @Test("upcomingCharges returns at most 3 items, soonest first")
+    func upcomingChargesLimitedAndSorted() throws {
+        let repo = try makeRepo()
+        let cal = Calendar.current
+
+        for offset in [10, 2, 7, 1, 20] {
+            try repo.save(makeItem(
+                title: "Day\(offset)",
+                nextCharge: cal.date(byAdding: .day, value: offset, to: .now)
+            ))
+        }
+
+        let vm = makeViewModel(repo: repo)
+        vm.load()
+
+        #expect(vm.upcomingCharges.count == 3)
+        #expect(vm.upcomingCharges.map(\.title) == ["Day1", "Day2", "Day7"])
+        #expect(vm.screenState.upcomingCharges == vm.upcomingCharges)
+    }
+
+    @Test("upcomingCharges excludes cancelled, paused, and archived items even when due soonest")
+    func upcomingChargesExcludesNonCountingStatuses() throws {
+        let repo = try makeRepo()
+        let cal = Calendar.current
+
+        let cancelled = makeItem(title: "Cancelled", status: .cancelled,
+                                  nextCharge: cal.date(byAdding: .day, value: 1, to: .now))
+        let paused = makeItem(title: "Paused", status: .paused,
+                               nextCharge: cal.date(byAdding: .day, value: 2, to: .now))
+        let archived = RecurringItem(
+            title: "Archived",
+            amount: 199,
+            currencyCode: "RUB",
+            nextChargeDate: cal.date(byAdding: .day, value: 3, to: .now)!,
+            status: .archived
+        )
+        let active = makeItem(title: "Active", status: .active,
+                               nextCharge: cal.date(byAdding: .day, value: 5, to: .now))
+
+        try repo.save(cancelled)
+        try repo.save(paused)
+        try repo.save(archived)
+        try repo.save(active)
+
+        let vm = makeViewModel(repo: repo)
+        vm.load()
+
+        // If filtering ran after the 3-item cap, the three excluded statuses
+        // (due on days 1-3) would fill every slot and "Active" (day 5) would
+        // never surface. Filtering must happen before the cap.
+        #expect(vm.upcomingCharges.count == 1)
+        #expect(vm.upcomingCharges.first?.title == "Active")
+    }
+
+    @Test("upcomingCharges includes a trial item that has an upcoming charge date")
+    func upcomingChargesIncludesTrialWithChargeDate() throws {
+        let repo = try makeRepo()
+        let cal = Calendar.current
+
+        let trial = makeItem(
+            title: "Trial Service", status: .trial,
+            nextCharge: cal.date(byAdding: .day, value: 3, to: .now),
+            trialEndDate: cal.date(byAdding: .day, value: 3, to: .now)
+        )
+        try repo.save(trial)
+
+        let vm = makeViewModel(repo: repo)
+        vm.load()
+
+        #expect(vm.upcomingCharges.contains { $0.title == "Trial Service" })
+    }
+
+    @Test("upcomingCharges is empty when every item is cancelled, paused, or archived")
+    func upcomingChargesEmptyWhenNothingCounts() throws {
+        let repo = try makeRepo()
+        let cal = Calendar.current
+
+        try repo.save(makeItem(title: "Cancelled", status: .cancelled,
+                                nextCharge: cal.date(byAdding: .day, value: 1, to: .now)))
+        try repo.save(makeItem(title: "Paused", status: .paused,
+                                nextCharge: cal.date(byAdding: .day, value: 2, to: .now)))
+
+        let vm = makeViewModel(repo: repo)
+        vm.load()
+
+        #expect(vm.upcomingCharges.isEmpty)
         #expect(vm.isLoaded)
         #expect(!vm.hasError)
     }

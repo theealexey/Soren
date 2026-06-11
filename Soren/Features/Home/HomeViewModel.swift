@@ -17,6 +17,7 @@ final class HomeViewModel {
         countdown: "", name: "", amountFormatted: "", additionalCount: 0
     )
     private(set) var insights: [InsightRowModel] = []
+    private(set) var upcomingCharges: [RecurringItem] = []
     private(set) var selection: BillingLandscapeSelection? = nil
     private(set) var isLoaded = false
     private(set) var error: Error? = nil
@@ -31,6 +32,7 @@ final class HomeViewModel {
             landscapePoints: landscapePoints,
             callout: callout,
             insights: insights,
+            upcomingCharges: upcomingCharges,
             isLoaded: isLoaded,
             hasError: hasError
         )
@@ -132,6 +134,16 @@ final class HomeViewModel {
                 points: landscapePoints,
                 trials: trials,
                 currency: currency
+            )
+
+            // Same `upcoming` list that feeds the landscape, narrowed to the next 3
+            // genuinely-payable charges. `countsInTotals` already excludes
+            // cancelled/paused/archived — items that can still carry a stale
+            // nextChargeDate within the window but won't actually charge.
+            upcomingCharges = Array(
+                upcoming
+                    .filter(\.status.countsInTotals)
+                    .prefix(3)
             )
 
             isLoaded = true
