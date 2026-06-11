@@ -64,8 +64,8 @@ struct AmountLabel: View {
         ) ?? "\(amount)"
     }
 
-    /// Thread-safe formatter cache using nonisolated(unsafe) —
-    /// AmountLabel is a View (always on @MainActor), so this is safe in practice.
+    /// Formatter cache isolated to `@MainActor` — AmountLabel is a View
+    /// (always on @MainActor), so cache access is never concurrent.
     @MainActor
     private static var formatterCache: [String: NumberFormatter] = [:]
 

@@ -46,6 +46,11 @@ protocol NotificationScheduling: AnyObject, Sendable {
 /// Identifier scheme (stable across reschedules):
 ///   `"soren.charge.<item-UUID>"` for charge reminders
 ///   `"soren.trial.<item-UUID>"`  for trial-ending reminders
+///
+/// SAFETY: `UNUserNotificationCenter` is not marked `Sendable` in the SDK, but its
+/// API is documented as safe to call from any thread/queue. `Calendar` is itself
+/// `Sendable`. Both dependencies are stored as `let` and this type holds no other
+/// mutable state, making cross-actor access safe without actor isolation.
 final class NotificationScheduler: NotificationScheduling, @unchecked Sendable {
 
     // MARK: - Dependencies
@@ -266,16 +271,12 @@ final class NotificationScheduler: NotificationScheduling, @unchecked Sendable {
         }
     }
 
-    private var currencyFormatters: [String: NumberFormatter] = [:]
-
     private func currencyFormatter(for code: String) -> NumberFormatter {
-        if let cached = currencyFormatters[code] { return cached }
         let f = NumberFormatter()
         f.numberStyle         = .currency
         f.currencyCode        = code
         f.maximumFractionDigits = 2
         f.minimumFractionDigits = 0
-        currencyFormatters[code] = f
         return f
     }
 
