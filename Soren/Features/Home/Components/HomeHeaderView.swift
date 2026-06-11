@@ -21,7 +21,7 @@ struct HomeHeaderView: View {
 
             Text(forecastLabel)
                 .font(Typography.caption)
-                .foregroundStyle(theme.tertiaryText)
+                .foregroundStyle(theme.secondaryText)
         }
         .padding(.horizontal, Spacing.lg)
     }

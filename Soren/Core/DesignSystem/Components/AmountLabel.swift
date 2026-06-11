@@ -32,7 +32,7 @@ struct AmountLabel: View {
     }
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: Spacing.xxs) {
+        HStack(alignment: .firstTextBaseline, spacing: Spacing.xxxs) {
             Text(formattedAmount)
                 .font(size.font)
                 .foregroundStyle(tint ?? ColorTokens.textPrimary)
@@ -59,9 +59,13 @@ struct AmountLabel: View {
     }
 
     var formattedAmount: String {
-        Self.formatter(for: currencyCode).string(
+        let formatted = Self.formatter(for: currencyCode).string(
             from: amount as NSDecimalNumber
         ) ?? "\(amount)"
+        // NumberFormatter inserts a non-breaking space between value and
+        // currency symbol for many locale/currency pairs (e.g. "0,99 $").
+        // A thin space keeps the separation without the visual gap.
+        return formatted.replacingOccurrences(of: "\u{00A0}", with: "\u{2009}")
     }
 
     /// Formatter cache isolated to `@MainActor` — AmountLabel is a View
