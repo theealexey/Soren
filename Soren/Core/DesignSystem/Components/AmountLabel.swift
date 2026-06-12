@@ -64,8 +64,9 @@ struct AmountLabel: View {
         ) ?? "\(amount)"
         // NumberFormatter inserts a non-breaking space between value and
         // currency symbol for many locale/currency pairs (e.g. "0,99 $").
-        // A thin space keeps the separation without the visual gap.
-        return formatted.replacingOccurrences(of: "\u{00A0}", with: "\u{2009}")
+        // A narrow no-break space keeps the pair from wrapping while
+        // tightening the visual gap.
+        return formatted.replacingOccurrences(of: "\u{00A0}", with: "\u{202F}")
     }
 
     /// Formatter cache isolated to `@MainActor` — AmountLabel is a View
