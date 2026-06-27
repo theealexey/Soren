@@ -10,6 +10,7 @@ struct LibraryView: View {
     @Environment(\.navigateToItem) private var navigateToItem
     @State private var viewModel: LibraryViewModel?
     @State private var pendingDeleteItem: RecurringItem?
+    @FocusState private var isSearchFocused: Bool
 
     /// Maximum width of the populated library content column.
     /// Keeps the search bar, filter chips, summary row, and item list
@@ -140,8 +141,14 @@ struct LibraryView: View {
         .listStyle(.insetGrouped)
         .listSectionSpacing(.compact)
         .contentMargins(.top, 0, for: .scrollContent)
+        .scrollDismissesKeyboard(.interactively)
         .scrollContentBackground(.hidden)
         .background(ColorTokens.background)
+        .simultaneousGesture(
+            TapGesture().onEnded {
+                dismissSearchFocus()
+            }
+        )
         .refreshable {
             vm.load()
         }
@@ -183,6 +190,19 @@ struct LibraryView: View {
             .font(Typography.body)
             .foregroundStyle(ColorTokens.textPrimary)
             .autocorrectionDisabled()
+            .focused($isSearchFocused)
+            .submitLabel(.done)
+            .onSubmit {
+                dismissSearchFocus()
+            }
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button(String(localized: "Готово")) {
+                        dismissSearchFocus()
+                    }
+                }
+            }
 
             if !vm.searchText.isEmpty {
                 Button {
@@ -214,6 +234,7 @@ struct LibraryView: View {
                     let isSelected = vm.activeFilter == filter
 
                     Button {
+                        dismissSearchFocus()
                         withAnimation(MotionTokens.snappy) { vm.activeFilter = filter }
                         HapticEngine.selection()
                     } label: {
@@ -352,6 +373,10 @@ struct LibraryView: View {
         if mod10 == 1 && mod100 != 11 { return String(localized: "подписка") }
         if (2...4).contains(mod10) && !(12...14).contains(mod100) { return String(localized: "подписки") }
         return String(localized: "подписок")
+    }
+
+    private func dismissSearchFocus() {
+        isSearchFocused = false
     }
 }
 
