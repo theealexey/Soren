@@ -1,4 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 // MARK: - Library View
 
@@ -17,6 +20,7 @@ struct LibraryView: View {
     /// visually cohesive on iPad and Mac rather than stretching to full screen width.
     /// On any iPhone (max 430 pt wide) this cap is never reached.
     private let libraryContentMaxWidth: CGFloat = 640
+    private let floatingPillContentInset: CGFloat = Spacing.xxxl + Spacing.xl
 
     var body: some View {
         Group {
@@ -94,6 +98,7 @@ struct LibraryView: View {
                     Section {
                         ForEach(section.items) { item in
                             Button {
+                                dismissSearchFocus()
                                 navigateToItem(item)
                             } label: {
                                 SorenListRow(
@@ -141,7 +146,7 @@ struct LibraryView: View {
         .listStyle(.insetGrouped)
         .listSectionSpacing(.compact)
         .contentMargins(.top, 0, for: .scrollContent)
-        .scrollDismissesKeyboard(.interactively)
+        .scrollDismissesKeyboard(.immediately)
         .scrollContentBackground(.hidden)
         .background(ColorTokens.background)
         .simultaneousGesture(
@@ -149,6 +154,11 @@ struct LibraryView: View {
                 dismissSearchFocus()
             }
         )
+        .onScrollPhaseChange { _, newPhase in
+            if newPhase.isScrolling {
+                dismissSearchFocus()
+            }
+        }
         .refreshable {
             vm.load()
         }
@@ -170,6 +180,10 @@ struct LibraryView: View {
             }
             .padding(.top, Spacing.lg + Spacing.xxs)
             .background(ColorTokens.background)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            Color.clear
+                .frame(height: floatingPillContentInset)
         }
     }
 
@@ -194,14 +208,6 @@ struct LibraryView: View {
             .submitLabel(.done)
             .onSubmit {
                 dismissSearchFocus()
-            }
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button(String(localized: "Готово")) {
-                        dismissSearchFocus()
-                    }
-                }
             }
 
             if !vm.searchText.isEmpty {
@@ -377,6 +383,13 @@ struct LibraryView: View {
 
     private func dismissSearchFocus() {
         isSearchFocused = false
+#if canImport(UIKit)
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first { $0.isKeyWindow }?
+            .endEditing(true)
+#endif
     }
 }
 
