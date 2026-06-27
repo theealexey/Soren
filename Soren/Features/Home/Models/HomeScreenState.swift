@@ -10,6 +10,7 @@ struct HomeScreenState {
     let forecastLabel: String
     let landscapePoints: [BillingLandscapePoint]
     let callout: NextPaymentCalloutState
+    let calloutNavigationItem: RecurringItem?
     let insights: [InsightRowModel]
     let upcomingCharges: [RecurringItem]
     let isLoaded: Bool

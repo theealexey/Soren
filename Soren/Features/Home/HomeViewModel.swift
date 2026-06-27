@@ -16,6 +16,7 @@ final class HomeViewModel {
     private(set) var callout: NextPaymentCalloutState = .nextPayment(
         countdown: "", name: "", amountFormatted: "", additionalCount: 0
     )
+    private(set) var calloutNavigationItem: RecurringItem?
     private(set) var insights: [InsightRowModel] = []
     private(set) var upcomingCharges: [RecurringItem] = []
     private(set) var selection: BillingLandscapeSelection? = nil
@@ -31,6 +32,7 @@ final class HomeViewModel {
             forecastLabel: forecastLabel,
             landscapePoints: landscapePoints,
             callout: callout,
+            calloutNavigationItem: calloutNavigationItem,
             insights: insights,
             upcomingCharges: upcomingCharges,
             isLoaded: isLoaded,
@@ -69,6 +71,7 @@ final class HomeViewModel {
         guard !isLoaded || forceReload else { return }
         error = nil
         selection = nil
+        calloutNavigationItem = nil
 
         do {
             let now = Date.now
@@ -129,6 +132,7 @@ final class HomeViewModel {
                 .filter { $0.effectiveNextChargeDate() >= windowStart }
                 .min { $0.effectiveNextChargeDate() < $1.effectiveNextChargeDate() }
             callout = defaultCallout(nextItem: nextItem, now: now, currency: currency)
+            calloutNavigationItem = nextItem
 
             insights = buildInsights(
                 points: landscapePoints,
@@ -169,6 +173,7 @@ final class HomeViewModel {
 
         guard !items.isEmpty else {
             selection = nil
+            calloutNavigationItem = nil
             callout = .emptyDay(formattedDate: Self.dayFormatter.string(from: date))
             return
         }
@@ -191,6 +196,7 @@ final class HomeViewModel {
         )
         selection = sel
         callout   = .selectedDay(sel)
+        calloutNavigationItem = items.count == 1 ? items[0] : nil
     }
 
     func clearSelection() {
@@ -203,6 +209,7 @@ final class HomeViewModel {
             .filter { $0.effectiveNextChargeDate() >= calendar.startOfDay(for: now) }
             .min { $0.effectiveNextChargeDate() < $1.effectiveNextChargeDate() }
         callout = defaultCallout(nextItem: nextItem, now: now, currency: currency)
+        calloutNavigationItem = nextItem
     }
 
     // MARK: - Callout builder

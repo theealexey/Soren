@@ -11,6 +11,7 @@ import SwiftUI
 struct UpcomingChargesSectionView: View {
 
     let items: [RecurringItem]
+    let onSelectItem: (RecurringItem) -> Void
 
     @Environment(\.appTheme) private var theme
 
@@ -34,16 +35,22 @@ struct UpcomingChargesSectionView: View {
             hairline
 
             ForEach(items) { item in
-                SorenListRow(
-                    title: item.title,
-                    subtitle: RecurringItemFormatter.chargeSubtitle(for: item),
-                    amount: item.amount,
-                    currency: item.currencyCode,
-                    cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
-                    providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
-                    category: item.category
-                )
-                .padding(.horizontal, Spacing.lg)
+                Button {
+                    onSelectItem(item)
+                } label: {
+                    SorenListRow(
+                        title: item.title,
+                        subtitle: RecurringItemFormatter.chargeSubtitle(for: item),
+                        amount: item.amount,
+                        currency: item.currencyCode,
+                        cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
+                        providerTemplate: ProviderCatalog.template(forProviderID: item.providerID),
+                        category: item.category
+                    )
+                    .padding(.horizontal, Spacing.lg)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
 
                 if item.id != items.last?.id {
                     hairline
@@ -107,14 +114,14 @@ struct UpcomingChargesSectionView: View {
                 billingCycle: .annual,
                 nextChargeDate: cal.date(byAdding: .day, value: 12, to: now)!
             )
-        ])
+        ], onSelectItem: { _ in })
         .padding(.vertical, Spacing.lg)
     }
     .background(ColorTokens.background)
 }
 
 #Preview("Empty") {
-    UpcomingChargesSectionView(items: [])
+    UpcomingChargesSectionView(items: [], onSelectItem: { _ in })
         .padding(.vertical, Spacing.lg)
         .background(ColorTokens.background)
 }

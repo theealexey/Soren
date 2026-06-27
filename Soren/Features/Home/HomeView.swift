@@ -12,6 +12,7 @@ struct HomeView: View {
     @Environment(AppContainer.self) private var container
     @Environment(\.appTheme) private var theme
     @Environment(\.addSubscriptionAction) private var addSubscription
+    @Environment(\.navigateToItem) private var navigateToItem
 
     @State private var viewModel: HomeViewModel?
 
@@ -73,7 +74,7 @@ struct HomeView: View {
                     onSelectDate: { vm.selectDate($0) }
                 )
 
-                NextPaymentCalloutView(state: vm.callout)
+                calloutView(vm)
                     .padding(.top, Spacing.xl)
                     .padding(.bottom, Spacing.xxl)
 
@@ -82,11 +83,29 @@ struct HomeView: View {
                         .padding(.bottom, Spacing.xl)
                 }
 
-                UpcomingChargesSectionView(items: vm.upcomingCharges)
+                UpcomingChargesSectionView(
+                    items: vm.upcomingCharges,
+                    onSelectItem: { navigateToItem($0) }
+                )
                     .padding(.bottom, Spacing.xl)
             }
         }
         .scrollIndicators(.hidden)
+    }
+
+    @ViewBuilder
+    private func calloutView(_ vm: HomeViewModel) -> some View {
+        if let item = vm.calloutNavigationItem {
+            Button {
+                navigateToItem(item)
+            } label: {
+                NextPaymentCalloutView(state: vm.callout)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        } else {
+            NextPaymentCalloutView(state: vm.callout)
+        }
     }
 }
 
