@@ -239,7 +239,11 @@ private struct SorenFloatingPill: View {
         .padding(.vertical, Spacing.xs)
         .background {
             Capsule()
-                .fill(.ultraThinMaterial)
+                .fill(ColorTokens.surfaceElevated)
+                .overlay {
+                    Capsule()
+                        .fill(.ultraThinMaterial.opacity(0.55))
+                }
                 .overlay {
                     Capsule()
                         .strokeBorder(ColorTokens.separator.opacity(0.5), lineWidth: 0.5)
