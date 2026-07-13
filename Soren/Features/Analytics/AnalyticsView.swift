@@ -204,8 +204,8 @@ struct AnalyticsView: View {
             PremiumCard {
                 Chart(state.monthlyProjections) { proj in
                     BarMark(
-                        x: .value("Месяц", proj.shortLabel),
-                        y: .value("Сумма", proj.doubleTotal)
+                        x: .value(String(localized: "Месяц"), proj.shortLabel),
+                        y: .value(String(localized: "Сумма"), proj.doubleTotal)
                     )
                     .foregroundStyle(ColorTokens.accent.gradient)
                     .cornerRadius(6)
@@ -385,10 +385,7 @@ struct AnalyticsView: View {
     }
 
     private static let chargeDateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "ru_RU")
-        f.dateFormat = "d MMMM"
-        return f
+        PresentationLocale.dateFormatter(template: "d MMMM")
     }()
 
     private func nextAnnualLabel(for item: RecurringItem) -> String {

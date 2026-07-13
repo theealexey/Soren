@@ -45,7 +45,7 @@ struct HomeView: View {
     private func content(_ vm: HomeViewModel) -> some View {
         if vm.hasError {
             ErrorStateView(
-                message: "Couldn't load data",
+                message: "Не удалось загрузить данные",
                 retryAction: { vm.load(forceReload: true) }
             )
         } else if !vm.isLoaded {

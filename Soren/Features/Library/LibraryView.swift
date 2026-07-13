@@ -290,11 +290,7 @@ struct LibraryView: View {
 
     private func summaryBar(_ vm: LibraryViewModel) -> some View {
         HStack {
-            Text(verbatim: "\(vm.filteredItems.count)")
-                .font(Typography.captionMedium)
-                .foregroundStyle(ColorTokens.textPrimary)
-            + Text(" ")
-            + Text(pluralSubscription(vm.filteredItems.count))
+            Text(verbatim: String(localized: "\(vm.filteredItems.count) подписок"))
                 .font(Typography.caption)
                 .foregroundStyle(ColorTokens.textSecondary)
 
@@ -372,14 +368,6 @@ struct LibraryView: View {
     }
 
     // MARK: - Helpers
-
-    private func pluralSubscription(_ count: Int) -> String {
-        let mod10 = count % 10
-        let mod100 = count % 100
-        if mod10 == 1 && mod100 != 11 { return String(localized: "подписка") }
-        if (2...4).contains(mod10) && !(12...14).contains(mod100) { return String(localized: "подписки") }
-        return String(localized: "подписок")
-    }
 
     private func dismissSearchFocus() {
         isSearchFocused = false

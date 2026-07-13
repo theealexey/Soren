@@ -157,7 +157,15 @@ private struct DatePickerRow: View {
                 Text(label)
                     .foregroundStyle(ColorTokens.textPrimary)
                 Spacer()
-                Text(selection.formatted(date: .abbreviated, time: .omitted))
+                Text(
+                    selection.formatted(
+                        .dateTime
+                            .day()
+                            .month(.abbreviated)
+                            .year()
+                            .locale(PresentationLocale.current)
+                    )
+                )
                     .foregroundStyle(.tint)
             }
         }

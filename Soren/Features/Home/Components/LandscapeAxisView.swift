@@ -35,8 +35,6 @@ struct LandscapeAxisView: View {
     }
 
     private static let formatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "MMM d"
-        return f
+        PresentationLocale.dateFormatter(template: "MMM d")
     }()
 }

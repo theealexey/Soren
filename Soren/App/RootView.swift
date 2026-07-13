@@ -152,10 +152,7 @@ struct RootView: View {
 // Allocated once at file scope — static stored properties are not allowed in generic types.
 // DateFormatter is expensive (~1ms) to create; keeping one instance eliminates per-render cost.
 private let _sorenMonthYearFormatter: DateFormatter = {
-    let f = DateFormatter()
-    f.locale = Locale(identifier: "ru_RU")
-    f.dateFormat = "LLLL yyyy"
-    return f
+    PresentationLocale.dateFormatter(template: "LLLL yyyy")
 }()
 
 // MARK: - Active Sheet
@@ -184,7 +181,9 @@ private struct SorenContextBar<Trailing: View>: View {
     private var contextTitle: String {
         switch tab {
         case .calendar:
-            return _sorenMonthYearFormatter.string(from: .now).capitalized
+            return _sorenMonthYearFormatter
+                .string(from: .now)
+                .capitalized(with: PresentationLocale.current)
         default:
             return tab.title
         }

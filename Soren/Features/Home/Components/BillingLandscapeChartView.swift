@@ -22,8 +22,8 @@ struct BillingLandscapeChartView: View {
 
         Chart(points) { point in
             BarMark(
-                x: .value("Day", point.id),
-                y: .value("Amount", max(point.normalizedHeight, 0.04))  // floor for empty-day visibility
+                x: .value(String(localized: "День"), point.id),
+                y: .value(String(localized: "Сумма"), max(point.normalizedHeight, 0.04))  // floor for empty-day visibility
             )
             .foregroundStyle(resolver.fillColor(for: point, selection: selection))
             .clipShape(RoundedRectangle(cornerRadius: CornerRadius.hairline))

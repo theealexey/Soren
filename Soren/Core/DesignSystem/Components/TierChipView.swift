@@ -16,7 +16,7 @@ struct TierChipView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxs) {
-            Text(tier.name)
+            Text(localized(tier.name))
                 .font(Typography.captionMedium)
                 .foregroundStyle(isSelected ? .white : ColorTokens.textPrimary)
 
@@ -37,7 +37,7 @@ struct TierChipView: View {
             }
 
             if let features = tier.features {
-                Text(features)
+                Text(localized(features))
                     .font(Typography.footnote)
                     .foregroundStyle(isSelected ? .white.opacity(0.7) : ColorTokens.textTertiary)
                     .lineLimit(2)
@@ -68,6 +68,10 @@ struct TierChipView: View {
         case .weekly: .weekly
         default: .custom(tier.billingCycle.shortName)
         }
+    }
+
+    private func localized(_ value: String) -> String {
+        String(localized: String.LocalizationValue(value))
     }
 }
 

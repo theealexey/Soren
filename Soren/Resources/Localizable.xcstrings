@@ -4,9 +4,6 @@
     "" : {
 
     },
-    " " : {
-
-    },
     "·" : {
 
     },
@@ -21,10 +18,24 @@
       }
     },
     "«%@» списывается завтра" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "\"%@\" is charging tomorrow"
+          }
+        }
+      }
     },
     "«%@» списывается сегодня" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "\"%@\" is charging today"
+          }
+        }
+      }
     },
     "«%@» списывается через %@" : {
       "extractionState" : "stale",
@@ -134,9 +145,51 @@
     "%lld критических проблем" : {
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld critical issues"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld critical issue"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld critical issues"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld критические проблемы"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld критических проблем"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld критическая проблема"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld критической проблемы"
+                }
+              }
+            }
           }
         }
       }
@@ -144,9 +197,155 @@
     "%lld неудачных платежей" : {
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld failed payments"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld failed payment"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld failed payments"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld неудачных платежа"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld неудачных платежей"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld неудачный платёж"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld неудачного платежа"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld платежей" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld payment"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld payments"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld платежа"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld платежей"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld платёж"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld платежа"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld подписок" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld subscription"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld subscriptions"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld подписки"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld подписок"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld подписка"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld подписки"
+                }
+              }
+            }
           }
         }
       }
@@ -154,9 +353,51 @@
     "%lld предупреждений" : {
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld warnings"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld warning"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld warnings"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld предупреждения"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld предупреждений"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld предупреждение"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld предупреждения"
+                }
+              }
+            }
           }
         }
       }
@@ -216,9 +457,51 @@
     "%lld просроченных списаний" : {
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld overdue charges"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld overdue charge"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld overdue charges"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld просроченных списания"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld просроченных списаний"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld просроченное списание"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld просроченного списания"
+                }
+              }
+            }
           }
         }
       }
@@ -226,9 +509,51 @@
     "%lld списаний на этой неделе" : {
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld charges this week"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld charge this week"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld charges this week"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld списания на этой неделе"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld списаний на этой неделе"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld списание на этой неделе"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld списания на этой неделе"
+                }
+              }
+            }
           }
         }
       }
@@ -246,6 +571,105 @@
     "+%lld" : {
 
     },
+    "~$2.50/мес" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "~$2.50/mo"
+          }
+        }
+      }
+    },
+    "~$2.67/мес" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "~$2.67/mo"
+          }
+        }
+      }
+    },
+    "~$3.99/мес" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "~$3.99/mo"
+          }
+        }
+      }
+    },
+    "~$4.17/мес" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "~$4.17/mo"
+          }
+        }
+      }
+    },
+    "~$4.99/мес" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "~$4.99/mo"
+          }
+        }
+      }
+    },
+    "~$7/мес, синяя галочка" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "~$7/mo, blue checkmark"
+          }
+        }
+      }
+    },
+    "~$8.33/мес, 2 буста" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "~$8.33/mo, 2 boosts"
+          }
+        }
+      }
+    },
+    "~$32.92/мес, Grok 3, без рекламы" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "~$32.92/mo, Grok 3, ad-free"
+          }
+        }
+      }
+    },
+    "~200 изображений/мес" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "~200 images/mo"
+          }
+        }
+      }
+    },
     "−%@ %@/мес" : {
       "localizations" : {
         "en" : {
@@ -262,7 +686,19 @@
         }
       }
     },
+    "1 кредит/мес + каталог Plus" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 credit/mo + Plus catalog"
+          }
+        }
+      }
+    },
     "1 критическая проблема" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -272,12 +708,563 @@
         }
       }
     },
+    "1 поток, без рекламы" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 stream, ad-free"
+          }
+        }
+      }
+    },
     "1 предупреждение" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "1 warning"
+          }
+        }
+      }
+    },
+    "1 ТБ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 TB"
+          }
+        }
+      }
+    },
+    "1 ТБ + Office-приложения" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 TB + Office apps"
+          }
+        }
+      }
+    },
+    "1 ТБ, Office для 1 чел." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 TB, Office for 1 person"
+          }
+        }
+      }
+    },
+    "1M+ книг и журналов" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1M+ books and magazines"
+          }
+        }
+      }
+    },
+    "2 аккаунта" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 accounts"
+          }
+        }
+      }
+    },
+    "2 буста, файлы 500 МБ, HD-стриминг" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 boosts, 500 MB files, HD streaming"
+          }
+        }
+      }
+    },
+    "2 игры/мес, онлайн мультиплеер" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 games/mo, online multiplayer"
+          }
+        }
+      }
+    },
+    "2 ТБ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 TB"
+          }
+        }
+      }
+    },
+    "2 ТБ (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 TB (annual)"
+          }
+        }
+      }
+    },
+    "2 ТБ, 1 пользователь" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 TB, 1 user"
+          }
+        }
+      }
+    },
+    "3 консультации/мес" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3 consultations/mo"
+          }
+        }
+      }
+    },
+    "3 ТБ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3 TB"
+          }
+        }
+      }
+    },
+    "3 ТБ, eSign, расширенный поиск" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3 TB, eSign, advanced search"
+          }
+        }
+      }
+    },
+    "4 потока, скачивание" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4 streams, downloads"
+          }
+        }
+      }
+    },
+    "4K HDR, 4 экрана" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4K HDR, 4 screens"
+          }
+        }
+      }
+    },
+    "4K HDR, 4 экрана, скачивание" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4K HDR, 4 screens, downloads"
+          }
+        }
+      }
+    },
+    "4K HDR, реклама" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4K HDR, ads"
+          }
+        }
+      }
+    },
+    "4K HDR, скачивание" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4K HDR, downloads"
+          }
+        }
+      }
+    },
+    "4K UHD, скачивание" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4K UHD, downloads"
+          }
+        }
+      }
+    },
+    "4K, 4 экрана, Dolby Atmos" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4K, 4 screens, Dolby Atmos"
+          }
+        }
+      }
+    },
+    "5 ТБ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 TB"
+          }
+        }
+      }
+    },
+    "5× лимиты Plus, продвинутые модели" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5× Plus limits, advanced models"
+          }
+        }
+      }
+    },
+    "5× лимиты Pro, приоритет" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5× Pro limits, priority access"
+          }
+        }
+      }
+    },
+    "6 ТБ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6 TB"
+          }
+        }
+      }
+    },
+    "6 устройств" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6 devices"
+          }
+        }
+      }
+    },
+    "10 ТБ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 TB"
+          }
+        }
+      }
+    },
+    "12 ТБ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12 TB"
+          }
+        }
+      }
+    },
+    "15 ч. GPU, безлимит (relax)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 GPU hours, unlimited (relax)"
+          }
+        }
+      }
+    },
+    "20× лимиты Plus, безлимитный доступ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "20× Plus limits, unlimited access"
+          }
+        }
+      }
+    },
+    "20× лимиты Pro" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "20× Pro limits"
+          }
+        }
+      }
+    },
+    "30 ч. GPU, stealth mode" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30 GPU hours, stealth mode"
+          }
+        }
+      }
+    },
+    "30 ч. встречи, 1 ГБ облако" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30-hour meetings, 1 GB cloud storage"
+          }
+        }
+      }
+    },
+    "50 ГБ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "50 GB"
+          }
+        }
+      }
+    },
+    "60 ч. GPU" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "60 GPU hours"
+          }
+        }
+      }
+    },
+    "64 ГБ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "64 GB"
+          }
+        }
+      }
+    },
+    "100 ГБ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "100 GB"
+          }
+        }
+      }
+    },
+    "100 ГБ (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "100 GB (annual)"
+          }
+        }
+      }
+    },
+    "100 ГБ, 420K шаблонов, бренд-кит" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "100 GB, 420K templates, brand kit"
+          }
+        }
+      }
+    },
+    "128 ГБ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "128 GB"
+          }
+        }
+      }
+    },
+    "200 ГБ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "200 GB"
+          }
+        }
+      }
+    },
+    "200 ГБ (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "200 GB (annual)"
+          }
+        }
+      }
+    },
+    "200+ игр, до 6 чел." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "200+ games, up to 6 people"
+          }
+        }
+      }
+    },
+    "200+ игр, до 6 чел., экономия ~$34" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "200+ games, up to 6 people, save ~$34"
+          }
+        }
+      }
+    },
+    "256 ГБ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "256 GB"
+          }
+        }
+      }
+    },
+    "500 быстрых запросов/мес" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "500 fast requests/mo"
+          }
+        }
+      }
+    },
+    "500 ГБ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "500 GB"
+          }
+        }
+      }
+    },
+    "512 ГБ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "512 GB"
+          }
+        }
+      }
+    },
+    "1080p, 2 экрана" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1080p, 2 screens"
+          }
+        }
+      }
+    },
+    "1080p, 2 экрана, скачивание" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1080p, 2 screens, downloads"
           }
         }
       }
@@ -292,14 +1279,104 @@
         }
       }
     },
-    "Amount" : {
-
+    "Basic (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basic (annual)"
+          }
+        }
+      }
     },
-    "Couldn't load data" : {
-
+    "Copilot Pro (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copilot Pro (annual)"
+          }
+        }
+      }
     },
-    "Day" : {
-
+    "Custom emoji, анимированный аватар" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom emoji, animated avatar"
+          }
+        }
+      }
+    },
+    "Essential (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Essential (annual)"
+          }
+        }
+      }
+    },
+    "Extra (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extra (annual)"
+          }
+        }
+      }
+    },
+    "Family (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Family (annual)"
+          }
+        }
+      }
+    },
+    "FHD, 2 экрана" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FHD, 2 screens"
+          }
+        }
+      }
+    },
+    "FHD, без рекламы" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FHD, ad-free"
+          }
+        }
+      }
+    },
+    "FHD, онлайн-просмотр" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FHD, online viewing"
+          }
+        }
+      }
     },
     "forecast" : {
       "extractionState" : "stale",
@@ -312,6 +1389,39 @@
         }
       }
     },
+    "GPT-4o, Claude, безлимит поиска" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPT-4o, Claude, unlimited search"
+          }
+        }
+      }
+    },
+    "Grok 3, приоритет в ленте, без рекламы" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grok 3, feed priority, ad-free"
+          }
+        }
+      }
+    },
+    "Hi-Res 24-bit, без рекламы" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hi-Res 24-bit, ad-free"
+          }
+        }
+      }
+    },
     "In %lld days" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -319,6 +1429,248 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Через %lld дн."
+          }
+        }
+      }
+    },
+    "Individual (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Individual (annual)"
+          }
+        }
+      }
+    },
+    "KION, музыка, кешбэк" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KION, music, cashback"
+          }
+        }
+      }
+    },
+    "Lightroom + Photoshop, 20 ГБ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lightroom + Photoshop, 20 GB"
+          }
+        }
+      }
+    },
+    "Max (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Max (annual)"
+          }
+        }
+      }
+    },
+    "Music, TV+, Arcade, iCloud+ 50 ГБ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Music, TV+, Arcade, iCloud+ 50 GB"
+          }
+        }
+      }
+    },
+    "Nitro (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nitro (annual)"
+          }
+        }
+      }
+    },
+    "Nitro Basic (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nitro Basic (annual)"
+          }
+        }
+      }
+    },
+    "Personal (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal (annual)"
+          }
+        }
+      }
+    },
+    "Plus (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus (annual)"
+          }
+        }
+      }
+    },
+    "Plus + Stars, эксклюзивные стикеры, монетизация" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus + Stars, exclusive stickers, monetization"
+          }
+        }
+      }
+    },
+    "Premium (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium (annual)"
+          }
+        }
+      }
+    },
+    "Premium+ (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium+ (annual)"
+          }
+        }
+      }
+    },
+    "Privacy mode, SSO, аудит" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy mode, SSO, audit log"
+          }
+        }
+      }
+    },
+    "SAML SSO, 24/7 поддержка" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SAML SSO, 24/7 support"
+          }
+        }
+      }
+    },
+    "SAML SSO, экспорт PDF" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SAML SSO, PDF export"
+          }
+        }
+      }
+    },
+    "Standard (без рекламы)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard (ad-free)"
+          }
+        }
+      }
+    },
+    "Standard (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard (annual)"
+          }
+        }
+      }
+    },
+    "Standard + продвижение профиля, ссылки в Reels" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard + profile promotion, links in Reels"
+          }
+        }
+      }
+    },
+    "Standard с рекламой" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard with ads"
+          }
+        }
+      }
+    },
+    "Studio (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Studio (annual)"
+          }
+        }
+      }
+    },
+    "Super (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Super (annual)"
+          }
+        }
+      }
+    },
+    "Super + AI roleplay, видео-звонки" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Super + AI roleplay, video calls"
           }
         }
       }
@@ -345,6 +1697,28 @@
         }
       }
     },
+    "Ultimate (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ultimate (annual)"
+          }
+        }
+      }
+    },
+    "Verified badge, поддержка аккаунта" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verified badge, account support"
+          }
+        }
+      }
+    },
     "VPN и безопасность" : {
       "localizations" : {
         "en" : {
@@ -355,11 +1729,36 @@
         }
       }
     },
+    "WB Клуб" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WB Клуб"
+          }
+        }
+      }
+    },
     "Автоматически" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic"
+          }
+        }
+      }
     },
     "Автопродление" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto-Renew"
+          }
+        }
+      }
     },
     "Активна" : {
       "localizations" : {
@@ -432,6 +1831,39 @@
         }
       }
     },
+    "Базовая" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basic"
+          }
+        }
+      }
+    },
+    "Базовый" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basic"
+          }
+        }
+      }
+    },
+    "Базовый доступ к моделям" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basic model access"
+          }
+        }
+      }
+    },
     "Банки и экосистемы" : {
       "localizations" : {
         "en" : {
@@ -452,6 +1884,116 @@
         }
       }
     },
+    "Без аккаунта, анонимно" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No account, anonymous"
+          }
+        }
+      }
+    },
+    "Без комиссии доставки" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No delivery fees"
+          }
+        }
+      }
+    },
+    "Без рекламы" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ad-free"
+          }
+        }
+      }
+    },
+    "Без рекламы (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ad-free (annual)"
+          }
+        }
+      }
+    },
+    "Без рекламы, 700 монет/мес" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ad-free, 700 coins/mo"
+          }
+        }
+      }
+    },
+    "Без рекламы, безлимитные жизни" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ad-free, unlimited hearts"
+          }
+        }
+      }
+    },
+    "Безлимитные консультации" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlimited consultations"
+          }
+        }
+      }
+    },
+    "Безлимитные страницы и блоки" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlimited pages and blocks"
+          }
+        }
+      }
+    },
+    "Безлимитные устройства" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlimited devices"
+          }
+        }
+      }
+    },
+    "Безлимитный каталог Plus" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlimited Plus catalog"
+          }
+        }
+      }
+    },
     "Белорусский рубль" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -459,6 +2001,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Belarusian Ruble"
+          }
+        }
+      }
+    },
+    "Бесплатная доставка от 499₽" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free delivery from ₽499"
+          }
+        }
+      }
+    },
+    "Бесплатная доставка, баллы" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free delivery, rewards"
           }
         }
       }
@@ -485,7 +2049,14 @@
       }
     },
     "в год" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "per year"
+          }
+        }
+      }
     },
     "В год" : {
       "localizations" : {
@@ -508,7 +2079,14 @@
       }
     },
     "в месяц" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "per month"
+          }
+        }
+      }
     },
     "В месяц" : {
       "localizations" : {
@@ -521,7 +2099,14 @@
       }
     },
     "в неделю" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "per week"
+          }
+        }
+      }
     },
     "Валюта" : {
       "localizations" : {
@@ -544,7 +2129,14 @@
       }
     },
     "Введите цену" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter price"
+          }
+        }
+      }
     },
     "Версия" : {
       "localizations" : {
@@ -596,6 +2188,61 @@
         }
       }
     },
+    "Все + News+, Fitness+, iCloud+ 2 ТБ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Everything + News+, Fitness+, iCloud+ 2 TB"
+          }
+        }
+      }
+    },
+    "Всё + повышенный кешбэк" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Everything + higher cashback"
+          }
+        }
+      }
+    },
+    "Все 20+ приложений, 100 ГБ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All 20+ apps, 100 GB"
+          }
+        }
+      }
+    },
+    "Все курсы без ограничений" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlimited access to all courses"
+          }
+        }
+      }
+    },
+    "Все курсы и сертификаты" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All courses and certificates"
+          }
+        }
+      }
+    },
     "Все подписки в порядке. Мы уведомим вас, когда что-то потребует внимания." : {
       "localizations" : {
         "en" : {
@@ -626,6 +2273,17 @@
         }
       }
     },
+    "Все функции + Funimation" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All features + Funimation"
+          }
+        }
+      }
+    },
     "Главная" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -648,6 +2306,17 @@
       }
     },
     "Годовая" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annual"
+          }
+        }
+      }
+    },
+    "Годовой" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -699,16 +2368,86 @@
       }
     },
     "Дата начала не может быть позже даты окончания" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start date cannot be after end date"
+          }
+        }
+      }
     },
     "Дата окончания" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "End Date"
+          }
+        }
+      }
     },
     "Дата окончания не может быть раньше следующего списания" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "End date cannot be before the next charge"
+          }
+        }
+      }
     },
     "Дата списания была %lld дн. назад" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Charge date was %lld day ago"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Charge date was %lld days ago"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Дата списания была %lld дня назад"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Дата списания была %lld дней назад"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Дата списания была %lld день назад"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Дата списания была %lld дня назад"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Даты" : {
       "localizations" : {
@@ -720,6 +2459,16 @@
         }
       }
     },
+    "День" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Day"
+          }
+        }
+      }
+    },
     "Дирхам ОАЭ" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -727,6 +2476,83 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "UAE Dirham"
+          }
+        }
+      }
+    },
+    "До 4 участников" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to 4 members"
+          }
+        }
+      }
+    },
+    "До 5 участников" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to 5 members"
+          }
+        }
+      }
+    },
+    "До 6 участников" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to 6 members"
+          }
+        }
+      }
+    },
+    "До 6 чел., 1 ТБ каждому" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to 6 people, 1 TB each"
+          }
+        }
+      }
+    },
+    "До 6 чел., iCloud+ 200 ГБ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to 6 people, iCloud+ 200 GB"
+          }
+        }
+      }
+    },
+    "До 8 аккаунтов" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to 8 accounts"
+          }
+        }
+      }
+    },
+    "До 300 участников, транскрипция" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to 300 participants, transcription"
           }
         }
       }
@@ -1035,19 +2861,54 @@
       }
     },
     "За 1 день" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 day before"
+          }
+        }
+      }
     },
     "За 3 дня" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3 days before"
+          }
+        }
+      }
     },
     "За 7 дней" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7 days before"
+          }
+        }
+      }
     },
     "Завершена" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ended"
+          }
+        }
+      }
     },
     "Завершённые" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ended"
+          }
+        }
+      }
     },
     "Завтра" : {
       "localizations" : {
@@ -1060,7 +2921,14 @@
       }
     },
     "Загрузить демо-данные" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Load Demo Data"
+          }
+        }
+      }
     },
     "Загрузка..." : {
       "localizations" : {
@@ -1093,7 +2961,14 @@
       }
     },
     "и ещё %lld" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "and %lld more"
+          }
+        }
+      }
     },
     "Игры" : {
       "localizations" : {
@@ -1101,6 +2976,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Games"
+          }
+        }
+      }
+    },
+    "Индивидуальная" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Individual"
           }
         }
       }
@@ -1156,10 +3042,66 @@
       }
     },
     "Истекает сегодня" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ends today"
+          }
+        }
+      }
     },
     "Истекает через %lld дн." : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Ends in %lld day"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Ends in %lld days"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Истекает через %lld дня"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Истекает через %lld дней"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Истекает через %lld день"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Истекает через %lld дня"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Итого за месяц" : {
       "localizations" : {
@@ -1174,9 +3116,51 @@
     "Каждые %lld дн." : {
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Every %lld days"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Every %lld day"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Every %lld days"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Каждые %lld дня"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Каждые %lld дней"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Каждый %lld день"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Каждые %lld дня"
+                }
+              }
+            }
           }
         }
       }
@@ -1198,6 +3182,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Calendar"
+          }
+        }
+      }
+    },
+    "Каталог 400+ игр" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "400+ game catalog"
+          }
+        }
+      }
+    },
+    "Каталог PC + Console" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PC + Console catalog"
+          }
+        }
+      }
+    },
+    "Каталог игр, без рекламы" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Game catalog, ad-free"
           }
         }
       }
@@ -1233,6 +3250,61 @@
         }
       }
     },
+    "Кешбэк до 30%, страховка, консьерж" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to 30% cashback, insurance, concierge"
+          }
+        }
+      }
+    },
+    "Кешбэк, бесплатная доставка" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cashback, free delivery"
+          }
+        }
+      }
+    },
+    "Кешбэк, Звук, Okko" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cashback, Zvuk, Okko"
+          }
+        }
+      }
+    },
+    "Кешбэк, Музыка" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cashback, Music"
+          }
+        }
+      }
+    },
+    "Кешбэк, Музыка, Кинопоиск" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cashback, Music, Kinopoisk"
+          }
+        }
+      }
+    },
     "Китайский юань" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1244,12 +3316,45 @@
         }
       }
     },
+    "Классика PS1–PS4, стриминг" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS1–PS4 classics, streaming"
+          }
+        }
+      }
+    },
     "Книги" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Books"
+          }
+        }
+      }
+    },
+    "Книги + аудиокниги" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Books + audiobooks"
+          }
+        }
+      }
+    },
+    "Книги, аудио, комиксы" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Books, audio, comics"
           }
         }
       }
@@ -1275,6 +3380,17 @@
         }
       }
     },
+    "Маркет Плюс" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Market Plus"
+          }
+        }
+      }
+    },
     "мес" : {
       "localizations" : {
         "en" : {
@@ -1286,7 +3402,14 @@
       }
     },
     "Месяц" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Month"
+          }
+        }
+      }
     },
     "Мобильный" : {
       "localizations" : {
@@ -1308,12 +3431,34 @@
         }
       }
     },
+    "На одного участника" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For one member"
+          }
+        }
+      }
+    },
     "На паузе" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Paused"
+          }
+        }
+      }
+    },
+    "На участника, совместный бренд-кит" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per member, shared brand kit"
           }
         }
       }
@@ -1339,7 +3484,14 @@
       }
     },
     "Напоминание" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder"
+          }
+        }
+      }
     },
     "Напоминание о пробном" : {
       "localizations" : {
@@ -1352,10 +3504,24 @@
       }
     },
     "Напоминание по умолчанию" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default Reminder"
+          }
+        }
+      }
     },
     "Напомнить о списании" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Charge Reminder"
+          }
+        }
+      }
     },
     "Напомнить об окончании пробного" : {
       "localizations" : {
@@ -1458,7 +3624,14 @@
       }
     },
     "Не удалось сохранить" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t Save"
+          }
+        }
+      }
     },
     "Не указан" : {
       "localizations" : {
@@ -1582,13 +3755,34 @@
       }
     },
     "Нет предстоящих списаний" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No upcoming charges"
+          }
+        }
+      }
     },
     "Нет списаний" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No charges"
+          }
+        }
+      }
     },
     "Никогда" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never"
+          }
+        }
+      }
     },
     "Ничего не найдено по запросу «%@»" : {
       "localizations" : {
@@ -1651,7 +3845,58 @@
       }
     },
     "ОК" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "Онлайн + 25 классических игр" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Online multiplayer + 25 classic games"
+          }
+        }
+      }
+    },
+    "Оптимальный" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Optimal"
+          }
+        }
+      }
+    },
+    "Оригиналы МТС, 4K" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MTS Originals, 4K"
+          }
+        }
+      }
+    },
+    "Оригинальные сериалы, 4K" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Original series, 4K"
+          }
+        }
+      }
     },
     "Основное" : {
       "localizations" : {
@@ -1666,9 +3911,51 @@
     "Осталось %lld дн." : {
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld days left"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld day left"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld days left"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Осталось %lld дня"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Осталось %lld дней"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Остался %lld день"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Осталось %lld дня"
+                }
+              }
+            }
           }
         }
       }
@@ -1724,10 +4011,35 @@
       }
     },
     "Отменить" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
+    "Оффлайн, Hi-Q аудио" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offline, Hi-Q audio"
+          }
+        }
+      }
     },
     "Очистить демо-данные" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Demo Data"
+          }
+        }
+      }
     },
     "Ошибка" : {
       "localizations" : {
@@ -1801,7 +4113,25 @@
       }
     },
     "Пик расходов" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peak Pressure"
+          }
+        }
+      }
+    },
+    "Плюс" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus"
+          }
+        }
+      }
     },
     "По дате списания" : {
       "localizations" : {
@@ -1864,6 +4194,7 @@
       }
     },
     "подписка" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1884,6 +4215,7 @@
       }
     },
     "подписки" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1904,6 +4236,7 @@
       }
     },
     "подписок" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1965,12 +4298,45 @@
         }
       }
     },
+    "Полная история, голосовые каналы" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full history, voice channels"
+          }
+        }
+      }
+    },
+    "Полный пакет монетизации и поддержки" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full monetization and support package"
+          }
+        }
+      }
+    },
     "Популярные" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Popular"
+          }
+        }
+      }
+    },
+    "Прайм+" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prime+"
           }
         }
       }
@@ -1991,6 +4357,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Previous Month"
+          }
+        }
+      }
+    },
+    "Премиум" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium"
           }
         }
       }
@@ -2229,7 +4606,14 @@
       }
     },
     "прогноз" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "forecast"
+          }
+        }
+      }
     },
     "Прогноз на 6 месяцев" : {
       "localizations" : {
@@ -2242,7 +4626,14 @@
       }
     },
     "Продление" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renewal"
+          }
+        }
+      }
     },
     "Продуктивность" : {
       "localizations" : {
@@ -2326,7 +4717,14 @@
       }
     },
     "Разработка" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Development"
+          }
+        }
+      }
     },
     "Расчётный счёт" : {
       "localizations" : {
@@ -2334,6 +4732,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bank Account"
+          }
+        }
+      }
+    },
+    "Расширенные лимиты, управление" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Higher limits, management tools"
+          }
+        }
+      }
+    },
+    "Расширенные модели, большие контексты" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Advanced models, larger context windows"
           }
         }
       }
@@ -2369,6 +4789,28 @@
         }
       }
     },
+    "С рекламой" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With ads"
+          }
+        }
+      }
+    },
+    "С рекламой (год)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With ads (annual)"
+          }
+        }
+      }
+    },
     "Сборка" : {
       "localizations" : {
         "en" : {
@@ -2380,13 +4822,34 @@
       }
     },
     "Сбросить" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
+          }
+        }
+      }
     },
     "Сбросить все данные?" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset All Data?"
+          }
+        }
+      }
     },
     "Сбросить данные" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Data"
+          }
+        }
+      }
     },
     "Светлая" : {
       "localizations" : {
@@ -2399,7 +4862,14 @@
       }
     },
     "Свободный период" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quiet Window"
+          }
+        }
+      }
     },
     "Сегодня" : {
       "localizations" : {
@@ -2411,12 +4881,56 @@
         }
       }
     },
+    "Семейная" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Family"
+          }
+        }
+      }
+    },
+    "Семейный" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Family"
+          }
+        }
+      }
+    },
+    "Синяя галочка, расширенные посты" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blue checkmark, longer posts"
+          }
+        }
+      }
+    },
     "Системная" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "System"
+          }
+        }
+      }
+    },
+    "Скидки, бесплатная доставка" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discounts, free delivery"
           }
         }
       }
@@ -2494,9 +5008,51 @@
     "Списание через %lld дн." : {
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Charge in %lld days"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Charge in %lld day"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Charge in %lld days"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Списание через %lld дня"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Списание через %lld дней"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Списание через %lld день"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Списание через %lld дня"
+                }
+              }
+            }
           }
         }
       }
@@ -2507,6 +5063,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Charges & Trials"
+          }
+        }
+      }
+    },
+    "Стандарт" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard"
           }
         }
       }
@@ -2611,12 +5178,34 @@
         }
       }
     },
+    "ТНТ, ТВ-3, 2×2, оригиналы" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TNT, TV-3, 2×2, originals"
+          }
+        }
+      }
+    },
     "Только %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Only %@"
+          }
+        }
+      }
+    },
+    "Только видео" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Video only"
           }
         }
       }
@@ -2683,7 +5272,14 @@
       }
     },
     "Укажите дату окончания подписки" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select a subscription end date"
+          }
+        }
+      }
     },
     "Укажите название подписки" : {
       "localizations" : {
@@ -2691,6 +5287,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enter subscription name"
+          }
+        }
+      }
+    },
+    "Управление командой, политики" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Team management, policies"
+          }
+        }
+      }
+    },
+    "Файлы до 4 ГБ, без рекламы, Premium-стикеры" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Files up to 4 GB, ad-free, Premium stickers"
+          }
+        }
+      }
+    },
+    "Фильмы и сериалы" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Movies and series"
           }
         }
       }
@@ -2740,9 +5369,51 @@
     "Через %lld дн." : {
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In %lld days"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "In %lld day"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "In %lld days"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Через %lld дня"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Через %lld дней"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Через %lld день"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Через %lld дня"
+                }
+              }
+            }
           }
         }
       }
@@ -2750,15 +5421,51 @@
     "Через %lld дн. — %@" : {
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In %1$lld days — %2$@"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "In %1$lld day — %2$@"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "In %1$lld days — %2$@"
+                }
+              }
+            }
           }
         },
         "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Через %1$lld дн. — %2$@"
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Через %1$lld дня — %2$@"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Через %1$lld дней — %2$@"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Через %1$lld день — %2$@"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Через %1$lld дня — %2$@"
+                }
+              }
+            }
           }
         }
       }
@@ -2779,6 +5486,171 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Something went wrong"
+          }
+        }
+      }
+    },
+    "Экономия ~$4" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save ~$4"
+          }
+        }
+      }
+    },
+    "Экономия ~$6" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save ~$6"
+          }
+        }
+      }
+    },
+    "Экономия ~$20" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save ~$20"
+          }
+        }
+      }
+    },
+    "Экономия ~$21" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save ~$21"
+          }
+        }
+      }
+    },
+    "Экономия ~$24" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save ~$24"
+          }
+        }
+      }
+    },
+    "Экономия ~$32" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save ~$32"
+          }
+        }
+      }
+    },
+    "Экономия ~$40" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save ~$40"
+          }
+        }
+      }
+    },
+    "Экономия ~$41" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save ~$41"
+          }
+        }
+      }
+    },
+    "Экономия ~$56" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save ~$56"
+          }
+        }
+      }
+    },
+    "Экономия ~$64" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save ~$64"
+          }
+        }
+      }
+    },
+    "Экономия ~$72" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save ~$72"
+          }
+        }
+      }
+    },
+    "Экономия ~$86" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save ~$86"
+          }
+        }
+      }
+    },
+    "Экономия ~$309" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save ~$309"
+          }
+        }
+      }
+    },
+    "Экономия ~2,9K₽" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save ~₽2.9K"
+          }
+        }
+      }
+    },
+    "Экономия ~3,4K₽" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save ~₽3.4K"
           }
         }
       }

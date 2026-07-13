@@ -13,6 +13,6 @@ extension SupportedCurrency {
     /// The full currency name in the user's current locale.
     /// Example: "российский рубль" (ru), "Russian Ruble" (en), "Russischer Rubel" (de).
     var localizedName: String {
-        Locale.current.localizedString(forCurrencyCode: code) ?? name
+        PresentationLocale.current.localizedString(forCurrencyCode: code) ?? name
     }
 }

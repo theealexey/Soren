@@ -283,7 +283,12 @@ final class NotificationScheduler: NotificationScheduling, @unchecked Sendable {
     private func chargeBody(amount: Decimal, currency: String, chargeDate: Date) -> String {
         let formatter    = currencyFormatter(for: currency)
         let amountString = formatter.string(for: amount) ?? "\(amount)"
-        let dateString   = chargeDate.formatted(.dateTime.day().month())
+        let dateString = chargeDate.formatted(
+            .dateTime
+                .day()
+                .month()
+                .locale(PresentationLocale.current)
+        )
         return "\(amountString) · \(dateString)"
     }
 

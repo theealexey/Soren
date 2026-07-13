@@ -8,7 +8,7 @@ struct MonthlyProjection: Identifiable {
     let total: Decimal
     var id: Date { month }
 
-    /// Short month label for chart axis (e.g. "Апр").
+    /// Short localized month label for the chart axis.
     var shortLabel: String {
         Self.labelFormatter.string(from: month)
     }
@@ -19,10 +19,7 @@ struct MonthlyProjection: Identifiable {
     }
 
     private static let labelFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "ru_RU")
-        f.dateFormat = "MMM"
-        return f
+        PresentationLocale.dateFormatter(template: "MMM")
     }()
 }
 
@@ -175,7 +172,7 @@ final class AnalyticsViewModel {
     // Stored once to avoid unsafe Calendar.current access in async contexts.
     private static let cal: Calendar = {
         var c = Calendar(identifier: .gregorian)
-        c.locale = .current
+        c.locale = PresentationLocale.current
         c.timeZone = .current
         return c
     }()

@@ -107,12 +107,10 @@ final class AlertsViewModel {
 
     var criticalTitle: String {
         let count = alerts.criticalCount
-        if count == 1 { return String(localized: "1 критическая проблема") }
         return String(localized: "\(count) критических проблем")
     }
 
     func alertCountTitle(_ count: Int) -> String {
-        if count == 1 { return String(localized: "1 предупреждение") }
         return String(localized: "\(count) предупреждений")
     }
 }

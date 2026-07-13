@@ -45,23 +45,22 @@ final class CalendarViewModel {
 
     // MARK: - Private
 
-    /// Single Gregorian calendar with ru_RU locale and Mon-first week used consistently
+    /// Single Gregorian calendar with the app language and Mon-first week used consistently
     /// throughout this ViewModel. Using one instance prevents Calendar.current (which may
     /// be non-Gregorian on CIS devices using Islamic or Persian system calendars) from
     /// being mixed into date arithmetic.
     static let cal: Calendar = {
         var c = Calendar(identifier: .gregorian)
-        c.locale = Locale(identifier: "ru_RU")
+        c.locale = PresentationLocale.current
         c.firstWeekday = 2  // Monday
         return c
     }()
 
     private static let monthFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "ru_RU")
-        f.calendar = CalendarViewModel.cal
-        f.dateFormat = "LLLL yyyy"
-        return f
+        PresentationLocale.dateFormatter(
+            template: "LLLL yyyy",
+            calendar: CalendarViewModel.cal
+        )
     }()
 
     private let repository: any RecurringItemRepository

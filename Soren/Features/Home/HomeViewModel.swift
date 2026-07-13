@@ -123,7 +123,9 @@ final class HomeViewModel {
                 )
             }
 
-            monthLabel   = Self.monthYearFormatter.string(from: now).capitalized
+            monthLabel = Self.monthYearFormatter
+                .string(from: now)
+                .capitalized(with: PresentationLocale.current)
             let forecast = dailyTotals.values.reduce(Decimal(0), +)
             forecastLabel = "\(formatted(amount: forecast, currency: currency)) \(String(localized: "прогноз"))"
 
@@ -363,14 +365,10 @@ final class HomeViewModel {
     // MARK: - Static formatters
 
     private static let monthYearFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "LLLL yyyy"
-        return f
+        PresentationLocale.dateFormatter(template: "LLLL yyyy")
     }()
 
     private static let dayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "MMM d"
-        return f
+        PresentationLocale.dateFormatter(template: "MMM d")
     }()
 }

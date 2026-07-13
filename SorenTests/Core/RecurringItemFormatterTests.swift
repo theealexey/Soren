@@ -322,3 +322,131 @@ struct InsightsBuilderTests {
         #expect(insights.isEmpty)
     }
 }
+
+// MARK: - Presentation Localization Tests
+
+@Suite("Presentation Localization")
+struct PresentationLocalizationTests {
+
+    private func localizationBundle(_ languageCode: String) throws -> Bundle {
+        let appBundle = try #require(Bundle(identifier: "com.alexey.soren"))
+        let path = try #require(appBundle.path(forResource: languageCode, ofType: "lproj"))
+        return try #require(Bundle(path: path))
+    }
+
+    private func containsCyrillic(_ value: String) -> Bool {
+        value.unicodeScalars.contains { (0x0400...0x04FF).contains($0.value) }
+    }
+
+    @Test("App language and regional conventions are resolved independently")
+    func localeResolutionKeepsRegionalConventions() {
+        let englishForRussianRegion = PresentationLocale.resolved(
+            appLanguageIdentifier: "en",
+            regionalLocale: Locale(identifier: "ru_RU")
+        )
+        #expect(englishForRussianRegion.language.languageCode?.identifier == "en")
+        #expect(englishForRussianRegion.region?.identifier == "RU")
+
+        let russianForUSRegion = PresentationLocale.resolved(
+            appLanguageIdentifier: "ru",
+            regionalLocale: Locale(identifier: "en_US")
+        )
+        #expect(russianForUSRegion.language.languageCode?.identifier == "ru")
+        #expect(russianForUSRegion.region?.identifier == "US")
+    }
+
+    @Test("Calendar labels follow app language")
+    func calendarLabelsFollowAppLanguage() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
+        let date = try #require(calendar.date(from: DateComponents(year: 2026, month: 7, day: 1)))
+
+        let english = PresentationLocale.dateFormatter(
+            template: "LLLL yyyy",
+            locale: Locale(identifier: "en_RU"),
+            calendar: calendar
+        ).string(from: date)
+        let russian = PresentationLocale.dateFormatter(
+            template: "LLLL yyyy",
+            locale: Locale(identifier: "ru_RU"),
+            calendar: calendar
+        ).string(from: date)
+
+        #expect(english.localizedCaseInsensitiveContains("July"))
+        #expect(russian.localizedCaseInsensitiveContains("июль"))
+    }
+
+    @Test("Home presentation labels have English and Russian catalog values")
+    func homeLabelsAreLocalized() throws {
+        let english = Locale(identifier: "en")
+        let russian = Locale(identifier: "ru")
+        let englishBundle = try localizationBundle("en")
+        let russianBundle = try localizationBundle("ru")
+
+        #expect(String(localized: "Пик расходов", bundle: englishBundle, locale: english) == "Peak Pressure")
+        #expect(String(localized: "Свободный период", bundle: englishBundle, locale: english) == "Quiet Window")
+        #expect(String(localized: "прогноз", bundle: englishBundle, locale: english) == "forecast")
+
+        #expect(String(localized: "Пик расходов", bundle: russianBundle, locale: russian) == "Пик расходов")
+        #expect(String(localized: "Свободный период", bundle: russianBundle, locale: russian) == "Свободный период")
+        #expect(String(localized: "прогноз", bundle: russianBundle, locale: russian) == "прогноз")
+    }
+
+    @Test("Subscription and payment counts use localized plural rules")
+    func localizedCountPlurals() throws {
+        let english = Locale(identifier: "en")
+        let russian = Locale(identifier: "ru")
+        let englishBundle = try localizationBundle("en")
+        let russianBundle = try localizationBundle("ru")
+
+        #expect(String(localized: "\(1) подписок", bundle: englishBundle, locale: english) == "1 subscription")
+        #expect(String(localized: "\(2) подписок", bundle: englishBundle, locale: english) == "2 subscriptions")
+        #expect(String(localized: "\(1) платежей", bundle: englishBundle, locale: english) == "1 payment")
+        #expect(String(localized: "\(5) платежей", bundle: englishBundle, locale: english) == "5 payments")
+
+        #expect(String(localized: "\(1) подписок", bundle: russianBundle, locale: russian) == "1 подписка")
+        #expect(String(localized: "\(2) подписок", bundle: russianBundle, locale: russian) == "2 подписки")
+        #expect(String(localized: "\(5) подписок", bundle: russianBundle, locale: russian) == "5 подписок")
+        #expect(String(localized: "\(21) платежей", bundle: russianBundle, locale: russian) == "21 платёж")
+    }
+
+    @Test("Provider tier metadata has English catalog coverage")
+    func providerTierMetadataHasEnglishCoverage() async throws {
+        let englishBundle = try localizationBundle("en")
+        let english = Locale(identifier: "en")
+        let providers = await InMemoryProviderCatalogRepository().fetchAll()
+        let tierMetadata = Set(
+            providers.flatMap(\.plans).flatMap { tier in
+                [tier.name, tier.features].compactMap { $0 }
+            }
+        )
+        let approvedVerbatimBrands: Set<String> = ["WB Клуб"]
+
+        #expect(approvedVerbatimBrands.isSubset(of: tierMetadata))
+
+        for source in tierMetadata.sorted() {
+            let localized = String(
+                localized: String.LocalizationValue(source),
+                bundle: englishBundle,
+                locale: english
+            )
+
+            #expect(
+                !localized.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                "Empty English tier localization for: \(source)"
+            )
+
+            if approvedVerbatimBrands.contains(source) {
+                #expect(
+                    localized == source,
+                    "Approved brand must remain verbatim: \(source)"
+                )
+            } else if containsCyrillic(source) {
+                #expect(
+                    localized != source && !containsCyrillic(localized),
+                    "Missing English tier localization for: \(source)"
+                )
+            }
+        }
+    }
+}

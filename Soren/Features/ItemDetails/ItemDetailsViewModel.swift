@@ -230,10 +230,21 @@ final class ItemDetailsViewModel {
     }
 
     var formattedNextCharge: String {
-        item.nextChargeDate.formatted(.dateTime.day().month(.wide))
+        item.nextChargeDate.formatted(
+            .dateTime
+                .day()
+                .month(.wide)
+                .locale(PresentationLocale.current)
+        )
     }
 
     var formattedStartDate: String {
-        item.startDate.formatted(.dateTime.day().month(.wide).year())
+        item.startDate.formatted(
+            .dateTime
+                .day()
+                .month(.wide)
+                .year()
+                .locale(PresentationLocale.current)
+        )
     }
 }

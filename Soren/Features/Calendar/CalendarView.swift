@@ -120,11 +120,11 @@ struct CalendarView: View {
         .accessibilityHidden(true)
     }
 
-    /// Mon-first short weekday labels derived from the Gregorian ru_RU calendar.
+    /// Mon-first short weekday labels derived from the app's presentation locale.
     /// Rotation uses `firstWeekday` so the logic matches `buildGrid()` in the ViewModel.
     private static let weekdayLabels: [String] = {
         var cal = Calendar(identifier: .gregorian)
-        cal.locale = Locale(identifier: "ru_RU")
+        cal.locale = PresentationLocale.current
         cal.firstWeekday = 2
         var symbols = cal.veryShortStandaloneWeekdaySymbols
         // API returns Sun-first: [Вс, Пн, Вт, Ср, Чт, Пт, Сб]
@@ -225,21 +225,15 @@ struct CalendarView: View {
         return Text(verbatim: "\(dayStr), \(pluralPayments(charges.count))")
     }
 
-    private func pluralPayments(_ n: Int) -> String {
-        let mod10 = n % 10, mod100 = n % 100
-        switch mod10 {
-        case 1 where mod100 != 11:                             return "\(n) платёж"
-        case 2...4 where !(mod100 >= 12 && mod100 <= 14):     return "\(n) платежа"
-        default:                                               return "\(n) платежей"
-        }
+    private func pluralPayments(_ count: Int) -> String {
+        String(localized: "\(count) платежей")
     }
 
     private static let accessibilityDayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "ru_RU")
-        f.calendar = CalendarViewModel.cal
-        f.dateFormat = "d MMMM"
-        return f
+        PresentationLocale.dateFormatter(
+            template: "d MMMM",
+            calendar: CalendarViewModel.cal
+        )
     }()
 
     // MARK: - Selected Day Section
@@ -337,15 +331,16 @@ struct CalendarView: View {
         if CalendarViewModel.cal.isDateInTomorrow(date) {
             return String(localized: "Завтра")
         }
-        return Self.dayFormatter.string(from: date).capitalized
+        return Self.dayFormatter
+            .string(from: date)
+            .capitalized(with: PresentationLocale.current)
     }
 
     private static let dayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "ru_RU")
-        f.calendar = CalendarViewModel.cal
-        f.dateFormat = "d MMMM"
-        return f
+        PresentationLocale.dateFormatter(
+            template: "d MMMM",
+            calendar: CalendarViewModel.cal
+        )
     }()
 }
 
