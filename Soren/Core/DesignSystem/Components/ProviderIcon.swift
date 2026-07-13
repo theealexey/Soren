@@ -5,44 +5,78 @@ import UIKit
 
 /// Loads provider logos from a prioritised list of URLs.
 /// Caches in memory (NSCache) and on disk (URLCache on URLSession).
-/// Priority per provider: Clearbit → Google favicon → nil (letter-mark shown).
+/// Coalesces concurrent requests for the same provider so scrolling does not
+/// start duplicate network work or cancel the shared load.
 ///
 /// Implemented as an `actor` so that NSCache mutations are serialised and
 /// UIImage values are safely passed to @MainActor callers under Swift 6.
-private actor LogoLoader {
+actor LogoLoader {
+
+    typealias DataLoader = @Sendable (URL) async throws -> (Data, URLResponse)
 
     static let shared = LogoLoader()
 
-    private let session: URLSession
+    private let loadData: DataLoader
     private let memory = NSCache<NSURL, UIImage>()
+    private var inFlight: [NSURL: Task<UIImage?, Never>] = [:]
 
     private init() {
         let config = URLSessionConfiguration.default
         config.urlCache = URLCache(memoryCapacity: 0, diskCapacity: 100 * 1024 * 1024)
+        config.requestCachePolicy = .returnCacheDataElseLoad
         config.timeoutIntervalForRequest = 8
         config.timeoutIntervalForResource = 10
-        self.session = URLSession(configuration: config)
+        let session = URLSession(configuration: config)
+        self.loadData = { url in
+            try await session.data(from: url)
+        }
+        memory.countLimit = 300
+    }
+
+    init(loadData: @escaping DataLoader) {
+        self.loadData = loadData
         memory.countLimit = 300
     }
 
     func image(for urls: [URL]) async -> UIImage? {
         guard let key = urls.first else { return nil }
-        if let cached = memory.object(forKey: key as NSURL) { return cached }
-        for url in urls {
-            if let img = await fetch(url) {
-                memory.setObject(img, forKey: key as NSURL)
-                return img
-            }
+        let cacheKey = key as NSURL
+
+        if let cached = memory.object(forKey: cacheKey) {
+            return cached
         }
-        return nil
+        if let existing = inFlight[cacheKey] {
+            return await existing.value
+        }
+
+        let loadData = self.loadData
+        let task = Task<UIImage?, Never> {
+            for url in urls {
+                if let image = await Self.fetch(url, using: loadData) {
+                    return image
+                }
+            }
+            return nil
+        }
+        inFlight[cacheKey] = task
+
+        let image = await task.value
+        inFlight[cacheKey] = nil
+
+        if let image {
+            memory.setObject(image, forKey: cacheKey)
+        }
+        return image
     }
 
-    private func fetch(_ url: URL) async -> UIImage? {
-        guard let (data, response) = try? await session.data(from: url),
+    private nonisolated static func fetch(_ url: URL, using loadData: DataLoader) async -> UIImage? {
+        guard let (data, response) = try? await loadData(url),
               let http = response as? HTTPURLResponse,
-              http.statusCode == 200,
-              let img = UIImage(data: data) else { return nil }
-        return img
+              (200..<300).contains(http.statusCode),
+              http.mimeType?.lowercased().hasPrefix("image/") == true,
+              !data.isEmpty,
+              let image = UIImage(data: data) else { return nil }
+        return image
     }
 }
 
@@ -52,27 +86,48 @@ private actor LogoLoader {
 ///
 /// Resolution priority:
 /// 1. Bundled asset — image named `iconAssetName` or `provider_{id}` in Assets.xcassets
-/// 2. Remote logo   — loaded via LogoLoader (Clearbit → Google favicon), cached on disk
+/// 2. Remote logo   — loaded via LogoLoader from the verified fallback, cached on disk
 /// 3. Letter-mark   — instant, shown while remote loads or on failure
 /// 4. SF Symbol     — category icon, for manual entries without a provider
 struct ProviderIcon: View {
     private let content: Content
     let size: Size
 
+    enum Resolution: Equatable {
+        case asset(String)
+        case remote([URL])
+        case letterMark
+        case symbol
+    }
+
     // MARK: - Init (Provider-based)
 
     init(provider: ProviderTemplate, size: Size = .medium) {
-        let logoURLs = ProviderLogoResolver.logoURLs(for: provider)
-        if let assetName = Self.bundledAssetName(for: provider) {
+        switch Self.resolution(for: provider) {
+        case .asset(let assetName):
             self.content = .asset(assetName)
-        } else if !logoURLs.isEmpty {
+        case .remote(let logoURLs):
             self.content = .remoteLogo(logoURLs, provider)
-        } else if let hex = provider.brandColorHex {
+        case .letterMark:
+            let hex = provider.brandColorHex ?? "#888888"
             self.content = .letterMark(provider.letterMark, Color(hex: hex))
-        } else {
+        case .symbol:
             self.content = .symbol(provider.category.systemIconName, provider.category.color)
         }
         self.size = size
+    }
+
+    static func resolution(for provider: ProviderTemplate) -> Resolution {
+        if let assetName = bundledAssetName(for: provider) {
+            return .asset(assetName)
+        }
+
+        let logoURLs = ProviderLogoResolver.logoURLs(for: provider)
+        if !logoURLs.isEmpty {
+            return .remote(logoURLs)
+        }
+
+        return provider.brandColorHex == nil ? .symbol : .letterMark
     }
 
     private static func bundledAssetName(for provider: ProviderTemplate) -> String? {
@@ -100,9 +155,14 @@ struct ProviderIcon: View {
         case .asset(let name):
             Image(name)
                 .resizable()
-                .scaledToFill()
+                .scaledToFit()
+                .frame(width: size.frame * 0.72, height: size.frame * 0.72)
                 .frame(width: size.frame, height: size.frame)
-                .clipShape(RoundedRectangle(cornerRadius: size.radius))
+                .background(Color.white, in: RoundedRectangle(cornerRadius: size.radius))
+                .overlay(
+                    RoundedRectangle(cornerRadius: size.radius)
+                        .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
+                )
 
         case .remoteLogo(let urls, let provider):
             RemoteLogoIcon(urls: urls, provider: provider, size: size)
@@ -135,7 +195,7 @@ struct ProviderIcon: View {
 // MARK: - Remote Logo Icon
 
 /// Shows a letter-mark immediately, then fades in the real logo when loaded.
-/// Uses LogoLoader for memory + disk caching with Clearbit → Google favicon fallback.
+/// Uses LogoLoader for coalesced memory + disk-cached remote fallback loading.
 private struct RemoteLogoIcon: View {
     let urls: [URL]
     let provider: ProviderTemplate
@@ -163,6 +223,7 @@ private struct RemoteLogoIcon: View {
             }
         }
         .task(id: urls.first) {
+            loaded = nil
             loaded = await LogoLoader.shared.image(for: urls)
         }
     }

@@ -1,6 +1,50 @@
 import Testing
 import Foundation
+import UIKit
 @testable import Soren
+
+// MARK: - Provider Logo Resolution Tests
+
+@Suite("Provider logos — Resolution")
+struct ProviderLogoResolutionTests {
+
+    @Test("Remote logo fallback does not use retired Clearbit host")
+    func remoteLogoFallbackUsesVerifiedHost() throws {
+        let provider = try #require(ProviderCatalog.template(forProviderID: "spotify"))
+        let urls = ProviderLogoResolver.logoURLs(for: provider)
+
+        #expect(urls.count == 1)
+        #expect(urls.first?.host() == "t1.gstatic.com")
+        #expect(urls.allSatisfy { $0.host() != "logo.clearbit.com" })
+    }
+
+    @Test("Custom provider without a logo source uses a placeholder")
+    @MainActor
+    func customProviderWithoutLogoSourceUsesPlaceholder() {
+        let provider = ProviderTemplate(
+            id: "custom_test_provider",
+            displayName: "Custom",
+            category: .other,
+            brandColorHex: "#123456"
+        )
+
+        #expect(ProviderIcon.resolution(for: provider) == .letterMark)
+    }
+
+    @Test(
+        "Screenshot-critical providers resolve to bundled assets",
+        arguments: [
+            "spotify", "yandex_plus", "mts_premium", "mts", "chatgpt_plus",
+            "icloud", "netflix", "nordvpn", "x_premium", "youtube_premium",
+            "telegram_premium", "qobuz", "github_copilot",
+        ]
+    )
+    @MainActor
+    func screenshotProviderUsesBundledAsset(providerID: String) throws {
+        let provider = try #require(ProviderCatalog.template(forProviderID: providerID))
+        #expect(ProviderIcon.resolution(for: provider) == .asset("provider_\(providerID)"))
+    }
+}
 
 // MARK: - Provider Catalog Tests (Aggressive)
 
@@ -140,6 +184,126 @@ struct ProviderCatalogIntegrityTests {
             #expect(provider?.itemType == .mobilePlan,
                     "\(id) should be .mobilePlan, got \(String(describing: provider?.itemType))")
         }
+    }
+}
+
+// MARK: - Logo Loader Tests
+
+@Suite("LogoLoader — Reliability")
+struct LogoLoaderReliabilityTests {
+
+    @Test("Concurrent callers share one request and one caller cannot cancel it")
+    func concurrentRequestsAreCoalesced() async throws {
+        let url = try #require(URL(string: "https://example.test/logo.png"))
+        let imageData = try validPNGData()
+        let stub = LogoDataStub(
+            responses: [.init(statusCode: 200, mimeType: "image/png", data: imageData)],
+            delay: .milliseconds(100)
+        )
+        let loader = makeLoader(stub: stub)
+
+        let first = Task { await loader.image(for: [url]) }
+        try await Task.sleep(for: .milliseconds(20))
+        let second = Task { await loader.image(for: [url]) }
+        first.cancel()
+
+        let secondImage = await second.value
+        _ = await first.value
+        let cachedImage = await loader.image(for: [url])
+
+        #expect(secondImage != nil)
+        #expect(cachedImage != nil)
+        #expect(await stub.requestCount == 1)
+    }
+
+    @Test("Failed request is not cached and a later request retries")
+    func failureCanRetry() async throws {
+        let url = try #require(URL(string: "https://example.test/retry.png"))
+        let imageData = try validPNGData()
+        let stub = LogoDataStub(responses: [
+            .init(statusCode: 500, mimeType: "image/png", data: imageData),
+            .init(statusCode: 200, mimeType: "image/png", data: imageData),
+        ])
+        let loader = makeLoader(stub: stub)
+
+        let failed = await loader.image(for: [url])
+        let retried = await loader.image(for: [url])
+
+        #expect(failed == nil)
+        #expect(retried != nil)
+        #expect(await stub.requestCount == 2)
+    }
+
+    @Test("Invalid HTTP, MIME and image data fail safely")
+    func invalidResponsesFailSafely() async throws {
+        let url = try #require(URL(string: "https://example.test/invalid.png"))
+        let imageData = try validPNGData()
+        let invalidResponses = [
+            LogoDataStub.Response(statusCode: 404, mimeType: "image/png", data: imageData),
+            LogoDataStub.Response(statusCode: 200, mimeType: "text/html", data: imageData),
+            LogoDataStub.Response(statusCode: 200, mimeType: "image/png", data: Data("invalid".utf8)),
+        ]
+
+        for response in invalidResponses {
+            let stub = LogoDataStub(responses: [response])
+            let loader = makeLoader(stub: stub)
+            #expect(await loader.image(for: [url]) == nil)
+        }
+    }
+
+    private func makeLoader(stub: LogoDataStub) -> LogoLoader {
+        LogoLoader { url in
+            try await stub.load(url)
+        }
+    }
+
+    private func validPNGData() throws -> Data {
+        try #require(Data(base64Encoded:
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+        ))
+    }
+}
+
+private actor LogoDataStub {
+    struct Response: Sendable {
+        let statusCode: Int
+        let mimeType: String
+        let data: Data
+    }
+
+    enum StubError: Error {
+        case noResponse
+        case invalidHTTPResponse
+    }
+
+    private var responses: [Response]
+    private let delay: Duration
+    private(set) var requestCount = 0
+
+    init(responses: [Response], delay: Duration = .zero) {
+        self.responses = responses
+        self.delay = delay
+    }
+
+    func load(_ url: URL) async throws -> (Data, URLResponse) {
+        requestCount += 1
+        if delay > .zero {
+            try await Task.sleep(for: delay)
+        }
+        guard !responses.isEmpty else {
+            throw StubError.noResponse
+        }
+
+        let response = responses.removeFirst()
+        guard let http = HTTPURLResponse(
+            url: url,
+            statusCode: response.statusCode,
+            httpVersion: nil,
+            headerFields: ["Content-Type": response.mimeType]
+        ) else {
+            throw StubError.invalidHTTPResponse
+        }
+        return (response.data, http)
     }
 }
 

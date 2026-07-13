@@ -8,7 +8,8 @@ import SwiftUI
 /// Displays: icon/logo → title + subtitle → amount + cycle badge.
 ///
 /// When `providerTemplate` is set (item was added from the catalog), the leading icon
-/// uses `ProviderIcon` (bundled asset → Clearbit → letter-mark). Otherwise the category SF Symbol is shown.
+/// uses `ProviderIcon` (bundled asset → verified remote fallback → letter-mark).
+/// Otherwise the category SF Symbol is shown.
 ///
 /// Usage:
 /// ```swift
