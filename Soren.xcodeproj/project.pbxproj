@@ -68,7 +68,9 @@
 		3E6405A4F0A59A5EF54A5056 /* GetUpcomingCharges.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AE23A399CED2B38971BCB57 /* GetUpcomingCharges.swift */; };
 		40B9AED4D39EF8E91FE3ADAE /* PaymentMethodRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = E649AB3F110DA227AEAD1E55 /* PaymentMethodRepository.swift */; };
 		40D591A8E4F0F1F842AA791E /* UserPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3040DE9BC5A648451E24ACD3 /* UserPreferencesTests.swift */; };
+		42BD4BC83B42D5FCE350B4AD /* CurrencyEstimateFormTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C9E457E5F3AE1FA3BDF6AE3 /* CurrencyEstimateFormTests.swift */; };
 		42F8B50D7C256BA73B7A0466 /* RecurringItemFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 311318194B8656243E68001D /* RecurringItemFormatter.swift */; };
+		4312666E66069F3C2557555A /* AppContainer+SubscriptionFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF5B34A61391D9F3BE3020C /* AppContainer+SubscriptionFactory.swift */; };
 		4400522E9CF5B4E98536CBF3 /* LandscapeGestureOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A90895A6DB5B8C47EE8C2893 /* LandscapeGestureOverlay.swift */; };
 		446776A4B4A8B61EACD9791E /* MotionTokenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B50D4B434DAA34DC9657942 /* MotionTokenTests.swift */; };
 		45D8007054C0DC0DC22CEF7E /* OpenExchangeRateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF6E3294064040757EF1F48 /* OpenExchangeRateProvider.swift */; };
@@ -133,6 +135,7 @@
 		97AAF63EB6D8AA617387BA40 /* SDPaymentMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD92113C1D03A64942CA712B /* SDPaymentMethod.swift */; };
 		99D4482F2360C3032DA9DD5F /* AnalyticsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CB961DE71FAF0774445A452 /* AnalyticsViewModel.swift */; };
 		9AB586D1DCDF1329DA29AA0A /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2B7E500333C0C94A5166480 /* SettingsViewModel.swift */; };
+		9BDFC2866AF0F51663CCBF79 /* CurrencyEstimateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1842B87EAB2C0F30A1057D5D /* CurrencyEstimateService.swift */; };
 		9C55EF0B4D9D539A384016BC /* DemoDataSeederTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7FEF3744A14334CB7E29C9 /* DemoDataSeederTests.swift */; };
 		9DBDEE86A8B720BC7A20DA10 /* BillingLandscapeChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25586C2B2B8CB65C46CAC7B0 /* BillingLandscapeChartView.swift */; };
 		A01F693759100EA5B9674564 /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0506D39F9F15EA1E0F2C69D9 /* LibraryViewModel.swift */; };
@@ -184,6 +187,7 @@
 		E34E6599E65A32E0D0B53DCA /* ItemCategory+UI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0ABFF3976C352E0D7805781 /* ItemCategory+UI.swift */; };
 		E44AF6E3B1193D1539D9F6DF /* StatBlockTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D894AE57EE24BDE2C349DB /* StatBlockTests.swift */; };
 		E50A73F87DB0D1EFFC86D9CF /* BillingLandscapeSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C591C7CFE8E7B0CC4EC21A4 /* BillingLandscapeSelection.swift */; };
+		E5F7BC2FCFFB8AC32D39290A /* CurrencyEstimateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7BBB1166961C6AAC57ADD94 /* CurrencyEstimateView.swift */; };
 		E8794D9F7CC10724A272BD30 /* InsightsBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF99DB7F322CD045D657B971 /* InsightsBuilder.swift */; };
 		E8B8BAA278833A03DFDAF8BB /* NextPaymentCalloutState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61A9CAB3AAD1055BB741543D /* NextPaymentCalloutState.swift */; };
 		E953AAE416EAC1F6DF27489E /* DeleteRecurringItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A97F884F05552C0F6B3D2C0 /* DeleteRecurringItem.swift */; };
@@ -241,6 +245,7 @@
 		12BB3E94FC82A75A10ADB2E6 /* ColorTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorTokens.swift; sourceTree = "<group>"; };
 		16764C22B2D1DD391965CB57 /* TierChipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TierChipView.swift; sourceTree = "<group>"; };
 		17FB3D14A9A82C3A3E6B2087 /* MoneyConversionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoneyConversionTests.swift; sourceTree = "<group>"; };
+		1842B87EAB2C0F30A1057D5D /* CurrencyEstimateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyEstimateService.swift; sourceTree = "<group>"; };
 		1B6510353060C5487133CC9D /* PresentationLocale.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationLocale.swift; sourceTree = "<group>"; };
 		1BFC60614BDD0169BC0BA6B0 /* InsightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightCard.swift; sourceTree = "<group>"; };
 		1EB4E6EA40D1C2BF3A3C1EB5 /* ProviderCatalog+Global.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProviderCatalog+Global.swift"; sourceTree = "<group>"; };
@@ -337,6 +342,7 @@
 		83E9DF3D4E0331FB4D1B57BD /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		8579C0FCEC4862D8C6D9976C /* DatingCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatingCatalogTests.swift; sourceTree = "<group>"; };
 		8C260B954C3104C784E92C46 /* AddSubscriptionTierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSubscriptionTierTests.swift; sourceTree = "<group>"; };
+		8C9E457E5F3AE1FA3BDF6AE3 /* CurrencyEstimateFormTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyEstimateFormTests.swift; sourceTree = "<group>"; };
 		8CEEF7B37513315DE9DE3C6C /* NextChargeDateSuggestionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextChargeDateSuggestionTests.swift; sourceTree = "<group>"; };
 		90337875EFD6C4485C9DD0ED /* ConvertMoneyUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvertMoneyUseCase.swift; sourceTree = "<group>"; };
 		92BFCE661AC196D1C9B137BB /* ItemDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailsView.swift; sourceTree = "<group>"; };
@@ -367,6 +373,7 @@
 		B6509B2ABE747FA5E800016D /* ItemDetailsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailsViewModel.swift; sourceTree = "<group>"; };
 		B698265EA94513CE0884AF37 /* RecurringItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringItem.swift; sourceTree = "<group>"; };
 		B6AD358CDCB53D8F2605A5C6 /* AppThemeKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppThemeKey.swift; sourceTree = "<group>"; };
+		B7BBB1166961C6AAC57ADD94 /* CurrencyEstimateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyEstimateView.swift; sourceTree = "<group>"; };
 		B9876CEEF8945568154B43B6 /* SorenSchemaVersions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SorenSchemaVersions.swift; sourceTree = "<group>"; };
 		BC57DBA9A5801A488865A4AA /* UpdateRecurringItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateRecurringItem.swift; sourceTree = "<group>"; };
 		BE0FB55547E3EC178EADC11B /* SorenTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SorenTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -404,6 +411,7 @@
 		EA7FEF3744A14334CB7E29C9 /* DemoDataSeederTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoDataSeederTests.swift; sourceTree = "<group>"; };
 		EAC69E24F7112B4A8F468D2D /* ProviderTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderTemplate.swift; sourceTree = "<group>"; };
 		EFA7B870CBEEC728F72D1D5E /* DeleteRecurringItemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteRecurringItemTests.swift; sourceTree = "<group>"; };
+		EFF5B34A61391D9F3BE3020C /* AppContainer+SubscriptionFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppContainer+SubscriptionFactory.swift"; sourceTree = "<group>"; };
 		F0E64C464F9C99450775A110 /* LandscapeBarResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandscapeBarResolver.swift; sourceTree = "<group>"; };
 		F0F163392822F2FF77B7587C /* SorenWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SorenWidgets.swift; sourceTree = "<group>"; };
 		F1C8300C1A129E7BBB3B1F0A /* PaymentRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentRecord.swift; sourceTree = "<group>"; };
@@ -451,6 +459,7 @@
 		0D00DDB9396C38EF7DE831D2 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				1842B87EAB2C0F30A1057D5D /* CurrencyEstimateService.swift */,
 				62CB17C3F3C062CD73153CE9 /* NotificationRefreshCoordinator.swift */,
 				E20E49623CDEDE2B14F27BAA /* NotificationScheduler.swift */,
 			);
@@ -805,6 +814,7 @@
 			isa = PBXGroup;
 			children = (
 				8C260B954C3104C784E92C46 /* AddSubscriptionTierTests.swift */,
+				8C9E457E5F3AE1FA3BDF6AE3 /* CurrencyEstimateFormTests.swift */,
 				F3F143755C60DD39251EB0B0 /* GetUpcomingChargesTests.swift */,
 				042695C7057463B3D9AB304B /* HomeViewModelTests.swift */,
 				205BD1F1537AB8F4846E0B74 /* ItemDetailsEditFormTests.swift */,
@@ -979,6 +989,7 @@
 			children = (
 				7960A2157878C5C39AE82756 /* AmountLabel.swift */,
 				78D90AEE18CDF2F5F1B15EDF /* ComponentsPreview.swift */,
+				B7BBB1166961C6AAC57ADD94 /* CurrencyEstimateView.swift */,
 				ADD575F86DA46DE5363CD92A /* FilterChip.swift */,
 				F3720B5F5D991DB038E27DA0 /* FlowLayout.swift */,
 				1BFC60614BDD0169BC0BA6B0 /* InsightCard.swift */,
@@ -1078,6 +1089,7 @@
 				704603302FD9C648B425E8B6 /* AppContainer.swift */,
 				FDA0E9CE1CF93B8F5C95A797 /* AppContainer+AnalyticsFactory.swift */,
 				065C3A6652CA332D4B3CFEA6 /* AppContainer+HomeFactory.swift */,
+				EFF5B34A61391D9F3BE3020C /* AppContainer+SubscriptionFactory.swift */,
 				2264C0A5E995F4CE3A9289F4 /* AppState.swift */,
 				CA945694AA563A401CBA4141 /* RootView.swift */,
 				FCEF5B74B2E1B0B2BC44B6B0 /* SorenApp.swift */,
@@ -1303,6 +1315,7 @@
 				99D4482F2360C3032DA9DD5F /* AnalyticsViewModel.swift in Sources */,
 				C585BED9BAE43ABE4BF44C80 /* AppContainer+AnalyticsFactory.swift in Sources */,
 				2E9A9C78436D16FB785D0B50 /* AppContainer+HomeFactory.swift in Sources */,
+				4312666E66069F3C2557555A /* AppContainer+SubscriptionFactory.swift in Sources */,
 				BC67F03FFAAF36667E671F79 /* AppContainer.swift in Sources */,
 				B86ABB04AF6B42AB1DC7255F /* AppState.swift in Sources */,
 				618D50695425118B520E9A88 /* AppTheme.swift in Sources */,
@@ -1324,6 +1337,8 @@
 				24B721CF97AA2287C4604C53 /* ColorTokens.swift in Sources */,
 				0D4F8587FDCFA17DC643A56F /* ComponentsPreview.swift in Sources */,
 				FE4D62C4458836DB57A78670 /* ConvertMoneyUseCase.swift in Sources */,
+				9BDFC2866AF0F51663CCBF79 /* CurrencyEstimateService.swift in Sources */,
+				E5F7BC2FCFFB8AC32D39290A /* CurrencyEstimateView.swift in Sources */,
 				E953AAE416EAC1F6DF27489E /* DeleteRecurringItem.swift in Sources */,
 				3308EDAE7F9C1B8C82D95613 /* DemoDataSeeder.swift in Sources */,
 				260324042BCE56791C95104A /* DemoSeedItems.swift in Sources */,
@@ -1457,6 +1472,7 @@
 				E9CBF6DF558DD865FFA2D11C /* AmountLabelTests.swift in Sources */,
 				C495539F7E533ACA7ABF6162 /* BillingCycleEncoderTests.swift in Sources */,
 				0B2E3988602DFFDC732E24E8 /* BillingCycleTests.swift in Sources */,
+				42BD4BC83B42D5FCE350B4AD /* CurrencyEstimateFormTests.swift in Sources */,
 				21EDA56E9EA6F376C89DB5BE /* DatingCatalogTests.swift in Sources */,
 				D63127EDAD3A2FE9AF0E246A /* DeleteRecurringItemTests.swift in Sources */,
 				9C55EF0B4D9D539A384016BC /* DemoDataSeederTests.swift in Sources */,

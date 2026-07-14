@@ -3380,7 +3380,6 @@
       }
     },
     "Курсы валют недоступны" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4037,6 +4036,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Offline, Hi-Q audio"
+          }
+        }
+      }
+    },
+    "Оценка по курсу на %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estimate using rates from %@"
           }
         }
       }
@@ -4981,6 +4990,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Next Month"
+          }
+        }
+      }
+    },
+    "Сохранённый курс от %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cached rate from %@"
           }
         }
       }

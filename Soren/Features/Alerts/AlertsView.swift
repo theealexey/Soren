@@ -30,11 +30,7 @@ struct AlertsView: View {
             }
             .navigationDestination(for: RecurringItem.self) { item in
                 ItemDetailsView(
-                    viewModel: ItemDetailsViewModel(
-                        item: item,
-                        repositories: container.repositories,
-                        exchangeRateProvider: container.exchangeRateProvider
-                    )
+                    viewModel: container.makeItemDetailsViewModel(item: item)
                 )
             }
         }

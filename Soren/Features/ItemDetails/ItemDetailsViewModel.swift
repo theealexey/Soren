@@ -16,8 +16,18 @@ final class ItemDetailsViewModel {
     // MARK: - Edit Form Fields
 
     var editTitle = ""
-    var editAmountText = ""
-    var editCurrencyCode = "RUB"
+    var editAmountText = "" {
+        didSet {
+            if oldValue != editAmountText { scheduleCurrencyEstimate() }
+        }
+    }
+    var editCurrencyCode = "RUB" {
+        didSet {
+            if oldValue != editCurrencyCode { scheduleCurrencyEstimate() }
+        }
+    }
+    private(set) var reportingCurrencyCode: String
+    private(set) var currencyEstimateState: CurrencyEstimateState = .hidden
     var editBillingCycle: BillingCycle = .monthly {
         didSet {
             if !isEditNextChargeDateManuallySet {
@@ -65,15 +75,20 @@ final class ItemDetailsViewModel {
 
     private let updateRecurringItem: UpdateRecurringItem
     private let deleteRecurringItem: DeleteRecurringItem
-    private let exchangeRateProvider: any ExchangeRateProvider
+    private let currencyEstimateService: CurrencyEstimateService
+    private let preferences: UserPreferencesRepository
+    private var estimateTask: Task<Void, Never>?
+    private var currentEstimateRequest: CurrencyEstimateRequest?
 
     // MARK: - Init
 
-    init(
+    init<Provider: ExchangeRateProvider>(
         item: RecurringItem,
         repositories: RepositoryContainer,
-        exchangeRateProvider: any ExchangeRateProvider,
-        notificationScheduler: (any NotificationScheduling)? = nil
+        exchangeRateProvider: Provider,
+        notificationScheduler: (any NotificationScheduling)? = nil,
+        convertMoney: ConvertMoneyUseCase = ConvertMoneyUseCase(),
+        preferences: UserPreferencesRepository = UserPreferencesRepository()
     ) {
         self.item = item
         self.updateRecurringItem = UpdateRecurringItem(
@@ -84,7 +99,27 @@ final class ItemDetailsViewModel {
             repository: repositories.recurringItems,
             notificationScheduler: notificationScheduler
         )
-        self.exchangeRateProvider = exchangeRateProvider
+        self.currencyEstimateService = CurrencyEstimateService(
+            exchangeRateProvider: exchangeRateProvider,
+            convertMoney: convertMoney
+        )
+        self.preferences = preferences
+        self.reportingCurrencyCode = preferences.load().defaultCurrencyCode
+    }
+
+    init(
+        item: RecurringItem,
+        updateRecurringItem: UpdateRecurringItem,
+        deleteRecurringItem: DeleteRecurringItem,
+        currencyEstimateService: CurrencyEstimateService,
+        preferences: UserPreferencesRepository
+    ) {
+        self.item = item
+        self.updateRecurringItem = updateRecurringItem
+        self.deleteRecurringItem = deleteRecurringItem
+        self.currencyEstimateService = currencyEstimateService
+        self.preferences = preferences
+        self.reportingCurrencyCode = preferences.load().defaultCurrencyCode
     }
 
     // MARK: - Edit Next Charge Date
@@ -140,9 +175,11 @@ final class ItemDetailsViewModel {
         editChargeReminder = item.chargeReminder
         editTrialReminder  = item.trialReminder
         isEditing = true
+        refreshReportingCurrency()
     }
 
     func cancelEditing() {
+        cancelCurrencyEstimate()
         isEditing = false
     }
 
@@ -170,6 +207,7 @@ final class ItemDetailsViewModel {
         // Use the returned copy — it carries the updatedAt stamp set by the use case.
         // The use case also reschedules the notification directly after a successful persist.
         item = try await updateRecurringItem.execute(updated)
+        cancelCurrencyEstimate()
         isEditing = false
     }
 
@@ -195,25 +233,64 @@ final class ItemDetailsViewModel {
         isDeleted = true
     }
 
-    // MARK: - Currency Conversion
+    // MARK: - Derived Currency Estimate
 
-    /// Called when the user changes currency in the edit form.
-    /// Converts editAmountText from the old currency to the new one using cached rates.
-    /// Silently no-ops if rates are unavailable — leaves the amount unchanged.
-    func convertAmount(from sourceCurrency: String, to targetCurrency: String) async {
-        guard sourceCurrency != targetCurrency else { return }
-        guard let amount = Decimal(string: editAmountText.replacingOccurrences(of: ",", with: ".")) else { return }
-
-        do {
-            let rates = try await exchangeRateProvider.latestRates()
-            guard let converted = rates.convert(amount, from: sourceCurrency, to: targetCurrency) else { return }
-            var result = Decimal()
-            var source = converted
-            NSDecimalRound(&result, &source, 2, .plain)
-            editAmountText = result.description
-        } catch {
-            // Rates unavailable — leave amount as-is, don't break the form.
+    func refreshReportingCurrency() {
+        let latestCode = preferences.load().defaultCurrencyCode
+        if latestCode != reportingCurrencyCode {
+            reportingCurrencyCode = latestCode
+            currentEstimateRequest = nil
         }
+        scheduleCurrencyEstimate()
+    }
+
+    func cancelCurrencyEstimate() {
+        estimateTask?.cancel()
+        estimateTask = nil
+        currentEstimateRequest = nil
+        currencyEstimateState = .hidden
+    }
+
+    private func scheduleCurrencyEstimate() {
+        guard isEditing else { return }
+        guard
+            let amount = parsedEditAmount,
+            amount > 0,
+            let request = try? CurrencyEstimateRequest(
+                amount: amount,
+                originalCurrencyCode: editCurrencyCode,
+                targetCurrencyCode: reportingCurrencyCode
+            ),
+            request.requiresConversion
+        else {
+            cancelCurrencyEstimate()
+            return
+        }
+
+        guard request != currentEstimateRequest else { return }
+
+        estimateTask?.cancel()
+        currentEstimateRequest = request
+        currencyEstimateState = .loading
+
+        let service = currencyEstimateService
+        estimateTask = Task { [weak self] in
+            let state: CurrencyEstimateState
+            do {
+                state = .available(try await service.estimate(request))
+            } catch {
+                state = .unavailable
+            }
+
+            guard !Task.isCancelled else { return }
+            guard let self, self.currentEstimateRequest == request else { return }
+            self.currencyEstimateState = state
+            self.estimateTask = nil
+        }
+    }
+
+    private var parsedEditAmount: Decimal? {
+        Decimal(string: editAmountText.replacingOccurrences(of: ",", with: "."))
     }
 
     // MARK: - Computed

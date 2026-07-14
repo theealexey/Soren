@@ -81,26 +81,13 @@ struct RootView: View {
         case .itemDetails(let item):
             NavigationStack {
                 ItemDetailsView(
-                    viewModel: ItemDetailsViewModel(
-                        item: item,
-                        repositories: container.repositories,
-                        exchangeRateProvider: container.exchangeRateProvider,
-                        notificationScheduler: container.notificationScheduler
-                    )
+                    viewModel: container.makeItemDetailsViewModel(item: item)
                 )
             }
         case .addSubscription:
             NavigationStack {
                 ProviderPickerView(
-                    viewModel: AddSubscriptionViewModel(
-                        catalog: container.providerCatalog,
-                        saveRecurringItem: SaveRecurringItem(
-                            repository: container.repositories.recurringItems,
-                            notificationScheduler: container.notificationScheduler
-                        ),
-                        exchangeRateProvider: container.exchangeRateProvider,
-                        preferences: container.preferences
-                    )
+                    viewModel: container.makeAddSubscriptionViewModel()
                 )
             }
         case .settings:

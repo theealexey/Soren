@@ -19,8 +19,18 @@ final class AddSubscriptionViewModel {
     var selectedProvider: ProviderTemplate?
     var selectedTier: PlanTier?
     var title = ""
-    var amountText = ""
-    var currencyCode: String
+    var amountText = "" {
+        didSet {
+            if oldValue != amountText { scheduleCurrencyEstimate() }
+        }
+    }
+    var currencyCode: String {
+        didSet {
+            if oldValue != currencyCode { scheduleCurrencyEstimate() }
+        }
+    }
+    private(set) var reportingCurrencyCode: String
+    private(set) var currencyEstimateState: CurrencyEstimateState = .hidden
     var billingCycle: BillingCycle = .monthly {
         didSet {
             if !isNextChargeDateManuallySet {
@@ -88,23 +98,26 @@ final class AddSubscriptionViewModel {
 
     private let catalog: any ProviderCatalogRepository
     private let saveRecurringItem: SaveRecurringItem
-    private let exchangeRateProvider: any ExchangeRateProvider
+    private let currencyEstimateService: CurrencyEstimateService
     private let preferences: UserPreferencesRepository
+    private var estimateTask: Task<Void, Never>?
+    private var currentEstimateRequest: CurrencyEstimateRequest?
 
     // MARK: - Init
 
     init(
         catalog: any ProviderCatalogRepository,
         saveRecurringItem: SaveRecurringItem,
-        exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider(),
+        currencyEstimateService: CurrencyEstimateService = .preview,
         preferences: UserPreferencesRepository = UserPreferencesRepository()
     ) {
         self.catalog = catalog
         self.saveRecurringItem = saveRecurringItem
-        self.exchangeRateProvider = exchangeRateProvider
+        self.currencyEstimateService = currencyEstimateService
         self.preferences = preferences
         let prefs = preferences.load()
         self.currencyCode   = prefs.defaultCurrencyCode
+        self.reportingCurrencyCode = prefs.defaultCurrencyCode
         self.chargeReminder = prefs.defaultChargeReminder
         // didSet observers don't fire during init — seed the suggestion explicitly.
         self.nextChargeDate = Self.suggestNextChargeDate(from: .now, cycle: .monthly)
@@ -251,22 +264,65 @@ final class AddSubscriptionViewModel {
         return candidate
     }
 
-    // MARK: - Currency Conversion
+    // MARK: - Derived Currency Estimate
 
-    func convertAmount(from sourceCurrency: String, to targetCurrency: String) async {
-        guard sourceCurrency != targetCurrency else { return }
-        guard let amount = Decimal(string: amountText.replacingOccurrences(of: ",", with: ".")) else { return }
-
-        do {
-            let rates = try await exchangeRateProvider.latestRates()
-            guard let converted = rates.convert(amount, from: sourceCurrency, to: targetCurrency) else { return }
-            var result = Decimal()
-            var source = converted
-            NSDecimalRound(&result, &source, 2, .plain)
-            amountText = result.description
-        } catch {
-            // Rates unavailable — leave amount as-is.
+    /// Reloads the user's reporting currency without changing the subscription currency.
+    /// Called when the form appears so a Settings change made before presentation is reflected.
+    func refreshReportingCurrency() {
+        let latestCode = preferences.load().defaultCurrencyCode
+        if latestCode != reportingCurrencyCode {
+            reportingCurrencyCode = latestCode
+            currentEstimateRequest = nil
         }
+        scheduleCurrencyEstimate()
+    }
+
+    func cancelCurrencyEstimate() {
+        estimateTask?.cancel()
+        estimateTask = nil
+        currentEstimateRequest = nil
+        currencyEstimateState = .hidden
+    }
+
+    private func scheduleCurrencyEstimate() {
+        guard
+            let amount = parsedAmount,
+            amount > 0,
+            let request = try? CurrencyEstimateRequest(
+                amount: amount,
+                originalCurrencyCode: currencyCode,
+                targetCurrencyCode: reportingCurrencyCode
+            ),
+            request.requiresConversion
+        else {
+            cancelCurrencyEstimate()
+            return
+        }
+
+        guard request != currentEstimateRequest else { return }
+
+        estimateTask?.cancel()
+        currentEstimateRequest = request
+        currencyEstimateState = .loading
+
+        let service = currencyEstimateService
+        estimateTask = Task { [weak self] in
+            let state: CurrencyEstimateState
+            do {
+                state = .available(try await service.estimate(request))
+            } catch {
+                state = .unavailable
+            }
+
+            guard !Task.isCancelled else { return }
+            guard let self, self.currentEstimateRequest == request else { return }
+            self.currencyEstimateState = state
+            self.estimateTask = nil
+        }
+    }
+
+    private var parsedAmount: Decimal? {
+        Decimal(string: amountText.replacingOccurrences(of: ",", with: "."))
     }
 
     // MARK: - Filtered Providers

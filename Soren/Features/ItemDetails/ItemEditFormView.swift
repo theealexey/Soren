@@ -14,6 +14,7 @@ struct ItemEditFormView: View {
                 title: $viewModel.editTitle,
                 amountText: $viewModel.editAmountText,
                 currencyCode: $viewModel.editCurrencyCode,
+                currencyEstimateState: viewModel.currencyEstimateState,
                 billingCycle: $viewModel.editBillingCycle,
                 category: $viewModel.editCategory,
                 itemType: $viewModel.editItemType,
@@ -48,8 +49,11 @@ struct ItemEditFormView: View {
             }
         }
         .interactiveDismissDisabled()
-        .onChange(of: viewModel.editCurrencyCode) { old, new in
-            Task { await viewModel.convertAmount(from: old, to: new) }
+        .onAppear {
+            viewModel.refreshReportingCurrency()
+        }
+        .onDisappear {
+            viewModel.cancelCurrencyEstimate()
         }
     }
 

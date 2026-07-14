@@ -11,6 +11,7 @@ struct RecurringItemFormFields: View {
     @Binding var title: String
     @Binding var amountText: String
     @Binding var currencyCode: String
+    let currencyEstimateState: CurrencyEstimateState
     @Binding var billingCycle: BillingCycle
     @Binding var category: ItemCategory
     @Binding var itemType: ItemType
@@ -51,6 +52,10 @@ struct RecurringItemFormFields: View {
                 }
                 .labelsHidden()
                 .fixedSize()
+            }
+
+            if currencyEstimateState.isVisible {
+                CurrencyEstimateView(state: currencyEstimateState)
             }
 
             Picker(String(localized: "Период оплаты"), selection: $billingCycle) {

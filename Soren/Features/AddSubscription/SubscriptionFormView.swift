@@ -18,7 +18,8 @@ struct SubscriptionFormView: View {
             RecurringItemFormFields(
                 title: $viewModel.title,
                 amountText: $viewModel.amountText,
-                currencyCode: currencyBinding,
+                currencyCode: $viewModel.currencyCode,
+                currencyEstimateState: viewModel.currencyEstimateState,
                 billingCycle: $viewModel.billingCycle,
                 category: $viewModel.category,
                 itemType: $viewModel.itemType,
@@ -53,6 +54,12 @@ struct SubscriptionFormView: View {
         } message: {
             Text(viewModel.saveErrorMessage ?? "")
         }
+        .onAppear {
+            viewModel.refreshReportingCurrency()
+        }
+        .onDisappear {
+            viewModel.cancelCurrencyEstimate()
+        }
     }
 
     // MARK: - Next Charge Date Binding
@@ -74,24 +81,6 @@ struct SubscriptionFormView: View {
         Binding(
             get: { viewModel.endDate },
             set: { viewModel.setEndDateManually($0) }
-        )
-    }
-
-    // MARK: - Currency Binding
-
-    /// Triggers amount conversion only when the user explicitly changes the currency Picker.
-    /// Avoids the `onChange` race where a programmatic `currencyCode` write during provider
-    /// selection fires conversion before the tier amount is written to `amountText`.
-    private var currencyBinding: Binding<String> {
-        Binding(
-            get: { viewModel.currencyCode },
-            set: { newCode in
-                let old = viewModel.currencyCode
-                viewModel.currencyCode = newCode
-                if old != newCode {
-                    Task { await viewModel.convertAmount(from: old, to: newCode) }
-                }
-            }
         )
     }
 
