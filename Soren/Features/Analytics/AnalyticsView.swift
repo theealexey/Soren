@@ -29,10 +29,10 @@ struct AnalyticsView: View {
             guard viewModel == nil else { return }
             let vm = container.makeAnalyticsViewModel()
             viewModel = vm
-            await vm.load()
+            vm.load()
         }
         .onChange(of: container.itemsVersion) { _, _ in
-            viewModel?.loadLocalData(forceReload: true)
+            viewModel?.load(forceReload: true)
         }
     }
 
@@ -40,16 +40,22 @@ struct AnalyticsView: View {
 
     @ViewBuilder
     private func analyticsContent(_ vm: AnalyticsViewModel) -> some View {
-        if vm.error != nil {
-            ErrorStateView(message: "Не удалось загрузить данные") {
-                Task { await vm.load(forceReload: true) }
+        Group {
+            if vm.error != nil {
+                ErrorStateView(message: "Не удалось загрузить данные") {
+                    vm.load(forceReload: true)
+                }
+            } else if !vm.isLoaded {
+                LoadingStateView()
+            } else if vm.screenState.isEmpty {
+                emptyState
+            } else {
+                scrollContent(vm)
             }
-        } else if !vm.isLoaded {
-            LoadingStateView()
-        } else if vm.screenState.isEmpty {
-            emptyState
-        } else {
-            scrollContent(vm)
+        }
+        .task(id: vm.aggregationRevision) {
+            let revision = vm.aggregationRevision
+            await vm.refreshCurrencyAggregation(revision: revision)
         }
     }
 
@@ -101,24 +107,10 @@ struct AnalyticsView: View {
             SectionHeader(String(localized: "Обзор"))
                 .padding(.horizontal, Spacing.lg)
 
-            HStack(spacing: Spacing.sm) {
-                PremiumCard(.elevated) {
-                    StatBlock(
-                        title: "В месяц",
-                        amount: state.summary.monthlyTotal,
-                        currency: state.defaultCurrency
-                    )
-                }
+            overviewCards(state)
 
-                PremiumCard(.elevated) {
-                    StatBlock(
-                        title: "В год",
-                        amount: state.summary.yearlyProjection,
-                        currency: state.defaultCurrency
-                    )
-                }
-            }
-            .padding(.horizontal, Spacing.lg)
+            aggregationStatus(state.monthlyAggregation)
+                .padding(.horizontal, Spacing.lg)
 
             HStack(spacing: Spacing.xs) {
                 metricChip(
@@ -144,6 +136,86 @@ struct AnalyticsView: View {
                 }
             }
             .padding(.horizontal, Spacing.lg)
+        }
+    }
+
+    private func overviewCards(_ state: AnalyticsScreenState) -> some View {
+        HStack(spacing: Spacing.sm) {
+            PremiumCard(.elevated) {
+                if let total = state.monthlyAggregation?.total {
+                    StatBlock(
+                        title: "В месяц",
+                        amount: total.amount,
+                        currency: total.currencyCode
+                    )
+                } else {
+                    unavailableStat(title: "В месяц")
+                }
+            }
+
+            PremiumCard(.elevated) {
+                if let total = state.monthlyAggregation?.total {
+                    StatBlock(
+                        title: "В год",
+                        amount: total.amount * 12,
+                        currency: total.currencyCode
+                    )
+                } else {
+                    unavailableStat(title: "В год")
+                }
+            }
+        }
+        .padding(.horizontal, Spacing.lg)
+    }
+
+    private func unavailableStat(title: LocalizedStringKey) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.xxs) {
+            Text(title)
+                .overlineStyle()
+            Text(verbatim: "—")
+                .font(Typography.amountLarge)
+                .foregroundStyle(ColorTokens.textTertiary)
+        }
+    }
+
+    @ViewBuilder
+    private func aggregationStatus(_ aggregation: RecurringSpendAggregationResult?) -> some View {
+        if let aggregation {
+            VStack(alignment: .leading, spacing: Spacing.xxxs) {
+                switch aggregation {
+                case let .complete(_, metadata):
+                    staleRateLabel(metadata)
+
+                case let .partial(_, missingCodes, metadata):
+                    Text(String(localized: "Частично"))
+                        .font(Typography.footnote)
+                        .foregroundStyle(ColorTokens.warning)
+                    Text(String(localized: "Нет курсов для \(missingCodes.joined(separator: ", "))"))
+                        .font(Typography.footnote)
+                        .foregroundStyle(ColorTokens.warning)
+                    staleRateLabel(metadata)
+
+                case let .unavailable(_, missingCodes, _, metadata):
+                    Text(String(localized: "Курсы валют недоступны"))
+                        .font(Typography.footnote)
+                        .foregroundStyle(ColorTokens.textTertiary)
+                    if !missingCodes.isEmpty {
+                        Text(String(localized: "Нет курсов для \(missingCodes.joined(separator: ", "))"))
+                            .font(Typography.footnote)
+                            .foregroundStyle(ColorTokens.textTertiary)
+                    }
+                    staleRateLabel(metadata)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func staleRateLabel(_ metadata: SpendAggregationRateMetadata?) -> some View {
+        if let metadata, case .stale = metadata.freshness {
+            Text(String(localized: "По сохранённому курсу"))
+                .font(Typography.footnote)
+                .foregroundStyle(ColorTokens.warning)
         }
     }
 
@@ -404,8 +476,8 @@ struct AnalyticsView: View {
             HStack {
                 SectionHeader(String(localized: "Не используются"))
                 Spacer()
-                if state.unusedMonthlyCost > 0 {
-                    Text(String(localized: "−\(wasteString(state.unusedMonthlyCost)) \(state.defaultCurrency)/мес"))
+                if let unusedMonthlyCost = state.unusedMonthlyCost, unusedMonthlyCost > 0 {
+                    Text(String(localized: "−\(wasteString(unusedMonthlyCost)) \(state.defaultCurrency)/мес"))
                         .font(Typography.captionMedium)
                         .foregroundStyle(ColorTokens.warning)
                         .padding(.horizontal, Spacing.sm)

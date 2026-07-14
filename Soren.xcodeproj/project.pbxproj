@@ -111,6 +111,7 @@
 		742600BB157FAB86A230F160 /* PremiumCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D608B428CBCD3D27DA555CD0 /* PremiumCard.swift */; };
 		747917FE51A83E20934C9492 /* BillingCycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE04ACFA4CA0C434A7F14B3E /* BillingCycle.swift */; };
 		7613610E2A464E0AFD6FE866 /* AlertsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25E033DBD36185ED00092310 /* AlertsViewModel.swift */; };
+		76B1429399A84AD17AD1AD40 /* AnalyticsCurrencyAggregationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0171796597C89F55084045DA /* AnalyticsCurrencyAggregationTests.swift */; };
 		76DF651F451FA5F704F39669 /* ProviderIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7594AC2BF9C18EA3752F7938 /* ProviderIcon.swift */; };
 		7707C4BFF9F47651CDDC2C3D /* SorenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6237A5CF21F39D3AD7CF791 /* SorenTests.swift */; };
 		77DB8F372F0A16A4FB80331F /* ItemDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92BFCE661AC196D1C9B137BB /* ItemDetailsView.swift */; };
@@ -234,6 +235,7 @@
 		00327FFEEF7A9E012FB10737 /* InMemoryProviderCatalogRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InMemoryProviderCatalogRepository.swift; sourceTree = "<group>"; };
 		00642B8A92839F9F4F88D149 /* YandexProviderIdentityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YandexProviderIdentityTests.swift; sourceTree = "<group>"; };
 		00805B3E1165471E3DBCAA9B /* AppContainer+LibraryFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppContainer+LibraryFactory.swift"; sourceTree = "<group>"; };
+		0171796597C89F55084045DA /* AnalyticsCurrencyAggregationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsCurrencyAggregationTests.swift; sourceTree = "<group>"; };
 		03A97C0EA66D48E990556524 /* UserPreferencesRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPreferencesRepository.swift; sourceTree = "<group>"; };
 		042695C7057463B3D9AB304B /* HomeViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModelTests.swift; sourceTree = "<group>"; };
 		044C4CC94022CAD6BD7876C3 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
@@ -827,6 +829,7 @@
 			isa = PBXGroup;
 			children = (
 				8C260B954C3104C784E92C46 /* AddSubscriptionTierTests.swift */,
+				0171796597C89F55084045DA /* AnalyticsCurrencyAggregationTests.swift */,
 				F5FC5B5C1C3496705DF3F328 /* CalendarCurrencyAggregationTests.swift */,
 				8C9E457E5F3AE1FA3BDF6AE3 /* CurrencyEstimateFormTests.swift */,
 				F3F143755C60DD39251EB0B0 /* GetUpcomingChargesTests.swift */,
@@ -1492,6 +1495,7 @@
 				C3502270C48B6F7C7C802509 /* AddSubscriptionTierTests.swift in Sources */,
 				5A43E0468E2A492CD8C689C8 /* AggregateRecurringSpendUseCaseTests.swift in Sources */,
 				E9CBF6DF558DD865FFA2D11C /* AmountLabelTests.swift in Sources */,
+				76B1429399A84AD17AD1AD40 /* AnalyticsCurrencyAggregationTests.swift in Sources */,
 				C495539F7E533ACA7ABF6162 /* BillingCycleEncoderTests.swift in Sources */,
 				0B2E3988602DFFDC732E24E8 /* BillingCycleTests.swift in Sources */,
 				4F32C1A2B2B9CEE98E3184A0 /* CalendarCurrencyAggregationTests.swift in Sources */,

@@ -2,9 +2,9 @@ import Foundation
 
 // MARK: - Monthly Projection
 
-/// Projected total spend for a single calendar month, in defaultCurrency.
-struct MonthlyProjection: Identifiable {
-    let month: Date        // first day of the month
+/// Projected total spend for a single calendar month, in reporting currency.
+struct MonthlyProjection: Identifiable, Equatable {
+    let month: Date
     let total: Decimal
     var id: Date { month }
 
@@ -13,7 +13,7 @@ struct MonthlyProjection: Identifiable {
         Self.labelFormatter.string(from: month)
     }
 
-    /// `Decimal → Double` bridge — only for chart rendering.
+    /// `Decimal -> Double` bridge used only by Swift Charts.
     var doubleTotal: Double {
         NSDecimalNumber(decimal: total).doubleValue
     }
@@ -23,43 +23,56 @@ struct MonthlyProjection: Identifiable {
     }()
 }
 
-// MARK: - Category Spend
+// MARK: - Comparative Spend Models
 
-/// Aggregated monthly spend for one category, normalized to defaultCurrency.
-struct CategorySpend: Identifiable {
+/// Complete monthly spend for one category, normalized to reporting currency.
+struct CategorySpend: Identifiable, Equatable {
     let category: ItemCategory
-    let monthlyTotal: Decimal   // in defaultCurrency
+    let monthlyTotal: Decimal
     let itemCount: Int
-    /// Share of grand monthly total: 0.0 – 1.0.
+    /// Share of the complete monthly total: 0.0 ... 1.0.
     let proportion: Double
 
     var id: String { category.rawValue }
 }
 
+/// Complete monthly spend for one provider, normalized to reporting currency.
+struct ProviderSpend: Identifiable, Equatable {
+    let id: String
+    let name: String
+    let monthlyTotal: Decimal
+    let itemCount: Int
+}
+
+/// Comparable change between two projected months in one reporting currency.
+struct AnalyticsTrendComparison: Equatable {
+    let earlierMonth: Date
+    let laterMonth: Date
+    let earlierTotal: Decimal
+    let laterTotal: Decimal
+    let delta: Decimal
+    let currencyCode: String
+}
+
 // MARK: - Top Spend Row Model
 
-/// Pre-computed display model for one row in the Top Subscriptions section.
-/// AnalyticsViewModel builds this at load time so the View performs no computation.
+/// Pre-computed reporting-currency contribution for Top Subscriptions.
+/// `navigationItem` retains the original authoritative amount and currency.
 struct TopSpendRowModel: Identifiable {
     let id: UUID
     let title: String
     let subtitle: String?
-    /// Monthly equivalent in defaultCurrency, converted via exchange rates if available.
     let monthlyAmount: Decimal
     let currency: String
     let providerTemplate: ProviderTemplate?
     let category: ItemCategory
-    /// Full item retained as navigation payload — navigateToItem requires RecurringItem.
     let navigationItem: RecurringItem
 }
 
 // MARK: - Analytics View Model
 
-/// Drives the Insights/Analytics tab.
-///
-/// Loads a single [RecurringItem] snapshot and builds AnalyticsScreenState
-/// atomically — all counts, totals and breakdowns derive from the same array.
-/// Exchange rates are fetched async on first load and reused on item changes.
+/// Drives the Analytics tab from one recurring-item snapshot and, when needed,
+/// one exchange-rate snapshot per calculation revision.
 @MainActor @Observable
 final class AnalyticsViewModel {
 
@@ -68,195 +81,358 @@ final class AnalyticsViewModel {
     private(set) var screenState: AnalyticsScreenState = .empty
     private(set) var isLoaded = false
     private(set) var error: Error?
+    /// Drives one cancellable SwiftUI task per Analytics calculation.
+    private(set) var aggregationRevision = 0
 
     // MARK: - Dependencies
 
     private let getActiveItems: GetActiveItems
-    private let getDashboardSummary: GetDashboardSummary
     private let preferences: UserPreferencesRepository
-    private let exchangeRateProvider: (any ExchangeRateProvider)?
+    private let aggregateRecurringSpend: AggregateRecurringSpendUseCase
+    private let exchangeRateProvider: any ExchangeRateProvider
 
-    // MARK: - Exchange rates — VM-internal, not exposed in screenState
+    // MARK: - Revision State
 
-    private var exchangeRates: ExchangeRates?
-    private var defaultCurrency: String = UserPreferences.default.defaultCurrencyCode
+    private var items: [RecurringItem] = []
+    private var reportingCurrencyCode = UserPreferences.default.defaultCurrencyCode
+    private var exchangeRateSnapshot: ExchangeRateSnapshot?
+    private var inFlightRevision: Int?
+
+    // MARK: - Stable Calculation Context
+
+    /// Monthly-normalized values are not tied to a real charge date. A fixed range
+    /// lets every grouping use the canonical dated aggregation API consistently.
+    private static let normalizedProjectionDate = Date(timeIntervalSinceReferenceDate: 0)
+    private static let normalizedProjectionRange: Range<Date> = {
+        let start = normalizedProjectionDate
+        return start..<start.addingTimeInterval(1)
+    }()
+
+    private static let cal: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = PresentationLocale.current
+        calendar.timeZone = .current
+        return calendar
+    }()
 
     // MARK: - Init
 
     init(
         getActiveItems: GetActiveItems,
-        getDashboardSummary: GetDashboardSummary = GetDashboardSummary(),
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
-        exchangeRateProvider: (any ExchangeRateProvider)? = nil
+        aggregateRecurringSpend: AggregateRecurringSpendUseCase = AggregateRecurringSpendUseCase(),
+        exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider()
     ) {
         self.getActiveItems = getActiveItems
-        self.getDashboardSummary = getDashboardSummary
         self.preferences = preferences
+        self.aggregateRecurringSpend = aggregateRecurringSpend
         self.exchangeRateProvider = exchangeRateProvider
     }
 
     // MARK: - Load
 
-    func load(forceReload: Bool = false) async {
+    func load(forceReload: Bool = false) {
         guard !isLoaded || forceReload else { return }
-        defaultCurrency = preferences.load().defaultCurrencyCode
 
-        if let provider = exchangeRateProvider {
-            if let rates = try? await provider.latestRates() {
-                exchangeRates = rates
-            }
-        }
-
-        loadLocalData(forceReload: forceReload)
-    }
-
-    /// Re-computes from persisted data without re-fetching exchange rates.
-    /// Used by itemsVersion onChange to pick up newly added/removed items.
-    func loadLocalData(forceReload: Bool = false) {
-        guard !isLoaded || forceReload else { return }
+        aggregationRevision += 1
+        exchangeRateSnapshot = nil
         error = nil
+
         do {
-            let items = try getActiveItems.execute()
-
-            let summary = getDashboardSummary.execute(
-                items: items,
-                targetCurrency: defaultCurrency,
-                rates: exchangeRates
-            )
-            let unusedItems = items.filter { $0.usageStatus == .unused }
-            let unusedCost = unusedItems.reduce(Decimal.zero) { $0 + monthlyAmount($1) }
-
-            let topRows = items
-                .sorted { monthlyAmount($0) > monthlyAmount($1) }
-                .prefix(5)
-                .map { item in
-                    TopSpendRowModel(
-                        id: item.id,
-                        title: item.title,
-                        subtitle: item.providerName == item.title ? nil : item.providerName,
-                        monthlyAmount: monthlyAmount(item),
-                        currency: defaultCurrency,
-                        providerTemplate: item.providerTemplate,
-                        category: item.category,
-                        navigationItem: item
-                    )
-                }
-
-            screenState = AnalyticsScreenState(
-                summary: summary,
-                categoryBreakdown: buildCategoryBreakdown(items),
-                monthlyProjections: buildProjections(items),
-                topItems: Array(topRows),
-                annualItems: items.filter { if case .annual = $0.billingCycle { return true }; return false },
-                unusedItems: unusedItems,
-                defaultCurrency: defaultCurrency,
-                unusedMonthlyCost: unusedCost
-            )
+            reportingCurrencyCode = preferences.load().defaultCurrencyCode
+            items = try getActiveItems.execute()
+            rebuildScreenState(snapshot: nil)
             isLoaded = true
         } catch {
             self.error = error
         }
     }
 
-    // MARK: - Private
-
-    /// Monthly amount in defaultCurrency, converting via exchange rates when available.
-    private func monthlyAmount(_ item: RecurringItem) -> Decimal {
-        guard let rates = exchangeRates, item.currencyCode != defaultCurrency else {
-            return item.monthlyEquivalent
-        }
-        return rates.convert(item.monthlyEquivalent, from: item.currencyCode, to: defaultCurrency)
-            ?? item.monthlyEquivalent
+    /// Compatibility entry point retained for the existing category integration test.
+    /// It now follows the same revision-safe load path as production Analytics.
+    func loadLocalData(forceReload: Bool = false) {
+        load(forceReload: forceReload)
     }
 
-    // Stored once to avoid unsafe Calendar.current access in async contexts.
-    private static let cal: Calendar = {
-        var c = Calendar(identifier: .gregorian)
-        c.locale = PresentationLocale.current
-        c.timeZone = .current
-        return c
-    }()
+    /// Fetches at most one shared snapshot concurrently for the active Analytics revision.
+    /// Every monetary grouping is then rebuilt from that exact snapshot.
+    func refreshCurrencyAggregation(revision: Int) async {
+        guard revision == aggregationRevision,
+              exchangeRateSnapshot == nil,
+              currentCalculationRequiresExchangeRates(),
+              inFlightRevision != revision
+        else { return }
 
-    private func buildProjections(_ items: [RecurringItem], months: Int = 6) -> [MonthlyProjection] {
-        let cal = Self.cal
-        guard let monthStart = cal.date(from: cal.dateComponents([.year, .month], from: .now)) else { return [] }
-
-        return (0..<months).compactMap { offset in
-            guard let start = cal.date(byAdding: .month, value: offset, to: monthStart),
-                  let end   = cal.date(byAdding: .month, value: 1, to: start) else { return nil }
-
-            let total = items.reduce(Decimal.zero) { sum, item in
-                sum + projectedAmount(item, from: start, to: end)
+        inFlightRevision = revision
+        defer {
+            if inFlightRevision == revision {
+                inFlightRevision = nil
             }
-            return MonthlyProjection(month: start, total: total)
+        }
+
+        do {
+            let snapshot = try await exchangeRateProvider.latestSnapshot()
+            guard !Task.isCancelled, revision == aggregationRevision else { return }
+            exchangeRateSnapshot = snapshot
+            rebuildScreenState(snapshot: snapshot)
+        } catch is CancellationError {
+            return
+        } catch {
+            // The no-snapshot state is already truthful: foreign values remain
+            // missing instead of being added as raw numbers in reporting currency.
         }
     }
 
-    /// Amount this item contributes to a specific calendar month.
-    ///
-    /// - Monthly/weekly/custom: `monthlyEquivalent` every month (smooth).
-    /// - Long-cycle (quarterly, semiannual, annual): full `amount` only in months
-    ///   where a charge actually lands; zero otherwise.
-    private func projectedAmount(_ item: RecurringItem, from start: Date, to end: Date) -> Decimal {
-        if item.billingCycle.isLongCycle {
-            return hasCharge(item, from: start, to: end) ? convertedAmount(item) : .zero
+    // MARK: - State Construction
+
+    private func rebuildScreenState(snapshot: ExchangeRateSnapshot?) {
+        let monthlyAggregation = aggregateMonthly(items, snapshot: snapshot)
+        let monthlyTotal = monthlyAggregation.total?.amount ?? .zero
+        let unusedItems = items.filter { $0.usageStatus == .unused }
+        let summary = DashboardSummary(
+            monthlyTotal: monthlyTotal,
+            yearlyProjection: monthlyTotal * 12,
+            activeItemCount: items.count,
+            activeTrialCount: items.filter { $0.status == .trial }.count,
+            containsMixedCurrencies: Set(items.map(\.currencyCode)).count > 1,
+            ratesAvailable: monthlyAggregation.rateMetadata != nil
+        )
+
+        guard monthlyAggregation.isComplete else {
+            screenState = AnalyticsScreenState(
+                summary: summary,
+                monthlyAggregation: monthlyAggregation,
+                categoryBreakdown: [],
+                providerBreakdown: [],
+                monthlyProjections: [],
+                trendComparison: nil,
+                topItems: [],
+                annualItems: annualItems,
+                unusedItems: unusedItems,
+                defaultCurrency: reportingCurrencyCode,
+                unusedMonthlyCost: nil
+            )
+            return
         }
-        return monthlyAmount(item)
+
+        let projections = buildProjections(items, snapshot: snapshot)
+        let categoryBreakdown = buildCategoryBreakdown(items, grandTotal: monthlyTotal, snapshot: snapshot)
+        let providerBreakdown = buildProviderBreakdown(items, snapshot: snapshot)
+
+        screenState = AnalyticsScreenState(
+            summary: summary,
+            monthlyAggregation: monthlyAggregation,
+            categoryBreakdown: categoryBreakdown,
+            providerBreakdown: providerBreakdown,
+            monthlyProjections: projections,
+            trendComparison: buildTrendComparison(projections),
+            topItems: buildTopRows(items, snapshot: snapshot),
+            annualItems: annualItems,
+            unusedItems: unusedItems,
+            defaultCurrency: reportingCurrencyCode,
+            unusedMonthlyCost: aggregateMonthly(unusedItems, snapshot: snapshot).total?.amount
+        )
     }
 
-    /// Returns true if a billing cycle iteration of `item` falls within [start, end).
+    private var annualItems: [RecurringItem] {
+        items.filter {
+            if case .annual = $0.billingCycle { return true }
+            return false
+        }
+    }
+
+    private func aggregateMonthly(
+        _ items: [RecurringItem],
+        snapshot: ExchangeRateSnapshot?
+    ) -> RecurringSpendAggregationResult {
+        aggregateRecurringSpend.execute(
+            projections: items.map(monthlyProjection(for:)),
+            reportingCurrencyCode: reportingCurrencyCode,
+            snapshot: snapshot,
+            range: Self.normalizedProjectionRange
+        )
+    }
+
+    private func monthlyProjection(for item: RecurringItem) -> RecurringSpendProjection {
+        RecurringSpendProjection(
+            date: Self.normalizedProjectionDate,
+            amount: item.monthlyEquivalent,
+            currencyCode: item.currencyCode
+        )
+    }
+
+    private func currentCalculationRequiresExchangeRates() -> Bool {
+        aggregateRecurringSpend.requiresExchangeRates(
+            projections: items.map(monthlyProjection(for:)),
+            reportingCurrencyCode: reportingCurrencyCode,
+            range: Self.normalizedProjectionRange
+        )
+    }
+
+    // MARK: - Complete-only Comparisons
+
+    private func buildCategoryBreakdown(
+        _ items: [RecurringItem],
+        grandTotal: Decimal,
+        snapshot: ExchangeRateSnapshot?
+    ) -> [CategorySpend] {
+        guard grandTotal > .zero else { return [] }
+
+        let grouped = Dictionary(grouping: items, by: \.category)
+        return grouped.compactMap { category, categoryItems in
+            let result = aggregateMonthly(categoryItems, snapshot: snapshot)
+            guard result.isComplete, let total = result.total else { return nil }
+            return CategorySpend(
+                category: category,
+                monthlyTotal: total.amount,
+                itemCount: categoryItems.count,
+                proportion: NSDecimalNumber(decimal: total.amount / grandTotal).doubleValue
+            )
+        }
+        .sorted { $0.monthlyTotal > $1.monthlyTotal }
+    }
+
+    private struct ProviderGroup {
+        let id: String
+        let name: String
+        var items: [RecurringItem]
+    }
+
+    private func buildProviderBreakdown(
+        _ items: [RecurringItem],
+        snapshot: ExchangeRateSnapshot?
+    ) -> [ProviderSpend] {
+        var groups: [String: ProviderGroup] = [:]
+        for item in items {
+            let id = item.providerID ?? "manual:\(item.providerName)"
+            if var group = groups[id] {
+                group.items.append(item)
+                groups[id] = group
+            } else {
+                groups[id] = ProviderGroup(id: id, name: item.providerName, items: [item])
+            }
+        }
+
+        return groups.values.compactMap { group in
+            let result = aggregateMonthly(group.items, snapshot: snapshot)
+            guard result.isComplete, let total = result.total else { return nil }
+            return ProviderSpend(
+                id: group.id,
+                name: group.name,
+                monthlyTotal: total.amount,
+                itemCount: group.items.count
+            )
+        }
+        .sorted { $0.monthlyTotal > $1.monthlyTotal }
+    }
+
+    private func buildTopRows(
+        _ items: [RecurringItem],
+        snapshot: ExchangeRateSnapshot?
+    ) -> [TopSpendRowModel] {
+        items.compactMap { item in
+            let result = aggregateMonthly([item], snapshot: snapshot)
+            guard result.isComplete, let total = result.total else { return nil }
+            return TopSpendRowModel(
+                id: item.id,
+                title: item.title,
+                subtitle: item.providerName == item.title ? nil : item.providerName,
+                monthlyAmount: total.amount,
+                currency: total.currencyCode,
+                providerTemplate: item.providerTemplate,
+                category: item.category,
+                navigationItem: item
+            )
+        }
+        .sorted { $0.monthlyAmount > $1.monthlyAmount }
+        .prefix(5)
+        .map { $0 }
+    }
+
+    private func buildTrendComparison(
+        _ projections: [MonthlyProjection]
+    ) -> AnalyticsTrendComparison? {
+        guard projections.count >= 2 else { return nil }
+        let earlier = projections[0]
+        let later = projections[1]
+        return AnalyticsTrendComparison(
+            earlierMonth: earlier.month,
+            laterMonth: later.month,
+            earlierTotal: earlier.total,
+            laterTotal: later.total,
+            delta: later.total - earlier.total,
+            currencyCode: reportingCurrencyCode
+        )
+    }
+
+    // MARK: - Forecast
+
+    private func buildProjections(
+        _ items: [RecurringItem],
+        snapshot: ExchangeRateSnapshot?,
+        months: Int = 6
+    ) -> [MonthlyProjection] {
+        let calendar = Self.cal
+        guard let monthStart = calendar.date(
+            from: calendar.dateComponents([.year, .month], from: .now)
+        ) else { return [] }
+
+        var result: [MonthlyProjection] = []
+        for offset in 0..<months {
+            guard let start = calendar.date(byAdding: .month, value: offset, to: monthStart),
+                  let end = calendar.date(byAdding: .month, value: 1, to: start)
+            else { return [] }
+
+            let projections = items.compactMap { item -> RecurringSpendProjection? in
+                let amount: Decimal
+                if item.billingCycle.isLongCycle {
+                    guard hasCharge(item, from: start, to: end) else { return nil }
+                    amount = item.amount
+                } else {
+                    amount = item.monthlyEquivalent
+                }
+                return RecurringSpendProjection(
+                    date: start,
+                    amount: amount,
+                    currencyCode: item.currencyCode
+                )
+            }
+
+            let aggregation = aggregateRecurringSpend.execute(
+                projections: projections,
+                reportingCurrencyCode: reportingCurrencyCode,
+                snapshot: snapshot,
+                range: start..<end
+            )
+            guard aggregation.isComplete, let total = aggregation.total else { return [] }
+            result.append(MonthlyProjection(month: start, total: total.amount))
+        }
+        return result
+    }
+
     private func hasCharge(_ item: RecurringItem, from start: Date, to end: Date) -> Bool {
-        let cal = Self.cal
+        let calendar = Self.cal
         let cycleMonths: Int
         switch item.billingCycle {
-        case .quarterly:  cycleMonths = 3
+        case .quarterly: cycleMonths = 3
         case .semiannual: cycleMonths = 6
-        case .annual:     cycleMonths = 12
-        default:          return true
+        case .annual: cycleMonths = 12
+        default: return true
         }
 
-        // Walk nextChargeDate backward until it's before `start`
         var check = item.nextChargeDate
         while check >= end {
-            guard let prev = cal.date(byAdding: .month, value: -cycleMonths, to: check) else { return false }
-            check = prev
+            guard let previous = calendar.date(byAdding: .month, value: -cycleMonths, to: check) else {
+                return false
+            }
+            check = previous
         }
-        // Then walk forward until it's >= start or past end
         while check < start {
-            guard let next = cal.date(byAdding: .month, value: cycleMonths, to: check) else { return false }
+            guard let next = calendar.date(byAdding: .month, value: cycleMonths, to: check) else {
+                return false
+            }
             check = next
         }
         return check >= start && check < end
-    }
-
-    /// Actual item amount converted to defaultCurrency (used for long-cycle charges).
-    private func convertedAmount(_ item: RecurringItem) -> Decimal {
-        guard let rates = exchangeRates, item.currencyCode != defaultCurrency else {
-            return item.amount
-        }
-        return rates.convert(item.amount, from: item.currencyCode, to: defaultCurrency) ?? item.amount
-    }
-
-    private func buildCategoryBreakdown(_ items: [RecurringItem]) -> [CategorySpend] {
-        var totals: [ItemCategory: (Decimal, Int)] = [:]
-        for item in items {
-            let amount = monthlyAmount(item)
-            let existing = totals[item.category] ?? (.zero, 0)
-            totals[item.category] = (existing.0 + amount, existing.1 + 1)
-        }
-
-        let grandTotal = totals.values.reduce(.zero) { $0 + $1.0 }
-        guard grandTotal > 0 else { return [] }
-
-        return totals
-            .map { category, data in
-                CategorySpend(
-                    category: category,
-                    monthlyTotal: data.0,
-                    itemCount: data.1,
-                    proportion: NSDecimalNumber(decimal: data.0 / grandTotal).doubleValue
-                )
-            }
-            .sorted { $0.monthlyTotal > $1.monthlyTotal }
     }
 }

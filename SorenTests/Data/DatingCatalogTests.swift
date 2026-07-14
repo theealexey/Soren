@@ -128,7 +128,18 @@ struct DatingCatalogTests {
 
     @Test("Dating category participates in Analytics grouping")
     @MainActor
-    func datingParticipatesInAnalyticsGrouping() {
+    func datingParticipatesInAnalyticsGrouping() async throws {
+        let suiteName = "DatingCatalogTests.Analytics.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let preferences = UserPreferencesRepository(defaults: defaults)
+        preferences.save(UserPreferences(
+            defaultCurrencyCode: "RUB",
+            defaultChargeReminder: .threeDaysBefore,
+            chargeAlertDays: 3,
+            trialAlertDays: 3
+        ))
+
         let item = RecurringItem(
             title: "Tinder",
             providerID: "tinder",
@@ -138,13 +149,27 @@ struct DatingCatalogTests {
             nextChargeDate: .now
         )
         let repository = DatingAnalyticsRepository(items: [item])
-        let viewModel = AnalyticsViewModel(getActiveItems: GetActiveItems(repository: repository))
+        let rateDate = Date(timeIntervalSince1970: 1_700_000_000)
+        let rateProvider = StaticExchangeRateProvider(rates: ExchangeRates(
+            base: "USD",
+            date: rateDate,
+            rates: ["RUB": 100],
+            fetchedAt: rateDate
+        ))
+        let viewModel = AnalyticsViewModel(
+            getActiveItems: GetActiveItems(repository: repository),
+            preferences: preferences,
+            exchangeRateProvider: rateProvider
+        )
 
         viewModel.loadLocalData()
+        await viewModel.refreshCurrencyAggregation(revision: viewModel.aggregationRevision)
 
         #expect(viewModel.screenState.categoryBreakdown.count == 1)
         #expect(viewModel.screenState.categoryBreakdown.first?.category == .dating)
         #expect(viewModel.screenState.categoryBreakdown.first?.itemCount == 1)
+        #expect(viewModel.screenState.categoryBreakdown.first?.monthlyTotal == 1_000)
+        #expect(viewModel.screenState.monthlyAggregation?.total?.currencyCode == "RUB")
     }
 
     @Test("New dating providers never emit Clearbit URLs")

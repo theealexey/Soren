@@ -2,6 +2,25 @@ import Testing
 import Foundation
 @testable import Soren
 
+// MARK: - SettingsViewModel — reporting currency persistence
+
+@Suite("SettingsViewModel — reporting currency persistence")
+@MainActor
+struct SettingsViewModelCurrencyPersistenceTests {
+    @Test("Reporting currency is persisted before Settings dismissal invalidates Analytics")
+    func reportingCurrencyPersistsSynchronously() throws {
+        let suiteName = "SettingsViewModelCurrencyPersistenceTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let repository = UserPreferencesRepository(defaults: defaults)
+        let viewModel = SettingsViewModel(repository: repository)
+
+        viewModel.defaultCurrencyCode = "USD"
+
+        #expect(repository.load().defaultCurrencyCode == "USD")
+    }
+}
+
 // MARK: - UserPreferencesRepository — defaultChargeReminder
 
 /// Adversarial tests for the `defaultChargeReminder` preference:

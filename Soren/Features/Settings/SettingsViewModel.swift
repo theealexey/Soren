@@ -11,7 +11,7 @@ final class SettingsViewModel {
     // MARK: - Bindable State
 
     var defaultCurrencyCode: String {
-        didSet { debouncedSave() }
+        didSet { save() }
     }
 
     var defaultChargeReminder: ChargeReminderOption {
