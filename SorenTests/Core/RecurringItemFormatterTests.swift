@@ -414,7 +414,7 @@ struct PresentationLocalizationTests {
     func providerTierMetadataHasEnglishCoverage() async throws {
         let englishBundle = try localizationBundle("en")
         let english = Locale(identifier: "en")
-        let providers = await InMemoryProviderCatalogRepository().fetchAll()
+        let providers = ProviderCatalog.all
         let tierMetadata = Set(
             providers.flatMap(\.plans).flatMap { tier in
                 [tier.name, tier.features].compactMap { $0 }

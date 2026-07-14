@@ -312,8 +312,6 @@ Russian service prices are denominated in RUB and fluctuate frequently due to lo
 | ЛитРес | 699 RUB/мес / 4999 RUB/год | Unverified — recommend owner confirmation |
 | Bookmate | 449 RUB/мес / 2499 RUB/год | Unverified — recommend owner confirmation |
 | DocPlus | 590 / 990 RUB/мес | Unverified — recommend owner confirmation |
-| Яндекс Еда/Лавка | No plans (variable) | Intentional ✅ |
-| Delivery Club | No plans (variable) | Intentional ✅ |
 | Boosty, DonationAlerts, Sponsr | No plans (creator tips) | Intentional ✅ |
 | VK Play | 299 RUB/мес | Unverified — recommend owner confirmation |
 

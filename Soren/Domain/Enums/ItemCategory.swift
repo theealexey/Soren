@@ -20,4 +20,5 @@ enum ItemCategory: String, Codable, CaseIterable, Sendable {
     case education
     case creators
     case other
+    case dating
 }

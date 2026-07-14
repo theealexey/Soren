@@ -14,19 +14,20 @@ enum ProviderLogoResolver {
     ///
     /// Returns an empty array when neither source is configured.
     static func logoURLs(for provider: ProviderTemplate) -> [URL] {
-        var sources: [URL] = []
+        var urls: [URL] = []
 
         if let serviceSource = provider.serviceLogoSourceURL {
-            sources.append(serviceSource)
+            urls.append(serviceSource)
         }
 
         if let domain = provider.companyLogoFallbackDomain,
            let companySource = URL(string: "https://\(domain)"),
-           !sources.contains(companySource) {
-            sources.append(companySource)
+           let faviconURL = googleFaviconURL(for: companySource),
+           !urls.contains(faviconURL) {
+            urls.append(faviconURL)
         }
 
-        return sources.compactMap(googleFaviconURL(for:))
+        return urls
     }
 
     private static func googleFaviconURL(for source: URL) -> URL? {

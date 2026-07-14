@@ -26,6 +26,7 @@ extension ItemCategory {
         case .education:    String(localized: "Образование")
         case .creators:     String(localized: "Креаторы и донаты")
         case .other:        String(localized: "Другое")
+        case .dating:       String(localized: "Знакомства")
         }
     }
 
@@ -49,6 +50,7 @@ extension ItemCategory {
         case .education:    "graduationcap.fill"
         case .creators:     "person.2.fill"
         case .other:        "ellipsis.circle.fill"
+        case .dating:       "heart.fill"
         }
     }
 
@@ -72,6 +74,7 @@ extension ItemCategory {
         case .education:    ColorTokens.categoryAI
         case .creators:     ColorTokens.accent
         case .other:        ColorTokens.textTertiary
+        case .dating:       ColorTokens.categoryDating
         }
     }
 }

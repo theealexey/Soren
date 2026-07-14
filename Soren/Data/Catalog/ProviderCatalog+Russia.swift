@@ -24,7 +24,8 @@ extension ProviderCatalog {
               category: .shopping, itemType: .ecosystemBundle,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["ecosystem", "bundle", "cashback", "popular"],
-              brandColorHex: "#FC3F1D", companyLogoFallbackDomain: "yandex.ru",
+              serviceLogoSourceURL: URL(string: "https://avatars.mds.yandex.net/get-media-infra/3756502/d787faef9f2f25928f2306d47a099b9bc2de99f1/orig"),
+              brandColorHex: "#FC3F1D",
               plans: [
                   .init(id: "basic", name: "Базовый", amount: 199, billingCycle: .monthly, features: "Кешбэк, Музыка"),
                   .init(id: "standard", name: "Стандарт", amount: 399, billingCycle: .monthly, features: "Кешбэк, Музыка, Кинопоиск"),
@@ -263,12 +264,21 @@ extension ProviderCatalog {
         // MARK: Облако
         // ────────────────────────────────────────
 
+        .init(id: "yandex_360", displayName: "Яндекс 360",
+              aliases: ["яндекс 360", "yandex 360"],
+              category: .cloud,
+              suggestedCurrencyCode: "RUB", region: .russia,
+              tags: ["cloud", "productivity", "yandex"],
+              serviceLogoSourceURL: URL(string: "https://yastatic.net/s3/tuning/static/pages/brand-logo/versions/0.0.12/assets/downloads/main_icon.png")),
+
         .init(id: "yandex_disk", displayName: "Яндекс Диск",
               aliases: ["яндекс диск", "yandex disk"],
               category: .cloud,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["storage", "yandex"],
-              brandColorHex: "#FC3F1D", companyLogoFallbackDomain: "disk.yandex.ru",
+              isSelectable: false,
+              serviceLogoSourceURL: URL(string: "https://yastatic.net/s3/tuning/static/pages/brand-services/versions/0.0.10/assets/downloads/%D0%B8%D0%BA%D0%BE%D0%BD%D0%BA%D0%B0_%D0%B4%D0%B8%D1%81%D0%BA.png"),
+              brandColorHex: "#FC3F1D",
               plans: [
                   .init(id: "100gb", name: "100 ГБ", amount: 69, billingCycle: .monthly),
                   .init(id: "200gb", name: "200 ГБ", amount: 99, billingCycle: .monthly),
@@ -361,24 +371,6 @@ extension ProviderCatalog {
               ]),
 
         // ────────────────────────────────────────
-        // MARK: Еда и доставка
-        // ────────────────────────────────────────
-
-        .init(id: "yandex_delivery", displayName: "Яндекс Еда / Лавка",
-              aliases: ["яндекс еда", "яндекс лавка", "yandex food"],
-              category: .food, itemType: .membership,
-              suggestedCurrencyCode: "RUB", region: .russia,
-              tags: ["delivery", "yandex"],
-              brandColorHex: "#FC3F1D", companyLogoFallbackDomain: "eda.yandex.ru"),
-
-        .init(id: "delivery_club", displayName: "Delivery Club",
-              aliases: ["деливери клаб"],
-              category: .food, itemType: .membership,
-              suggestedCurrencyCode: "RUB", region: .russia,
-              tags: ["delivery"],
-              brandColorHex: "#2AC96B", companyLogoFallbackDomain: "delivery-club.ru"),
-
-        // ────────────────────────────────────────
         // MARK: Креаторы и донаты
         // ────────────────────────────────────────
 
@@ -402,6 +394,37 @@ extension ProviderCatalog {
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["creators", "donations"],
               brandColorHex: "#6C5CE7", companyLogoFallbackDomain: "sponsr.ru"),
+
+        // ────────────────────────────────────────
+        // MARK: Знакомства
+        // ────────────────────────────────────────
+
+        .init(id: "twinby", displayName: "Twinby",
+              aliases: ["твинби", "twin by"],
+              category: .dating,
+              suggestedCurrencyCode: "RUB", region: .russia,
+              tags: ["dating", "social"],
+              managementURL: URL(string: "https://twinby.com"),
+              serviceLogoSourceURL: URL(string: "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/ca/24/24/ca2424f9-da09-cc75-2581-87879cacf270/AppIcon-0-0-1x_U007ephone-0-1-sRGB-85-220.png/512x512bb.jpg"),
+              brandColorHex: "#78E000"),
+
+        .init(id: "mamba", displayName: "Mamba",
+              aliases: ["мамба"],
+              category: .dating,
+              suggestedCurrencyCode: "RUB", region: .russia,
+              tags: ["dating", "social"],
+              managementURL: URL(string: "https://mamba.ru"),
+              serviceLogoSourceURL: URL(string: "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/bd/b9/ce/bdb9ceea-b6bf-0822-76f3-3345c9595193/AppIcon-Mamba-0-0-1x_U007emarketing-0-11-0-85-220.png/512x512bb.jpg"),
+              brandColorHex: "#E43B2E"),
+
+        .init(id: "pure", displayName: "Pure",
+              aliases: ["пьюр", "pure dating"],
+              category: .dating,
+              suggestedCurrencyCode: "RUB", region: .russia,
+              tags: ["dating", "social"],
+              managementURL: URL(string: "https://pure.app"),
+              serviceLogoSourceURL: URL(string: "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/2b/d7/44/2bd74482-0b73-94b7-34fb-0d944e6471e2/AppIcon-0-0-1x_U007ephone-0-1-0-85-220.jpeg/512x512bb.jpg"),
+              brandColorHex: "#F500C8"),
 
         // ────────────────────────────────────────
         // MARK: Игры

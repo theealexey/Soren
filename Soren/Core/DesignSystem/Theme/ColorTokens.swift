@@ -56,5 +56,6 @@ enum ColorTokens {
     static let categoryBanking      = Color("Colors/CategoryBanking")
     static let categoryMobile       = Color("Colors/CategoryMobile")
     static let categoryHealth       = Color("Colors/CategoryHealth")
+    static let categoryDating       = Color("Colors/CategoryDating")
     static let categoryGames        = Color("Colors/CategoryGames")
 }

@@ -7,8 +7,11 @@ import Foundation
 /// This is the single source of truth for the Quick Add flow.
 enum ProviderCatalog {
 
-    /// All providers across all regions, sorted alphabetically.
+    /// All providers across all regions, including legacy templates kept for persisted items.
     static let all: [ProviderTemplate] = (global + russia).sorted { $0.displayName < $1.displayName }
+
+    /// Providers available when creating a new subscription.
+    static let selectable: [ProviderTemplate] = all.filter(\.isSelectable)
 
     /// O(1) lookup index — built once from `all` at module load time.
     /// Uses last-wins deduplication so a copy-paste ID collision never crashes.

@@ -13,22 +13,27 @@ final class InMemoryProviderCatalogRepository: ProviderCatalogRepository {
         self.providers = providers
     }
 
+    private var selectableProviders: [ProviderTemplate] {
+        providers.filter(\.isSelectable)
+    }
+
     func fetchAll() async -> [ProviderTemplate] {
-        providers
+        selectableProviders
     }
 
     func fetchByRegion(_ region: ProviderTemplate.Region) async -> [ProviderTemplate] {
-        providers.filter { $0.region == region }
+        selectableProviders.filter { $0.region == region }
     }
 
     func fetchByCategory(_ category: ItemCategory) async -> [ProviderTemplate] {
-        providers.filter { $0.category == category }
+        selectableProviders.filter { $0.category == category }
     }
 
     func search(query: String) async -> [ProviderTemplate] {
-        providers.filter { $0.matches(query) }
+        selectableProviders.filter { $0.matches(query) }
     }
 
+    /// Direct lookup intentionally includes legacy templates used by persisted subscriptions.
     func fetch(id: String) async -> ProviderTemplate? {
         providers.first { $0.id == id }
     }

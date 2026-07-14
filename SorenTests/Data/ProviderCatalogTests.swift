@@ -24,11 +24,11 @@ struct ProviderLogoResolutionTests {
             id: "service_with_company_fallback",
             displayName: "Service",
             category: .other,
-            serviceLogoSourceURL: URL(string: "https://service.example.com"),
+            serviceLogoSourceURL: URL(string: "https://service.example.com/logo.png"),
             companyLogoFallbackDomain: "example.com"
         )
         let sources = originalSources(for: provider)
-        #expect(sources == ["https://service.example.com", "https://example.com"])
+        #expect(sources == ["https://service.example.com/logo.png", "https://example.com"])
     }
 
     @Test("Website metadata does not implicitly enable a company favicon")
@@ -190,7 +190,10 @@ struct ProviderLogoResolutionTests {
 
     private func originalSources(for provider: ProviderTemplate) -> [String] {
         ProviderLogoResolver.logoURLs(for: provider).compactMap { url in
-            URLComponents(url: url, resolvingAgainstBaseURL: false)?
+            guard url.host() == "t1.gstatic.com" else {
+                return url.absoluteString
+            }
+            return URLComponents(url: url, resolvingAgainstBaseURL: false)?
                 .queryItems?
                 .first { $0.name == "url" }?
                 .value
@@ -488,13 +491,13 @@ struct ProviderCatalogSearchTests {
     @Test("Empty search returns all providers")
     func emptySearchReturnsAll() async {
         let results = await repo.search(query: "")
-        #expect(results.count == ProviderCatalog.all.count)
+        #expect(results.count == ProviderCatalog.selectable.count)
     }
 
     @Test("Search with spaces only returns all")
     func spacesOnlyReturnsAll() async {
         let results = await repo.search(query: "   ")
-        #expect(results.count == ProviderCatalog.all.count)
+        #expect(results.count == ProviderCatalog.selectable.count)
     }
 
     @Test("Search 'xyzgibberish' returns empty")

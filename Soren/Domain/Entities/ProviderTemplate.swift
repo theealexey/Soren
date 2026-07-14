@@ -12,12 +12,15 @@ struct ProviderTemplate: Identifiable, Hashable, Sendable {
     var suggestedCurrencyCode: String
     var region: Region
     var tags: [String]
+    /// Whether this provider may be selected when creating a new subscription.
+    /// Legacy templates remain resolvable by stable ID even when this is false.
+    var isSelectable: Bool
     /// URL to open the subscription management page.
     var managementURL: URL?
     /// SF Symbol or asset name for the icon.
     var iconAssetName: String?
-    /// Service-specific page/origin used for remote favicon resolution.
-    /// Prefer this over a parent-company fallback when the service has its own identity.
+    /// Direct service-specific image URL used as the first remote fallback.
+    /// This must return image data rather than an HTML service page.
     var serviceLogoSourceURL: URL?
     /// Hex brand color (e.g. "#E50914" for Netflix). Used for letter-mark icons.
     var brandColorHex: String?
@@ -41,6 +44,7 @@ struct ProviderTemplate: Identifiable, Hashable, Sendable {
         suggestedCurrencyCode: String = "RUB",
         region: Region = .global,
         tags: [String] = [],
+        isSelectable: Bool = true,
         managementURL: URL? = nil,
         iconAssetName: String? = nil,
         serviceLogoSourceURL: URL? = nil,
@@ -57,6 +61,7 @@ struct ProviderTemplate: Identifiable, Hashable, Sendable {
         self.suggestedCurrencyCode = suggestedCurrencyCode
         self.region = region
         self.tags = tags
+        self.isSelectable = isSelectable
         self.managementURL = managementURL
         self.iconAssetName = iconAssetName
         self.serviceLogoSourceURL = serviceLogoSourceURL

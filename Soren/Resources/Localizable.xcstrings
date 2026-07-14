@@ -2960,6 +2960,16 @@
         }
       }
     },
+    "Знакомства" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dating"
+          }
+        }
+      }
+    },
     "и ещё %lld" : {
       "localizations" : {
         "en" : {

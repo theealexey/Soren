@@ -115,7 +115,7 @@ extension ProviderCatalog {
         .init(id: "apple_music", displayName: "Apple Music", aliases: ["эпл мьюзик"],
               category: .music, suggestedCurrencyCode: "USD", region: .global,
               tags: ["music", "apple"],
-              serviceLogoSourceURL: URL(string: "https://music.apple.com"),
+              serviceLogoSourceURL: URL(string: "https://music.apple.com/favicon.ico"),
               brandColorHex: "#FC3C44",
               plans: [
                   .init(id: "individual", name: "Individual", amount: 10.99, billingCycle: .monthly),
@@ -166,7 +166,7 @@ extension ProviderCatalog {
         .init(id: "icloud", displayName: "iCloud+", aliases: ["айклауд", "icloud"],
               category: .cloud, suggestedCurrencyCode: "USD", region: .global,
               tags: ["apple", "storage", "popular"],
-              serviceLogoSourceURL: URL(string: "https://www.icloud.com"),
+              serviceLogoSourceURL: URL(string: "https://www.icloud.com/favicon.ico"),
               brandColorHex: "#3693F5",
               plans: [
                   .init(id: "50gb", name: "50 ГБ", amount: 0.99, billingCycle: .monthly),
@@ -324,8 +324,8 @@ extension ProviderCatalog {
         .init(id: "microsoft_365", displayName: "Microsoft 365", aliases: ["office", "office 365", "ms 365"],
               category: .productivity, suggestedCurrencyCode: "USD", region: .global,
               tags: ["office", "microsoft"],
-              serviceLogoSourceURL: URL(string: "https://www.microsoft365.com"),
               brandColorHex: "#D83B01",
+              companyLogoFallbackDomain: "www.microsoft365.com",
               plans: [
                   .init(id: "personal", name: "Personal", amount: 6.99, billingCycle: .monthly, features: "1 ТБ, Office для 1 чел."),
                   .init(id: "personal_annual", name: "Personal (год)", amount: 99.99, billingCycle: .annual, features: "1 ТБ, Office для 1 чел."),
@@ -649,19 +649,65 @@ extension ProviderCatalog {
 
         // MARK: Dating
 
-        // Plans omitted — subscription prices vary significantly by region and App Store territory.
-        // Users should enter their actual price when adding.
         .init(id: "grindr", displayName: "Grindr",
               aliases: ["grindr xtra", "grindr unlimited", "гриндер"],
-              category: .other, suggestedCurrencyCode: "USD", region: .global,
+              category: .dating, suggestedCurrencyCode: "USD", region: .global,
               tags: ["dating", "social", "lgbtq"],
               brandColorHex: "#F5A623", companyLogoFallbackDomain: "grindr.com"),
 
         .init(id: "hornet", displayName: "Hornet",
               aliases: ["hornet plus", "hornet premium", "hornet max", "хорнет"],
-              category: .other, suggestedCurrencyCode: "USD", region: .global,
+              category: .dating, suggestedCurrencyCode: "USD", region: .global,
               tags: ["dating", "social", "lgbtq"],
               brandColorHex: "#EE3124", companyLogoFallbackDomain: "hornet.com"),
+
+        .init(id: "tinder", displayName: "Tinder",
+              aliases: ["тиндер"],
+              category: .dating, suggestedCurrencyCode: "USD", region: .global,
+              tags: ["dating", "social"],
+              managementURL: URL(string: "https://tinder.com"),
+              serviceLogoSourceURL: URL(string: "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/e1/66/97/e1669740-5fd9-c155-0db4-56bfa0d26a71/AppIcon-BrandFlame-0-0-1x_U007ephone-0-1-0-0-sRGB-0-85-220.png/512x512bb.jpg"),
+              brandColorHex: "#E9425D"),
+
+        .init(id: "bumble", displayName: "Bumble",
+              aliases: ["бамбл"],
+              category: .dating, suggestedCurrencyCode: "USD", region: .global,
+              tags: ["dating", "social"],
+              managementURL: URL(string: "https://bumble.com"),
+              serviceLogoSourceURL: URL(string: "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/00/02/69/000269f5-f54d-c73b-1d8c-36e0cfa7c685/AppIcon-0-0-1x_U007ephone-0-1-0-85-220.png/512x512bb.jpg"),
+              brandColorHex: "#FFCB37"),
+
+        .init(id: "hinge", displayName: "Hinge",
+              aliases: ["хиндж"],
+              category: .dating, suggestedCurrencyCode: "USD", region: .global,
+              tags: ["dating", "social"],
+              managementURL: URL(string: "https://hinge.co"),
+              serviceLogoSourceURL: URL(string: "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/71/66/44/7166446a-3ab4-d12a-b388-841290862056/AppIcon-0-0-1x_U007emarketing-0-6-0-85-220.png/512x512bb.jpg"),
+              brandColorHex: "#1A1A1A"),
+
+        .init(id: "badoo", displayName: "Badoo",
+              aliases: ["баду"],
+              category: .dating, suggestedCurrencyCode: "USD", region: .global,
+              tags: ["dating", "social"],
+              managementURL: URL(string: "https://badoo.com"),
+              serviceLogoSourceURL: URL(string: "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/87/87/d7/8787d7bc-54ab-2710-0152-1aa61e15f15a/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/512x512bb.jpg"),
+              brandColorHex: "#D50032"),
+
+        .init(id: "feeld", displayName: "Feeld",
+              aliases: ["филд"],
+              category: .dating, suggestedCurrencyCode: "USD", region: .global,
+              tags: ["dating", "social"],
+              managementURL: URL(string: "https://feeld.co"),
+              serviceLogoSourceURL: URL(string: "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/3f/66/0c/3f660ccb-a49a-94fc-bb31-ff8408e63089/AppIcon-0-0-1x_U007ephone-0-12-0-85-220.png/512x512bb.jpg"),
+              brandColorHex: "#4938C9"),
+
+        .init(id: "her", displayName: "HER",
+              aliases: ["her dating", "хер"],
+              category: .dating, suggestedCurrencyCode: "USD", region: .global,
+              tags: ["dating", "social", "lgbtq"],
+              managementURL: URL(string: "https://weareher.com"),
+              serviceLogoSourceURL: URL(string: "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/18/44/31/18443194-6fc5-2ae7-385f-52d6483a2db9/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/512x512bb.jpg"),
+              brandColorHex: "#E2231A"),
 
         // MARK: Apple Bundles
         .init(id: "apple_one", displayName: "Apple One", aliases: ["эпл ван"],
