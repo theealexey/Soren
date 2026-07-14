@@ -33,12 +33,7 @@ struct LibraryView: View {
         .background(ColorTokens.background)
         .task {
             guard viewModel == nil else { return }
-            let vm = LibraryViewModel(
-                repositories: container.repositories,
-                preferences: container.preferences,
-                notificationScheduler: container.notificationScheduler,
-                exchangeRateProvider: container.exchangeRateProvider
-            )
+            let vm = container.makeLibraryViewModel()
             self.viewModel = vm
             vm.load()
         }
@@ -71,16 +66,22 @@ struct LibraryView: View {
 
     @ViewBuilder
     private func libraryContent(_ vm: LibraryViewModel) -> some View {
-        if vm.hasError {
-            ErrorStateView(message: "Не удалось загрузить подписки") {
-                vm.load()
+        Group {
+            if vm.hasError {
+                ErrorStateView(message: "Не удалось загрузить подписки") {
+                    vm.load()
+                }
+            } else if !vm.isLoaded {
+                LoadingStateView()
+            } else if vm.allItems.isEmpty {
+                emptyLibrary
+            } else {
+                populatedLibrary(vm)
             }
-        } else if !vm.isLoaded {
-            LoadingStateView()
-        } else if vm.allItems.isEmpty {
-            emptyLibrary
-        } else {
-            populatedLibrary(vm)
+        }
+        .task(id: vm.aggregationRevision) {
+            let revision = vm.aggregationRevision
+            await vm.refreshCurrencyAggregation(revision: revision)
         }
     }
 
@@ -296,18 +297,59 @@ struct LibraryView: View {
 
             Spacer()
 
-            if vm.filteredMonthlyTotal > 0 {
-                AmountLabel(
-                    vm.filteredMonthlyTotal,
-                    currency: vm.defaultCurrency,
-                    size: .small,
-                    cycle: .monthly
-                )
-            }
+            monthlyTotal(vm)
 
             sortMenu(vm)
         }
         .padding(.horizontal, Spacing.lg)
+    }
+
+    @ViewBuilder
+    private func monthlyTotal(_ vm: LibraryViewModel) -> some View {
+        if let aggregation = vm.filteredMonthlyAggregation {
+            VStack(alignment: .trailing, spacing: Spacing.xxxs) {
+                if let total = aggregation.total, total.amount > .zero {
+                    AmountLabel(
+                        total.amount,
+                        currency: total.currencyCode,
+                        size: .small,
+                        cycle: .monthly
+                    )
+                } else if aggregation.total == nil {
+                    Text(String(localized: "Курсы валют недоступны"))
+                        .font(Typography.footnote)
+                        .foregroundStyle(ColorTokens.textTertiary)
+                }
+
+                switch aggregation {
+                case let .complete(_, metadata):
+                    staleRateLabel(metadata)
+
+                case let .partial(_, missingCodes, metadata):
+                    Text(String(localized: "Нет курсов для \(missingCodes.joined(separator: ", "))"))
+                        .font(Typography.footnote)
+                        .foregroundStyle(ColorTokens.warning)
+                    staleRateLabel(metadata)
+
+                case let .unavailable(_, missingCodes, _, metadata):
+                    if !missingCodes.isEmpty {
+                        Text(String(localized: "Нет курсов для \(missingCodes.joined(separator: ", "))"))
+                            .font(Typography.footnote)
+                            .foregroundStyle(ColorTokens.textTertiary)
+                    }
+                    staleRateLabel(metadata)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func staleRateLabel(_ metadata: SpendAggregationRateMetadata?) -> some View {
+        if let metadata, case .stale = metadata.freshness {
+            Text(String(localized: "По сохранённому курсу"))
+                .font(Typography.footnote)
+                .foregroundStyle(ColorTokens.warning)
+        }
     }
 
     // MARK: - Sort Menu

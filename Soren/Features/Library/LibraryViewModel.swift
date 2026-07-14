@@ -26,12 +26,15 @@ final class LibraryViewModel {
     private(set) var defaultCurrency: String = UserPreferences.default.defaultCurrencyCode
     private(set) var error: Error?
     private(set) var isLoaded = false
+    /// Re-runs the single snapshot-loading task only when the current filtered
+    /// total starts requiring FX without a usable snapshot.
+    private(set) var aggregationRevision = 0
 
     // MARK: - Filtered Output (stored — computed once per state change, not per render)
 
     private(set) var filteredItems: [RecurringItem] = []
     private(set) var filterCounts: [StatusFilter: Int] = [:]
-    private(set) var filteredMonthlyTotal: Decimal = .zero
+    private(set) var filteredMonthlyAggregation: RecurringSpendAggregationResult?
     private(set) var activeCategories: [ItemCategory] = []
     private(set) var sections: [LibrarySection] = []
 
@@ -43,12 +46,17 @@ final class LibraryViewModel {
     private let deleteRecurringItem: DeleteRecurringItem
     private let preferences: UserPreferencesRepository
     private let exchangeRateProvider: any ExchangeRateProvider
+    private let aggregateRecurringSpend: AggregateRecurringSpendUseCase
     private let searchDebounceDelay: Duration
 
-    /// Rates fetched in the background after load(); used by recompute() to convert
-    /// foreign-currency monthly equivalents to the user's defaultCurrency.
-    /// nil until the first successful fetch (first render uses raw amounts as fallback).
-    private var cachedRates: ExchangeRates?
+    /// One snapshot is shared by every total in the current Library calculation.
+    /// A failed fetch deliberately leaves this nil: the Domain use case then emits
+    /// partial/unavailable instead of constructing a mixed-currency number.
+    private var exchangeRateSnapshot: ExchangeRateSnapshot?
+    private var inFlightAggregationRevision: Int?
+    private var filteredMonthlyProjections: [RecurringSpendProjection] = []
+
+    private static let aggregationRange = Date.distantPast..<Date.distantFuture
 
     // MARK: - Search Debounce
 
@@ -80,12 +88,14 @@ final class LibraryViewModel {
         deleteRecurringItem: DeleteRecurringItem,
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
         exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider(),
+        aggregateRecurringSpend: AggregateRecurringSpendUseCase = AggregateRecurringSpendUseCase(),
         searchDebounceDelay: Duration = .milliseconds(150)
     ) {
         self.getLibraryItems = getLibraryItems
         self.deleteRecurringItem = deleteRecurringItem
         self.preferences = preferences
         self.exchangeRateProvider = exchangeRateProvider
+        self.aggregateRecurringSpend = aggregateRecurringSpend
         self.searchDebounceDelay = searchDebounceDelay
     }
 
@@ -94,6 +104,7 @@ final class LibraryViewModel {
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
         notificationScheduler: (any NotificationScheduling)? = nil,
         exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider(),
+        aggregateRecurringSpend: AggregateRecurringSpendUseCase = AggregateRecurringSpendUseCase(),
         searchDebounceDelay: Duration = .milliseconds(150)
     ) {
         self.getLibraryItems = GetLibraryItems(repository: repositories.recurringItems)
@@ -103,6 +114,7 @@ final class LibraryViewModel {
         )
         self.preferences = preferences
         self.exchangeRateProvider = exchangeRateProvider
+        self.aggregateRecurringSpend = aggregateRecurringSpend
         self.searchDebounceDelay = searchDebounceDelay
     }
 
@@ -110,23 +122,45 @@ final class LibraryViewModel {
 
     func load() {
         error = nil
+        aggregationRevision += 1
+        exchangeRateSnapshot = nil
         do {
             defaultCurrency = preferences.load().defaultCurrencyCode
             allItems = try getLibraryItems.execute()
             isLoaded = true
-            recompute()
-            // Kick off rate fetch in background; recompute again once rates land.
-            // OpenExchangeRateProvider serves from its 3-tier cache (memory → disk → network),
-            // so subsequent calls after the first are typically instant.
-            Task { [weak self] in
-                guard let self else { return }
-                if let rates = try? await self.exchangeRateProvider.latestRates() {
-                    self.cachedRates = rates
-                    self.recompute()
-                }
-            }
+            filteredMonthlyProjections = []
+            recompute(scheduleSnapshotIfNeeded: false)
         } catch {
             self.error = error
+        }
+    }
+
+    /// Fetches at most one exchange-rate snapshot for the active Library revision.
+    /// Older requests cannot overwrite a newer filter/data calculation.
+    func refreshCurrencyAggregation(revision: Int) async {
+        guard revision == aggregationRevision,
+              exchangeRateSnapshot == nil,
+              currentCalculationRequiresExchangeRates(),
+              inFlightAggregationRevision != revision
+        else { return }
+
+        inFlightAggregationRevision = revision
+        defer {
+            if inFlightAggregationRevision == revision {
+                inFlightAggregationRevision = nil
+            }
+        }
+
+        do {
+            let snapshot = try await exchangeRateProvider.latestSnapshot()
+            guard !Task.isCancelled, revision == aggregationRevision else { return }
+            exchangeRateSnapshot = snapshot
+            rebuildMonthlyAggregation(snapshot: snapshot)
+        } catch is CancellationError {
+            return
+        } catch {
+            // The no-snapshot aggregation is already truthful: it never mixes
+            // original foreign amounts into the reporting-currency subtotal.
         }
     }
 
@@ -148,7 +182,9 @@ final class LibraryViewModel {
 
     // MARK: - Recompute (single pass — O(n log n) once per state change, not per render)
 
-    private func recompute() {
+    private func recompute(scheduleSnapshotIfNeeded: Bool = true) {
+        let previouslyRequiredRates = currentCalculationRequiresExchangeRates()
+
         // 1. Filter counts: one pass per status filter over allItems.
         var counts: [StatusFilter: Int] = [.all: allItems.count]
         for filter in StatusFilter.allCases where filter != .all {
@@ -171,19 +207,25 @@ final class LibraryViewModel {
         filteredItems = result
 
         // 3. Monthly total and active categories derived from the filtered result.
-        // Items in foreign currencies are converted to defaultCurrency using cachedRates.
-        // When rates are unavailable for a given pair, the raw amount is used as a
-        // fallback — consistent with GetDashboardSummary behaviour.
-        filteredMonthlyTotal = result
+        // Existing Library semantics include only the statuses that historically
+        // contributed to totals; aggregation itself is now the shared Domain policy.
+        filteredMonthlyProjections = result
             .filter(\.status.countsInTotals)
-            .reduce(.zero) { sum, item in
-                let monthly = item.monthlyEquivalent
-                guard item.currencyCode != defaultCurrency else { return sum + monthly }
-                guard let rates = cachedRates,
-                      let converted = rates.convert(monthly, from: item.currencyCode, to: defaultCurrency)
-                else { return sum + monthly }
-                return sum + converted
+            .map { item in
+                RecurringSpendProjection(
+                    date: item.nextChargeDate,
+                    amount: item.monthlyEquivalent,
+                    currencyCode: item.currencyCode
+                )
             }
+        rebuildMonthlyAggregation(snapshot: exchangeRateSnapshot)
+
+        if scheduleSnapshotIfNeeded,
+           exchangeRateSnapshot == nil,
+           !previouslyRequiredRates,
+           currentCalculationRequiresExchangeRates() {
+            aggregationRevision += 1
+        }
 
         let cats = Set(result.map(\.category))
         activeCategories = ItemCategory.allCases.filter { cats.contains($0) }
@@ -218,6 +260,23 @@ final class LibraryViewModel {
         } else {
             sections = [LibrarySection(id: "main", title: nil, items: result)]
         }
+    }
+
+    private func rebuildMonthlyAggregation(snapshot: ExchangeRateSnapshot?) {
+        filteredMonthlyAggregation = aggregateRecurringSpend.execute(
+            projections: filteredMonthlyProjections,
+            reportingCurrencyCode: defaultCurrency,
+            snapshot: snapshot,
+            range: Self.aggregationRange
+        )
+    }
+
+    private func currentCalculationRequiresExchangeRates() -> Bool {
+        aggregateRecurringSpend.requiresExchangeRates(
+            projections: filteredMonthlyProjections,
+            reportingCurrencyCode: defaultCurrency,
+            range: Self.aggregationRange
+        )
     }
 }
 
@@ -335,4 +394,3 @@ extension LibraryViewModel {
         }
     }
 }
-

@@ -1,202 +1,389 @@
-import Testing
 import Foundation
-import SwiftData
+import Observation
+import Testing
 @testable import Soren
 
-// MARK: - Library Total Calculation Tests (Adversarial)
-
-/// Focuses on the Library header total:
-///   • Currency conversion (the primary bug — USD items were previously added raw)
-///   • Status filtering (cancelled / paused must not contribute)
-///   • Billing-cycle normalisation (annual amounts use monthlyMultiplier)
-///   • Fallback behaviour when rates are unavailable
-
-@Suite("LibraryViewModel — Total Calculation")
+@Suite("Library currency aggregation")
 @MainActor
 struct LibraryTotalTests {
+    @MainActor
+    private final class InMemoryRecurringItemRepository: RecurringItemRepository {
+        private var items: [RecurringItem]
 
-    // MARK: - Fixtures
+        init(items: [RecurringItem]) {
+            self.items = items
+        }
 
-    private func makeVM(
-        rates: ExchangeRates = .preview
-    ) throws -> (LibraryViewModel, RepositoryContainer) {
-        let mc    = try SorenModelContainer.inMemory()
-        let repos = RepositoryContainer(context: mc.mainContext)
-        let vm    = LibraryViewModel(
-            repositories: repos,
-            exchangeRateProvider: StaticExchangeRateProvider(rates: rates),
-            searchDebounceDelay: .zero
-        )
-        return (vm, repos)
+        func fetchAll() throws -> [RecurringItem] { items }
+        func fetchActive() throws -> [RecurringItem] { items.filter { $0.status.countsInTotals } }
+        func fetchUpcoming(within days: Int, from date: Date) throws -> [RecurringItem] { [] }
+        func fetchByCategory(_ category: ItemCategory) throws -> [RecurringItem] {
+            items.filter { $0.category == category }
+        }
+        func fetch(id: UUID) throws -> RecurringItem? { items.first { $0.id == id } }
+        func save(_ item: RecurringItem) throws { items.append(item) }
+        func update(_ item: RecurringItem) throws {
+            guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
+            items[index] = item
+        }
+        func delete(id: UUID) throws { items.removeAll { $0.id == id } }
+        func saveAll(_ items: [RecurringItem]) throws { self.items.append(contentsOf: items) }
+        func deleteAll() throws { items.removeAll() }
     }
 
-    private func makeItem(
+    private enum RateProviderError: Error, Sendable {
+        case unavailable
+    }
+
+    private enum RateResponse: Sendable {
+        case success(ExchangeRateSnapshot)
+        case failure(RateProviderError)
+    }
+
+    private actor RecordingExchangeRateProvider: ExchangeRateProvider {
+        private var responses: [RateResponse]
+        private var requestCount = 0
+
+        init(responses: [RateResponse]) {
+            self.responses = responses
+        }
+
+        func latestSnapshot() async throws -> ExchangeRateSnapshot {
+            requestCount += 1
+            guard !responses.isEmpty else { throw RateProviderError.unavailable }
+
+            switch responses.removeFirst() {
+            case let .success(snapshot):
+                return snapshot
+            case let .failure(error):
+                throw error
+            }
+        }
+
+        func requests() -> Int { requestCount }
+    }
+
+    private struct PreferencesFixture {
+        let repository: UserPreferencesRepository
+        let defaults: UserDefaults
+        let suiteName: String
+
+        func save(currencyCode: String) {
+            repository.save(UserPreferences(
+                defaultCurrencyCode: currencyCode,
+                defaultChargeReminder: .threeDaysBefore,
+                chargeAlertDays: 3,
+                trialAlertDays: 3
+            ))
+        }
+
+        func cleanUp() {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+    }
+
+    private func preferences(currencyCode: String = "RUB") throws -> PreferencesFixture {
+        let suiteName = "LibraryTotalTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        let fixture = PreferencesFixture(
+            repository: UserPreferencesRepository(defaults: defaults),
+            defaults: defaults,
+            suiteName: suiteName
+        )
+        fixture.save(currencyCode: currencyCode)
+        return fixture
+    }
+
+    private func decimal(_ value: String) throws -> Decimal {
+        try #require(Decimal(string: value))
+    }
+
+    private func snapshot(
+        rubRate: Decimal = 80,
+        extraRates: [String: Decimal] = [:],
+        freshness: ExchangeRateFreshness = .fresh
+    ) -> ExchangeRateSnapshot {
+        let now = Date.now
+        var rates = extraRates
+        rates["RUB"] = rubRate
+        return ExchangeRateSnapshot(
+            exchangeRates: ExchangeRates(
+                base: "USD",
+                date: now.addingTimeInterval(-3_600),
+                rates: rates,
+                fetchedAt: now
+            ),
+            freshness: freshness
+        )
+    }
+
+    private func item(
         title: String,
         amount: Decimal,
-        currency: String,
+        currencyCode: String,
         cycle: BillingCycle = .monthly,
         status: ItemStatus = .active
     ) -> RecurringItem {
-        var item = RecurringItem(
+        RecurringItem(
             title: title,
             amount: amount,
-            currencyCode: currency,
+            currencyCode: currencyCode,
             billingCycle: cycle,
-            nextChargeDate: Calendar.current.date(byAdding: .day, value: 7, to: .now)!
+            nextChargeDate: .now,
+            status: status
         )
-        item.status = status
-        return item
     }
 
-    // MARK: - Single Currency (RUB)
-
-    @Test("All-RUB items sum without conversion")
-    func allRubItemsSumDirectly() async throws {
-        let (vm, repos) = try makeVM()
-        try repos.recurringItems.save(makeItem(title: "Boosty",    amount: 450, currency: "RUB"))
-        try repos.recurringItems.save(makeItem(title: "Кинопоиск", amount: 299, currency: "RUB"))
-        vm.load()
-        await Task.yield(); await Task.yield()
-
-        #expect(vm.filteredMonthlyTotal == 749)
+    private func viewModel(
+        items: [RecurringItem],
+        preferences: UserPreferencesRepository,
+        provider: RecordingExchangeRateProvider,
+        searchDebounceDelay: Duration = .zero
+    ) -> LibraryViewModel {
+        let repository = InMemoryRecurringItemRepository(items: items)
+        return LibraryViewModel(
+            getLibraryItems: GetLibraryItems(repository: repository),
+            deleteRecurringItem: DeleteRecurringItem(repository: repository),
+            preferences: preferences,
+            exchangeRateProvider: provider,
+            aggregateRecurringSpend: AggregateRecurringSpendUseCase(),
+            searchDebounceDelay: searchDebounceDelay
+        )
     }
 
-    // MARK: - Currency Conversion
-
-    @Test("USD item is converted to RUB — not added as raw dollar value")
-    func usdItemConvertsToRub() async throws {
-        // .preview rates: 1 USD = 87.5 RUB
-        let (vm, repos) = try makeVM()
-        try repos.recurringItems.save(makeItem(title: "Boosty",    amount: 450, currency: "RUB"))
-        try repos.recurringItems.save(makeItem(title: "X Premium", amount: 8,   currency: "USD"))
-        vm.load()
-        await Task.yield(); await Task.yield()
-
-        let usdInRub = Decimal(8) * Decimal(string: "87.5")!   // 700 RUB
-        let expected = Decimal(450) + usdInRub
-        #expect(vm.filteredMonthlyTotal == expected,
-                "8 USD at 87.5 = 700 RUB; expected total \(expected), got \(vm.filteredMonthlyTotal)")
+    private func refresh(_ viewModel: LibraryViewModel) async {
+        await viewModel.refreshCurrencyAggregation(revision: viewModel.aggregationRevision)
     }
 
-    @Test("Total is never polluted by raw USD value — $8/mo is not ₽8")
-    func totalNotPolludedByRawDollarAmount() async throws {
-        let (vm, repos) = try makeVM()
-        try repos.recurringItems.save(makeItem(title: "X Premium", amount: 8, currency: "USD"))
-        vm.load()
-        await Task.yield(); await Task.yield()
-
-        // $8 → ~₽700 at preview rate. The old bug would produce total == 8.
-        #expect(vm.filteredMonthlyTotal != 8,
-                "Total should be the RUB equivalent (~700), not the raw USD integer 8")
-        #expect(vm.filteredMonthlyTotal > 600,
-                "8 USD at any reasonable RUB rate should exceed ₽600")
+    private func waitForFilteredItemsChange(
+        in viewModel: LibraryViewModel,
+        action: () -> Void
+    ) async {
+        await withCheckedContinuation { continuation in
+            withObservationTracking {
+                _ = viewModel.filteredItems
+            } onChange: {
+                continuation.resume()
+            }
+            action()
+        }
     }
 
-    @Test("Three currencies all convert to RUB target")
-    func threeCurrenciesAllConvert() async throws {
-        // .preview: USD=87.5, EUR=0.92, TRY=38.2 (all relative to USD base)
-        let (vm, repos) = try makeVM()
-        try repos.recurringItems.save(makeItem(title: "RUB item", amount: 500, currency: "RUB"))
-        try repos.recurringItems.save(makeItem(title: "USD item", amount: 10,  currency: "USD"))
-        try repos.recurringItems.save(makeItem(title: "TRY item", amount: 100, currency: "TRY"))
+    @Test("Mixed currencies are converted before the current filtered subtotal")
+    func mixedCurrenciesConvertBeforeAggregation() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let usd = try decimal("12.99")
+        let rubRate = try decimal("76.76")
+        let provider = RecordingExchangeRateProvider(responses: [
+            .success(snapshot(rubRate: rubRate))
+        ])
+        let vm = viewModel(
+            items: [
+                item(title: "IVI", amount: 299, currencyCode: "RUB"),
+                item(title: "Apple TV+", amount: usd, currencyCode: "USD")
+            ],
+            preferences: fixture.repository,
+            provider: provider
+        )
+
         vm.load()
-        await Task.yield(); await Task.yield()
+        guard case let .partial(initialTotal, missingCodes, _) = vm.filteredMonthlyAggregation else {
+            Issue.record("Expected truthful partial subtotal before the snapshot arrives")
+            return
+        }
+        #expect(initialTotal.amount == 299)
+        #expect(missingCodes == ["USD"])
 
-        // USD→RUB: 10 * 87.5 / 1 = 875
-        let usdInRub  = Decimal(10)  * Decimal(string: "87.5")!
-        // TRY→RUB: 100 * 87.5 / 38.2
-        let tryInRub  = Decimal(100) * Decimal(string: "87.5")! / Decimal(string: "38.2")!
-        let expected  = Decimal(500) + usdInRub + tryInRub
+        await refresh(vm)
 
-        #expect(vm.filteredMonthlyTotal == expected)
+        #expect(vm.filteredMonthlyAggregation?.total?.amount == Decimal(299) + usd * rubRate)
+        #expect(vm.filteredMonthlyAggregation?.total?.currencyCode == "RUB")
+        #expect(vm.filteredMonthlyAggregation?.isComplete == true)
+        #expect(vm.filteredItems.map(\.currencyCode) == ["RUB", "USD"])
     }
 
-    // MARK: - Rates Unavailable (Fallback)
+    @Test("Unavailable rates never create a raw mixed-currency total")
+    func unavailableRatesNeverCreateRawMixedTotal() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let provider = RecordingExchangeRateProvider(responses: [.failure(.unavailable)])
+        let vm = viewModel(
+            items: [
+                item(title: "RUB", amount: 500, currencyCode: "RUB"),
+                item(title: "USD", amount: 10, currencyCode: "USD")
+            ],
+            preferences: fixture.repository,
+            provider: provider
+        )
 
-    @Test("When no rates available, raw sum is used — consistent with Dashboard fallback")
-    func noRatesFallsBackToRawSum() async throws {
-        let (vm, repos) = try makeVM(rates: .empty)
-        try repos.recurringItems.save(makeItem(title: "RUB", amount: 100, currency: "RUB"))
-        try repos.recurringItems.save(makeItem(title: "USD", amount: 10,  currency: "USD"))
         vm.load()
-        await Task.yield(); await Task.yield()
+        await refresh(vm)
 
-        // Fallback: rates.convert returns nil → raw amounts used
-        // 100 + 10 = 110 (meaningless but deterministic, not 0)
-        #expect(vm.filteredMonthlyTotal == 110)
+        guard case let .partial(total, missingCodes, _) = vm.filteredMonthlyAggregation else {
+            Issue.record("Expected partial subtotal when only the foreign rate is unavailable")
+            return
+        }
+        #expect(total.amount == 500)
+        #expect(total.amount != 510)
+        #expect(missingCodes == ["USD"])
     }
 
-    // MARK: - Billing Cycle Normalisation
+    @Test("Foreign-only subtotal is unavailable rather than a fake zero")
+    func foreignOnlySubtotalIsUnavailable() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let provider = RecordingExchangeRateProvider(responses: [.failure(.unavailable)])
+        let vm = viewModel(
+            items: [item(title: "Spotify", amount: 12, currencyCode: "USD")],
+            preferences: fixture.repository,
+            provider: provider
+        )
 
-    @Test("Annual item contributes its monthly equivalent, not full amount")
-    func annualItemUsesMonthlyEquivalent() async throws {
-        let (vm, repos) = try makeVM()
-        // 1200 RUB/year × 0.0833 ≈ 99.96 RUB/month
-        try repos.recurringItems.save(makeItem(title: "Annual", amount: 1200, currency: "RUB", cycle: .annual))
         vm.load()
-        await Task.yield(); await Task.yield()
+        await refresh(vm)
 
-        let expected = Decimal(1200) * BillingCycle.annual.monthlyMultiplier
-        #expect(vm.filteredMonthlyTotal == expected)
-        #expect(vm.filteredMonthlyTotal < 200,
-                "Annual ₽1200 = ~₽100/mo; total must not be the full ₽1200")
+        guard case let .unavailable(reportingCode, missingCodes, reason, _) = vm.filteredMonthlyAggregation else {
+            Issue.record("Expected unavailable state without a convertible amount")
+            return
+        }
+        #expect(reportingCode == "RUB")
+        #expect(missingCodes == ["USD"])
+        #expect(reason == .noConvertibleAmounts)
+        #expect(vm.filteredMonthlyAggregation?.total == nil)
     }
 
-    // MARK: - Status Filtering
+    @Test("Same-currency subtotal does not request exchange rates")
+    func sameCurrencySubtotalDoesNotRequestRates() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let provider = RecordingExchangeRateProvider(responses: [])
+        let vm = viewModel(
+            items: [
+                item(title: "IVI", amount: 299, currencyCode: "RUB"),
+                item(title: "KION", amount: 199, currencyCode: "RUB")
+            ],
+            preferences: fixture.repository,
+            provider: provider
+        )
 
-    @Test("Cancelled items are excluded from total")
-    func cancelledItemsExcluded() async throws {
-        let (vm, repos) = try makeVM()
-        try repos.recurringItems.save(makeItem(title: "Active",    amount: 500,  currency: "RUB"))
-        try repos.recurringItems.save(makeItem(title: "Cancelled", amount: 1000, currency: "RUB", status: .cancelled))
         vm.load()
-        await Task.yield(); await Task.yield()
+        await refresh(vm)
 
-        #expect(vm.filteredMonthlyTotal == 500)
+        #expect(vm.filteredMonthlyAggregation?.total?.amount == 498)
+        #expect(await provider.requests() == 0)
     }
 
-    @Test("Paused items are excluded from total")
-    func pausedItemsExcluded() async throws {
-        let (vm, repos) = try makeVM()
-        try repos.recurringItems.save(makeItem(title: "Active", amount: 300, currency: "RUB"))
-        try repos.recurringItems.save(makeItem(title: "Paused", amount: 900, currency: "RUB", status: .paused))
-        vm.load()
-        await Task.yield(); await Task.yield()
+    @Test("Annual subscriptions retain monthly normalization before conversion")
+    func annualSubscriptionUsesMonthlyNormalization() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let provider = RecordingExchangeRateProvider(responses: [])
+        let vm = viewModel(
+            items: [item(title: "Annual", amount: 1_200, currencyCode: "RUB", cycle: .annual)],
+            preferences: fixture.repository,
+            provider: provider
+        )
 
-        #expect(vm.filteredMonthlyTotal == 300)
+        vm.load()
+
+        #expect(vm.filteredMonthlyAggregation?.total?.amount == Decimal(1_200) * BillingCycle.annual.monthlyMultiplier)
     }
 
-    @Test("Trial items ARE included in total")
-    func trialItemsIncluded() async throws {
-        let (vm, repos) = try makeVM()
-        try repos.recurringItems.save(makeItem(title: "Active", amount: 400, currency: "RUB"))
-        try repos.recurringItems.save(makeItem(title: "Trial",  amount: 200, currency: "RUB", status: .trial))
-        vm.load()
-        await Task.yield(); await Task.yield()
+    @Test("Existing status contract excludes cancelled paused and archived items")
+    func existingStatusContractIsPreserved() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let provider = RecordingExchangeRateProvider(responses: [])
+        let vm = viewModel(
+            items: [
+                item(title: "Active", amount: 300, currencyCode: "RUB"),
+                item(title: "Trial", amount: 200, currencyCode: "RUB", status: .trial),
+                item(title: "Cancelled", amount: 900, currencyCode: "RUB", status: .cancelled),
+                item(title: "Paused", amount: 800, currencyCode: "RUB", status: .paused),
+                item(title: "Archived", amount: 700, currencyCode: "RUB", status: .archived)
+            ],
+            preferences: fixture.repository,
+            provider: provider
+        )
 
-        #expect(vm.filteredMonthlyTotal == 600)
+        vm.load()
+
+        #expect(vm.filteredMonthlyAggregation?.total?.amount == 500)
     }
 
-    @Test("Archived items are excluded from total")
-    func archivedItemsExcluded() async throws {
-        let (vm, repos) = try makeVM()
-        try repos.recurringItems.save(makeItem(title: "Active",   amount: 300, currency: "RUB"))
-        try repos.recurringItems.save(makeItem(title: "Archived", amount: 900, currency: "RUB", status: .archived))
-        vm.load()
-        await Task.yield(); await Task.yield()
+    @Test("Search subtotal follows existing filtered-result semantics without another request")
+    func searchSubtotalUsesCurrentResultAndReusesSnapshot() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let rubRate = try decimal("80")
+        let provider = RecordingExchangeRateProvider(responses: [
+            .success(snapshot(rubRate: rubRate))
+        ])
+        let vm = viewModel(
+            items: [
+                item(title: "Spotify", amount: 10, currencyCode: "USD"),
+                item(title: "IVI", amount: 299, currencyCode: "RUB")
+            ],
+            preferences: fixture.repository,
+            provider: provider,
+            searchDebounceDelay: .milliseconds(10)
+        )
 
-        #expect(vm.filteredMonthlyTotal == 300)
+        vm.load()
+        await refresh(vm)
+        let loadedRevision = vm.aggregationRevision
+        await waitForFilteredItemsChange(in: vm) {
+            vm.searchText = "IVI"
+            vm.searchText = "Spot"
+            vm.searchText = "Spotify"
+        }
+
+        #expect(vm.searchText == "Spotify")
+        #expect(vm.filteredItems.map(\.title) == ["Spotify"])
+        #expect(vm.filteredMonthlyAggregation?.total?.amount == Decimal(10) * rubRate)
+        #expect(vm.aggregationRevision == loadedRevision)
+        await refresh(vm)
+        #expect(await provider.requests() == 1)
     }
 
-    // MARK: - Empty State
+    @Test("One successful snapshot is shared by the current Library revision")
+    func successfulSnapshotIsLoadedOncePerRevision() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let provider = RecordingExchangeRateProvider(responses: [
+            .success(snapshot())
+        ])
+        let vm = viewModel(
+            items: [item(title: "Spotify", amount: 10, currencyCode: "USD")],
+            preferences: fixture.repository,
+            provider: provider
+        )
 
-    @Test("Empty library produces zero total")
-    func emptyLibraryZeroTotal() async throws {
-        let (vm, repos) = try makeVM()
-        _ = repos  // empty
         vm.load()
-        await Task.yield(); await Task.yield()
+        await refresh(vm)
+        await refresh(vm)
 
-        #expect(vm.filteredMonthlyTotal == 0)
+        #expect(await provider.requests() == 1)
+    }
+
+    @Test("Stale cached snapshots remain visible with stale metadata")
+    func staleSnapshotIsRepresentedAsStale() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let age: TimeInterval = 7 * 3_600
+        let provider = RecordingExchangeRateProvider(responses: [
+            .success(snapshot(freshness: .stale(age: age)))
+        ])
+        let vm = viewModel(
+            items: [item(title: "Spotify", amount: 10, currencyCode: "USD")],
+            preferences: fixture.repository,
+            provider: provider
+        )
+
+        vm.load()
+        await refresh(vm)
+
+        #expect(vm.filteredMonthlyAggregation?.rateMetadata?.freshness == .stale(age: age))
     }
 }
