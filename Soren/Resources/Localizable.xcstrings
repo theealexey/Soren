@@ -4634,6 +4634,16 @@
         }
       }
     },
+    "Прогноз недоступен" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forecast unavailable"
+          }
+        }
+      }
+    },
     "Прогноз на 6 месяцев" : {
       "localizations" : {
         "en" : {
@@ -5495,6 +5505,26 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "частичный прогноз" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "partial forecast"
+          }
+        }
+      }
+    },
+    "Частично" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partial"
           }
         }
       }

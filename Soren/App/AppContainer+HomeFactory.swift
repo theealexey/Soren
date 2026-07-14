@@ -10,7 +10,9 @@ extension AppContainer {
         HomeViewModel(
             getUpcomingCharges: GetUpcomingCharges(repository: repositories.recurringItems),
             getActiveTrials: GetActiveTrials(repository: repositories.recurringItems),
-            preferences: preferences
+            preferences: preferences,
+            aggregateRecurringSpend: AggregateRecurringSpendUseCase(),
+            exchangeRateProvider: exchangeRateProvider
         )
     }
 }

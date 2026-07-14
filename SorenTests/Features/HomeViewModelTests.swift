@@ -23,7 +23,8 @@ struct HomeViewModelTests {
         HomeViewModel(
             getUpcomingCharges: GetUpcomingCharges(repository: repo),
             getActiveTrials: GetActiveTrials(repository: repo),
-            preferences: UserPreferencesRepository()
+            preferences: UserPreferencesRepository(),
+            exchangeRateProvider: StaticExchangeRateProvider()
         )
     }
 

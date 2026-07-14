@@ -8,6 +8,7 @@ import Foundation
 struct HomeScreenState {
     let monthLabel: String
     let forecastLabel: String
+    let forecastAggregation: RecurringSpendAggregationResult?
     let landscapePoints: [BillingLandscapePoint]
     let callout: NextPaymentCalloutState
     let calloutNavigationItem: RecurringItem?

@@ -28,14 +28,18 @@ struct HomeView: View {
                 LoadingStateView()
             }
         }
-        .task {
-            guard viewModel == nil else { return }
-            let vm = container.makeHomeViewModel()
-            vm.load()
-            viewModel = vm
-        }
-        .onChange(of: container.itemsVersion) { _, _ in
-            viewModel?.load(forceReload: true)
+        .task(id: container.itemsVersion) {
+            let vm: HomeViewModel
+            if let existing = viewModel {
+                existing.load(forceReload: true)
+                vm = existing
+            } else {
+                let created = container.makeHomeViewModel()
+                created.load()
+                viewModel = created
+                vm = created
+            }
+            await vm.refreshCurrencyAggregation()
         }
     }
 
