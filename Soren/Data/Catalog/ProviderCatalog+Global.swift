@@ -17,7 +17,7 @@ extension ProviderCatalog {
         .init(id: "netflix", displayName: "Netflix", aliases: ["нетфликс"],
               category: .video, suggestedCurrencyCode: "USD", region: .global,
               tags: ["streaming", "popular"], managementURL: URL(string: "https://www.netflix.com/account"),
-              brandColorHex: "#E50914", clearbitDomain: "netflix.com",
+              brandColorHex: "#E50914", companyLogoFallbackDomain: "netflix.com",
               plans: [
                   // US prices as of March 2026
                   .init(id: "standard_ads", name: "Standard с рекламой", amount: 8.99, billingCycle: .monthly, features: "1080p, 2 экрана"),
@@ -28,7 +28,7 @@ extension ProviderCatalog {
         .init(id: "youtube_premium", displayName: "YouTube Premium", aliases: ["ютуб", "youtube"],
               category: .video, suggestedCurrencyCode: "USD", region: .global,
               tags: ["streaming", "ad-free", "popular"],
-              brandColorHex: "#FF0000", clearbitDomain: "youtube.com",
+              brandColorHex: "#FF0000", companyLogoFallbackDomain: "youtube.com",
               plans: [
                   // US prices raised April 2026
                   .init(id: "individual", name: "Individual", amount: 15.99, billingCycle: .monthly),
@@ -40,7 +40,7 @@ extension ProviderCatalog {
         .init(id: "disney_plus", displayName: "Disney+", aliases: ["дисней"],
               category: .video, suggestedCurrencyCode: "USD", region: .global,
               tags: ["streaming"],
-              brandColorHex: "#113CCF", clearbitDomain: "disneyplus.com",
+              brandColorHex: "#113CCF", companyLogoFallbackDomain: "disneyplus.com",
               plans: [
                   // US simplified to 2 tiers as of late 2025; both include 4K HDR
                   .init(id: "with_ads", name: "С рекламой", amount: 11.99, billingCycle: .monthly, features: "4K HDR, реклама"),
@@ -51,7 +51,7 @@ extension ProviderCatalog {
         .init(id: "hbo_max", displayName: "Max (HBO)", aliases: ["hbo", "max"],
               category: .video, suggestedCurrencyCode: "USD", region: .global,
               tags: ["streaming"],
-              brandColorHex: "#002BE7", clearbitDomain: "max.com",
+              brandColorHex: "#002BE7", companyLogoFallbackDomain: "max.com",
               plans: [
                   // US prices as of 2026
                   .init(id: "with_ads", name: "С рекламой", amount: 10.99, billingCycle: .monthly, features: "FHD, 2 экрана"),
@@ -65,7 +65,7 @@ extension ProviderCatalog {
         .init(id: "apple_tv_plus", displayName: "Apple TV+", aliases: ["apple tv", "эпл тв"],
               category: .video, suggestedCurrencyCode: "USD", region: .global,
               tags: ["streaming", "apple"],
-              brandColorHex: "#000000", clearbitDomain: "apple.com",
+              brandColorHex: "#000000",
               plans: [
                   // Price raised to $12.99/month in August 2025
                   .init(id: "monthly", name: "Monthly", amount: 12.99, billingCycle: .monthly),
@@ -75,7 +75,7 @@ extension ProviderCatalog {
         .init(id: "amazon_prime_video", displayName: "Amazon Prime Video", aliases: ["амазон", "prime video"],
               category: .video, suggestedCurrencyCode: "USD", region: .global,
               tags: ["streaming", "amazon"],
-              brandColorHex: "#00A8E1", clearbitDomain: "primevideo.com",
+              brandColorHex: "#00A8E1", companyLogoFallbackDomain: "primevideo.com",
               plans: [
                   .init(id: "monthly", name: "Monthly", amount: 8.99, billingCycle: .monthly, features: "Только видео"),
               ]),
@@ -83,7 +83,7 @@ extension ProviderCatalog {
         .init(id: "crunchyroll", displayName: "Crunchyroll", aliases: ["кранчиролл", "аниме"],
               category: .video, suggestedCurrencyCode: "USD", region: .global,
               tags: ["streaming", "anime"],
-              brandColorHex: "#F47521", clearbitDomain: "crunchyroll.com",
+              brandColorHex: "#F47521", companyLogoFallbackDomain: "crunchyroll.com",
               plans: [
                   .init(id: "fan", name: "Fan", amount: 7.99, billingCycle: .monthly, features: "1 поток, без рекламы"),
                   .init(id: "mega_fan", name: "Mega Fan", amount: 9.99, billingCycle: .monthly, features: "4 потока, скачивание"),
@@ -93,7 +93,7 @@ extension ProviderCatalog {
         .init(id: "mubi", displayName: "MUBI", aliases: ["муби"],
               category: .video, suggestedCurrencyCode: "USD", region: .global,
               tags: ["streaming", "arthouse"],
-              brandColorHex: "#001B38", clearbitDomain: "mubi.com",
+              brandColorHex: "#001B38", companyLogoFallbackDomain: "mubi.com",
               plans: [
                   .init(id: "monthly", name: "Monthly", amount: 14.99, billingCycle: .monthly),
                   .init(id: "annual", name: "Annual", amount: 107.88, billingCycle: .annual, features: "Экономия ~$72"),
@@ -103,7 +103,7 @@ extension ProviderCatalog {
         .init(id: "spotify", displayName: "Spotify", aliases: ["спотифай"],
               category: .music, suggestedCurrencyCode: "USD", region: .global,
               tags: ["music", "streaming", "popular"],
-              brandColorHex: "#1DB954", clearbitDomain: "spotify.com",
+              brandColorHex: "#1DB954", companyLogoFallbackDomain: "spotify.com",
               plans: [
                   // US prices raised January 2026
                   .init(id: "individual", name: "Individual", amount: 12.99, billingCycle: .monthly),
@@ -115,7 +115,8 @@ extension ProviderCatalog {
         .init(id: "apple_music", displayName: "Apple Music", aliases: ["эпл мьюзик"],
               category: .music, suggestedCurrencyCode: "USD", region: .global,
               tags: ["music", "apple"],
-              brandColorHex: "#FC3C44", clearbitDomain: "apple.com",
+              serviceLogoSourceURL: URL(string: "https://music.apple.com"),
+              brandColorHex: "#FC3C44",
               plans: [
                   .init(id: "individual", name: "Individual", amount: 10.99, billingCycle: .monthly),
                   .init(id: "family", name: "Family", amount: 16.99, billingCycle: .monthly, features: "До 6 участников"),
@@ -125,7 +126,7 @@ extension ProviderCatalog {
         .init(id: "tidal", displayName: "TIDAL", aliases: ["тайдал"],
               category: .music, suggestedCurrencyCode: "USD", region: .global,
               tags: ["music", "hifi"],
-              brandColorHex: "#000000", clearbitDomain: "tidal.com",
+              brandColorHex: "#000000", companyLogoFallbackDomain: "tidal.com",
               plans: [
                   // HiFi and HiFi+ merged into a single plan (April 2024)
                   .init(id: "individual", name: "Individual", amount: 10.99, billingCycle: .monthly, features: "Lossless, HiRes 24-bit, Dolby Atmos"),
@@ -135,7 +136,7 @@ extension ProviderCatalog {
         .init(id: "deezer", displayName: "Deezer", aliases: ["дизер"],
               category: .music, suggestedCurrencyCode: "USD", region: .global,
               tags: ["music"],
-              brandColorHex: "#A238FF", clearbitDomain: "deezer.com",
+              brandColorHex: "#A238FF", companyLogoFallbackDomain: "deezer.com",
               plans: [
                   .init(id: "individual", name: "Individual", amount: 10.99, billingCycle: .monthly),
                   .init(id: "individual_annual", name: "Individual (год)", amount: 107.99, billingCycle: .annual, features: "Экономия ~$24"),
@@ -146,7 +147,7 @@ extension ProviderCatalog {
         .init(id: "soundcloud_go", displayName: "SoundCloud Go+", aliases: ["саундклауд"],
               category: .music, suggestedCurrencyCode: "USD", region: .global,
               tags: ["music"],
-              brandColorHex: "#FF5500", clearbitDomain: "soundcloud.com",
+              brandColorHex: "#FF5500", companyLogoFallbackDomain: "soundcloud.com",
               plans: [
                   .init(id: "go", name: "Go", amount: 5.99, billingCycle: .monthly, features: "Без рекламы"),
                   .init(id: "go_plus", name: "Go+", amount: 9.99, billingCycle: .monthly, features: "Оффлайн, Hi-Q аудио"),
@@ -155,7 +156,7 @@ extension ProviderCatalog {
         .init(id: "qobuz", displayName: "Qobuz", aliases: ["кобуз"],
               category: .music, suggestedCurrencyCode: "USD", region: .global,
               tags: ["music", "hifi", "lossless"],
-              brandColorHex: "#000000", clearbitDomain: "qobuz.com",
+              brandColorHex: "#000000", companyLogoFallbackDomain: "qobuz.com",
               plans: [
                   .init(id: "studio", name: "Studio", amount: 12.99, billingCycle: .monthly, features: "Hi-Res 24-bit, без рекламы"),
                   .init(id: "studio_annual", name: "Studio (год)", amount: 129.99, billingCycle: .annual, features: "Hi-Res 24-bit, без рекламы"),
@@ -165,7 +166,8 @@ extension ProviderCatalog {
         .init(id: "icloud", displayName: "iCloud+", aliases: ["айклауд", "icloud"],
               category: .cloud, suggestedCurrencyCode: "USD", region: .global,
               tags: ["apple", "storage", "popular"],
-              brandColorHex: "#3693F5", clearbitDomain: "apple.com",
+              serviceLogoSourceURL: URL(string: "https://www.icloud.com"),
+              brandColorHex: "#3693F5",
               plans: [
                   .init(id: "50gb", name: "50 ГБ", amount: 0.99, billingCycle: .monthly),
                   .init(id: "200gb", name: "200 ГБ", amount: 2.99, billingCycle: .monthly),
@@ -177,7 +179,7 @@ extension ProviderCatalog {
         .init(id: "google_one", displayName: "Google One", aliases: ["гугл один", "google drive"],
               category: .cloud, suggestedCurrencyCode: "USD", region: .global,
               tags: ["google", "storage"],
-              brandColorHex: "#4285F4", clearbitDomain: "google.com",
+              brandColorHex: "#4285F4", companyLogoFallbackDomain: "google.com",
               plans: [
                   .init(id: "100gb", name: "100 ГБ", amount: 1.99, billingCycle: .monthly),
                   .init(id: "100gb_annual", name: "100 ГБ (год)", amount: 19.99, billingCycle: .annual, features: "Экономия ~$4"),
@@ -192,7 +194,7 @@ extension ProviderCatalog {
         .init(id: "dropbox", displayName: "Dropbox", aliases: ["дропбокс"],
               category: .cloud, suggestedCurrencyCode: "USD", region: .global,
               tags: ["storage"],
-              brandColorHex: "#0061FF", clearbitDomain: "dropbox.com",
+              brandColorHex: "#0061FF", companyLogoFallbackDomain: "dropbox.com",
               plans: [
                   .init(id: "plus", name: "Plus", amount: 11.99, billingCycle: .monthly, features: "2 ТБ, 1 пользователь"),
                   .init(id: "plus_annual", name: "Plus (год)", amount: 119.88, billingCycle: .annual, features: "2 ТБ, 1 пользователь"),
@@ -202,7 +204,7 @@ extension ProviderCatalog {
         .init(id: "onedrive", displayName: "Microsoft OneDrive", aliases: ["уандрайв"],
               category: .cloud, suggestedCurrencyCode: "USD", region: .global,
               tags: ["microsoft", "storage"],
-              brandColorHex: "#0078D4", clearbitDomain: "microsoft.com",
+              brandColorHex: "#0078D4",
               plans: [
                   .init(id: "100gb", name: "100 ГБ", amount: 1.99, billingCycle: .monthly),
                   .init(id: "m365_personal", name: "Microsoft 365 Personal", amount: 6.99, billingCycle: .monthly, features: "1 ТБ + Office-приложения"),
@@ -213,7 +215,7 @@ extension ProviderCatalog {
         .init(id: "chatgpt_plus", displayName: "ChatGPT Plus", aliases: ["чатгпт", "openai", "gpt"],
               category: .aiTools, suggestedCurrencyCode: "USD", region: .global,
               tags: ["ai", "popular"],
-              brandColorHex: "#10A37F", clearbitDomain: "openai.com",
+              brandColorHex: "#10A37F", companyLogoFallbackDomain: "openai.com",
               plans: [
                   // Go ($8) and Pro-100 ($100) added in 2026
                   .init(id: "go", name: "Go", amount: 8, billingCycle: .monthly, features: "Базовый доступ к моделям"),
@@ -226,7 +228,7 @@ extension ProviderCatalog {
         .init(id: "claude_pro", displayName: "Claude Pro", aliases: ["клод", "anthropic"],
               category: .aiTools, suggestedCurrencyCode: "USD", region: .global,
               tags: ["ai"],
-              brandColorHex: "#D97757", clearbitDomain: "anthropic.com",
+              brandColorHex: "#D97757", companyLogoFallbackDomain: "anthropic.com",
               plans: [
                   .init(id: "pro", name: "Pro", amount: 20, billingCycle: .monthly),
                   .init(id: "max_5x", name: "Max (5×)", amount: 100, billingCycle: .monthly, features: "5× лимиты Pro, приоритет"),
@@ -236,7 +238,7 @@ extension ProviderCatalog {
         .init(id: "midjourney", displayName: "Midjourney", aliases: ["миджорни"],
               category: .aiTools, suggestedCurrencyCode: "USD", region: .global,
               tags: ["ai", "image"],
-              brandColorHex: "#000000", clearbitDomain: "midjourney.com",
+              brandColorHex: "#000000", companyLogoFallbackDomain: "midjourney.com",
               plans: [
                   .init(id: "basic", name: "Basic", amount: 10, billingCycle: .monthly, features: "~200 изображений/мес"),
                   .init(id: "standard", name: "Standard", amount: 30, billingCycle: .monthly, features: "15 ч. GPU, безлимит (relax)"),
@@ -247,7 +249,7 @@ extension ProviderCatalog {
         .init(id: "github_copilot", displayName: "GitHub Copilot", aliases: ["копайлот", "copilot"],
               category: .aiTools, suggestedCurrencyCode: "USD", region: .global,
               tags: ["ai", "dev"],
-              brandColorHex: "#000000", clearbitDomain: "github.com",
+              brandColorHex: "#000000", companyLogoFallbackDomain: "github.com",
               plans: [
                   // Copilot Pro+ ($39/mo) added 2025; annual Copilot Pro = $100/year
                   .init(id: "individual", name: "Copilot Pro", amount: 10, billingCycle: .monthly),
@@ -259,7 +261,7 @@ extension ProviderCatalog {
         .init(id: "cursor", displayName: "Cursor", aliases: ["курсор"],
               category: .aiTools, suggestedCurrencyCode: "USD", region: .global,
               tags: ["ai", "dev"],
-              brandColorHex: "#000000", clearbitDomain: "cursor.com",
+              brandColorHex: "#000000", companyLogoFallbackDomain: "cursor.com",
               plans: [
                   .init(id: "pro", name: "Pro", amount: 20, billingCycle: .monthly, features: "500 быстрых запросов/мес"),
                   .init(id: "business", name: "Business", amount: 40, billingCycle: .monthly, features: "Privacy mode, SSO, аудит"),
@@ -268,7 +270,7 @@ extension ProviderCatalog {
         .init(id: "perplexity", displayName: "Perplexity Pro", aliases: ["перплексити"],
               category: .aiTools, suggestedCurrencyCode: "USD", region: .global,
               tags: ["ai", "search"],
-              brandColorHex: "#20808D", clearbitDomain: "perplexity.ai",
+              brandColorHex: "#20808D", companyLogoFallbackDomain: "perplexity.ai",
               plans: [
                   .init(id: "pro", name: "Pro", amount: 20, billingCycle: .monthly, features: "GPT-4o, Claude, безлимит поиска"),
               ]),
@@ -276,7 +278,7 @@ extension ProviderCatalog {
         .init(id: "notion_ai", displayName: "Notion AI", aliases: ["ноушен"],
               category: .aiTools, suggestedCurrencyCode: "USD", region: .global,
               tags: ["ai", "productivity"],
-              brandColorHex: "#000000", clearbitDomain: "notion.so",
+              brandColorHex: "#000000",
               plans: [
                   .init(id: "ai_addon", name: "AI Add-on", amount: 10, billingCycle: .monthly, features: "На одного участника"),
               ]),
@@ -285,7 +287,7 @@ extension ProviderCatalog {
         .init(id: "notion", displayName: "Notion", aliases: ["ноушен"],
               category: .productivity, suggestedCurrencyCode: "USD", region: .global,
               tags: ["notes", "workspace"],
-              brandColorHex: "#000000", clearbitDomain: "notion.so",
+              brandColorHex: "#000000", companyLogoFallbackDomain: "notion.so",
               plans: [
                   .init(id: "plus", name: "Plus", amount: 10, billingCycle: .monthly, features: "Безлимитные страницы и блоки"),
                   .init(id: "business", name: "Business", amount: 18, billingCycle: .monthly, features: "SAML SSO, экспорт PDF"),
@@ -294,17 +296,17 @@ extension ProviderCatalog {
         .init(id: "figma", displayName: "Figma", aliases: ["фигма"],
               category: .productivity, suggestedCurrencyCode: "USD", region: .global,
               tags: ["design"],
-              brandColorHex: "#F24E1E", clearbitDomain: "figma.com"),
+              brandColorHex: "#F24E1E", companyLogoFallbackDomain: "figma.com"),
 
         .init(id: "linear", displayName: "Linear", aliases: ["линеар"],
               category: .productivity, suggestedCurrencyCode: "USD", region: .global,
               tags: ["project-management"],
-              brandColorHex: "#5E6AD2", clearbitDomain: "linear.app"),
+              brandColorHex: "#5E6AD2", companyLogoFallbackDomain: "linear.app"),
 
         .init(id: "slack", displayName: "Slack", aliases: ["слак"],
               category: .productivity, suggestedCurrencyCode: "USD", region: .global,
               tags: ["communication"],
-              brandColorHex: "#4A154B", clearbitDomain: "slack.com",
+              brandColorHex: "#4A154B", companyLogoFallbackDomain: "slack.com",
               plans: [
                   .init(id: "pro", name: "Pro", amount: 8.75, billingCycle: .monthly, features: "Полная история, голосовые каналы"),
                   .init(id: "business_plus", name: "Business+", amount: 15, billingCycle: .monthly, features: "SAML SSO, 24/7 поддержка"),
@@ -313,7 +315,7 @@ extension ProviderCatalog {
         .init(id: "zoom", displayName: "Zoom", aliases: ["зум"],
               category: .productivity, suggestedCurrencyCode: "USD", region: .global,
               tags: ["communication", "video"],
-              brandColorHex: "#0B5CFF", clearbitDomain: "zoom.us",
+              brandColorHex: "#0B5CFF", companyLogoFallbackDomain: "zoom.us",
               plans: [
                   .init(id: "pro", name: "Pro", amount: 14.99, billingCycle: .monthly, features: "30 ч. встречи, 1 ГБ облако"),
                   .init(id: "business", name: "Business", amount: 21.99, billingCycle: .monthly, features: "До 300 участников, транскрипция"),
@@ -322,7 +324,8 @@ extension ProviderCatalog {
         .init(id: "microsoft_365", displayName: "Microsoft 365", aliases: ["office", "office 365", "ms 365"],
               category: .productivity, suggestedCurrencyCode: "USD", region: .global,
               tags: ["office", "microsoft"],
-              brandColorHex: "#D83B01", clearbitDomain: "microsoft.com",
+              serviceLogoSourceURL: URL(string: "https://www.microsoft365.com"),
+              brandColorHex: "#D83B01",
               plans: [
                   .init(id: "personal", name: "Personal", amount: 6.99, billingCycle: .monthly, features: "1 ТБ, Office для 1 чел."),
                   .init(id: "personal_annual", name: "Personal (год)", amount: 99.99, billingCycle: .annual, features: "1 ТБ, Office для 1 чел."),
@@ -333,7 +336,7 @@ extension ProviderCatalog {
         .init(id: "1password", displayName: "1Password", aliases: ["ванпассворд"],
               category: .productivity, suggestedCurrencyCode: "USD", region: .global,
               tags: ["security", "passwords"],
-              brandColorHex: "#0572EC", clearbitDomain: "1password.com",
+              brandColorHex: "#0572EC", companyLogoFallbackDomain: "1password.com",
               plans: [
                   // Prices raised March 27, 2026
                   .init(id: "individual", name: "Individual", amount: 3.99, billingCycle: .monthly),
@@ -343,7 +346,7 @@ extension ProviderCatalog {
         .init(id: "canva", displayName: "Canva Pro", aliases: ["канва"],
               category: .productivity, suggestedCurrencyCode: "USD", region: .global,
               tags: ["design"],
-              brandColorHex: "#00C4CC", clearbitDomain: "canva.com",
+              brandColorHex: "#00C4CC", companyLogoFallbackDomain: "canva.com",
               plans: [
                   .init(id: "pro", name: "Pro", amount: 12.99, billingCycle: .monthly, features: "100 ГБ, 420K шаблонов, бренд-кит"),
                   .init(id: "teams", name: "Teams", amount: 14.99, billingCycle: .monthly, features: "На участника, совместный бренд-кит"),
@@ -352,7 +355,7 @@ extension ProviderCatalog {
         .init(id: "adobe_cc", displayName: "Adobe Creative Cloud", aliases: ["адоби", "фотошоп", "photoshop"],
               category: .productivity, suggestedCurrencyCode: "USD", region: .global,
               tags: ["design", "creative"],
-              brandColorHex: "#FF0000", clearbitDomain: "adobe.com",
+              brandColorHex: "#FF0000", companyLogoFallbackDomain: "adobe.com",
               plans: [
                   // "All Apps" renamed to "Creative Cloud Pro" on August 1, 2025
                   .init(id: "photography", name: "Photography", amount: 19.99, billingCycle: .monthly, features: "Lightroom + Photoshop, 20 ГБ"),
@@ -363,7 +366,7 @@ extension ProviderCatalog {
               aliases: ["телеграм", "telegram"],
               category: .productivity, suggestedCurrencyCode: "USD", region: .global,
               tags: ["messaging", "communication"],
-              brandColorHex: "#2CA5E0", clearbitDomain: "telegram.org",
+              brandColorHex: "#2CA5E0", companyLogoFallbackDomain: "telegram.org",
               plans: [
                   // Telegram FAQ: "price depends on your country and region."
                   // No universal default; users must enter their actual charge.
@@ -377,7 +380,7 @@ extension ProviderCatalog {
         .init(id: "nordvpn", displayName: "NordVPN", aliases: ["норд"],
               category: .vpn, suggestedCurrencyCode: "USD", region: .global,
               tags: ["vpn", "popular"],
-              brandColorHex: "#4687FF", clearbitDomain: "nordvpn.com",
+              brandColorHex: "#4687FF", companyLogoFallbackDomain: "nordvpn.com",
               plans: [
                   // Basic tier reference prices (US 2026)
                   .init(id: "monthly", name: "Monthly", amount: 12.99, billingCycle: .monthly, features: "6 устройств"),
@@ -387,7 +390,7 @@ extension ProviderCatalog {
         .init(id: "surfshark", displayName: "Surfshark", aliases: ["серфшарк"],
               category: .vpn, suggestedCurrencyCode: "USD", region: .global,
               tags: ["vpn"],
-              brandColorHex: "#178BF1", clearbitDomain: "surfshark.com",
+              brandColorHex: "#178BF1", companyLogoFallbackDomain: "surfshark.com",
               plans: [
                   .init(id: "monthly", name: "Monthly", amount: 15.45, billingCycle: .monthly, features: "Безлимитные устройства"),
                   .init(id: "annual", name: "Annual", amount: 47.88, billingCycle: .annual, features: "~$3.99/мес"),
@@ -396,7 +399,7 @@ extension ProviderCatalog {
         .init(id: "mullvad", displayName: "Mullvad VPN", aliases: ["мулвад"],
               category: .vpn, suggestedCurrencyCode: "EUR", region: .global,
               tags: ["vpn", "privacy"],
-              brandColorHex: "#294D73", clearbitDomain: "mullvad.net",
+              brandColorHex: "#294D73", companyLogoFallbackDomain: "mullvad.net",
               plans: [
                   .init(id: "standard", name: "Standard", amount: 5, billingCycle: .monthly, features: "Без аккаунта, анонимно"),
               ]),
@@ -405,7 +408,7 @@ extension ProviderCatalog {
         .init(id: "amazon_prime", displayName: "Amazon Prime", aliases: ["амазон прайм"],
               category: .shopping, itemType: .membership, suggestedCurrencyCode: "USD", region: .global,
               tags: ["delivery", "amazon"],
-              brandColorHex: "#FF9900", clearbitDomain: "amazon.com",
+              brandColorHex: "#FF9900",
               plans: [
                   .init(id: "monthly", name: "Monthly", amount: 14.99, billingCycle: .monthly),
                   .init(id: "annual", name: "Annual", amount: 139, billingCycle: .annual, features: "Экономия ~$41"),
@@ -415,7 +418,7 @@ extension ProviderCatalog {
         .init(id: "ps_plus", displayName: "PlayStation Plus", aliases: ["ps plus", "пс плюс", "playstation"],
               category: .games, suggestedCurrencyCode: "USD", region: .global,
               tags: ["gaming"],
-              brandColorHex: "#003087", clearbitDomain: "playstation.com",
+              brandColorHex: "#003087", companyLogoFallbackDomain: "playstation.com",
               plans: [
                   .init(id: "essential", name: "Essential", amount: 9.99, billingCycle: .monthly, features: "2 игры/мес, онлайн мультиплеер"),
                   .init(id: "essential_annual", name: "Essential (год)", amount: 79.99, billingCycle: .annual, features: "2 игры/мес, онлайн мультиплеер"),
@@ -428,7 +431,7 @@ extension ProviderCatalog {
         .init(id: "xbox_gamepass", displayName: "Xbox Game Pass", aliases: ["геймпас", "game pass"],
               category: .games, suggestedCurrencyCode: "USD", region: .global,
               tags: ["gaming", "microsoft"],
-              brandColorHex: "#107C10", clearbitDomain: "xbox.com",
+              brandColorHex: "#107C10", companyLogoFallbackDomain: "xbox.com",
               plans: [
                   // Ultimate dropped from $29.99 to $22.99 on April 21, 2026
                   .init(id: "core", name: "Core", amount: 9.99, billingCycle: .monthly, features: "Онлайн + 25 классических игр"),
@@ -439,7 +442,7 @@ extension ProviderCatalog {
         .init(id: "nintendo_online", displayName: "Nintendo Switch Online", aliases: ["нинтендо"],
               category: .games, suggestedCurrencyCode: "USD", region: .global,
               tags: ["gaming"],
-              brandColorHex: "#E60012", clearbitDomain: "nintendo.com",
+              brandColorHex: "#E60012", companyLogoFallbackDomain: "nintendo.com",
               plans: [
                   .init(id: "individual_monthly", name: "Individual", amount: 3.99, billingCycle: .monthly),
                   .init(id: "individual_annual", name: "Individual (год)", amount: 19.99, billingCycle: .annual),
@@ -449,7 +452,7 @@ extension ProviderCatalog {
         .init(id: "apple_arcade", displayName: "Apple Arcade", aliases: ["эпл аркейд"],
               category: .games, suggestedCurrencyCode: "USD", region: .global,
               tags: ["gaming", "apple"],
-              brandColorHex: "#0070C9", clearbitDomain: "apple.com",
+              brandColorHex: "#0070C9",
               plans: [
                   .init(id: "monthly", name: "Monthly", amount: 6.99, billingCycle: .monthly, features: "200+ игр, до 6 чел."),
                   .init(id: "annual", name: "Annual", amount: 49.99, billingCycle: .annual, features: "200+ игр, до 6 чел., экономия ~$34"),
@@ -459,7 +462,7 @@ extension ProviderCatalog {
         .init(id: "strava", displayName: "Strava", aliases: ["страва"],
               category: .health, suggestedCurrencyCode: "USD", region: .global,
               tags: ["fitness"],
-              brandColorHex: "#FC4C02", clearbitDomain: "strava.com",
+              brandColorHex: "#FC4C02", companyLogoFallbackDomain: "strava.com",
               plans: [
                   .init(id: "monthly", name: "Monthly", amount: 11.99, billingCycle: .monthly),
                   .init(id: "annual", name: "Annual", amount: 79.99, billingCycle: .annual, features: "Экономия ~$64"),
@@ -468,7 +471,7 @@ extension ProviderCatalog {
         .init(id: "headspace", displayName: "Headspace", aliases: ["хедспейс"],
               category: .health, suggestedCurrencyCode: "USD", region: .global,
               tags: ["meditation"],
-              brandColorHex: "#F47D31", clearbitDomain: "headspace.com",
+              brandColorHex: "#F47D31", companyLogoFallbackDomain: "headspace.com",
               plans: [
                   .init(id: "monthly", name: "Monthly", amount: 12.99, billingCycle: .monthly),
                   .init(id: "annual", name: "Annual", amount: 69.99, billingCycle: .annual, features: "Экономия ~$86"),
@@ -477,7 +480,7 @@ extension ProviderCatalog {
         .init(id: "apple_fitness_plus", displayName: "Apple Fitness+", aliases: ["фитнес плюс"],
               category: .health, suggestedCurrencyCode: "USD", region: .global,
               tags: ["fitness", "apple"],
-              brandColorHex: "#97D608", clearbitDomain: "apple.com",
+              brandColorHex: "#97D608",
               plans: [
                   .init(id: "monthly", name: "Monthly", amount: 9.99, billingCycle: .monthly),
                   .init(id: "annual", name: "Annual", amount: 79.99, billingCycle: .annual, features: "Экономия ~$40"),
@@ -487,7 +490,7 @@ extension ProviderCatalog {
         .init(id: "duolingo", displayName: "Duolingo Plus", aliases: ["дуолинго"],
               category: .education, suggestedCurrencyCode: "USD", region: .global,
               tags: ["language"],
-              brandColorHex: "#58CC02", clearbitDomain: "duolingo.com",
+              brandColorHex: "#58CC02", companyLogoFallbackDomain: "duolingo.com",
               plans: [
                   // US prices as of 2026; Duolingo Max added (AI roleplay + video calls)
                   .init(id: "super_monthly", name: "Super", amount: 12.99, billingCycle: .monthly, features: "Без рекламы, безлимитные жизни"),
@@ -500,7 +503,7 @@ extension ProviderCatalog {
         .init(id: "coursera", displayName: "Coursera Plus", aliases: ["курсера"],
               category: .education, suggestedCurrencyCode: "USD", region: .global,
               tags: ["courses"],
-              brandColorHex: "#0056D2", clearbitDomain: "coursera.org",
+              brandColorHex: "#0056D2", companyLogoFallbackDomain: "coursera.org",
               plans: [
                   .init(id: "monthly", name: "Monthly", amount: 59, billingCycle: .monthly, features: "Все курсы и сертификаты"),
                   .init(id: "annual", name: "Annual", amount: 399, billingCycle: .annual, features: "Экономия ~$309"),
@@ -510,7 +513,7 @@ extension ProviderCatalog {
         .init(id: "kindle_unlimited", displayName: "Kindle Unlimited", aliases: ["киндл"],
               category: .books, suggestedCurrencyCode: "USD", region: .global,
               tags: ["books", "amazon"],
-              brandColorHex: "#FF9900", clearbitDomain: "amazon.com",
+              brandColorHex: "#FF9900",
               plans: [
                   .init(id: "monthly", name: "Monthly", amount: 11.99, billingCycle: .monthly, features: "1M+ книг и журналов"),
               ]),
@@ -518,7 +521,7 @@ extension ProviderCatalog {
         .init(id: "audible", displayName: "Audible", aliases: ["аудибл", "аудиокниги"],
               category: .books, suggestedCurrencyCode: "USD", region: .global,
               tags: ["audiobooks", "amazon"],
-              brandColorHex: "#F8991D", clearbitDomain: "audible.com",
+              brandColorHex: "#F8991D", companyLogoFallbackDomain: "audible.com",
               plans: [
                   .init(id: "plus", name: "Plus", amount: 7.95, billingCycle: .monthly, features: "Безлимитный каталог Plus"),
                   .init(id: "premium_plus", name: "Premium Plus", amount: 14.95, billingCycle: .monthly, features: "1 кредит/мес + каталог Plus"),
@@ -528,7 +531,7 @@ extension ProviderCatalog {
         .init(id: "uber_eats_pass", displayName: "Uber One", aliases: ["убер"],
               category: .food, itemType: .membership, suggestedCurrencyCode: "USD", region: .global,
               tags: ["delivery"],
-              brandColorHex: "#000000", clearbitDomain: "uber.com",
+              brandColorHex: "#000000", companyLogoFallbackDomain: "uber.com",
               plans: [
                   .init(id: "monthly", name: "Monthly", amount: 9.99, billingCycle: .monthly, features: "Без комиссии доставки"),
                   .init(id: "annual", name: "Annual", amount: 99, billingCycle: .annual, features: "Экономия ~$21"),
@@ -538,37 +541,37 @@ extension ProviderCatalog {
         .init(id: "patreon", displayName: "Patreon", aliases: ["патреон"],
               category: .creators, itemType: .membership, suggestedCurrencyCode: "USD", region: .global,
               tags: ["creators", "donations"],
-              brandColorHex: "#FF424D", clearbitDomain: "patreon.com"),
+              brandColorHex: "#FF424D", companyLogoFallbackDomain: "patreon.com"),
 
         .init(id: "twitch_sub", displayName: "Twitch Subscriptions", aliases: ["твич", "twitch"],
               category: .creators, suggestedCurrencyCode: "USD", region: .global,
               tags: ["creators", "streaming"],
-              brandColorHex: "#9146FF", clearbitDomain: "twitch.tv"),
+              brandColorHex: "#9146FF", companyLogoFallbackDomain: "twitch.tv"),
 
         .init(id: "youtube_membership", displayName: "YouTube Memberships", aliases: ["ютуб мемберство"],
               category: .creators, suggestedCurrencyCode: "USD", region: .global,
               tags: ["creators", "youtube"],
-              brandColorHex: "#FF0000", clearbitDomain: "youtube.com"),
+              brandColorHex: "#FF0000", companyLogoFallbackDomain: "youtube.com"),
 
         .init(id: "ko_fi", displayName: "Ko-fi", aliases: ["кофи"],
               category: .creators, itemType: .membership, suggestedCurrencyCode: "USD", region: .global,
               tags: ["creators", "donations"],
-              brandColorHex: "#13C3FF", clearbitDomain: "ko-fi.com"),
+              brandColorHex: "#13C3FF", companyLogoFallbackDomain: "ko-fi.com"),
 
         .init(id: "buy_me_a_coffee", displayName: "Buy Me a Coffee", aliases: ["бай ми э кофе", "bmac"],
               category: .creators, itemType: .membership, suggestedCurrencyCode: "USD", region: .global,
               tags: ["creators", "donations"],
-              brandColorHex: "#FFDD00", clearbitDomain: "buymeacoffee.com"),
+              brandColorHex: "#FFDD00", companyLogoFallbackDomain: "buymeacoffee.com"),
 
         .init(id: "substack", displayName: "Substack", aliases: ["сабстак"],
               category: .creators, itemType: .membership, suggestedCurrencyCode: "USD", region: .global,
               tags: ["creators", "newsletter"],
-              brandColorHex: "#FF6719", clearbitDomain: "substack.com"),
+              brandColorHex: "#FF6719", companyLogoFallbackDomain: "substack.com"),
 
         .init(id: "onlyfans", displayName: "OnlyFans", aliases: ["онлифанс"],
               category: .creators, suggestedCurrencyCode: "USD", region: .global,
               tags: ["creators"],
-              brandColorHex: "#00AFF0", clearbitDomain: "onlyfans.com"),
+              brandColorHex: "#00AFF0", companyLogoFallbackDomain: "onlyfans.com"),
 
         // MARK: Social & Creator Platforms
 
@@ -578,7 +581,7 @@ extension ProviderCatalog {
               category: .creators, suggestedCurrencyCode: "USD", region: .global,
               tags: ["social", "creator", "verified"],
               managementURL: URL(string: "https://www.meta.com/verified"),
-              brandColorHex: "#0866FF", clearbitDomain: "meta.com",
+              brandColorHex: "#0866FF", companyLogoFallbackDomain: "meta.com",
               plans: [
                   // Prices are per-profile, US-web only, and vary significantly by country
                   // and platform (iOS App Store adds ~30%). No reliable default exists.
@@ -598,7 +601,7 @@ extension ProviderCatalog {
               category: .creators, suggestedCurrencyCode: "USD", region: .global,
               tags: ["social", "creator", "twitter"],
               managementURL: URL(string: "https://x.com/settings/premium"),
-              brandColorHex: "#000000", clearbitDomain: "x.com",
+              brandColorHex: "#000000", companyLogoFallbackDomain: "x.com",
               plans: [
                   // US prices at x.com/i/premium; Premium+ doubled in Feb 2025 (Grok 3)
                   .init(id: "basic_monthly", name: "Basic", amount: 3, billingCycle: .monthly),
@@ -619,7 +622,7 @@ extension ProviderCatalog {
               category: .creators, suggestedCurrencyCode: "USD", region: .global,
               tags: ["gaming", "community", "communication"],
               managementURL: URL(string: "https://discord.com/settings/premium"),
-              brandColorHex: "#5865F2", clearbitDomain: "discord.com",
+              brandColorHex: "#5865F2", companyLogoFallbackDomain: "discord.com",
               plans: [
                   .init(id: "basic_monthly", name: "Nitro Basic", amount: 2.99, billingCycle: .monthly,
                         features: "Custom emoji, анимированный аватар"),
@@ -636,7 +639,7 @@ extension ProviderCatalog {
               category: .creators, suggestedCurrencyCode: "USD", region: .global,
               tags: ["community", "social"],
               managementURL: URL(string: "https://www.reddit.com/premium"),
-              brandColorHex: "#FF4500", clearbitDomain: "reddit.com",
+              brandColorHex: "#FF4500", companyLogoFallbackDomain: "reddit.com",
               plans: [
                   .init(id: "monthly", name: "Monthly", amount: 5.99, billingCycle: .monthly,
                         features: "Без рекламы, 700 монет/мес"),
@@ -652,19 +655,19 @@ extension ProviderCatalog {
               aliases: ["grindr xtra", "grindr unlimited", "гриндер"],
               category: .other, suggestedCurrencyCode: "USD", region: .global,
               tags: ["dating", "social", "lgbtq"],
-              brandColorHex: "#F5A623", clearbitDomain: "grindr.com"),
+              brandColorHex: "#F5A623", companyLogoFallbackDomain: "grindr.com"),
 
         .init(id: "hornet", displayName: "Hornet",
               aliases: ["hornet plus", "hornet premium", "hornet max", "хорнет"],
               category: .other, suggestedCurrencyCode: "USD", region: .global,
               tags: ["dating", "social", "lgbtq"],
-              brandColorHex: "#EE3124", clearbitDomain: "hornet.com"),
+              brandColorHex: "#EE3124", companyLogoFallbackDomain: "hornet.com"),
 
         // MARK: Apple Bundles
         .init(id: "apple_one", displayName: "Apple One", aliases: ["эпл ван"],
               category: .cloud, itemType: .ecosystemBundle, suggestedCurrencyCode: "USD", region: .global,
               tags: ["apple", "bundle"],
-              brandColorHex: "#000000", clearbitDomain: "apple.com",
+              brandColorHex: "#000000",
               plans: [
                   .init(id: "individual", name: "Individual", amount: 19.95, billingCycle: .monthly, features: "Music, TV+, Arcade, iCloud+ 50 ГБ"),
                   .init(id: "family", name: "Family", amount: 25.95, billingCycle: .monthly, features: "До 6 чел., iCloud+ 200 ГБ"),

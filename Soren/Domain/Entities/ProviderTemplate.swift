@@ -16,11 +16,15 @@ struct ProviderTemplate: Identifiable, Hashable, Sendable {
     var managementURL: URL?
     /// SF Symbol or asset name for the icon.
     var iconAssetName: String?
+    /// Service-specific page/origin used for remote favicon resolution.
+    /// Prefer this over a parent-company fallback when the service has its own identity.
+    var serviceLogoSourceURL: URL?
     /// Hex brand color (e.g. "#E50914" for Netflix). Used for letter-mark icons.
     var brandColorHex: String?
-    /// Domain used for remote logo resolution (e.g. "netflix.com", "yandex.ru").
+    /// Explicitly allowed company/domain-level favicon fallback
+    /// (e.g. "netflix.com", "yandex.ru").
     /// Pass to `ProviderLogoResolver.logoURLs(for:)` to obtain fetch URLs.
-    var clearbitDomain: String?
+    var companyLogoFallbackDomain: String?
     /// Available pricing tiers. Empty means no predefined plans.
     var plans: [PlanTier]
 
@@ -39,8 +43,9 @@ struct ProviderTemplate: Identifiable, Hashable, Sendable {
         tags: [String] = [],
         managementURL: URL? = nil,
         iconAssetName: String? = nil,
+        serviceLogoSourceURL: URL? = nil,
         brandColorHex: String? = nil,
-        clearbitDomain: String? = nil,
+        companyLogoFallbackDomain: String? = nil,
         plans: [PlanTier] = []
     ) {
         self.id = id
@@ -54,8 +59,9 @@ struct ProviderTemplate: Identifiable, Hashable, Sendable {
         self.tags = tags
         self.managementURL = managementURL
         self.iconAssetName = iconAssetName
+        self.serviceLogoSourceURL = serviceLogoSourceURL
         self.brandColorHex = brandColorHex
-        self.clearbitDomain = clearbitDomain
+        self.companyLogoFallbackDomain = companyLogoFallbackDomain
         self.plans = plans
     }
 }

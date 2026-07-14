@@ -86,9 +86,10 @@ actor LogoLoader {
 ///
 /// Resolution priority:
 /// 1. Bundled asset — image named `iconAssetName` or `provider_{id}` in Assets.xcassets
-/// 2. Remote logo   — loaded via LogoLoader from the verified fallback, cached on disk
-/// 3. Letter-mark   — instant, shown while remote loads or on failure
-/// 4. SF Symbol     — category icon, for manual entries without a provider
+/// 2. Service logo  — explicit service-level remote source
+/// 3. Company logo  — explicitly allowed domain-level fallback
+/// 4. Letter-mark   — instant, shown while remote loads or on failure
+/// 5. SF Symbol     — category icon, for manual entries without a provider
 struct ProviderIcon: View {
     private let content: Content
     let size: Size

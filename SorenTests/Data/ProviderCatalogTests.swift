@@ -18,6 +18,32 @@ struct ProviderLogoResolutionTests {
         #expect(urls.allSatisfy { $0.host() != "logo.clearbit.com" })
     }
 
+    @Test("Service-level source precedes an explicitly allowed company fallback")
+    func serviceLogoSourcePrecedesCompanyFallback() {
+        let provider = ProviderTemplate(
+            id: "service_with_company_fallback",
+            displayName: "Service",
+            category: .other,
+            serviceLogoSourceURL: URL(string: "https://service.example.com"),
+            companyLogoFallbackDomain: "example.com"
+        )
+        let sources = originalSources(for: provider)
+        #expect(sources == ["https://service.example.com", "https://example.com"])
+    }
+
+    @Test("Website metadata does not implicitly enable a company favicon")
+    func companyFallbackRequiresExplicitMetadata() {
+        let provider = ProviderTemplate(
+            id: "service_only",
+            displayName: "Service",
+            category: .other,
+            managementURL: URL(string: "https://example.com/account")
+        )
+
+        #expect(originalSources(for: provider).isEmpty)
+        #expect(provider.companyLogoFallbackDomain == nil)
+    }
+
     @Test("Custom provider without a logo source uses a placeholder")
     @MainActor
     func customProviderWithoutLogoSourceUsesPlaceholder() {
@@ -34,7 +60,7 @@ struct ProviderLogoResolutionTests {
     @Test(
         "Screenshot-critical providers resolve to bundled assets",
         arguments: [
-            "spotify", "yandex_plus", "mts_premium", "mts", "chatgpt_plus",
+            "spotify", "yandex_plus", "mts_premium", "mts", "chatgpt_plus", "apple_music",
             "icloud", "netflix", "nordvpn", "x_premium", "youtube_premium",
             "telegram_premium", "qobuz", "github_copilot",
         ]
@@ -43,6 +69,132 @@ struct ProviderLogoResolutionTests {
     func screenshotProviderUsesBundledAsset(providerID: String) throws {
         let provider = try #require(ProviderCatalog.template(forProviderID: providerID))
         #expect(ProviderIcon.resolution(for: provider) == .asset("provider_\(providerID)"))
+    }
+
+    @Test(
+        "Targeted curated services resolve to bundled service identities",
+        arguments: ["yandex_plus", "kindle_unlimited", "onedrive", "notion_ai"]
+    )
+    @MainActor
+    func targetedCuratedServiceUsesBundledAsset(providerID: String) throws {
+        let provider = try #require(ProviderCatalog.template(forProviderID: providerID))
+
+        if providerID != "yandex_plus" {
+            #expect(provider.companyLogoFallbackDomain == nil)
+        }
+        #expect(ProviderIcon.resolution(for: provider) == .asset("provider_\(providerID)"))
+    }
+
+    @Test("Audited large-tile raster assets meet the source-resolution floor")
+    func auditedLargeTileRasterAssetsMeetSourceResolutionFloor() throws {
+        let assetNames = ["provider_yandex_plus", "provider_notion_ai"]
+        let repositoryRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let providersDirectory = repositoryRoot
+            .appendingPathComponent("Soren/Resources/Assets.xcassets/Providers", isDirectory: true)
+
+        for assetName in assetNames {
+            let assetURL = providersDirectory
+                .appendingPathComponent("\(assetName).imageset", isDirectory: true)
+                .appendingPathComponent("logo.png")
+            let image = try #require(UIImage(contentsOfFile: assetURL.path))
+            let cgImage = try #require(image.cgImage)
+            let dimensions = "\(cgImage.width)×\(cgImage.height)"
+
+            #expect(
+                cgImage.width == cgImage.height,
+                "\(assetName) must be square; actual dimensions: \(dimensions)"
+            )
+            #expect(
+                cgImage.width >= 256 && cgImage.height >= 256,
+                "\(assetName) must be at least 256×256; actual dimensions: \(dimensions)"
+            )
+        }
+    }
+
+    @Test("Every Apple service resolves to its own bundled service asset")
+    @MainActor
+    func appleServicesUseDistinctAssets() throws {
+        let providerIDs = [
+            "apple_tv_plus", "apple_music", "icloud",
+            "apple_arcade", "apple_fitness_plus", "apple_one",
+        ]
+        var resolutions: [ProviderIcon.Resolution] = []
+
+        for providerID in providerIDs {
+            let provider = try #require(ProviderCatalog.template(forProviderID: providerID))
+            #expect(provider.companyLogoFallbackDomain == nil)
+
+            let resolution = ProviderIcon.resolution(for: provider)
+            #expect(resolution == .asset("provider_\(providerID)"))
+            resolutions.append(resolution)
+        }
+
+        #expect(resolutions == providerIDs.map { .asset("provider_\($0)") })
+    }
+
+    @Test(
+        "Persisted service IDs resolve through the same bundled assets as Add",
+        arguments: ["apple_music", "icloud"]
+    )
+    @MainActor
+    func persistedServiceIdentityUsesCatalogAsset(providerID: String) throws {
+        let item = RecurringItem(
+            title: providerID,
+            providerID: providerID,
+            amount: 1,
+            nextChargeDate: .now
+        )
+
+        let provider = try #require(item.providerTemplate)
+        #expect(provider.id == providerID)
+        #expect(ProviderIcon.resolution(for: provider) == .asset("provider_\(providerID)"))
+    }
+
+    @Test("Shared-domain service groups have explicit collision policies")
+    @MainActor
+    func sharedDomainGroupsDoNotCollapseAccidentally() throws {
+        let amazonPrime = try #require(ProviderCatalog.template(forProviderID: "amazon_prime"))
+        let kindle = try #require(ProviderCatalog.template(forProviderID: "kindle_unlimited"))
+        #expect(amazonPrime.companyLogoFallbackDomain == nil)
+        #expect(kindle.companyLogoFallbackDomain == nil)
+        #expect(amazonPrime.letterMark == "AP")
+        #expect(ProviderIcon.resolution(for: kindle) == .asset("provider_kindle_unlimited"))
+
+        let oneDrive = try #require(ProviderCatalog.template(forProviderID: "onedrive"))
+        let microsoft365 = try #require(ProviderCatalog.template(forProviderID: "microsoft_365"))
+        #expect(oneDrive.companyLogoFallbackDomain == nil)
+        #expect(ProviderIcon.resolution(for: oneDrive) == .asset("provider_onedrive"))
+        #expect(originalSources(for: microsoft365) == ["https://www.microsoft365.com"])
+
+        let notionAI = try #require(ProviderCatalog.template(forProviderID: "notion_ai"))
+        let notion = try #require(ProviderCatalog.template(forProviderID: "notion"))
+        #expect(notionAI.companyLogoFallbackDomain == nil)
+        #expect(notion.companyLogoFallbackDomain == "notion.so")
+        #expect(ProviderIcon.resolution(for: notionAI) == .asset("provider_notion_ai"))
+
+        let youtubePremium = try #require(ProviderCatalog.template(forProviderID: "youtube_premium"))
+        let youtubeMembership = try #require(ProviderCatalog.template(forProviderID: "youtube_membership"))
+        #expect(ProviderIcon.resolution(for: youtubePremium) == .asset("provider_youtube_premium"))
+        #expect(youtubeMembership.companyLogoFallbackDomain == "youtube.com")
+
+        let mtsPremium = try #require(ProviderCatalog.template(forProviderID: "mts_premium"))
+        let mts = try #require(ProviderCatalog.template(forProviderID: "mts"))
+        #expect(ProviderIcon.resolution(for: mtsPremium) == .asset("provider_mts_premium"))
+        #expect(ProviderIcon.resolution(for: mts) == .asset("provider_mts"))
+        #expect(mtsPremium.companyLogoFallbackDomain == "mts.ru")
+        #expect(mts.companyLogoFallbackDomain == "mts.ru")
+    }
+
+    private func originalSources(for provider: ProviderTemplate) -> [String] {
+        ProviderLogoResolver.logoURLs(for: provider).compactMap { url in
+            URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                .queryItems?
+                .first { $0.name == "url" }?
+                .value
+        }
     }
 }
 

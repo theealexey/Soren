@@ -24,7 +24,7 @@ extension ProviderCatalog {
               category: .shopping, itemType: .ecosystemBundle,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["ecosystem", "bundle", "cashback", "popular"],
-              brandColorHex: "#FC3F1D", clearbitDomain: "yandex.ru",
+              brandColorHex: "#FC3F1D", companyLogoFallbackDomain: "yandex.ru",
               plans: [
                   .init(id: "basic", name: "Базовый", amount: 199, billingCycle: .monthly, features: "Кешбэк, Музыка"),
                   .init(id: "standard", name: "Стандарт", amount: 399, billingCycle: .monthly, features: "Кешбэк, Музыка, Кинопоиск"),
@@ -36,7 +36,7 @@ extension ProviderCatalog {
               category: .banking, itemType: .ecosystemBundle,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["ecosystem", "banking", "bundle"],
-              brandColorHex: "#21A038", clearbitDomain: "sber.ru",
+              brandColorHex: "#21A038", companyLogoFallbackDomain: "sber.ru",
               plans: [
                   .init(id: "standard", name: "Стандарт", amount: 399, billingCycle: .monthly, features: "Кешбэк, Звук, Okko"),
                   .init(id: "prime_plus", name: "Прайм+", amount: 599, billingCycle: .monthly, features: "Всё + повышенный кешбэк"),
@@ -47,7 +47,7 @@ extension ProviderCatalog {
               category: .mobile, itemType: .ecosystemBundle,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["ecosystem", "telecom", "bundle", "popular"],
-              brandColorHex: "#E30611", clearbitDomain: "mts.ru",
+              brandColorHex: "#E30611", companyLogoFallbackDomain: "mts.ru",
               plans: [
                   .init(id: "standard", name: "Стандарт", amount: 199, billingCycle: .monthly, features: "KION, музыка, кешбэк"),
                   .init(id: "family", name: "Семейный", amount: 349, billingCycle: .monthly, features: "До 5 участников"),
@@ -58,7 +58,7 @@ extension ProviderCatalog {
               category: .banking, itemType: .membership,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["banking", "cashback"],
-              brandColorHex: "#FFDD2D", clearbitDomain: "tbank.ru",
+              brandColorHex: "#FFDD2D", companyLogoFallbackDomain: "tbank.ru",
               plans: [
                   .init(id: "pro", name: "Pro", amount: 790, billingCycle: .monthly, features: "Кешбэк до 30%, страховка, консьерж"),
               ]),
@@ -72,7 +72,7 @@ extension ProviderCatalog {
               category: .video,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["streaming", "yandex"],
-              brandColorHex: "#FF5500", clearbitDomain: "kinopoisk.ru",
+              brandColorHex: "#FF5500", companyLogoFallbackDomain: "kinopoisk.ru",
               plans: [
                   .init(id: "basic", name: "Базовый", amount: 299, billingCycle: .monthly, features: "FHD, онлайн-просмотр"),
                   .init(id: "optimal", name: "Оптимальный", amount: 399, billingCycle: .monthly, features: "4K HDR, скачивание"),
@@ -83,7 +83,7 @@ extension ProviderCatalog {
               category: .video,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["streaming"],
-              brandColorHex: "#A033FF", clearbitDomain: "okko.tv",
+              brandColorHex: "#A033FF", companyLogoFallbackDomain: "okko.tv",
               plans: [
                   .init(id: "optimal", name: "Оптимальный", amount: 399, billingCycle: .monthly, features: "4K HDR, скачивание"),
               ]),
@@ -93,7 +93,7 @@ extension ProviderCatalog {
               category: .video,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["streaming", "rostelecom"],
-              brandColorHex: "#7B2BFC", clearbitDomain: "wink.ru",
+              brandColorHex: "#7B2BFC", companyLogoFallbackDomain: "wink.ru",
               plans: [
                   .init(id: "basic", name: "Базовая", amount: 199, billingCycle: .monthly, features: "Фильмы и сериалы"),
               ]),
@@ -103,7 +103,7 @@ extension ProviderCatalog {
               category: .video,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["streaming", "mts"],
-              brandColorHex: "#E30611", clearbitDomain: "kion.ru",
+              brandColorHex: "#E30611", companyLogoFallbackDomain: "kion.ru",
               plans: [
                   .init(id: "kion", name: "KION", amount: 299, billingCycle: .monthly, features: "Оригиналы МТС, 4K"),
               ]),
@@ -113,7 +113,7 @@ extension ProviderCatalog {
               category: .video,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["streaming"],
-              brandColorHex: "#F43B3B", clearbitDomain: "start.ru",
+              brandColorHex: "#F43B3B", companyLogoFallbackDomain: "start.ru",
               plans: [
                   .init(id: "start", name: "START", amount: 399, billingCycle: .monthly, features: "Оригинальные сериалы, 4K"),
               ]),
@@ -123,7 +123,7 @@ extension ProviderCatalog {
               category: .video,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["streaming"],
-              brandColorHex: "#FF1F8E", clearbitDomain: "premier.one",
+              brandColorHex: "#FF1F8E", companyLogoFallbackDomain: "premier.one",
               plans: [
                   .init(id: "premier", name: "PREMIER", amount: 299, billingCycle: .monthly, features: "ТНТ, ТВ-3, 2×2, оригиналы"),
               ]),
@@ -133,7 +133,7 @@ extension ProviderCatalog {
               category: .video,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["streaming"],
-              brandColorHex: "#EA003D", clearbitDomain: "ivi.ru",
+              brandColorHex: "#EA003D", companyLogoFallbackDomain: "ivi.ru",
               plans: [
                   .init(id: "ivi", name: "IVI", amount: 299, billingCycle: .monthly, features: "FHD, без рекламы"),
                   .init(id: "ivi_plus", name: "IVI+", amount: 499, billingCycle: .monthly, features: "4K UHD, скачивание"),
@@ -148,7 +148,7 @@ extension ProviderCatalog {
               category: .music,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["music", "yandex"],
-              brandColorHex: "#FFDB4D", clearbitDomain: "music.yandex.ru",
+              brandColorHex: "#FFDB4D", companyLogoFallbackDomain: "music.yandex.ru",
               plans: [
                   .init(id: "individual", name: "Индивидуальная", amount: 169, billingCycle: .monthly),
                   .init(id: "family", name: "Семейная", amount: 349, billingCycle: .monthly, features: "До 6 участников"),
@@ -159,7 +159,7 @@ extension ProviderCatalog {
               category: .music,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["music", "sber"],
-              brandColorHex: "#0DC268", clearbitDomain: "zvuk.com",
+              brandColorHex: "#0DC268", companyLogoFallbackDomain: "zvuk.com",
               plans: [
                   .init(id: "standard", name: "Стандарт", amount: 169, billingCycle: .monthly),
                   .init(id: "family", name: "Семейный", amount: 349, billingCycle: .monthly, features: "До 6 участников"),
@@ -170,7 +170,7 @@ extension ProviderCatalog {
               category: .music,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["music", "vk"],
-              brandColorHex: "#0077FF", clearbitDomain: "vk.com",
+              brandColorHex: "#0077FF", companyLogoFallbackDomain: "vk.com",
               plans: [
                   .init(id: "individual", name: "Индивидуальная", amount: 169, billingCycle: .monthly),
                   .init(id: "family", name: "Семейная", amount: 299, billingCycle: .monthly, features: "До 6 участников"),
@@ -185,7 +185,7 @@ extension ProviderCatalog {
               category: .shopping, itemType: .membership,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["marketplace", "delivery"],
-              brandColorHex: "#005BFF", clearbitDomain: "ozon.ru",
+              brandColorHex: "#005BFF", companyLogoFallbackDomain: "ozon.ru",
               plans: [
                   .init(id: "standard", name: "Стандарт", amount: 199, billingCycle: .monthly, features: "Бесплатная доставка, баллы"),
               ]),
@@ -195,7 +195,7 @@ extension ProviderCatalog {
               category: .shopping, itemType: .membership,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["marketplace"],
-              brandColorHex: "#CB11AB", clearbitDomain: "wildberries.ru",
+              brandColorHex: "#CB11AB", companyLogoFallbackDomain: "wildberries.ru",
               plans: [
                   .init(id: "standard", name: "WB Клуб", amount: 349, billingCycle: .monthly, features: "Скидки, бесплатная доставка"),
               ]),
@@ -205,7 +205,7 @@ extension ProviderCatalog {
               category: .shopping, itemType: .membership,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["marketplace", "yandex"],
-              brandColorHex: "#FC3F1D", clearbitDomain: "market.yandex.ru",
+              brandColorHex: "#FC3F1D", companyLogoFallbackDomain: "market.yandex.ru",
               plans: [
                   .init(id: "standard", name: "Маркет Плюс", amount: 199, billingCycle: .monthly, features: "Кешбэк, бесплатная доставка"),
               ]),
@@ -215,7 +215,7 @@ extension ProviderCatalog {
               category: .food, itemType: .membership,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["delivery", "grocery"],
-              brandColorHex: "#FF3366", clearbitDomain: "samokat.ru",
+              brandColorHex: "#FF3366", companyLogoFallbackDomain: "samokat.ru",
               plans: [
                   .init(id: "plus", name: "Плюс", amount: 199, billingCycle: .monthly, features: "Бесплатная доставка от 499₽"),
               ]),
@@ -229,35 +229,35 @@ extension ProviderCatalog {
               category: .mobile, itemType: .mobilePlan,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["telecom"],
-              brandColorHex: "#E30611", clearbitDomain: "mts.ru"),
+              brandColorHex: "#E30611", companyLogoFallbackDomain: "mts.ru"),
 
         .init(id: "megafon", displayName: "МегаФон",
               aliases: ["мегафон", "megafon"],
               category: .mobile, itemType: .mobilePlan,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["telecom"],
-              brandColorHex: "#00B956", clearbitDomain: "megafon.ru"),
+              brandColorHex: "#00B956", companyLogoFallbackDomain: "megafon.ru"),
 
         .init(id: "beeline", displayName: "Билайн",
               aliases: ["beeline", "билайн"],
               category: .mobile, itemType: .mobilePlan,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["telecom"],
-              brandColorHex: "#FFCE00", clearbitDomain: "beeline.ru"),
+              brandColorHex: "#FFCE00", companyLogoFallbackDomain: "beeline.ru"),
 
         .init(id: "t2", displayName: "Т2 (Tele2)",
               aliases: ["tele2", "теле2", "т2"],
               category: .mobile, itemType: .mobilePlan,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["telecom"],
-              brandColorHex: "#1F2229", clearbitDomain: "tele2.ru"),
+              brandColorHex: "#1F2229", companyLogoFallbackDomain: "tele2.ru"),
 
         .init(id: "yota", displayName: "Yota",
               aliases: ["йота"],
               category: .mobile, itemType: .mobilePlan,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["telecom"],
-              brandColorHex: "#00B4EF", clearbitDomain: "yota.ru"),
+              brandColorHex: "#00B4EF", companyLogoFallbackDomain: "yota.ru"),
 
         // ────────────────────────────────────────
         // MARK: Облако
@@ -268,7 +268,7 @@ extension ProviderCatalog {
               category: .cloud,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["storage", "yandex"],
-              brandColorHex: "#FC3F1D", clearbitDomain: "disk.yandex.ru",
+              brandColorHex: "#FC3F1D", companyLogoFallbackDomain: "disk.yandex.ru",
               plans: [
                   .init(id: "100gb", name: "100 ГБ", amount: 69, billingCycle: .monthly),
                   .init(id: "200gb", name: "200 ГБ", amount: 99, billingCycle: .monthly),
@@ -282,7 +282,7 @@ extension ProviderCatalog {
               category: .cloud,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["storage", "vk"],
-              brandColorHex: "#005FF9", clearbitDomain: "mail.ru",
+              brandColorHex: "#005FF9", companyLogoFallbackDomain: "mail.ru",
               plans: [
                   .init(id: "64gb", name: "64 ГБ", amount: 49, billingCycle: .monthly),
                   .init(id: "128gb", name: "128 ГБ", amount: 79, billingCycle: .monthly),
@@ -300,14 +300,14 @@ extension ProviderCatalog {
               category: .education,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["courses"],
-              brandColorHex: "#6B4FBB", clearbitDomain: "skillbox.ru"),
+              brandColorHex: "#6B4FBB", companyLogoFallbackDomain: "skillbox.ru"),
 
         .init(id: "stepik", displayName: "Stepik",
               aliases: ["степик"],
               category: .education,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["courses"],
-              brandColorHex: "#5AAF4C", clearbitDomain: "stepik.org",
+              brandColorHex: "#5AAF4C", companyLogoFallbackDomain: "stepik.org",
               plans: [
                   .init(id: "pro", name: "Pro", amount: 1299, billingCycle: .monthly, features: "Все курсы без ограничений"),
               ]),
@@ -317,7 +317,7 @@ extension ProviderCatalog {
               category: .education,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["courses", "yandex"],
-              brandColorHex: "#FC3F1D", clearbitDomain: "practicum.yandex.ru"),
+              brandColorHex: "#FC3F1D", companyLogoFallbackDomain: "practicum.yandex.ru"),
 
         // ────────────────────────────────────────
         // MARK: Книги
@@ -328,7 +328,7 @@ extension ProviderCatalog {
               category: .books,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["books", "audiobooks"],
-              brandColorHex: "#FF6600", clearbitDomain: "litres.ru",
+              brandColorHex: "#FF6600", companyLogoFallbackDomain: "litres.ru",
               plans: [
                   .init(id: "standard", name: "Стандарт", amount: 699, billingCycle: .monthly, features: "Книги + аудиокниги"),
                   .init(id: "annual", name: "Годовой", amount: 4999, billingCycle: .annual, features: "Экономия ~3,4K₽"),
@@ -339,7 +339,7 @@ extension ProviderCatalog {
               category: .books,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["books"],
-              brandColorHex: "#F43B40", clearbitDomain: "bookmate.com",
+              brandColorHex: "#F43B40", companyLogoFallbackDomain: "bookmate.com",
               plans: [
                   .init(id: "monthly", name: "Ежемесячно", amount: 449, billingCycle: .monthly, features: "Книги, аудио, комиксы"),
                   .init(id: "annual", name: "Годовой", amount: 2499, billingCycle: .annual, features: "Экономия ~2,9K₽"),
@@ -354,7 +354,7 @@ extension ProviderCatalog {
               category: .health,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["health", "telemedicine"],
-              brandColorHex: "#00C1B4", clearbitDomain: "docplus.ru",
+              brandColorHex: "#00C1B4", companyLogoFallbackDomain: "docplus.ru",
               plans: [
                   .init(id: "basic", name: "Базовый", amount: 590, billingCycle: .monthly, features: "3 консультации/мес"),
                   .init(id: "premium", name: "Премиум", amount: 990, billingCycle: .monthly, features: "Безлимитные консультации"),
@@ -369,14 +369,14 @@ extension ProviderCatalog {
               category: .food, itemType: .membership,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["delivery", "yandex"],
-              brandColorHex: "#FC3F1D", clearbitDomain: "eda.yandex.ru"),
+              brandColorHex: "#FC3F1D", companyLogoFallbackDomain: "eda.yandex.ru"),
 
         .init(id: "delivery_club", displayName: "Delivery Club",
               aliases: ["деливери клаб"],
               category: .food, itemType: .membership,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["delivery"],
-              brandColorHex: "#2AC96B", clearbitDomain: "delivery-club.ru"),
+              brandColorHex: "#2AC96B", companyLogoFallbackDomain: "delivery-club.ru"),
 
         // ────────────────────────────────────────
         // MARK: Креаторы и донаты
@@ -387,21 +387,21 @@ extension ProviderCatalog {
               category: .creators, itemType: .membership,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["creators", "donations"],
-              brandColorHex: "#F15F2C", clearbitDomain: "boosty.to"),
+              brandColorHex: "#F15F2C", companyLogoFallbackDomain: "boosty.to"),
 
         .init(id: "donationalerts", displayName: "DonationAlerts",
               aliases: ["донейшн алертс", "da"],
               category: .creators, itemType: .membership,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["creators", "donations"],
-              brandColorHex: "#F57B20", clearbitDomain: "donationalerts.com"),
+              brandColorHex: "#F57B20", companyLogoFallbackDomain: "donationalerts.com"),
 
         .init(id: "sponsr", displayName: "Sponsr",
               aliases: ["спонср"],
               category: .creators, itemType: .membership,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["creators", "donations"],
-              brandColorHex: "#6C5CE7", clearbitDomain: "sponsr.ru"),
+              brandColorHex: "#6C5CE7", companyLogoFallbackDomain: "sponsr.ru"),
 
         // ────────────────────────────────────────
         // MARK: Игры
@@ -412,7 +412,7 @@ extension ProviderCatalog {
               category: .games,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["gaming", "vk"],
-              brandColorHex: "#0077FF", clearbitDomain: "vkplay.ru",
+              brandColorHex: "#0077FF", companyLogoFallbackDomain: "vkplay.ru",
               plans: [
                   .init(id: "monthly", name: "Play Pass", amount: 299, billingCycle: .monthly, features: "Каталог игр, без рекламы"),
               ]),
