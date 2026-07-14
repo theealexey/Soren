@@ -27,16 +27,20 @@ final class CalendarViewModel {
     private(set) var selectedDate: Date             // start of the tapped day
     private(set) var chargesByDate: [Date: [RecurringItem]] = [:]
     private(set) var daysInGrid: [CalendarDay] = []
-    /// Monthly total in `defaultCurrency` only — excludes items in other currencies.
-    private(set) var monthlyTotal: Decimal = .zero
-    /// True if items in other currencies were excluded from monthlyTotal.
-    private(set) var hasMultiCurrencyItems = false
-    private(set) var defaultCurrency: String = UserPreferences.default.defaultCurrencyCode
+    private(set) var monthlyAggregation: RecurringSpendAggregationResult?
+    private(set) var selectedDayAggregation: RecurringSpendAggregationResult?
+    private(set) var reportingCurrencyCode = UserPreferences.default.defaultCurrencyCode
+    /// Drives one cancellable SwiftUI task per Calendar calculation.
+    private(set) var aggregationRevision = 0
     private(set) var isLoaded = false
     private(set) var error: Error?
 
     var selectedDayCharges: [RecurringItem] {
         chargesByDate[selectedDate] ?? []
+    }
+
+    var hasMonthlyCharges: Bool {
+        !monthlyProjections.isEmpty
     }
 
     var monthTitle: String {
@@ -63,17 +67,32 @@ final class CalendarViewModel {
         )
     }()
 
-    private let repository: any RecurringItemRepository
+    private let fetchActiveItems: @MainActor () throws -> [RecurringItem]
     private let preferences: UserPreferencesRepository
+    private let aggregateRecurringSpend: AggregateRecurringSpendUseCase
+    private let loadExchangeRateSnapshot: @Sendable () async throws -> ExchangeRateSnapshot
+
+    private var monthlyProjections: [RecurringSpendProjection] = []
+    private var displayedMonthRange: Range<Date>?
+    private var exchangeRateSnapshot: ExchangeRateSnapshot?
+    private var inFlightRevision: Int?
 
     // MARK: - Init
 
-    init(
-        repository: any RecurringItemRepository,
-        preferences: UserPreferencesRepository = UserPreferencesRepository()
+    init<Repository: RecurringItemRepository, Provider: ExchangeRateProvider>(
+        repository: Repository,
+        preferences: UserPreferencesRepository = UserPreferencesRepository(),
+        aggregateRecurringSpend: AggregateRecurringSpendUseCase = AggregateRecurringSpendUseCase(),
+        exchangeRateProvider: Provider
     ) {
-        self.repository = repository
+        self.fetchActiveItems = {
+            try repository.fetchActive()
+        }
         self.preferences = preferences
+        self.aggregateRecurringSpend = aggregateRecurringSpend
+        self.loadExchangeRateSnapshot = {
+            try await exchangeRateProvider.latestSnapshot()
+        }
         let today = Self.cal.startOfDay(for: .now)
         self.selectedDate = today
         self.displayedMonth = Self.cal.date(
@@ -84,7 +103,15 @@ final class CalendarViewModel {
     // MARK: - Actions
 
     func selectDate(_ date: Date) {
-        selectedDate = date
+        let previouslyRequiredRates = currentCalculationRequiresExchangeRates()
+        selectedDate = Self.cal.startOfDay(for: date)
+        rebuildAggregations(snapshot: exchangeRateSnapshot)
+
+        if exchangeRateSnapshot == nil,
+           !previouslyRequiredRates,
+           currentCalculationRequiresExchangeRates() {
+            aggregationRevision += 1
+        }
     }
 
     func previousMonth() {
@@ -107,18 +134,48 @@ final class CalendarViewModel {
 
     func load(forceReload: Bool = false) {
         guard !isLoaded || forceReload else { return }
-        defaultCurrency = preferences.load().defaultCurrencyCode
+        reportingCurrencyCode = preferences.load().defaultCurrencyCode
         reloadMonth()
         // Only mark as loaded when reloadMonth did NOT produce an error.
         if error == nil { isLoaded = true }
     }
 
+    /// Loads at most one snapshot for the current calculation. The revision guard
+    /// prevents an older month/currency request from overwriting newer Calendar state.
+    func refreshCurrencyAggregation(revision: Int) async {
+        guard revision == aggregationRevision,
+              currentCalculationRequiresExchangeRates(),
+              inFlightRevision != revision
+        else { return }
+
+        inFlightRevision = revision
+        defer {
+            if inFlightRevision == revision {
+                inFlightRevision = nil
+            }
+        }
+
+        do {
+            let snapshot = try await loadExchangeRateSnapshot()
+            guard !Task.isCancelled, revision == aggregationRevision else { return }
+            exchangeRateSnapshot = snapshot
+            rebuildAggregations(snapshot: snapshot)
+        } catch is CancellationError {
+            return
+        } catch {
+            // Existing events stay visible. The no-snapshot result is already a
+            // truthful partial/unavailable state and never a raw mixed-currency sum.
+        }
+    }
+
     // MARK: - Private
 
     private func reloadMonth() {
+        aggregationRevision += 1
+        exchangeRateSnapshot = nil
         error = nil
         do {
-            let items = try repository.fetchActive()
+            let items = try fetchActiveItems()
             let grid = buildGrid()
             let gridStart = grid.first?.date ?? displayedMonth
             let gridEnd = grid.last?.date ?? displayedMonth
@@ -135,31 +192,98 @@ final class CalendarViewModel {
             daysInGrid = grid
             chargesByDate = byDate
 
-            // Monthly total: only items in defaultCurrency to avoid cross-currency nonsense.
-            // Compute monthEnd as startOfDay(last day of month) to be DST-safe.
-            // Reset totals before the guard so stale values never persist on failure.
-            monthlyTotal = .zero
-            hasMultiCurrencyItems = false
-            guard
-                let nextMonthStart = Self.cal.date(byAdding: .month, value: 1, to: displayedMonth),
-                let monthEndRaw = Self.cal.date(byAdding: .day, value: -1, to: nextMonthStart)
-            else {
+            guard let nextMonthStart = Self.cal.date(
+                byAdding: .month,
+                value: 1,
+                to: displayedMonth
+            ) else {
                 assertionFailure("CalendarViewModel: failed to compute month boundaries for \(displayedMonth)")
                 return
             }
-            let monthEnd = Self.cal.startOfDay(for: monthEndRaw)
 
-            let monthItems = items.filter { item in
+            let monthRange = displayedMonth..<nextMonthStart
+            displayedMonthRange = monthRange
+            monthlyProjections = items.compactMap { item in
                 let day = Self.cal.startOfDay(for: item.nextChargeDate)
-                return day >= displayedMonth && day <= monthEnd
+                guard monthRange.contains(day) else { return nil }
+                return projection(for: item, on: day)
             }
-            let sameCurrencyItems = monthItems.filter { $0.currencyCode == defaultCurrency }
-            monthlyTotal = sameCurrencyItems.reduce(.zero) { $0 + $1.amount }
-            hasMultiCurrencyItems = monthItems.count != sameCurrencyItems.count
+            rebuildAggregations(snapshot: exchangeRateSnapshot)
 
         } catch {
             self.error = error
         }
+    }
+
+    private func rebuildAggregations(snapshot: ExchangeRateSnapshot?) {
+        guard let monthRange = displayedMonthRange else {
+            monthlyAggregation = nil
+            selectedDayAggregation = nil
+            return
+        }
+
+        monthlyAggregation = aggregateRecurringSpend.execute(
+            projections: monthlyProjections,
+            reportingCurrencyCode: reportingCurrencyCode,
+            snapshot: snapshot,
+            range: monthRange
+        )
+
+        guard let selectedDayEnd = Self.cal.date(
+            byAdding: .day,
+            value: 1,
+            to: selectedDate
+        ) else {
+            selectedDayAggregation = nil
+            return
+        }
+
+        let selectedRange = selectedDate..<selectedDayEnd
+        selectedDayAggregation = aggregateRecurringSpend.execute(
+            projections: selectedDayCharges.map {
+                projection(for: $0, on: selectedDate)
+            },
+            reportingCurrencyCode: reportingCurrencyCode,
+            snapshot: snapshot,
+            range: selectedRange
+        )
+    }
+
+    private func currentCalculationRequiresExchangeRates() -> Bool {
+        let monthNeedsRates: Bool
+        if let monthRange = displayedMonthRange {
+            monthNeedsRates = aggregateRecurringSpend.requiresExchangeRates(
+                projections: monthlyProjections,
+                reportingCurrencyCode: reportingCurrencyCode,
+                range: monthRange
+            )
+        } else {
+            monthNeedsRates = false
+        }
+
+        guard let selectedDayEnd = Self.cal.date(
+            byAdding: .day,
+            value: 1,
+            to: selectedDate
+        ) else { return monthNeedsRates }
+
+        let selectedRange = selectedDate..<selectedDayEnd
+        let selectedNeedsRates = aggregateRecurringSpend.requiresExchangeRates(
+            projections: selectedDayCharges.map {
+                projection(for: $0, on: selectedDate)
+            },
+            reportingCurrencyCode: reportingCurrencyCode,
+            range: selectedRange
+        )
+        return monthNeedsRates || selectedNeedsRates
+    }
+
+    private func projection(for item: RecurringItem, on date: Date) -> RecurringSpendProjection {
+        RecurringSpendProjection(
+            date: date,
+            amount: item.amount,
+            currencyCode: item.currencyCode
+        )
     }
 
     // MARK: - Grid Construction

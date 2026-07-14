@@ -30,6 +30,7 @@
 		1388A547869A2A2BA95CC8D7 /* RecurringItemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D5A3EC78A790E61CAD07A89 /* RecurringItemTests.swift */; };
 		14B6223F8B35374A39EA1FD7 /* HomeHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D22AF1ECA5F764BF4C816F1 /* HomeHeaderView.swift */; };
 		14FAD191C47CD95CDF6C6518 /* StateViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20EC791707151DB425DF4523 /* StateViews.swift */; };
+		1B018893C9870B39545BE785 /* AppContainer+CalendarFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BC0056301AA302B544B628D /* AppContainer+CalendarFactory.swift */; };
 		1D8BAEA0072A517150500030 /* AddSubscriptionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B159CB7446D97BCE3FBBE7AE /* AddSubscriptionViewModel.swift */; };
 		21006C45289C9333966B24F9 /* InsightRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05A9D63C02EDF5AB21EF8D17 /* InsightRowView.swift */; };
 		2177D4E14F0174CC23AD944C /* SubscriptionFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB20EA2841D6985A5FDC19A7 /* SubscriptionFormView.swift */; };
@@ -77,6 +78,7 @@
 		46F810DD72F4B9AA37C11574 /* UpcomingChargesSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 537D798922991ABAADD19C84 /* UpcomingChargesSectionView.swift */; };
 		4D64A67C6D09B01C37CB27F9 /* AmountLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7960A2157878C5C39AE82756 /* AmountLabel.swift */; };
 		4E694388778785AFE5CCCE72 /* NotificationSchedulerTitleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A420A6845C8D36C45DCE355E /* NotificationSchedulerTitleTests.swift */; };
+		4F32C1A2B2B9CEE98E3184A0 /* CalendarCurrencyAggregationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FC5B5C1C3496705DF3F328 /* CalendarCurrencyAggregationTests.swift */; };
 		50A1AE6330F81D365103E9B3 /* ValidationErrorFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B4ED267EDB217E4783C0540 /* ValidationErrorFormatterTests.swift */; };
 		50C39ECEA025E0E6793551C1 /* SorenUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593F223EC1D8EC1482C3ABD5 /* SorenUITests.swift */; };
 		50D781EBD0D92061CF1844A4 /* UserPreferencesRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03A97C0EA66D48E990556524 /* UserPreferencesRepository.swift */; };
@@ -319,6 +321,7 @@
 		6ADA45D4D60B8F3261C7B496 /* SupportedCurrency+Display.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SupportedCurrency+Display.swift"; sourceTree = "<group>"; };
 		6AE23A399CED2B38971BCB57 /* GetUpcomingCharges.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetUpcomingCharges.swift; sourceTree = "<group>"; };
 		6B4ED267EDB217E4783C0540 /* ValidationErrorFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationErrorFormatterTests.swift; sourceTree = "<group>"; };
+		6BC0056301AA302B544B628D /* AppContainer+CalendarFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppContainer+CalendarFactory.swift"; sourceTree = "<group>"; };
 		6CB961DE71FAF0774445A452 /* AnalyticsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsViewModel.swift; sourceTree = "<group>"; };
 		6F8C8F4A6B62D148686189D9 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		6F935C51942C260D6EE1004A /* StatBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatBlock.swift; sourceTree = "<group>"; };
@@ -425,6 +428,7 @@
 		F3F143755C60DD39251EB0B0 /* GetUpcomingChargesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetUpcomingChargesTests.swift; sourceTree = "<group>"; };
 		F566BC8691A4049871A72174 /* UpdateRecurringItemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateRecurringItemTests.swift; sourceTree = "<group>"; };
 		F5C46E050399632FDE7B0454 /* ExchangeRateProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRateProvider.swift; sourceTree = "<group>"; };
+		F5FC5B5C1C3496705DF3F328 /* CalendarCurrencyAggregationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarCurrencyAggregationTests.swift; sourceTree = "<group>"; };
 		F7705C464A405A91322BAAC4 /* ProviderCatalogRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderCatalogRepository.swift; sourceTree = "<group>"; };
 		F95FABB15A6F0EE1E4D13898 /* Materials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Materials.swift; sourceTree = "<group>"; };
 		FA1829C587899C7C72F7ABF5 /* HomeScreenState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreenState.swift; sourceTree = "<group>"; };
@@ -821,6 +825,7 @@
 			isa = PBXGroup;
 			children = (
 				8C260B954C3104C784E92C46 /* AddSubscriptionTierTests.swift */,
+				F5FC5B5C1C3496705DF3F328 /* CalendarCurrencyAggregationTests.swift */,
 				8C9E457E5F3AE1FA3BDF6AE3 /* CurrencyEstimateFormTests.swift */,
 				F3F143755C60DD39251EB0B0 /* GetUpcomingChargesTests.swift */,
 				07DDC6D0BC0E6D32CC6C2CB9 /* HomeCurrencyAggregationTests.swift */,
@@ -1097,6 +1102,7 @@
 			children = (
 				704603302FD9C648B425E8B6 /* AppContainer.swift */,
 				FDA0E9CE1CF93B8F5C95A797 /* AppContainer+AnalyticsFactory.swift */,
+				6BC0056301AA302B544B628D /* AppContainer+CalendarFactory.swift */,
 				065C3A6652CA332D4B3CFEA6 /* AppContainer+HomeFactory.swift */,
 				EFF5B34A61391D9F3BE3020C /* AppContainer+SubscriptionFactory.swift */,
 				2264C0A5E995F4CE3A9289F4 /* AppState.swift */,
@@ -1324,6 +1330,7 @@
 				ECA6E72B57B8A4CA040B307D /* AnalyticsView.swift in Sources */,
 				99D4482F2360C3032DA9DD5F /* AnalyticsViewModel.swift in Sources */,
 				C585BED9BAE43ABE4BF44C80 /* AppContainer+AnalyticsFactory.swift in Sources */,
+				1B018893C9870B39545BE785 /* AppContainer+CalendarFactory.swift in Sources */,
 				2E9A9C78436D16FB785D0B50 /* AppContainer+HomeFactory.swift in Sources */,
 				4312666E66069F3C2557555A /* AppContainer+SubscriptionFactory.swift in Sources */,
 				BC67F03FFAAF36667E671F79 /* AppContainer.swift in Sources */,
@@ -1483,6 +1490,7 @@
 				E9CBF6DF558DD865FFA2D11C /* AmountLabelTests.swift in Sources */,
 				C495539F7E533ACA7ABF6162 /* BillingCycleEncoderTests.swift in Sources */,
 				0B2E3988602DFFDC732E24E8 /* BillingCycleTests.swift in Sources */,
+				4F32C1A2B2B9CEE98E3184A0 /* CalendarCurrencyAggregationTests.swift in Sources */,
 				42BD4BC83B42D5FCE350B4AD /* CurrencyEstimateFormTests.swift in Sources */,
 				21EDA56E9EA6F376C89DB5BE /* DatingCatalogTests.swift in Sources */,
 				D63127EDAD3A2FE9AF0E246A /* DeleteRecurringItemTests.swift in Sources */,

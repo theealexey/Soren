@@ -9,6 +9,7 @@ import SwiftUI
 struct CalendarView: View {
     @Environment(AppContainer.self) private var container
     @Environment(\.navigateToItem) private var navigateToItem
+    @Environment(\.scenePhase) private var scenePhase
     @State private var viewModel: CalendarViewModel?
 
     /// Maximum width of the calendar content column.
@@ -28,14 +29,15 @@ struct CalendarView: View {
         .background(ColorTokens.background)
         .task {
             guard viewModel == nil else { return }
-            let vm = CalendarViewModel(
-                repository: container.repositories.recurringItems,
-                preferences: container.preferences
-            )
+            let vm = container.makeCalendarViewModel()
             viewModel = vm
             vm.load()
         }
         .onChange(of: container.itemsVersion) { _, _ in
+            viewModel?.load(forceReload: true)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active, viewModel?.isLoaded == true else { return }
             viewModel?.load(forceReload: true)
         }
     }
@@ -44,21 +46,27 @@ struct CalendarView: View {
 
     @ViewBuilder
     private func calendarContent(_ vm: CalendarViewModel) -> some View {
-        if vm.error != nil {
-            ErrorStateView(message: "Не удалось загрузить данные") {
-                vm.load(forceReload: true)
-            }
-        } else {
-            ScrollView {
-                VStack(spacing: 0) {
-                    monthNavHeader(vm)
-                    weekdayHeader
-                    calendarGrid(vm)
-                    selectedDaySection(vm)
+        Group {
+            if vm.error != nil {
+                ErrorStateView(message: "Не удалось загрузить данные") {
+                    vm.load(forceReload: true)
                 }
-                .frame(maxWidth: calendarContentMaxWidth)
-                .frame(maxWidth: .infinity, alignment: .center)
+            } else {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        monthNavHeader(vm)
+                        weekdayHeader
+                        calendarGrid(vm)
+                        selectedDaySection(vm)
+                    }
+                    .frame(maxWidth: calendarContentMaxWidth)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                }
             }
+        }
+        .task(id: vm.aggregationRevision) {
+            let revision = vm.aggregationRevision
+            await vm.refreshCurrencyAggregation(revision: revision)
         }
     }
 
@@ -295,7 +303,7 @@ struct CalendarView: View {
                 .padding(.horizontal, Spacing.lg)
             }
 
-            if vm.monthlyTotal > 0 {
+            if vm.hasMonthlyCharges, vm.monthlyAggregation != nil {
                 monthlyTotalFooter(vm: vm)
             }
         }
@@ -304,22 +312,61 @@ struct CalendarView: View {
     }
 
     private func monthlyTotalFooter(vm: CalendarViewModel) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: Spacing.xxxs) {
-                Text(String(localized: "Итого за месяц"))
-                    .font(Typography.captionMedium)
-                    .foregroundStyle(ColorTokens.textSecondary)
-                if vm.hasMultiCurrencyItems {
-                    Text(String(localized: "Только \(vm.defaultCurrency)"))
-                        .font(Typography.footnote)
-                        .foregroundStyle(ColorTokens.textTertiary)
+        Group {
+            if let aggregation = vm.monthlyAggregation {
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: Spacing.xxxs) {
+                        Text(String(localized: "Итого за месяц"))
+                            .font(Typography.captionMedium)
+                            .foregroundStyle(ColorTokens.textSecondary)
+
+                        switch aggregation {
+                        case let .complete(_, metadata):
+                            if let metadata, case .stale = metadata.freshness {
+                                Text(String(localized: "По сохранённому курсу"))
+                                    .font(Typography.footnote)
+                                    .foregroundStyle(ColorTokens.warning)
+                            }
+
+                        case let .partial(_, missingCodes, metadata):
+                            Text(String(localized: "Нет курсов для \(missingCodes.joined(separator: ", "))"))
+                                .font(Typography.footnote)
+                                .foregroundStyle(ColorTokens.warning)
+                            if let metadata, case .stale = metadata.freshness {
+                                Text(String(localized: "По сохранённому курсу"))
+                                    .font(Typography.footnote)
+                                    .foregroundStyle(ColorTokens.warning)
+                            }
+
+                        case let .unavailable(_, missingCodes, _, metadata):
+                            Text(String(localized: "Курсы валют недоступны"))
+                                .font(Typography.footnote)
+                                .foregroundStyle(ColorTokens.textTertiary)
+                            if !missingCodes.isEmpty {
+                                Text(String(localized: "Нет курсов для \(missingCodes.joined(separator: ", "))"))
+                                    .font(Typography.footnote)
+                                    .foregroundStyle(ColorTokens.textTertiary)
+                            }
+                            if let metadata, case .stale = metadata.freshness {
+                                Text(String(localized: "По сохранённому курсу"))
+                                    .font(Typography.footnote)
+                                    .foregroundStyle(ColorTokens.warning)
+                            }
+                        }
+                    }
+                    Spacer()
+                    if let total = aggregation.total {
+                        AmountLabel(
+                            total.amount,
+                            currency: total.currencyCode,
+                            size: .medium
+                        )
+                    }
                 }
+                .padding(.horizontal, Spacing.lg)
+                .padding(.top, Spacing.sm)
             }
-            Spacer()
-            AmountLabel(vm.monthlyTotal, currency: vm.defaultCurrency, size: .medium)
         }
-        .padding(.horizontal, Spacing.lg)
-        .padding(.top, Spacing.sm)
     }
 
     // MARK: - Helpers

@@ -3733,6 +3733,16 @@
         }
       }
     },
+    "Нет курсов для %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Missing rates for %@"
+          }
+        }
+      }
+    },
     "Нет платежей" : {
       "localizations" : {
         "en" : {
@@ -4148,6 +4158,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plus"
+          }
+        }
+      }
+    },
+    "По сохранённому курсу" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Using cached rates"
           }
         }
       }
