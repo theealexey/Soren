@@ -144,10 +144,10 @@ struct ExchangeRatesTests {
         let micro = ExchangeRates(
             base: "USD",
             date: .now,
-            rates: ["MICRO": Decimal(string: "0.000001")!, "RUB": 87.5],
+            rates: ["XTS": Decimal(string: "0.000001")!, "RUB": 87.5],
             fetchedAt: .now
         )
-        let result = micro.convert(1, from: "MICRO", to: "RUB")
+        let result = micro.convert(1, from: "XTS", to: "RUB")
         #expect(result != nil)
         // 1 * 87.5 / 0.000001 = 87_500_000
         #expect(result == Decimal(string: "87.5")! / Decimal(string: "0.000001")!)

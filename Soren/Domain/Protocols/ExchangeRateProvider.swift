@@ -15,15 +15,15 @@ struct ExchangeRates: Equatable, Sendable {
     let fetchedAt: Date
 
     /// Convert an amount between two currencies using cross-rate math.
-    /// Returns nil if either currency is unknown.
+    /// Compatibility adapter for screens not yet migrated to `ConvertMoneyUseCase`.
     func convert(_ amount: Decimal, from source: String, to target: String) -> Decimal? {
-        guard source != target else { return amount }
-
-        let sourceRate: Decimal? = source == base ? 1 : rates[source]
-        let targetRate: Decimal? = target == base ? 1 : rates[target]
-
-        guard let s = sourceRate, let t = targetRate, s != 0 else { return nil }
-        return amount * t / s
+        guard let original = try? Money(amount: amount, currencyCode: source) else {
+            return nil
+        }
+        let snapshot = ExchangeRateSnapshot(exchangeRates: self, freshness: .fresh)
+        return try? ConvertMoneyUseCase()
+            .execute(original: original, targetCurrencyCode: target, snapshot: snapshot)
+            .converted.amount
     }
 
     static let empty = ExchangeRates(base: "USD", date: .distantPast, rates: [:], fetchedAt: .distantPast)
@@ -34,6 +34,13 @@ struct ExchangeRates: Equatable, Sendable {
 /// Abstraction for fetching exchange rates.
 /// Domain layer depends on this protocol; Data layer provides the implementation.
 protocol ExchangeRateProvider: Sendable {
-    /// Fetch the latest rates. Implementations handle caching internally.
-    func latestRates() async throws -> ExchangeRates
+    /// Fetch rates together with their cache freshness.
+    func latestSnapshot() async throws -> ExchangeRateSnapshot
+}
+
+extension ExchangeRateProvider {
+    /// Compatibility adapter for existing callers during the staged migration.
+    func latestRates() async throws -> ExchangeRates {
+        try await latestSnapshot().exchangeRates
+    }
 }

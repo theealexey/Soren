@@ -4,19 +4,14 @@ import Foundation
 
 /// Abstraction for persisting exchange rates between app launches.
 protocol ExchangeRateCache: Sendable {
-    func load() -> ExchangeRates?
-    func save(_ rates: ExchangeRates)
+    func load() async -> ExchangeRates?
+    func save(_ rates: ExchangeRates) async
 }
 
 // MARK: - UserDefaults Implementation
 
-/// Persists exchange rates in UserDefaults as JSON.
-///
-/// SAFETY: `UserDefaults` is internally thread-safe for basic get/set operations.
-/// This class holds no other mutable state, making cross-actor access safe without
-/// actor isolation. If any non-UserDefaults state is added in future, reconsider
-/// and make this an `actor` instead.
-final class UserDefaultsExchangeRateCache: ExchangeRateCache, @unchecked Sendable {
+/// Persists exchange rates in UserDefaults as JSON behind actor isolation.
+actor UserDefaultsExchangeRateCache: ExchangeRateCache {
     private let defaults: UserDefaults
     private let key = "soren.exchangeRates"
 
@@ -24,12 +19,12 @@ final class UserDefaultsExchangeRateCache: ExchangeRateCache, @unchecked Sendabl
         self.defaults = defaults
     }
 
-    func load() -> ExchangeRates? {
+    func load() async -> ExchangeRates? {
         guard let data = defaults.data(forKey: key) else { return nil }
         return try? JSONDecoder().decode(CodableExchangeRates.self, from: data).toDomain()
     }
 
-    func save(_ rates: ExchangeRates) {
+    func save(_ rates: ExchangeRates) async {
         let codable = CodableExchangeRates(from: rates)
         if let data = try? JSONEncoder().encode(codable) {
             defaults.set(data, forKey: key)

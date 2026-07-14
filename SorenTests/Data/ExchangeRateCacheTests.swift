@@ -1,114 +1,75 @@
-import Testing
 import Foundation
+import Testing
 @testable import Soren
-
-// MARK: - Exchange Rate Cache Tests (Adversarial)
-
-/// Tests UserDefaults-backed rate cache for round-trip fidelity,
-/// overwrite correctness, and precision preservation.
 
 @Suite("ExchangeRateCache")
 struct ExchangeRateCacheTests {
+    private func makeCache() throws -> UserDefaultsExchangeRateCache {
+        let suiteName = "test.exchangeRateCache.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        return UserDefaultsExchangeRateCache(defaults: defaults)
+    }
 
-    /// Isolated UserDefaults suite — no leakage to real defaults.
-    private func makeCache() -> UserDefaultsExchangeRateCache {
-        let suite = UserDefaults(suiteName: "test.exchangeRateCache.\(UUID().uuidString)")!
-        return UserDefaultsExchangeRateCache(defaults: suite)
+    private func decimal(_ value: String) throws -> Decimal {
+        try #require(Decimal(string: value))
     }
 
     private func makeSampleRates(
-        rates: [String: Decimal] = ["RUB": 87.5, "EUR": 0.92],
-        fetchedAt: Date = .now
+        rates: [String: Decimal],
+        providerDate: Date,
+        fetchedAt: Date
     ) -> ExchangeRates {
-        ExchangeRates(base: "USD", date: fetchedAt, rates: rates, fetchedAt: fetchedAt)
+        ExchangeRates(base: "USD", date: providerDate, rates: rates, fetchedAt: fetchedAt)
     }
 
-    // MARK: - Round-Trip
+    @Test("Cache round-trip preserves Decimal rates and timestamps")
+    func roundTripPreservesValue() async throws {
+        let cache = try makeCache()
+        let providerDate = Date(timeIntervalSince1970: 1_700_000_000)
+        let fetchedAt = Date(timeIntervalSince1970: 1_700_000_123)
+        let original = makeSampleRates(
+            rates: [
+                "RUB": try decimal("87.123456"),
+                "TINY": try decimal("0.000001"),
+            ],
+            providerDate: providerDate,
+            fetchedAt: fetchedAt
+        )
 
-    @Test("Save then load returns equal rates")
-    func roundTrip() {
-        let cache = makeCache()
-        let original = makeSampleRates()
+        await cache.save(original)
+        let loaded = await cache.load()
 
-        cache.save(original)
-        let loaded = cache.load()
-
-        #expect(loaded != nil)
-        #expect(loaded?.base == original.base)
-        #expect(loaded?.rates == original.rates)
+        #expect(loaded == original)
     }
 
-    // MARK: - Empty State
-
-    @Test("Load from empty defaults returns nil")
-    func emptyDefaults() {
-        let cache = makeCache()
-        #expect(cache.load() == nil)
+    @Test("Empty cache returns nil")
+    func emptyDefaults() async throws {
+        let cache = try makeCache()
+        #expect(await cache.load() == nil)
     }
 
-    // MARK: - Overwrite
+    @Test("Second save replaces the previous snapshot")
+    func overwrite() async throws {
+        let cache = try makeCache()
+        let date = Date(timeIntervalSince1970: 1_700_000_000)
+        let first = makeSampleRates(rates: ["RUB": 80], providerDate: date, fetchedAt: date)
+        let second = makeSampleRates(rates: ["RUB": 95], providerDate: date, fetchedAt: date)
 
-    @Test("Second save overwrites first — load returns latest")
-    func overwrite() {
-        let cache = makeCache()
+        await cache.save(first)
+        await cache.save(second)
 
-        let first = makeSampleRates(rates: ["RUB": 80])
-        let second = makeSampleRates(rates: ["RUB": 95])
-
-        cache.save(first)
-        cache.save(second)
-
-        let loaded = cache.load()
-        #expect(loaded?.rates["RUB"] == 95)
+        #expect(await cache.load() == second)
     }
 
-    // MARK: - Decimal Precision
+    @Test("Independent cache suites do not share values")
+    func isolation() async throws {
+        let firstCache = try makeCache()
+        let secondCache = try makeCache()
+        let date = Date(timeIntervalSince1970: 1_700_000_000)
+        let rates = makeSampleRates(rates: ["RUB": 87.5], providerDate: date, fetchedAt: date)
 
-    @Test("Decimal precision survives round-trip")
-    func decimalPrecision() {
-        let cache = makeCache()
-        let precise = makeSampleRates(rates: [
-            "PRECISE": Decimal(string: "87.123456")!,
-            "TINY": Decimal(string: "0.000001")!,
-        ])
+        await firstCache.save(rates)
 
-        cache.save(precise)
-        let loaded = cache.load()
-
-        #expect(loaded?.rates["PRECISE"] == Decimal(string: "87.123456")!)
-        #expect(loaded?.rates["TINY"] == Decimal(string: "0.000001")!)
-    }
-
-    // MARK: - Large Dictionary
-
-    @Test("50-currency dictionary survives without data loss")
-    func largeDictionary() {
-        let cache = makeCache()
-
-        var bigRates: [String: Decimal] = [:]
-        for i in 0..<50 {
-            bigRates["CUR\(String(format: "%02d", i))"] = Decimal(i + 1) + Decimal(string: "0.5")!
-        }
-
-        let rates = makeSampleRates(rates: bigRates)
-        cache.save(rates)
-        let loaded = cache.load()
-
-        #expect(loaded != nil)
-        #expect(loaded?.rates.count == 50)
-        #expect(loaded?.rates["CUR00"] == Decimal(string: "1.5")!)
-        #expect(loaded?.rates["CUR49"] == Decimal(string: "50.5")!)
-    }
-
-    // MARK: - Isolation
-
-    @Test("Different cache instances don't leak data")
-    func isolation() {
-        let cache1 = makeCache()
-        let cache2 = makeCache()
-
-        cache1.save(makeSampleRates(rates: ["RUB": 87.5]))
-
-        #expect(cache2.load() == nil, "Cache2 should not see Cache1's data")
+        #expect(await secondCache.load() == nil)
     }
 }
