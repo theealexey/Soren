@@ -63,6 +63,37 @@ struct LibraryTotalTests {
         func requests() -> Int { requestCount }
     }
 
+    private actor DeferredExchangeRateProvider: ExchangeRateProvider {
+        private var continuations: [CheckedContinuation<ExchangeRateSnapshot, Error>] = []
+        private var requestCount = 0
+        private var requestWaiters: [CheckedContinuation<Void, Never>] = []
+
+        func latestSnapshot() async throws -> ExchangeRateSnapshot {
+            requestCount += 1
+            let waiters = requestWaiters
+            requestWaiters.removeAll()
+            for waiter in waiters {
+                waiter.resume()
+            }
+
+            return try await withCheckedThrowingContinuation { continuation in
+                continuations.append(continuation)
+            }
+        }
+
+        func waitForRequests(_ expectedCount: Int) async {
+            guard requestCount < expectedCount else { return }
+            await withCheckedContinuation { continuation in
+                requestWaiters.append(continuation)
+            }
+        }
+
+        func resumeRequest(at index: Int, with snapshot: ExchangeRateSnapshot) {
+            guard continuations.indices.contains(index) else { return }
+            continuations.remove(at: index).resume(returning: snapshot)
+        }
+    }
+
     private struct PreferencesFixture {
         let repository: UserPreferencesRepository
         let defaults: UserDefaults
@@ -122,22 +153,25 @@ struct LibraryTotalTests {
         amount: Decimal,
         currencyCode: String,
         cycle: BillingCycle = .monthly,
-        status: ItemStatus = .active
+        status: ItemStatus = .active,
+        nextChargeDate: Date = .now,
+        createdAt: Date = .now
     ) -> RecurringItem {
         RecurringItem(
             title: title,
             amount: amount,
             currencyCode: currencyCode,
             billingCycle: cycle,
-            nextChargeDate: .now,
-            status: status
+            nextChargeDate: nextChargeDate,
+            status: status,
+            createdAt: createdAt
         )
     }
 
-    private func viewModel(
+    private func viewModel<Provider: ExchangeRateProvider>(
         items: [RecurringItem],
         preferences: UserPreferencesRepository,
-        provider: RecordingExchangeRateProvider,
+        provider: Provider,
         searchDebounceDelay: Duration = .zero
     ) -> LibraryViewModel {
         let repository = InMemoryRecurringItemRepository(items: items)
@@ -376,14 +410,295 @@ struct LibraryTotalTests {
             .success(snapshot(freshness: .stale(age: age)))
         ])
         let vm = viewModel(
-            items: [item(title: "Spotify", amount: 10, currencyCode: "USD")],
+            items: [
+                item(title: "RUB", amount: 100, currencyCode: "RUB"),
+                item(title: "USD", amount: 2, currencyCode: "USD")
+            ],
             preferences: fixture.repository,
             provider: provider
         )
+
+        vm.sortOrder = .amountAsc
 
         vm.load()
         await refresh(vm)
 
         #expect(vm.filteredMonthlyAggregation?.rateMetadata?.freshness == .stale(age: age))
+        #expect(vm.filteredItems.map(\.title) == ["RUB", "USD"])
+    }
+
+    @Test("Amount sorting compares monthly reporting values instead of raw cross-currency decimals")
+    func amountSortingUsesConvertedMonthlyValues() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let rub = item(title: "100 RUB", amount: 100, currencyCode: "RUB")
+        let usd = item(title: "2 USD", amount: 2, currencyCode: "USD")
+        let provider = RecordingExchangeRateProvider(responses: [
+            .success(snapshot(rubRate: 100))
+        ])
+        let vm = viewModel(
+            items: [rub, usd],
+            preferences: fixture.repository,
+            provider: provider
+        )
+
+        vm.sortOrder = .amountAsc
+        vm.load()
+        await refresh(vm)
+
+        #expect(vm.filteredItems.map(\.title) == ["100 RUB", "2 USD"])
+        let totalBeforeDescending = vm.filteredMonthlyAggregation?.total
+
+        vm.sortOrder = .amountDesc
+
+        #expect(vm.filteredItems.map(\.title) == ["2 USD", "100 RUB"])
+        #expect(vm.filteredMonthlyAggregation?.total == totalBeforeDescending)
+        #expect(rub.amount == 100)
+        #expect(rub.currencyCode == "RUB")
+        #expect(usd.amount == 2)
+        #expect(usd.currencyCode == "USD")
+        #expect(await provider.requests() == 1)
+    }
+
+    @Test("Same-currency amount sorting does not request exchange rates")
+    func sameCurrencyAmountSortingDoesNotRequestRates() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let provider = RecordingExchangeRateProvider(responses: [])
+        let vm = viewModel(
+            items: [
+                item(title: "More", amount: 200, currencyCode: "RUB"),
+                item(title: "Less", amount: 100, currencyCode: "RUB")
+            ],
+            preferences: fixture.repository,
+            provider: provider
+        )
+
+        vm.sortOrder = .amountAsc
+        vm.load()
+        await refresh(vm)
+
+        #expect(vm.filteredItems.map(\.title) == ["Less", "More"])
+        #expect(await provider.requests() == 0)
+    }
+
+    @Test("Existing date, name, and recently-added sort modes remain unchanged")
+    func nonAmountSortModesRemainUnchanged() throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let referenceDate = Date.now
+        let vm = viewModel(
+            items: [
+                item(
+                    title: "Alpha",
+                    amount: 100,
+                    currencyCode: "RUB",
+                    nextChargeDate: referenceDate.addingTimeInterval(3 * 86_400),
+                    createdAt: referenceDate.addingTimeInterval(86_400)
+                ),
+                item(
+                    title: "Bravo",
+                    amount: 200,
+                    currencyCode: "RUB",
+                    nextChargeDate: referenceDate.addingTimeInterval(2 * 86_400),
+                    createdAt: referenceDate.addingTimeInterval(2 * 86_400)
+                ),
+                item(
+                    title: "Zulu",
+                    amount: 300,
+                    currencyCode: "RUB",
+                    nextChargeDate: referenceDate.addingTimeInterval(86_400),
+                    createdAt: referenceDate.addingTimeInterval(3 * 86_400)
+                )
+            ],
+            preferences: fixture.repository,
+            provider: RecordingExchangeRateProvider(responses: [])
+        )
+
+        vm.load()
+        #expect(vm.filteredItems.map(\.title) == ["Zulu", "Bravo", "Alpha"])
+
+        vm.sortOrder = .name
+        #expect(vm.filteredItems.map(\.title) == ["Alpha", "Bravo", "Zulu"])
+
+        vm.sortOrder = .recentlyAdded
+        #expect(vm.filteredItems.map(\.title) == ["Zulu", "Bravo", "Alpha"])
+    }
+
+    @Test("Amount sorting normalizes every supported billing cycle before conversion")
+    func amountSortingNormalizesBillingCyclesBeforeConversion() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let normalizedCases: [(String, Decimal, BillingCycle)] = [
+            ("Annual", 120, .annual),
+            ("Quarterly", 30, .quarterly),
+            ("Semiannual", 60, .semiannual),
+            ("Weekly", 2, .weekly),
+            ("Custom", 3, .custom(days: 10))
+        ]
+
+        for (title, amount, cycle) in normalizedCases {
+            let provider = RecordingExchangeRateProvider(responses: [
+                .success(snapshot(rubRate: 100))
+            ])
+            let vm = viewModel(
+                items: [
+                    item(title: title, amount: amount, currencyCode: "USD", cycle: cycle),
+                    item(title: "Monthly", amount: 15, currencyCode: "USD")
+                ],
+                preferences: fixture.repository,
+                provider: provider
+            )
+
+            vm.sortOrder = .amountAsc
+            vm.load()
+            await refresh(vm)
+
+            #expect(vm.filteredItems.map(\.title) == [title, "Monthly"])
+            #expect(await provider.requests() == 1)
+        }
+    }
+
+    @Test("Missing rates place unavailable amount keys after comparable values deterministically")
+    func unavailableAmountSortKeysNeverFallBackToRawValues() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let provider = RecordingExchangeRateProvider(responses: [
+            .success(snapshot(rubRate: 100))
+        ])
+        let vm = viewModel(
+            items: [
+                item(title: "Known", amount: 100, currencyCode: "RUB"),
+                item(title: "Unavailable B", amount: 2, currencyCode: "EUR"),
+                item(title: "Unavailable A", amount: 1, currencyCode: "JPY")
+            ],
+            preferences: fixture.repository,
+            provider: provider
+        )
+
+        vm.sortOrder = .amountAsc
+        vm.load()
+        await refresh(vm)
+
+        let expected = ["Known", "Unavailable A", "Unavailable B"]
+        #expect(vm.filteredItems.map(\.title) == expected)
+        #expect(vm.filteredMonthlyAggregation?.missingCurrencyCodes == ["EUR", "JPY"])
+
+        vm.sortOrder = .amountDesc
+
+        #expect(vm.filteredItems.map(\.title) == expected)
+    }
+
+    @Test("Search and status filters keep amount sorting within the visible rows")
+    func amountSortingPreservesSearchAndStatusFilterContracts() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let provider = RecordingExchangeRateProvider(responses: [
+            .success(snapshot(rubRate: 100))
+        ])
+        let vm = viewModel(
+            items: [
+                item(title: "Match RUB", amount: 100, currencyCode: "RUB"),
+                item(title: "Match USD", amount: 2, currencyCode: "USD"),
+                item(title: "Other", amount: 500, currencyCode: "RUB"),
+                item(title: "Paused Match", amount: 3, currencyCode: "USD", status: .paused)
+            ],
+            preferences: fixture.repository,
+            provider: provider
+        )
+
+        vm.sortOrder = .amountDesc
+        vm.load()
+        await refresh(vm)
+
+        await waitForFilteredItemsChange(in: vm) {
+            vm.searchText = "Match"
+        }
+
+        #expect(vm.filteredItems.map(\.title) == ["Paused Match", "Match USD", "Match RUB"])
+
+        vm.activeFilter = .paused
+
+        #expect(vm.filteredItems.map(\.title) == ["Paused Match"])
+        #expect(await provider.requests() == 1)
+    }
+
+    @Test("Reporting-currency reload recalculates amount keys without resetting sort mode")
+    func reportingCurrencyReloadRecalculatesAmountSortKeys() async throws {
+        let fixture = try preferences(currencyCode: "RUB")
+        defer { fixture.cleanUp() }
+        let provider = RecordingExchangeRateProvider(responses: [
+            .success(snapshot(rubRate: 100)),
+            .success(snapshot(rubRate: 100))
+        ])
+        let rub = item(title: "RUB", amount: 100, currencyCode: "RUB")
+        let usd = item(title: "USD", amount: 2, currencyCode: "USD")
+        let vm = viewModel(
+            items: [rub, usd],
+            preferences: fixture.repository,
+            provider: provider
+        )
+
+        vm.sortOrder = .amountAsc
+        vm.load()
+        await refresh(vm)
+        #expect(vm.defaultCurrency == "RUB")
+        #expect(vm.filteredMonthlyAggregation?.total?.amount == 300)
+
+        fixture.save(currencyCode: "USD")
+        vm.load()
+        await refresh(vm)
+
+        #expect(vm.defaultCurrency == "USD")
+        #expect(vm.sortOrder == .amountAsc)
+        #expect(vm.filteredItems.map(\.title) == ["RUB", "USD"])
+        #expect(vm.filteredMonthlyAggregation?.total?.amount == 3)
+        #expect(rub.currencyCode == "RUB")
+        #expect(usd.currencyCode == "USD")
+        #expect(await provider.requests() == 2)
+    }
+
+    @Test("Obsolete exchange-rate results cannot restore a previous reporting-currency amount order")
+    func obsoleteRateResultCannotRestorePreviousAmountSortOrder() async throws {
+        let fixture = try preferences(currencyCode: "RUB")
+        defer { fixture.cleanUp() }
+        let provider = DeferredExchangeRateProvider()
+        let vm = viewModel(
+            items: [
+                item(title: "RUB", amount: 100, currencyCode: "RUB"),
+                item(title: "USD", amount: 2, currencyCode: "USD")
+            ],
+            preferences: fixture.repository,
+            provider: provider
+        )
+
+        vm.sortOrder = .amountAsc
+        vm.load()
+        let previousRevision = vm.aggregationRevision
+        let previousRefresh = Task {
+            await vm.refreshCurrencyAggregation(revision: previousRevision)
+        }
+        await provider.waitForRequests(1)
+
+        fixture.save(currencyCode: "USD")
+        vm.load()
+        let currentRevision = vm.aggregationRevision
+        let currentRefresh = Task {
+            await vm.refreshCurrencyAggregation(revision: currentRevision)
+        }
+        await provider.waitForRequests(2)
+
+        await provider.resumeRequest(at: 1, with: snapshot(rubRate: 100))
+        await currentRefresh.value
+        #expect(vm.defaultCurrency == "USD")
+        #expect(vm.filteredMonthlyAggregation?.total?.amount == 3)
+
+        await provider.resumeRequest(at: 0, with: snapshot(rubRate: 10))
+        await previousRefresh.value
+
+        #expect(vm.defaultCurrency == "USD")
+        #expect(vm.aggregationRevision == currentRevision)
+        #expect(vm.filteredMonthlyAggregation?.total?.amount == 3)
+        #expect(vm.filteredItems.map(\.title) == ["RUB", "USD"])
     }
 }

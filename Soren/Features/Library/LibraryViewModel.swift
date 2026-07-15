@@ -47,6 +47,7 @@ final class LibraryViewModel {
     private let preferences: UserPreferencesRepository
     private let exchangeRateProvider: any ExchangeRateProvider
     private let aggregateRecurringSpend: AggregateRecurringSpendUseCase
+    private let convertMoney: ConvertMoneyUseCase
     private let searchDebounceDelay: Duration
 
     /// One snapshot is shared by every total in the current Library calculation.
@@ -89,6 +90,7 @@ final class LibraryViewModel {
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
         exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider(),
         aggregateRecurringSpend: AggregateRecurringSpendUseCase = AggregateRecurringSpendUseCase(),
+        convertMoney: ConvertMoneyUseCase = ConvertMoneyUseCase(),
         searchDebounceDelay: Duration = .milliseconds(150)
     ) {
         self.getLibraryItems = getLibraryItems
@@ -96,6 +98,7 @@ final class LibraryViewModel {
         self.preferences = preferences
         self.exchangeRateProvider = exchangeRateProvider
         self.aggregateRecurringSpend = aggregateRecurringSpend
+        self.convertMoney = convertMoney
         self.searchDebounceDelay = searchDebounceDelay
     }
 
@@ -105,6 +108,7 @@ final class LibraryViewModel {
         notificationScheduler: (any NotificationScheduling)? = nil,
         exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider(),
         aggregateRecurringSpend: AggregateRecurringSpendUseCase = AggregateRecurringSpendUseCase(),
+        convertMoney: ConvertMoneyUseCase = ConvertMoneyUseCase(),
         searchDebounceDelay: Duration = .milliseconds(150)
     ) {
         self.getLibraryItems = GetLibraryItems(repository: repositories.recurringItems)
@@ -115,6 +119,7 @@ final class LibraryViewModel {
         self.preferences = preferences
         self.exchangeRateProvider = exchangeRateProvider
         self.aggregateRecurringSpend = aggregateRecurringSpend
+        self.convertMoney = convertMoney
         self.searchDebounceDelay = searchDebounceDelay
     }
 
@@ -155,7 +160,9 @@ final class LibraryViewModel {
             let snapshot = try await exchangeRateProvider.latestSnapshot()
             guard !Task.isCancelled, revision == aggregationRevision else { return }
             exchangeRateSnapshot = snapshot
-            rebuildMonthlyAggregation(snapshot: snapshot)
+            // The same snapshot drives both the total and amount-sort projection.
+            // Recompute synchronously so rows cannot retain their pre-FX order.
+            recompute(scheduleSnapshotIfNeeded: false)
         } catch is CancellationError {
             return
         } catch {
@@ -203,7 +210,7 @@ final class LibraryViewModel {
                 || item.note.lowercased().contains(query)
             }
         }
-        result = sortOrder.apply(to: result)
+        result = sortItems(result)
         filteredItems = result
 
         // 3. Monthly total and active categories derived from the filtered result.
@@ -239,7 +246,7 @@ final class LibraryViewModel {
         if activeFilter == .all, searchText.isEmpty {
             let active   = result.filter { !$0.isExpired }
             let past     = result.filter {  $0.isExpired }
-            let archived = allItems.filter { $0.status == .archived }
+            let archived = sortItems(allItems.filter { $0.status == .archived })
 
             let hasMixed = !past.isEmpty || !archived.isEmpty
             var built: [LibrarySection] = []
@@ -278,6 +285,89 @@ final class LibraryViewModel {
             range: Self.aggregationRange
         )
     }
+
+    // MARK: - Amount Sorting
+
+    /// Produces monthly values in the current reporting currency before sorting.
+    /// Unknown conversions deliberately remain unavailable instead of falling back
+    /// to a raw amount from another currency.
+    private func sortItems(_ items: [RecurringItem]) -> [RecurringItem] {
+        guard sortOrder.isAmountBased else {
+            return sortOrder.apply(to: items)
+        }
+
+        var sortKeys: [UUID: MonthlyAmountSortKey] = [:]
+        for item in items {
+            sortKeys[item.id] = monthlyAmountSortKey(for: item)
+        }
+
+        return items.sorted { lhs, rhs in
+            let lhsKey = sortKeys[lhs.id] ?? .unavailable
+            let rhsKey = sortKeys[rhs.id] ?? .unavailable
+            return compareAmountSortKeys(lhsKey, rhsKey, lhs: lhs, rhs: rhs)
+        }
+    }
+
+    private func monthlyAmountSortKey(for item: RecurringItem) -> MonthlyAmountSortKey {
+        guard let reportingCurrencyCode = try? Money.normalizeCurrencyCode(defaultCurrency),
+              let monthlyMoney = try? Money(
+                  amount: item.monthlyEquivalent,
+                  currencyCode: item.currencyCode
+              )
+        else {
+            return .unavailable
+        }
+
+        if monthlyMoney.currencyCode == reportingCurrencyCode {
+            return .comparable(monthlyMoney.amount)
+        }
+
+        guard let exchangeRateSnapshot,
+              let conversion = try? convertMoney.execute(
+                  original: monthlyMoney,
+                  targetCurrencyCode: reportingCurrencyCode,
+                  snapshot: exchangeRateSnapshot
+              )
+        else {
+            return .unavailable
+        }
+
+        return .comparable(conversion.converted.amount)
+    }
+
+    private func compareAmountSortKeys(
+        _ lhsKey: MonthlyAmountSortKey,
+        _ rhsKey: MonthlyAmountSortKey,
+        lhs: RecurringItem,
+        rhs: RecurringItem
+    ) -> Bool {
+        switch (lhsKey, rhsKey) {
+        case let (.comparable(lhsValue), .comparable(rhsValue)):
+            if lhsValue != rhsValue {
+                return sortOrder == .amountAsc ? lhsValue < rhsValue : lhsValue > rhsValue
+            }
+            return hasDeterministicTieBreak(lhs, before: rhs)
+        case (.comparable, .unavailable):
+            return true
+        case (.unavailable, .comparable):
+            return false
+        case (.unavailable, .unavailable):
+            return hasDeterministicTieBreak(lhs, before: rhs)
+        }
+    }
+
+    private func hasDeterministicTieBreak(_ lhs: RecurringItem, before rhs: RecurringItem) -> Bool {
+        let titleOrder = lhs.title.localizedCaseInsensitiveCompare(rhs.title)
+        if titleOrder != .orderedSame {
+            return titleOrder == .orderedAscending
+        }
+        return lhs.id.uuidString < rhs.id.uuidString
+    }
+}
+
+private enum MonthlyAmountSortKey {
+    case comparable(Decimal)
+    case unavailable
 }
 
 // MARK: - Library Section
@@ -358,6 +448,15 @@ extension LibraryViewModel {
 
         var id: String { rawValue }
 
+        var isAmountBased: Bool {
+            switch self {
+            case .amountAsc, .amountDesc:
+                true
+            case .nextCharge, .name, .recentlyAdded:
+                false
+            }
+        }
+
         var title: String {
             switch self {
             case .nextCharge:   String(localized: "По дате списания")
@@ -384,10 +483,10 @@ extension LibraryViewModel {
                 return items.sorted { $0.nextChargeDate < $1.nextChargeDate }
             case .name:
                 return items.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
-            case .amountAsc:
-                return items.sorted { $0.monthlyEquivalent < $1.monthlyEquivalent }
-            case .amountDesc:
-                return items.sorted { $0.monthlyEquivalent > $1.monthlyEquivalent }
+            case .amountAsc, .amountDesc:
+                // Amount sorting requires reporting-currency projections built by
+                // LibraryViewModel; raw monthly values are not cross-currency keys.
+                return items
             case .recentlyAdded:
                 return items.sorted { $0.createdAt > $1.createdAt }
             }
