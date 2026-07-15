@@ -91,13 +91,15 @@ struct HomeCurrencyAggregationTests {
         title: String,
         amount: Decimal,
         currencyCode: String,
-        nextChargeDate: Date
+        nextChargeDate: Date,
+        status: ItemStatus = .active
     ) -> RecurringItem {
         RecurringItem(
             title: title,
             amount: amount,
             currencyCode: currencyCode,
-            nextChargeDate: nextChargeDate
+            nextChargeDate: nextChargeDate,
+            status: status
         )
     }
 
@@ -256,5 +258,172 @@ struct HomeCurrencyAggregationTests {
         #expect(missingCodes == ["USD"])
         #expect(reason == .noConvertibleAmounts)
         #expect(vm.landscapePoints.first(where: { $0.chargeCount == 1 })?.rawTotal == 0)
+    }
+
+    @Test("Paused and cancelled items never contribute to the Home forecast or selected day")
+    func inactiveItemsAreExcludedFromForecastAndSelection() throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
+        let active = item(
+            title: "Active",
+            amount: 299,
+            currencyCode: "RUB",
+            nextChargeDate: chargeDate
+        )
+        let paused = item(
+            title: "Paused",
+            amount: 500,
+            currencyCode: "RUB",
+            nextChargeDate: chargeDate,
+            status: .paused
+        )
+        let cancelled = item(
+            title: "Cancelled",
+            amount: 700,
+            currencyCode: "RUB",
+            nextChargeDate: chargeDate,
+            status: .cancelled
+        )
+        let provider = RecordingExchangeRateProvider(result: .failure(.unavailable))
+        let vm = viewModel(
+            items: [active, paused, cancelled],
+            preferences: preferences,
+            provider: provider
+        )
+
+        vm.load()
+
+        #expect(vm.forecastAggregation?.total?.amount == 299)
+        let dayPoint = try #require(vm.landscapePoints.first { $0.chargeCount > 0 })
+        #expect(dayPoint.chargeCount == 1)
+        #expect(dayPoint.rawTotal == 299)
+
+        vm.selectDate(chargeDate)
+        let selection = try #require(vm.selection)
+        #expect(selection.charges.map(\.id) == [active.id])
+        #expect(vm.calloutNavigationItem?.id == active.id)
+
+        // Home's existing upcoming-row contract stays status-filtered and the originals stay intact.
+        #expect(vm.upcomingCharges.map(\.id) == [active.id])
+        #expect(paused.status == .paused)
+        #expect(cancelled.status == .cancelled)
+        #expect(paused.amount == 500)
+        #expect(cancelled.amount == 700)
+    }
+
+    @Test("Paused and cancelled items never become the default Home hero", arguments: [
+        ItemStatus.paused,
+        ItemStatus.cancelled
+    ])
+    func inactiveStatusNeverBecomesDefaultHero(status: ItemStatus) throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let chargeDate = Calendar.current.date(byAdding: .day, value: 1, to: .now) ?? .now
+        let provider = RecordingExchangeRateProvider(result: .failure(.unavailable))
+        let vm = viewModel(
+            items: [item(
+                title: status.rawValue,
+                amount: 999,
+                currencyCode: "RUB",
+                nextChargeDate: chargeDate,
+                status: status
+            )],
+            preferences: preferences,
+            provider: provider
+        )
+
+        vm.load()
+
+        #expect(vm.callout == .noUpcoming)
+        #expect(vm.calloutNavigationItem == nil)
+        #expect(vm.forecastAggregation?.total?.amount == 0)
+        #expect(vm.landscapePoints.allSatisfy { $0.chargeCount == 0 && $0.rawTotal == 0 })
+        #expect(!vm.insights.contains { $0.id == .peak })
+    }
+
+    @Test("Home converts active foreign items while excluded foreign items do not make the result partial")
+    func activeMixedCurrencyStillConvertsAfterStatusFiltering() async throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let chargeDate = Calendar.current.date(byAdding: .day, value: 3, to: .now) ?? .now
+        let provider = RecordingExchangeRateProvider(result: .success(snapshot()))
+        let vm = viewModel(
+            items: [
+                item(title: "Active RUB", amount: 500, currencyCode: "RUB", nextChargeDate: chargeDate),
+                item(title: "Active USD", amount: 10, currencyCode: "USD", nextChargeDate: chargeDate),
+                item(
+                    title: "Paused USD",
+                    amount: 90,
+                    currencyCode: "USD",
+                    nextChargeDate: chargeDate,
+                    status: .paused
+                )
+            ],
+            preferences: preferences,
+            provider: provider
+        )
+
+        vm.load()
+        guard case let .partial(initialTotal, missingCodes, _) = vm.forecastAggregation else {
+            Issue.record("Expected only the active USD charge to await conversion")
+            return
+        }
+        #expect(initialTotal.amount == 500)
+        #expect(missingCodes == ["USD"])
+
+        await vm.refreshCurrencyAggregation()
+
+        #expect(vm.forecastAggregation?.isComplete == true)
+        #expect(vm.forecastAggregation?.total?.amount == 1_400)
+        #expect(vm.landscapePoints.first(where: { $0.chargeCount == 2 })?.rawTotal == 1_400)
+        let requestCount = await provider.requests()
+        #expect(requestCount == 1)
+    }
+
+    @Test("Excluded foreign items neither request FX nor create missing-currency state")
+    func excludedForeignItemsDoNotAffectFXAggregation() async throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let chargeDate = Calendar.current.date(byAdding: .day, value: 4, to: .now) ?? .now
+        let provider = RecordingExchangeRateProvider(result: .failure(.unavailable))
+        let vm = viewModel(
+            items: [
+                item(
+                    title: "Paused USD",
+                    amount: 10,
+                    currencyCode: "USD",
+                    nextChargeDate: chargeDate,
+                    status: .paused
+                ),
+                item(
+                    title: "Cancelled EUR",
+                    amount: 20,
+                    currencyCode: "EUR",
+                    nextChargeDate: chargeDate,
+                    status: .cancelled
+                )
+            ],
+            preferences: preferences,
+            provider: provider
+        )
+
+        vm.load()
+        await vm.refreshCurrencyAggregation()
+
+        guard case let .complete(total, metadata) = vm.forecastAggregation else {
+            Issue.record("Expected excluded foreign items to leave a complete zero total")
+            return
+        }
+        #expect(total.amount == 0)
+        #expect(total.currencyCode == "RUB")
+        #expect(metadata == nil)
+        #expect(vm.forecastAggregation?.missingCurrencyCodes == [])
+        let requestCount = await provider.requests()
+        #expect(requestCount == 0)
     }
 }

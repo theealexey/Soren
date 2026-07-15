@@ -59,6 +59,9 @@ final class HomeViewModel {
     /// Populated on load. Enables instant selectDate() without a repository hit.
     private var cachedItemsByDay: [Date: [RecurringItem]] = [:]
     private var cachedUpcoming: [RecurringItem] = []
+    /// Subset of the fetched upcoming items that is eligible for financial presentation.
+    /// Keep the raw collection separately so non-financial UI can retain its established contract.
+    private var cachedFinancialUpcoming: [RecurringItem] = []
     private var cachedTrials: [RecurringItem] = []
     private var cachedWindowStart: Date?
     private var cachedWindowEnd: Date?
@@ -113,12 +116,13 @@ final class HomeViewModel {
             // the active forecast so they don't inflate upcoming totals or landscape bars.
             let upcoming = try getUpcomingCharges.execute(days: windowDays, from: windowStart)
                 .filter { !$0.isExpired }
+            let financialUpcoming = upcoming.filter(\.status.countsInTotals)
             let trials   = try getActiveTrials.execute()
             reportingCurrencyCode = preferences.load().defaultCurrencyCode
 
             // Group by effective charge date so rolled-forward items land in the correct bucket.
             let grouped: [Date: [RecurringItem]] = Dictionary(
-                grouping: upcoming,
+                grouping: financialUpcoming,
                 by: {
                     calendar.startOfDay(
                         for: $0.effectiveNextChargeDate(relativeTo: windowStart, calendar: calendar)
@@ -127,6 +131,7 @@ final class HomeViewModel {
             )
             cachedItemsByDay = grouped
             cachedUpcoming = upcoming
+            cachedFinancialUpcoming = financialUpcoming
             cachedTrials = trials
             cachedWindowStart = windowStart
             cachedWindowEnd = windowEnd
@@ -148,7 +153,7 @@ final class HomeViewModel {
               let windowEnd = cachedWindowEnd
         else { return }
 
-        let projections = spendProjections(from: cachedUpcoming, relativeTo: windowStart)
+        let projections = spendProjections(from: cachedFinancialUpcoming, relativeTo: windowStart)
         guard aggregateRecurringSpend.requiresExchangeRates(
             projections: projections,
             reportingCurrencyCode: reportingCurrencyCode,
@@ -176,7 +181,7 @@ final class HomeViewModel {
               let windowEnd = cachedWindowEnd
         else { return }
 
-        let projections = spendProjections(from: cachedUpcoming, relativeTo: windowStart)
+        let projections = spendProjections(from: cachedFinancialUpcoming, relativeTo: windowStart)
         let forecastResult = aggregateRecurringSpend.execute(
             projections: projections,
             reportingCurrencyCode: reportingCurrencyCode,
@@ -229,7 +234,7 @@ final class HomeViewModel {
             let selectedItems = cachedItemsByDay[selectedDate] ?? []
             calloutNavigationItem = selectedItems.count == 1 ? selectedItems[0] : nil
         } else {
-            let nextItem = cachedUpcoming
+            let nextItem = cachedFinancialUpcoming
                 .filter {
                     $0.effectiveNextChargeDate(relativeTo: windowStart, calendar: calendar) >= windowStart
                 }
