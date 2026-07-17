@@ -201,22 +201,24 @@ final class HomeViewModel {
             )
         }
 
-        let dailyTotals = dailyResults.mapValues { $0.total?.amount ?? .zero }
-        let maxTotal = dailyTotals.values.max() ?? .zero
+        let dailyStates = dailyResults.mapValues(DailyFinancialState.init(aggregationResult:))
+        let maxTotal = dailyStates.values.compactMap(\.numericAmount).max() ?? .zero
         let windowDays = 30
 
         landscapePoints = (0..<windowDays).map { offset in
             let day = calendar.date(byAdding: .day, value: offset, to: windowStart) ?? windowStart
-            let total = dailyTotals[day] ?? .zero
-            let normalized: Double = maxTotal > 0
-                ? NSDecimalNumber(decimal: total / maxTotal).doubleValue
-                : 0
+            let financialState = dailyStates[day] ?? .complete(amount: .zero)
+            let normalized = financialState.numericAmount.map { total in
+                maxTotal > 0
+                    ? NSDecimalNumber(decimal: total / maxTotal).doubleValue
+                    : 0
+            }
 
             return BillingLandscapePoint(
                 id: offset,
                 date: day,
+                financialState: financialState,
                 normalizedHeight: normalized,
-                rawTotal: total,
                 currencyCode: reportingCurrencyCode,
                 chargeCount: cachedItemsByDay[day]?.count ?? 0
             )
@@ -351,11 +353,13 @@ final class HomeViewModel {
             )
         }
 
+        let aggregation = aggregate(items: items, on: day)
         return BillingLandscapeSelection(
             date: day,
             formattedDate: Self.dayFormatter.string(from: day),
             charges: charges,
-            totalFormatted: formattedAggregationAmount(aggregate(items: items, on: day))
+            financialState: DailyFinancialState(aggregationResult: aggregation),
+            totalFormatted: formattedAggregationAmount(aggregation)
         )
     }
 
@@ -418,11 +422,12 @@ final class HomeViewModel {
         var weeks: [WeekKey: WeekBucket] = [:]
 
         for point in points {
+            guard let total = point.rawTotal else { continue }
             let comps = calendar.dateComponents([.weekOfYear, .yearForWeekOfYear], from: point.date)
             let key = WeekKey(year: comps.yearForWeekOfYear ?? 0, week: comps.weekOfYear ?? 0)
             let existing = weeks[key]
             weeks[key] = WeekBucket(
-                total: (existing?.total ?? 0) + point.rawTotal,
+                total: (existing?.total ?? 0) + total,
                 start: min(existing?.start ?? point.date, point.date),
                 end:   max(existing?.end   ?? point.date, point.date)
             )

@@ -70,6 +70,42 @@ struct HomeCurrencyAggregationTests {
         func requests() -> Int { requestCount }
     }
 
+    private actor DeferredExchangeRateProvider: ExchangeRateProvider {
+        private var continuations: [CheckedContinuation<ExchangeRateSnapshot, Error>] = []
+        private var requestCount = 0
+        private var requestWaiters: [CheckedContinuation<Void, Never>] = []
+
+        func latestSnapshot() async throws -> ExchangeRateSnapshot {
+            requestCount += 1
+            let waiters = requestWaiters
+            requestWaiters.removeAll()
+            for waiter in waiters {
+                waiter.resume()
+            }
+
+            return try await withCheckedThrowingContinuation { continuation in
+                continuations.append(continuation)
+            }
+        }
+
+        func waitForRequests(_ expectedCount: Int) async {
+            guard requestCount < expectedCount else { return }
+            await withCheckedContinuation { continuation in
+                requestWaiters.append(continuation)
+            }
+        }
+
+        func resumeRequest(at index: Int, with snapshot: ExchangeRateSnapshot) {
+            guard continuations.indices.contains(index) else { return }
+            continuations.remove(at: index).resume(returning: snapshot)
+        }
+
+        func failRequest(at index: Int) {
+            guard continuations.indices.contains(index) else { return }
+            continuations.remove(at: index).resume(throwing: TestRateError.unavailable)
+        }
+    }
+
     private enum TestRateError: Error, Sendable {
         case unavailable
     }
@@ -107,13 +143,20 @@ struct HomeCurrencyAggregationTests {
         let suiteName = "HomeCurrencyAggregationTests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
         let repository = UserPreferencesRepository(defaults: defaults)
+        savePreferences(repository, currencyCode: "RUB")
+        return (repository, defaults, suiteName)
+    }
+
+    private func savePreferences(
+        _ repository: UserPreferencesRepository,
+        currencyCode: String
+    ) {
         repository.save(UserPreferences(
-            defaultCurrencyCode: "RUB",
+            defaultCurrencyCode: currencyCode,
             defaultChargeReminder: .threeDaysBefore,
             chargeAlertDays: 3,
             trialAlertDays: 3
         ))
-        return (repository, defaults, suiteName)
     }
 
     private func viewModel<Provider: ExchangeRateProvider>(
@@ -257,7 +300,21 @@ struct HomeCurrencyAggregationTests {
         #expect(code == "RUB")
         #expect(missingCodes == ["USD"])
         #expect(reason == .noConvertibleAmounts)
-        #expect(vm.landscapePoints.first(where: { $0.chargeCount == 1 })?.rawTotal == 0)
+        let point = try #require(vm.landscapePoints.first { $0.chargeCount == 1 })
+        #expect(point.financialState == .unavailable(
+            missingCurrencyCodes: ["USD"],
+            reason: .noConvertibleAmounts
+        ))
+        #expect(point.rawTotal == nil)
+        #expect(point.normalizedHeight == nil)
+        #expect(BillingLandscapeChartView.numericPoints(from: vm.landscapePoints).isEmpty)
+        #expect(!vm.insights.contains { $0.id == .peak })
+
+        guard case let .nextPayment(_, _, amountFormatted, _) = vm.callout else {
+            Issue.record("Expected the unavailable charge to remain the Home hero")
+            return
+        }
+        #expect(amountFormatted == String(localized: "Курсы валют недоступны"))
     }
 
     @Test("Paused and cancelled items never contribute to the Home forecast or selected day")
@@ -382,6 +439,251 @@ struct HomeCurrencyAggregationTests {
         #expect(vm.landscapePoints.first(where: { $0.chargeCount == 2 })?.rawTotal == 1_400)
         let requestCount = await provider.requests()
         #expect(requestCount == 1)
+    }
+
+    @Test("Unavailable daily state remains non-numeric while an available day remains chartable")
+    func unavailableDailyStateDoesNotBecomeZeroPointOrSelectedDayTotal() throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let calendar = Calendar.current
+        let rubDate = calendar.date(byAdding: .day, value: 2, to: .now) ?? .now
+        let usdDate = calendar.date(byAdding: .day, value: 4, to: .now) ?? .now
+        let usd = item(title: "USD", amount: 3, currencyCode: "USD", nextChargeDate: usdDate)
+        let vm = viewModel(
+            items: [
+                item(title: "RUB", amount: 100, currencyCode: "RUB", nextChargeDate: rubDate),
+                usd
+            ],
+            preferences: preferences,
+            provider: RecordingExchangeRateProvider(result: .failure(.unavailable))
+        )
+
+        vm.load()
+
+        let rubPoint = try #require(vm.landscapePoints.first {
+            calendar.isDate($0.date, inSameDayAs: rubDate)
+        })
+        let usdPoint = try #require(vm.landscapePoints.first {
+            calendar.isDate($0.date, inSameDayAs: usdDate)
+        })
+        #expect(rubPoint.financialState == .complete(amount: 100))
+        #expect(rubPoint.rawTotal == 100)
+        #expect(rubPoint.normalizedHeight == 1)
+        #expect(usdPoint.financialState == .unavailable(
+            missingCurrencyCodes: ["USD"],
+            reason: .noConvertibleAmounts
+        ))
+        #expect(usdPoint.rawTotal == nil)
+        #expect(usdPoint.normalizedHeight == nil)
+
+        let chartPoints = BillingLandscapeChartView.numericPoints(from: vm.landscapePoints)
+        #expect(chartPoints.contains { $0.id == rubPoint.id })
+        #expect(!chartPoints.contains { $0.id == usdPoint.id })
+        #expect(!vm.insights.contains { $0.id == .peak })
+
+        vm.selectDate(usdDate)
+        let selection = try #require(vm.selection)
+        #expect(selection.financialState == .unavailable(
+            missingCurrencyCodes: ["USD"],
+            reason: .noConvertibleAmounts
+        ))
+        #expect(selection.totalFormatted == String(localized: "Курсы валют недоступны"))
+        #expect(vm.calloutNavigationItem?.id == usd.id)
+    }
+
+    @Test("A real zero daily total remains distinct from an unavailable conversion")
+    func realZeroAndUnavailableDailyStatesRemainDistinct() throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let calendar = Calendar.current
+        let zeroDate = calendar.date(byAdding: .day, value: 2, to: .now) ?? .now
+        let unavailableDate = calendar.date(byAdding: .day, value: 3, to: .now) ?? .now
+        let vm = viewModel(
+            items: [
+                item(title: "Free", amount: 0, currencyCode: "RUB", nextChargeDate: zeroDate),
+                item(title: "Foreign", amount: 3, currencyCode: "USD", nextChargeDate: unavailableDate)
+            ],
+            preferences: preferences,
+            provider: RecordingExchangeRateProvider(result: .failure(.unavailable))
+        )
+
+        vm.load()
+
+        let zeroPoint = try #require(vm.landscapePoints.first {
+            calendar.isDate($0.date, inSameDayAs: zeroDate)
+        })
+        let unavailablePoint = try #require(vm.landscapePoints.first {
+            calendar.isDate($0.date, inSameDayAs: unavailableDate)
+        })
+        #expect(zeroPoint.financialState == .complete(amount: 0))
+        #expect(zeroPoint.rawTotal == 0)
+        #expect(zeroPoint.normalizedHeight == 0)
+        #expect(unavailablePoint.rawTotal == nil)
+        #expect(unavailablePoint.normalizedHeight == nil)
+
+        let chartPoints = BillingLandscapeChartView.numericPoints(from: vm.landscapePoints)
+        #expect(chartPoints.contains { $0.id == zeroPoint.id })
+        #expect(!chartPoints.contains { $0.id == unavailablePoint.id })
+    }
+
+    @Test("Partial daily state retains only the known subtotal and missing currency metadata")
+    func partialDailyStateRetainsKnownSubtotal() throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
+        let vm = viewModel(
+            items: [
+                item(title: "RUB", amount: 100, currencyCode: "RUB", nextChargeDate: chargeDate),
+                item(title: "USD", amount: 3, currencyCode: "USD", nextChargeDate: chargeDate)
+            ],
+            preferences: preferences,
+            provider: RecordingExchangeRateProvider(result: .failure(.unavailable))
+        )
+
+        vm.load()
+
+        let point = try #require(vm.landscapePoints.first { $0.chargeCount == 2 })
+        #expect(point.financialState == .partial(amount: 100, missingCurrencyCodes: ["USD"]))
+        #expect(point.rawTotal == 100)
+        #expect(point.normalizedHeight == 1)
+
+        vm.selectDate(chargeDate)
+        let selection = try #require(vm.selection)
+        #expect(selection.financialState == .partial(amount: 100, missingCurrencyCodes: ["USD"]))
+    }
+
+    @Test("A fresh snapshot restores unavailable daily points without mutating originals")
+    func freshSnapshotRestoresCompleteDailyState() async throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
+        let usd = item(title: "USD", amount: 3, currencyCode: "USD", nextChargeDate: chargeDate)
+        let provider = RecordingExchangeRateProvider(result: .success(snapshot()))
+        let vm = viewModel(items: [usd], preferences: preferences, provider: provider)
+
+        vm.load()
+        vm.selectDate(chargeDate)
+        #expect(vm.selection?.financialState == .unavailable(
+            missingCurrencyCodes: ["USD"],
+            reason: .noConvertibleAmounts
+        ))
+
+        await vm.refreshCurrencyAggregation()
+
+        let point = try #require(vm.landscapePoints.first { $0.chargeCount == 1 })
+        #expect(point.financialState == .complete(amount: 270))
+        #expect(point.rawTotal == 270)
+        #expect(point.normalizedHeight == 1)
+        #expect(BillingLandscapeChartView.numericPoints(from: vm.landscapePoints).contains {
+            $0.id == point.id
+        })
+        #expect(vm.selection?.financialState == .complete(amount: 270))
+        #expect(usd.amount == 3)
+        #expect(usd.currencyCode == "USD")
+        #expect(await provider.requests() == 1)
+    }
+
+    @Test("Reporting-currency reload rebuilds typed daily points without another snapshot")
+    func reportingCurrencyReloadRebuildsTypedDailyPoints() async throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let calendar = Calendar.current
+        let rubDate = calendar.date(byAdding: .day, value: 2, to: .now) ?? .now
+        let usdDate = calendar.date(byAdding: .day, value: 3, to: .now) ?? .now
+        let rub = item(title: "RUB", amount: 90, currencyCode: "RUB", nextChargeDate: rubDate)
+        let usd = item(title: "USD", amount: 1, currencyCode: "USD", nextChargeDate: usdDate)
+        let provider = RecordingExchangeRateProvider(result: .success(snapshot()))
+        let vm = viewModel(items: [rub, usd], preferences: preferences, provider: provider)
+
+        vm.load()
+        await vm.refreshCurrencyAggregation()
+        #expect(vm.landscapePoints.first {
+            calendar.isDate($0.date, inSameDayAs: rubDate)
+        }?.currencyCode == "RUB")
+
+        savePreferences(preferences, currencyCode: "USD")
+        vm.load(forceReload: true)
+
+        let rubPoint = try #require(vm.landscapePoints.first {
+            calendar.isDate($0.date, inSameDayAs: rubDate)
+        })
+        let usdPoint = try #require(vm.landscapePoints.first {
+            calendar.isDate($0.date, inSameDayAs: usdDate)
+        })
+        #expect(rubPoint.currencyCode == "USD")
+        #expect(usdPoint.currencyCode == "USD")
+        #expect(rubPoint.financialState == .complete(amount: 1))
+        #expect(usdPoint.financialState == .complete(amount: 1))
+        #expect(rub.amount == 90)
+        #expect(rub.currencyCode == "RUB")
+        #expect(usd.amount == 1)
+        #expect(usd.currencyCode == "USD")
+        #expect(await provider.requests() == 1)
+    }
+
+    @Test("Obsolete FX completions cannot overwrite the current unavailable daily state")
+    func obsoleteCompleteCannotReplaceCurrentUnavailableDailyState() async throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
+        let provider = DeferredExchangeRateProvider()
+        let vm = viewModel(
+            items: [item(title: "USD", amount: 3, currencyCode: "USD", nextChargeDate: chargeDate)],
+            preferences: preferences,
+            provider: provider
+        )
+
+        vm.load()
+        let oldRefresh = Task { await vm.refreshCurrencyAggregation() }
+        await provider.waitForRequests(1)
+
+        vm.load(forceReload: true)
+        await provider.resumeRequest(at: 0, with: snapshot())
+        await oldRefresh.value
+
+        let point = try #require(vm.landscapePoints.first { $0.chargeCount == 1 })
+        #expect(point.financialState == .unavailable(
+            missingCurrencyCodes: ["USD"],
+            reason: .noConvertibleAmounts
+        ))
+        #expect(point.rawTotal == nil)
+    }
+
+    @Test("Obsolete FX failures cannot overwrite the current complete daily state")
+    func obsoleteFailureCannotReplaceCurrentCompleteDailyState() async throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
+        let provider = DeferredExchangeRateProvider()
+        let vm = viewModel(
+            items: [item(title: "USD", amount: 3, currencyCode: "USD", nextChargeDate: chargeDate)],
+            preferences: preferences,
+            provider: provider
+        )
+
+        vm.load()
+        let oldRefresh = Task { await vm.refreshCurrencyAggregation() }
+        await provider.waitForRequests(1)
+
+        vm.load(forceReload: true)
+        let currentRefresh = Task { await vm.refreshCurrencyAggregation() }
+        await provider.waitForRequests(2)
+
+        await provider.resumeRequest(at: 1, with: snapshot())
+        await currentRefresh.value
+        await provider.failRequest(at: 0)
+        await oldRefresh.value
+
+        let point = try #require(vm.landscapePoints.first { $0.chargeCount == 1 })
+        #expect(point.financialState == .complete(amount: 270))
+        #expect(point.rawTotal == 270)
     }
 
     @Test("Excluded foreign items neither request FX nor create missing-currency state")

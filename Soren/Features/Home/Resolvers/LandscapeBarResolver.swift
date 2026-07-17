@@ -31,7 +31,11 @@ struct LandscapeBarResolver {
     // MARK: - Private
 
     private func baseColor(for point: BillingLandscapePoint) -> Color {
-        switch point.normalizedHeight {
+        guard let normalizedHeight = point.normalizedHeight else {
+            return theme.landscapeBarEmpty
+        }
+
+        switch normalizedHeight {
         case 0:          return theme.landscapeBarEmpty
         case ..<0.5:     return theme.landscapeBarBase
         case 0.5..<0.85: return theme.landscapeBarMid

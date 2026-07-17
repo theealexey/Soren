@@ -19,14 +19,17 @@ struct BillingLandscapeChartView: View {
 
     var body: some View {
         let resolver = LandscapeBarResolver(theme: theme)
+        let chartPoints = Self.numericPoints(from: points)
 
-        Chart(points) { point in
-            BarMark(
-                x: .value(String(localized: "День"), point.id),
-                y: .value(String(localized: "Сумма"), max(point.normalizedHeight, 0.04))  // floor for empty-day visibility
-            )
-            .foregroundStyle(resolver.fillColor(for: point, selection: selection))
-            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.hairline))
+        Chart(chartPoints) { point in
+            if let normalizedHeight = point.normalizedHeight {
+                BarMark(
+                    x: .value(String(localized: "День"), point.id),
+                    y: .value(String(localized: "Сумма"), max(normalizedHeight, 0.04))
+                )
+                .foregroundStyle(resolver.fillColor(for: point, selection: selection))
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.hairline))
+            }
         }
         .chartYScale(domain: 0...1)
         .chartYAxis(.hidden)
@@ -35,5 +38,22 @@ struct BillingLandscapeChartView: View {
             plot.frame(maxWidth: .infinity)
         }
         .animation(MotionTokens.snappy, value: selection?.date)
+    }
+
+    /// Keeps no-charge day marks in the established chart while ensuring an
+    /// all-unavailable financial window cannot render as a zero-value landscape.
+    static func numericPoints(from points: [BillingLandscapePoint]) -> [BillingLandscapePoint] {
+        let hasAvailableCharge = points.contains {
+            $0.chargeCount > 0 && $0.normalizedHeight != nil
+        }
+        let hasUnavailableCharge = points.contains {
+            $0.chargeCount > 0 && $0.normalizedHeight == nil
+        }
+
+        guard hasAvailableCharge || !hasUnavailableCharge else {
+            return []
+        }
+
+        return points.filter { $0.normalizedHeight != nil }
     }
 }

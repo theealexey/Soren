@@ -14,6 +14,9 @@ struct BillingLandscapeSelection: Equatable {
 
     let charges: [ChargeLineItem]
 
+    /// Preserves whether the selected day is complete, partial, or unavailable.
+    let financialState: DailyFinancialState
+
     /// Pre-formatted total for this day. e.g. "₽1 249"
     let totalFormatted: String
 
