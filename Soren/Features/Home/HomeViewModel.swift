@@ -17,6 +17,7 @@ final class HomeViewModel {
     private(set) var monthLabel: String = ""
     private(set) var forecastLabel: String = ""
     private(set) var forecastAggregation: RecurringSpendAggregationResult?
+    private(set) var exchangeRateNotice: HomeExchangeRateNotice = .none
     private(set) var landscapePoints: [BillingLandscapePoint] = []
     private(set) var callout: NextPaymentCalloutState = .nextPayment(
         countdown: "", name: "", amountFormatted: "", additionalCount: 0
@@ -36,6 +37,7 @@ final class HomeViewModel {
             monthLabel: monthLabel,
             forecastLabel: forecastLabel,
             forecastAggregation: forecastAggregation,
+            exchangeRateNotice: exchangeRateNotice,
             landscapePoints: landscapePoints,
             callout: callout,
             calloutNavigationItem: calloutNavigationItem,
@@ -52,6 +54,7 @@ final class HomeViewModel {
     private let getActiveTrials: GetActiveTrials
     private let preferences: UserPreferencesRepository
     private let aggregateRecurringSpend: AggregateRecurringSpendUseCase
+    private let convertMoney: ConvertMoneyUseCase
     private let loadExchangeRateSnapshot: @Sendable () async throws -> ExchangeRateSnapshot
 
     // MARK: - Cache
@@ -78,12 +81,14 @@ final class HomeViewModel {
         getActiveTrials: GetActiveTrials,
         preferences: UserPreferencesRepository,
         aggregateRecurringSpend: AggregateRecurringSpendUseCase = AggregateRecurringSpendUseCase(),
+        convertMoney: ConvertMoneyUseCase = ConvertMoneyUseCase(),
         exchangeRateProvider: Provider
     ) {
         self.getUpcomingCharges = getUpcomingCharges
         self.getActiveTrials = getActiveTrials
         self.preferences = preferences
         self.aggregateRecurringSpend = aggregateRecurringSpend
+        self.convertMoney = convertMoney
         self.loadExchangeRateSnapshot = {
             try await exchangeRateProvider.latestSnapshot()
         }
@@ -189,6 +194,12 @@ final class HomeViewModel {
             range: windowStart..<windowEnd
         )
         forecastAggregation = forecastResult
+        exchangeRateNotice = makeExchangeRateNotice(
+            aggregation: forecastResult,
+            projections: projections,
+            snapshot: snapshot,
+            range: windowStart..<windowEnd
+        )
 
         var dailyResults: [Date: RecurringSpendAggregationResult] = [:]
         for (day, items) in cachedItemsByDay {
@@ -218,6 +229,7 @@ final class HomeViewModel {
                 id: offset,
                 date: day,
                 financialState: financialState,
+                rateMetadata: dailyResults[day]?.rateMetadata,
                 normalizedHeight: normalized,
                 currencyCode: reportingCurrencyCode,
                 chargeCount: cachedItemsByDay[day]?.count ?? 0
@@ -291,6 +303,60 @@ final class HomeViewModel {
         )
     }
 
+    private func makeExchangeRateNotice(
+        aggregation: RecurringSpendAggregationResult,
+        projections: [RecurringSpendProjection],
+        snapshot: ExchangeRateSnapshot?,
+        range: Range<Date>
+    ) -> HomeExchangeRateNotice {
+        guard aggregation.total != nil,
+              let metadata = aggregation.rateMetadata,
+              case let .stale(age) = metadata.freshness,
+              hasSuccessfulForeignConversion(
+                  projections: projections,
+                  snapshot: snapshot,
+                  range: range
+              )
+        else {
+            return .none
+        }
+
+        return .stale(age: age)
+    }
+
+    /// Reuses the canonical converter solely to distinguish a stale snapshot that
+    /// actually produced a foreign value from one that only contains a failed rate.
+    private func hasSuccessfulForeignConversion(
+        projections: [RecurringSpendProjection],
+        snapshot: ExchangeRateSnapshot?,
+        range: Range<Date>
+    ) -> Bool {
+        guard let snapshot,
+              let reportingCurrency = try? Money.normalizeCurrencyCode(reportingCurrencyCode)
+        else {
+            return false
+        }
+
+        return projections
+            .filter { range.contains($0.date) }
+            .contains { projection in
+                guard let original = try? Money(
+                    amount: projection.amount,
+                    currencyCode: projection.currencyCode
+                ),
+                original.currencyCode != reportingCurrency
+                else {
+                    return false
+                }
+
+                return (try? convertMoney.execute(
+                    original: original,
+                    targetCurrencyCode: reportingCurrency,
+                    snapshot: snapshot
+                )) != nil
+            }
+    }
+
     private func formattedForecast(_ result: RecurringSpendAggregationResult) -> String {
         switch result {
         case let .complete(total, _):
@@ -359,6 +425,7 @@ final class HomeViewModel {
             formattedDate: Self.dayFormatter.string(from: day),
             charges: charges,
             financialState: DailyFinancialState(aggregationResult: aggregation),
+            rateMetadata: aggregation.rateMetadata,
             totalFormatted: formattedAggregationAmount(aggregation)
         )
     }

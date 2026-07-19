@@ -50,6 +50,9 @@ struct BillingLandscapePoint: Identifiable {
     /// unavailable financial values.
     let financialState: DailyFinancialState
 
+    /// FX freshness metadata when a foreign conversion participated in this day.
+    let rateMetadata: SpendAggregationRateMetadata?
+
     /// 0.0–1.0 for available values; nil when this day cannot be converted.
     let normalizedHeight: Double?
 

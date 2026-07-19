@@ -17,6 +17,9 @@ struct BillingLandscapeSelection: Equatable {
     /// Preserves whether the selected day is complete, partial, or unavailable.
     let financialState: DailyFinancialState
 
+    /// FX freshness metadata for the selected day's aggregate.
+    let rateMetadata: SpendAggregationRateMetadata?
+
     /// Pre-formatted total for this day. e.g. "₽1 249"
     let totalFormatted: String
 

@@ -67,7 +67,8 @@ struct HomeView: View {
 
                 HomeHeaderView(
                     monthLabel: vm.monthLabel,
-                    forecastLabel: vm.forecastLabel
+                    forecastLabel: vm.forecastLabel,
+                    exchangeRateNotice: vm.exchangeRateNotice
                 )
                 .padding(.top, Spacing.lg)
                 .padding(.bottom, Spacing.lg)

@@ -70,6 +70,23 @@ struct HomeCurrencyAggregationTests {
         func requests() -> Int { requestCount }
     }
 
+    private actor SequenceExchangeRateProvider: ExchangeRateProvider {
+        private var results: [Result<ExchangeRateSnapshot, TestRateError>]
+        private var requestCount = 0
+
+        init(results: [Result<ExchangeRateSnapshot, TestRateError>]) {
+            self.results = results
+        }
+
+        func latestSnapshot() async throws -> ExchangeRateSnapshot {
+            requestCount += 1
+            guard !results.isEmpty else { throw TestRateError.unavailable }
+            return try results.removeFirst().get()
+        }
+
+        func requests() -> Int { requestCount }
+    }
+
     private actor DeferredExchangeRateProvider: ExchangeRateProvider {
         private var continuations: [CheckedContinuation<ExchangeRateSnapshot, Error>] = []
         private var requestCount = 0
@@ -110,7 +127,10 @@ struct HomeCurrencyAggregationTests {
         case unavailable
     }
 
-    private func snapshot(rubRate: Decimal = 90) -> ExchangeRateSnapshot {
+    private func snapshot(
+        rubRate: Decimal = 90,
+        freshness: ExchangeRateFreshness = .fresh
+    ) -> ExchangeRateSnapshot {
         let now = Date.now
         return ExchangeRateSnapshot(
             exchangeRates: ExchangeRates(
@@ -119,7 +139,7 @@ struct HomeCurrencyAggregationTests {
                 rates: ["RUB": rubRate],
                 fetchedAt: now
             ),
-            freshness: .fresh
+            freshness: freshness
         )
     }
 
@@ -221,7 +241,9 @@ struct HomeCurrencyAggregationTests {
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
         let chargeDate = Calendar.current.date(byAdding: .day, value: 3, to: .now) ?? .now
-        let provider = RecordingExchangeRateProvider(result: .failure(.unavailable))
+        let provider = RecordingExchangeRateProvider(
+            result: .success(snapshot(freshness: .stale(age: 7_200)))
+        )
         let vm = viewModel(
             items: [
                 item(title: "A", amount: 100, currencyCode: "RUB", nextChargeDate: chargeDate),
@@ -238,6 +260,334 @@ struct HomeCurrencyAggregationTests {
         #expect(vm.forecastAggregation?.total?.amount == 600)
         let requestCount = await provider.requests()
         #expect(requestCount == 0)
+        #expect(vm.exchangeRateNotice == .none)
+        #expect(vm.screenState.exchangeRateNotice == .none)
+    }
+
+    @Test("Fresh foreign conversion has no Home stale-rate notice")
+    func freshForeignConversionHasNoStaleNotice() async throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
+        let provider = RecordingExchangeRateProvider(result: .success(snapshot()))
+        let vm = viewModel(
+            items: [item(title: "USD", amount: 2, currencyCode: "USD", nextChargeDate: chargeDate)],
+            preferences: preferences,
+            provider: provider
+        )
+
+        vm.load()
+        await vm.refreshCurrencyAggregation()
+
+        #expect(vm.forecastAggregation?.total?.amount == 180)
+        #expect(vm.exchangeRateNotice == .none)
+        #expect(vm.landscapePoints.first { $0.chargeCount == 1 }?.rateMetadata?.freshness == .fresh)
+    }
+
+    @Test("Stale foreign conversion retains values and presents one Home stale-rate notice")
+    func staleForeignConversionPresentsNoticeAndPreservesDailyMetadata() async throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let age: TimeInterval = 7_200
+        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
+        let usd = item(title: "USD", amount: 2, currencyCode: "USD", nextChargeDate: chargeDate)
+        let provider = RecordingExchangeRateProvider(result: .success(snapshot(freshness: .stale(age: age))))
+        let vm = viewModel(items: [usd], preferences: preferences, provider: provider)
+
+        vm.load()
+        await vm.refreshCurrencyAggregation()
+
+        #expect(vm.forecastAggregation?.total?.amount == 180)
+        #expect(vm.exchangeRateNotice == .stale(age: age))
+        #expect(vm.screenState.exchangeRateNotice == .stale(age: age))
+
+        let point = try #require(vm.landscapePoints.first { $0.chargeCount == 1 })
+        #expect(point.rawTotal == 180)
+        #expect(point.rateMetadata?.freshness == .stale(age: age))
+
+        vm.selectDate(chargeDate)
+        let selection = try #require(vm.selection)
+        #expect(selection.totalFormatted.contains("180"))
+        #expect(selection.rateMetadata?.freshness == .stale(age: age))
+        #expect(usd.amount == 2)
+        #expect(usd.currencyCode == "USD")
+        #expect(await provider.requests() == 1)
+    }
+
+    @Test("An empty Home does not request or present stale FX")
+    func emptyHomeHasNoStaleNotice() async throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let provider = RecordingExchangeRateProvider(
+            result: .success(snapshot(freshness: .stale(age: 7_200)))
+        )
+        let vm = viewModel(items: [], preferences: preferences, provider: provider)
+
+        vm.load()
+        await vm.refreshCurrencyAggregation()
+
+        #expect(vm.forecastAggregation?.total?.amount == 0)
+        #expect(vm.exchangeRateNotice == .none)
+        #expect(await provider.requests() == 0)
+    }
+
+    @Test("Foreign charges outside the Home window do not present stale FX")
+    func outsideWindowForeignChargeHasNoStaleNotice() async throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let outsideWindow = Calendar.current.date(byAdding: .day, value: 40, to: .now) ?? .now
+        let provider = RecordingExchangeRateProvider(
+            result: .success(snapshot(freshness: .stale(age: 7_200)))
+        )
+        let vm = viewModel(
+            items: [item(title: "Later USD", amount: 2, currencyCode: "USD", nextChargeDate: outsideWindow)],
+            preferences: preferences,
+            provider: provider
+        )
+
+        vm.load()
+        await vm.refreshCurrencyAggregation()
+
+        #expect(vm.forecastAggregation?.total?.amount == 0)
+        #expect(vm.exchangeRateNotice == .none)
+        #expect(await provider.requests() == 0)
+    }
+
+    @Test("Partial Home aggregate keeps stale notice only when a foreign conversion succeeded")
+    func partialStaleAggregatePreservesBothMetadataKinds() async throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let age: TimeInterval = 7_200
+        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
+        let provider = RecordingExchangeRateProvider(result: .success(snapshot(freshness: .stale(age: age))))
+        let vm = viewModel(
+            items: [
+                item(title: "USD", amount: 1, currencyCode: "USD", nextChargeDate: chargeDate),
+                item(title: "EUR", amount: 1, currencyCode: "EUR", nextChargeDate: chargeDate)
+            ],
+            preferences: preferences,
+            provider: provider
+        )
+
+        vm.load()
+        await vm.refreshCurrencyAggregation()
+
+        guard case let .partial(total, missingCodes, metadata) = vm.forecastAggregation else {
+            Issue.record("Expected stale partial aggregation")
+            return
+        }
+        #expect(total.amount == 90)
+        #expect(missingCodes == ["EUR"])
+        #expect(metadata?.freshness == .stale(age: age))
+        #expect(vm.exchangeRateNotice == .stale(age: age))
+
+        let point = try #require(vm.landscapePoints.first { $0.chargeCount == 2 })
+        #expect(point.financialState == .partial(amount: 90, missingCurrencyCodes: ["EUR"]))
+        #expect(point.rateMetadata?.freshness == .stale(age: age))
+    }
+
+    @Test("Unavailable Home aggregate never presents stale FX as a successful value")
+    func unavailableStaleSnapshotHasNoNotice() async throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
+        let provider = RecordingExchangeRateProvider(
+            result: .success(snapshot(freshness: .stale(age: 7_200)))
+        )
+        let vm = viewModel(
+            items: [item(title: "EUR", amount: 1, currencyCode: "EUR", nextChargeDate: chargeDate)],
+            preferences: preferences,
+            provider: provider
+        )
+
+        vm.load()
+        await vm.refreshCurrencyAggregation()
+
+        #expect(vm.forecastAggregation?.total == nil)
+        #expect(vm.exchangeRateNotice == .none)
+        #expect(vm.landscapePoints.first { $0.chargeCount == 1 }?.rawTotal == nil)
+    }
+
+    @Test("A stale partial subtotal without a successful foreign conversion has no Home stale-rate notice")
+    func stalePartialWithoutForeignConversionHasNoNotice() async throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
+        let provider = RecordingExchangeRateProvider(
+            result: .success(snapshot(freshness: .stale(age: 7_200)))
+        )
+        let vm = viewModel(
+            items: [
+                item(title: "RUB", amount: 100, currencyCode: "RUB", nextChargeDate: chargeDate),
+                item(title: "EUR", amount: 1, currencyCode: "EUR", nextChargeDate: chargeDate)
+            ],
+            preferences: preferences,
+            provider: provider
+        )
+
+        vm.load()
+        await vm.refreshCurrencyAggregation()
+
+        guard case let .partial(total, missingCodes, metadata) = vm.forecastAggregation else {
+            Issue.record("Expected stale partial aggregation without a foreign conversion")
+            return
+        }
+        #expect(total.amount == 100)
+        #expect(missingCodes == ["EUR"])
+        #expect(metadata?.freshness == .stale(age: 7_200))
+        #expect(vm.exchangeRateNotice == .none)
+    }
+
+    @Test("A stale conversion of a real foreign zero remains available and visible")
+    func staleForeignZeroRetainsNumericStateAndNotice() async throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let age: TimeInterval = 7_200
+        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
+        let provider = RecordingExchangeRateProvider(result: .success(snapshot(freshness: .stale(age: age))))
+        let vm = viewModel(
+            items: [item(title: "Free USD", amount: 0, currencyCode: "USD", nextChargeDate: chargeDate)],
+            preferences: preferences,
+            provider: provider
+        )
+
+        vm.load()
+        await vm.refreshCurrencyAggregation()
+
+        #expect(vm.forecastAggregation?.total?.amount == 0)
+        #expect(vm.exchangeRateNotice == .stale(age: age))
+        let point = try #require(vm.landscapePoints.first { $0.chargeCount == 1 })
+        #expect(point.financialState == .complete(amount: 0))
+        #expect(point.rawTotal == 0)
+        #expect(point.rateMetadata?.freshness == .stale(age: age))
+    }
+
+    @Test("Fresh and stale reloads replace the Home FX notice atomically")
+    func freshAndStaleReloadsReplaceNotice() async throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let age: TimeInterval = 7_200
+        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
+        let provider = SequenceExchangeRateProvider(results: [
+            .success(snapshot(freshness: .stale(age: age))),
+            .success(snapshot()),
+            .success(snapshot(freshness: .stale(age: age)))
+        ])
+        let vm = viewModel(
+            items: [item(title: "USD", amount: 1, currencyCode: "USD", nextChargeDate: chargeDate)],
+            preferences: preferences,
+            provider: provider
+        )
+
+        vm.load()
+        await vm.refreshCurrencyAggregation()
+        #expect(vm.exchangeRateNotice == .stale(age: age))
+
+        vm.load(forceReload: true)
+        await vm.refreshCurrencyAggregation()
+        #expect(vm.exchangeRateNotice == .none)
+
+        vm.load(forceReload: true)
+        await vm.refreshCurrencyAggregation()
+        #expect(vm.exchangeRateNotice == .stale(age: age))
+        #expect(await provider.requests() == 3)
+    }
+
+    @Test("Reporting currency recalculates the Home stale notice")
+    func reportingCurrencyChangeRecalculatesStaleNotice() async throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let age: TimeInterval = 7_200
+        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
+        let provider = RecordingExchangeRateProvider(result: .success(snapshot(freshness: .stale(age: age))))
+        let vm = viewModel(
+            items: [item(title: "USD", amount: 1, currencyCode: "USD", nextChargeDate: chargeDate)],
+            preferences: preferences,
+            provider: provider
+        )
+
+        vm.load()
+        await vm.refreshCurrencyAggregation()
+        #expect(vm.exchangeRateNotice == .stale(age: age))
+
+        savePreferences(preferences, currencyCode: "USD")
+        vm.load(forceReload: true)
+        await vm.refreshCurrencyAggregation()
+
+        #expect(vm.forecastAggregation?.total?.currencyCode == "USD")
+        #expect(vm.exchangeRateNotice == .none)
+        #expect(await provider.requests() == 1)
+    }
+
+    @Test("An obsolete stale snapshot cannot restore a stale notice over current fresh Home values")
+    func obsoleteStaleSnapshotCannotOverwriteFreshNotice() async throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
+        let provider = DeferredExchangeRateProvider()
+        let vm = viewModel(
+            items: [item(title: "USD", amount: 1, currencyCode: "USD", nextChargeDate: chargeDate)],
+            preferences: preferences,
+            provider: provider
+        )
+
+        vm.load()
+        let staleRefresh = Task { await vm.refreshCurrencyAggregation() }
+        await provider.waitForRequests(1)
+
+        vm.load(forceReload: true)
+        let freshRefresh = Task { await vm.refreshCurrencyAggregation() }
+        await provider.waitForRequests(2)
+
+        await provider.resumeRequest(at: 1, with: snapshot())
+        await freshRefresh.value
+        #expect(vm.exchangeRateNotice == .none)
+
+        await provider.resumeRequest(at: 0, with: snapshot(freshness: .stale(age: 7_200)))
+        await staleRefresh.value
+        #expect(vm.exchangeRateNotice == .none)
+    }
+
+    @Test("An obsolete fresh snapshot cannot hide a current stale Home notice")
+    func obsoleteFreshSnapshotCannotOverwriteStaleNotice() async throws {
+        let (preferences, defaults, suiteName) = try preferences()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let age: TimeInterval = 7_200
+        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
+        let provider = DeferredExchangeRateProvider()
+        let vm = viewModel(
+            items: [item(title: "USD", amount: 1, currencyCode: "USD", nextChargeDate: chargeDate)],
+            preferences: preferences,
+            provider: provider
+        )
+
+        vm.load()
+        let freshRefresh = Task { await vm.refreshCurrencyAggregation() }
+        await provider.waitForRequests(1)
+
+        vm.load(forceReload: true)
+        let staleRefresh = Task { await vm.refreshCurrencyAggregation() }
+        await provider.waitForRequests(2)
+
+        await provider.resumeRequest(at: 1, with: snapshot(freshness: .stale(age: age)))
+        await staleRefresh.value
+        #expect(vm.exchangeRateNotice == .stale(age: age))
+
+        await provider.resumeRequest(at: 0, with: snapshot())
+        await freshRefresh.value
+        #expect(vm.exchangeRateNotice == .stale(age: age))
     }
 
     @Test("FX failure keeps Home partial and never restores a raw mixed sum")
@@ -725,6 +1075,7 @@ struct HomeCurrencyAggregationTests {
         #expect(total.currencyCode == "RUB")
         #expect(metadata == nil)
         #expect(vm.forecastAggregation?.missingCurrencyCodes == [])
+        #expect(vm.exchangeRateNotice == .none)
         let requestCount = await provider.requests()
         #expect(requestCount == 0)
     }
