@@ -78,6 +78,7 @@
 		46F810DD72F4B9AA37C11574 /* UpcomingChargesSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 537D798922991ABAADD19C84 /* UpcomingChargesSectionView.swift */; };
 		4D64A67C6D09B01C37CB27F9 /* AmountLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7960A2157878C5C39AE82756 /* AmountLabel.swift */; };
 		4E694388778785AFE5CCCE72 /* NotificationSchedulerTitleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A420A6845C8D36C45DCE355E /* NotificationSchedulerTitleTests.swift */; };
+		4EEEAD2177A01B9B7D3FE728 /* ResolveRegionalPlanPriceUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12205303AA4AF4D9AF33450A /* ResolveRegionalPlanPriceUseCase.swift */; };
 		4F32C1A2B2B9CEE98E3184A0 /* CalendarCurrencyAggregationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FC5B5C1C3496705DF3F328 /* CalendarCurrencyAggregationTests.swift */; };
 		50A1AE6330F81D365103E9B3 /* ValidationErrorFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B4ED267EDB217E4783C0540 /* ValidationErrorFormatterTests.swift */; };
 		50C39ECEA025E0E6793551C1 /* SorenUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593F223EC1D8EC1482C3ABD5 /* SorenUITests.swift */; };
@@ -145,6 +146,7 @@
 		9C55EF0B4D9D539A384016BC /* DemoDataSeederTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7FEF3744A14334CB7E29C9 /* DemoDataSeederTests.swift */; };
 		9DBDEE86A8B720BC7A20DA10 /* BillingLandscapeChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25586C2B2B8CB65C46CAC7B0 /* BillingLandscapeChartView.swift */; };
 		A01F693759100EA5B9674564 /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0506D39F9F15EA1E0F2C69D9 /* LibraryViewModel.swift */; };
+		A05CA9880E51D5E594695FCA /* RegionalPlanPrice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14AC0098CDCE3539093FC072 /* RegionalPlanPrice.swift */; };
 		A0F4A45B8AF7DC3D8CB24C9F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B0EC85B8B2D99C6E69C0ADB8 /* PrivacyInfo.xcprivacy */; };
 		A11365CE9B1226921CDEE2BE /* PaymentMethodMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A24F4A666D09CE7D6B730480 /* PaymentMethodMapper.swift */; };
 		A1AB6B7D0E4482DFAADEBDA7 /* InsightRowModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C42771862F4B5EC7E6C3C7 /* InsightRowModel.swift */; };
@@ -180,6 +182,7 @@
 		CCC977B795E561BD9AF1CB6D /* TrialReminderSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FCE264B1237CC5C9285E83D /* TrialReminderSchedulerTests.swift */; };
 		CD665C5489ADA78959BCE48F /* RepositoryContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B0E4355CE761328C61F5EE0 /* RepositoryContainer.swift */; };
 		CF06E51679C5374C5F5C0FB9 /* ProviderCatalog+Russia.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54D6DF4C5A91EEF6EEE2ECA8 /* ProviderCatalog+Russia.swift */; };
+		D2AD960D463545F43309803A /* RegionalPricingDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB340735DB01AFAEA465D7AE /* RegionalPricingDomainTests.swift */; };
 		D3FDAAE8713DC3970947E010 /* RecurringItemMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC765BF3D06C301257D5F0DD /* RecurringItemMapper.swift */; };
 		D49AFF4872D3E4B862086798 /* GetAlerts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54064B8613A795CC1E157F4E /* GetAlerts.swift */; };
 		D620D89ECDCC308483F2B2E9 /* LibrarySearchDebounceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73E70FF01D62E8695DF85DEF /* LibrarySearchDebounceTests.swift */; };
@@ -199,6 +202,7 @@
 		E953AAE416EAC1F6DF27489E /* DeleteRecurringItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A97F884F05552C0F6B3D2C0 /* DeleteRecurringItem.swift */; };
 		E9CBF6DF558DD865FFA2D11C /* AmountLabelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 948A56E413765945A9D3956F /* AmountLabelTests.swift */; };
 		EA25F9B118AD9A4296BC9271 /* InsightSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FB009315E3E0851B859A99C /* InsightSectionView.swift */; };
+		EAB584728219B173426DD51B /* RegionalPricingIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7A89D1B56D551E3ED4830B0 /* RegionalPricingIdentity.swift */; };
 		ECA6E72B57B8A4CA040B307D /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E7DD79F80161908AF080679 /* AnalyticsView.swift */; };
 		EE06586CF84598617481ACE1 /* SorenApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCEF5B74B2E1B0B2BC44B6B0 /* SorenApp.swift */; };
 		F3A0EDAD0443BF22B192AA40 /* NextChargeDateSuggestionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CEEF7B37513315DE9DE3C6C /* NextChargeDateSuggestionTests.swift */; };
@@ -252,7 +256,9 @@
 		09C42771862F4B5EC7E6C3C7 /* InsightRowModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightRowModel.swift; sourceTree = "<group>"; };
 		0D6C4649E26E70C22C78B306 /* RepositoryError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryError.swift; sourceTree = "<group>"; };
 		0E7DD79F80161908AF080679 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
+		12205303AA4AF4D9AF33450A /* ResolveRegionalPlanPriceUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolveRegionalPlanPriceUseCase.swift; sourceTree = "<group>"; };
 		12BB3E94FC82A75A10ADB2E6 /* ColorTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorTokens.swift; sourceTree = "<group>"; };
+		14AC0098CDCE3539093FC072 /* RegionalPlanPrice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionalPlanPrice.swift; sourceTree = "<group>"; };
 		16764C22B2D1DD391965CB57 /* TierChipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TierChipView.swift; sourceTree = "<group>"; };
 		17FB3D14A9A82C3A3E6B2087 /* MoneyConversionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoneyConversionTests.swift; sourceTree = "<group>"; };
 		1842B87EAB2C0F30A1057D5D /* CurrencyEstimateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyEstimateService.swift; sourceTree = "<group>"; };
@@ -373,6 +379,7 @@
 		AA75DA9D8213E0F85264205F /* SorenListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SorenListRow.swift; sourceTree = "<group>"; };
 		AAF14B2678835A6D1F6ECF96 /* MotionTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionTokens.swift; sourceTree = "<group>"; };
 		AAF4482E70BA6CA589647812 /* ItemEditFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemEditFormView.swift; sourceTree = "<group>"; };
+		AB340735DB01AFAEA465D7AE /* RegionalPricingDomainTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionalPricingDomainTests.swift; sourceTree = "<group>"; };
 		ABC90BA9C0E1E720BACD159A /* GetActiveTrials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetActiveTrials.swift; sourceTree = "<group>"; };
 		ABF2C435F1328325A12FBB44 /* SwiftDataPaymentRecordRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDataPaymentRecordRepository.swift; sourceTree = "<group>"; };
 		AC765BF3D06C301257D5F0DD /* RecurringItemMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringItemMapper.swift; sourceTree = "<group>"; };
@@ -395,6 +402,7 @@
 		C14D43EE06E81178231BCCD4 /* OpenExchangeRateProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenExchangeRateProviderTests.swift; sourceTree = "<group>"; };
 		C2B7E500333C0C94A5166480 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
 		C6237A5CF21F39D3AD7CF791 /* SorenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SorenTests.swift; sourceTree = "<group>"; };
+		C7A89D1B56D551E3ED4830B0 /* RegionalPricingIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionalPricingIdentity.swift; sourceTree = "<group>"; };
 		C7AB91683EF76E4BC2EDC5B0 /* ValidationErrorFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationErrorFormatter.swift; sourceTree = "<group>"; };
 		CA945694AA563A401CBA4141 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		CB20EA2841D6985A5FDC19A7 /* SubscriptionFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionFormView.swift; sourceTree = "<group>"; };
@@ -564,6 +572,7 @@
 				17FB3D14A9A82C3A3E6B2087 /* MoneyConversionTests.swift */,
 				FB0CDC0B809B3C76636A90D2 /* ProviderTemplateTests.swift */,
 				5D5A3EC78A790E61CAD07A89 /* RecurringItemTests.swift */,
+				AB340735DB01AFAEA465D7AE /* RegionalPricingDomainTests.swift */,
 				E6D0C489DDAFEA40EA6D5D67 /* ReminderRuleTriggerDisplayTests.swift */,
 				1F20926A7790C1EA5AD3AF9E /* SaveRecurringItemTests.swift */,
 				08812B98439C0712AFCA46D6 /* SupportedCurrencyTests.swift */,
@@ -757,6 +766,8 @@
 				2A9B8583A80D8BD6F90A301D /* PlanTier.swift */,
 				EAC69E24F7112B4A8F468D2D /* ProviderTemplate.swift */,
 				B698265EA94513CE0884AF37 /* RecurringItem.swift */,
+				14AC0098CDCE3539093FC072 /* RegionalPlanPrice.swift */,
+				C7A89D1B56D551E3ED4830B0 /* RegionalPricingIdentity.swift */,
 				80918D4746AD2EF6165BD1F7 /* ReminderRule.swift */,
 				37EB3BB46B0020447F7E9CB0 /* SupportedCurrency.swift */,
 				72C8803311E601FEDA141BBD /* TrialReminderOption.swift */,
@@ -899,6 +910,7 @@
 				7DCD529175663CFB16A4EB3F /* GetDashboardSummary.swift */,
 				4DDCE10FBEA592108BF24705 /* GetLibraryItems.swift */,
 				6AE23A399CED2B38971BCB57 /* GetUpcomingCharges.swift */,
+				12205303AA4AF4D9AF33450A /* ResolveRegionalPlanPriceUseCase.swift */,
 				6937BB77EA2ED3E831320FCE /* SaveRecurringItem.swift */,
 				BC57DBA9A5801A488865A4AA /* UpdateRecurringItem.swift */,
 			);
@@ -1436,10 +1448,13 @@
 				42F8B50D7C256BA73B7A0466 /* RecurringItemFormatter.swift in Sources */,
 				D3FDAAE8713DC3970947E010 /* RecurringItemMapper.swift in Sources */,
 				33E19E039BEEA816734656AB /* RecurringItemRepository.swift in Sources */,
+				A05CA9880E51D5E594695FCA /* RegionalPlanPrice.swift in Sources */,
+				EAB584728219B173426DD51B /* RegionalPricingIdentity.swift in Sources */,
 				61DC8D65076211E24A2B1462 /* ReminderRule+Display.swift in Sources */,
 				B6B49575DA39529E4BCD86CE /* ReminderRule.swift in Sources */,
 				CD665C5489ADA78959BCE48F /* RepositoryContainer.swift in Sources */,
 				79CA3E5719B015C9EEF4DDE6 /* RepositoryError.swift in Sources */,
+				4EEEAD2177A01B9B7D3FE728 /* ResolveRegionalPlanPriceUseCase.swift in Sources */,
 				3925AE4BF9D05302A3D3131C /* RootView.swift in Sources */,
 				97AAF63EB6D8AA617387BA40 /* SDPaymentMethod.swift in Sources */,
 				D93FA1641A7D3DF819A7E525 /* SDPaymentRecord.swift in Sources */,
@@ -1529,6 +1544,7 @@
 				304A7F25315CD714E9E1D57E /* RecurringItemFormatterTests.swift in Sources */,
 				8CC360A1C0260A232B0A59EE /* RecurringItemMapperTests.swift in Sources */,
 				1388A547869A2A2BA95CC8D7 /* RecurringItemTests.swift in Sources */,
+				D2AD960D463545F43309803A /* RegionalPricingDomainTests.swift in Sources */,
 				AE798BF04610C5500D52FE80 /* ReminderRuleTriggerDisplayTests.swift in Sources */,
 				10126122552F3B43A5DFC2DE /* RepositoryTests.swift in Sources */,
 				B586BB5D3298B0A4489A4907 /* SaveRecurringItemTests.swift in Sources */,
