@@ -12,7 +12,7 @@ struct RecurringSpendProjection: Equatable, Sendable {
 
 // MARK: - Aggregation Result
 
-/// Exchange-rate metadata retained when FX participates in an aggregation.
+/// Exchange-rate metadata retained when a successful foreign conversion contributes to an aggregation.
 struct SpendAggregationRateMetadata: Equatable, Sendable {
     let providerDate: Date
     let fetchedAt: Date
@@ -121,7 +121,7 @@ struct AggregateRecurringSpendUseCase: Sendable {
         var convertedTotal = Decimal.zero
         var validAmountCount = 0
         var missingCodes = Set<String>()
-        var usedForeignCurrency = false
+        var usedSuccessfulForeignConversion = false
 
         for projection in scoped {
             guard let original = try? Money(
@@ -138,7 +138,6 @@ struct AggregateRecurringSpendUseCase: Sendable {
                 continue
             }
 
-            usedForeignCurrency = true
             guard let snapshot else {
                 missingCodes.insert(original.currencyCode)
                 continue
@@ -152,6 +151,7 @@ struct AggregateRecurringSpendUseCase: Sendable {
                 )
                 convertedTotal += conversion.converted.amount
                 validAmountCount += 1
+                usedSuccessfulForeignConversion = true
             } catch let error as ConvertMoneyError {
                 switch error {
                 case let .missingSourceRate(code), let .invalidRate(code):
@@ -165,7 +165,7 @@ struct AggregateRecurringSpendUseCase: Sendable {
         }
 
         let sortedMissingCodes = missingCodes.sorted()
-        let metadata = usedForeignCurrency
+        let metadata = usedSuccessfulForeignConversion
             ? snapshot.map(SpendAggregationRateMetadata.init(snapshot:))
             : nil
 

@@ -441,7 +441,7 @@ struct HomeCurrencyAggregationTests {
         }
         #expect(total.amount == 100)
         #expect(missingCodes == ["EUR"])
-        #expect(metadata?.freshness == .stale(age: 7_200))
+        #expect(metadata == nil)
         #expect(vm.exchangeRateNotice == .none)
     }
 

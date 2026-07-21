@@ -364,8 +364,77 @@ struct CalendarCurrencyAggregationTests {
             provider: staleProvider
         )
         staleVM.load()
+        staleVM.selectDate(chargeDate)
         await staleVM.refreshCurrencyAggregation(revision: staleVM.aggregationRevision)
         #expect(staleVM.monthlyAggregation?.rateMetadata?.freshness == .stale(age: age))
+        #expect(staleVM.selectedDayAggregation?.rateMetadata?.freshness == .stale(age: age))
+    }
+
+    @Test("A stale snapshot without a successful foreign Calendar conversion has no metadata")
+    func stalePartialCalendarAggregationHasNoMetadataWithoutConversion() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let chargeDate = try date(day: 23)
+        let provider = RecordingExchangeRateProvider(responses: [
+            .success(snapshot(rubRate: 80, freshness: .stale(age: 28_800)), delay: .zero)
+        ])
+        let vm = viewModel(
+            items: [
+                item(title: "RUB", amount: 299, currencyCode: "RUB", chargeDate: chargeDate),
+                item(title: "GBP", amount: 10, currencyCode: "GBP", chargeDate: chargeDate)
+            ],
+            preferences: fixture.repository,
+            provider: provider
+        )
+
+        vm.load()
+        vm.selectDate(chargeDate)
+        await vm.refreshCurrencyAggregation(revision: vm.aggregationRevision)
+
+        guard case let .partial(monthlyTotal, monthlyMissing, monthlyMetadata) = vm.monthlyAggregation,
+              case let .partial(dayTotal, dayMissing, dayMetadata) = vm.selectedDayAggregation
+        else {
+            Issue.record("Expected partial Calendar aggregations")
+            return
+        }
+        #expect(monthlyTotal.amount == 299)
+        #expect(dayTotal.amount == 299)
+        #expect(monthlyMissing == ["GBP"])
+        #expect(dayMissing == ["GBP"])
+        #expect(monthlyMetadata == nil)
+        #expect(dayMetadata == nil)
+    }
+
+    @Test("A stale snapshot without a convertible Calendar amount remains unavailable")
+    func staleUnavailableCalendarAggregationHasNoMetadata() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let chargeDate = try date(day: 24)
+        let provider = RecordingExchangeRateProvider(responses: [
+            .success(snapshot(rubRate: 80, freshness: .stale(age: 28_800)), delay: .zero)
+        ])
+        let vm = viewModel(
+            items: [item(title: "GBP", amount: 10, currencyCode: "GBP", chargeDate: chargeDate)],
+            preferences: fixture.repository,
+            provider: provider
+        )
+
+        vm.load()
+        vm.selectDate(chargeDate)
+        await vm.refreshCurrencyAggregation(revision: vm.aggregationRevision)
+
+        guard case let .unavailable(_, monthlyMissing, _, monthlyMetadata) = vm.monthlyAggregation,
+              case let .unavailable(_, dayMissing, _, dayMetadata) = vm.selectedDayAggregation
+        else {
+            Issue.record("Expected unavailable Calendar aggregations")
+            return
+        }
+        #expect(monthlyMissing == ["GBP"])
+        #expect(dayMissing == ["GBP"])
+        #expect(monthlyMetadata == nil)
+        #expect(dayMetadata == nil)
+        #expect(vm.monthlyAggregation?.total == nil)
+        #expect(vm.selectedDayAggregation?.total == nil)
     }
 
     @Test("Reporting currency change recalculates totals and preserves Calendar context")

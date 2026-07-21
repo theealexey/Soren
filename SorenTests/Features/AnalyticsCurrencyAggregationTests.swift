@@ -249,7 +249,9 @@ struct AnalyticsCurrencyAggregationTests {
     func partialRetainsMissingCurrencyCodes() async throws {
         let fixture = try preferences()
         defer { fixture.cleanUp() }
-        let provider = RecordingExchangeRateProvider(responses: [.success(snapshot())])
+        let provider = RecordingExchangeRateProvider(responses: [
+            .success(snapshot(freshness: .stale(age: 28_800)))
+        ])
         let vm = viewModel(
             items: [
                 item(title: "RUB", amount: 500, currencyCode: "RUB"),
@@ -263,21 +265,24 @@ struct AnalyticsCurrencyAggregationTests {
         vm.load()
         await refresh(vm)
 
-        guard case let .partial(total, codes, _) = vm.screenState.monthlyAggregation else {
+        guard case let .partial(total, codes, metadata) = vm.screenState.monthlyAggregation else {
             Issue.record("Expected partial Analytics aggregation")
             return
         }
         #expect(total.amount == 500)
         #expect(codes == ["EUR", "GBP"])
+        #expect(metadata == nil)
     }
 
     @Test("Foreign-only unavailable data is not represented as zero")
     func unavailableIsNotZero() async throws {
         let fixture = try preferences()
         defer { fixture.cleanUp() }
-        let provider = RecordingExchangeRateProvider(responses: [.failure(.unavailable)])
+        let provider = RecordingExchangeRateProvider(responses: [
+            .success(snapshot(freshness: .stale(age: 28_800)))
+        ])
         let vm = viewModel(
-            items: [item(title: "USD", amount: 10, currencyCode: "USD")],
+            items: [item(title: "GBP", amount: 10, currencyCode: "GBP")],
             preferences: fixture.repository,
             provider: provider
         )
@@ -285,10 +290,12 @@ struct AnalyticsCurrencyAggregationTests {
         vm.load()
         await refresh(vm)
 
-        guard case .unavailable = vm.screenState.monthlyAggregation else {
+        guard case let .unavailable(_, missingCodes, _, metadata) = vm.screenState.monthlyAggregation else {
             Issue.record("Expected unavailable Analytics aggregation")
             return
         }
+        #expect(missingCodes == ["GBP"])
+        #expect(metadata == nil)
         #expect(vm.screenState.monthlyAggregation?.total == nil)
         #expect(!vm.screenState.isEmpty)
     }

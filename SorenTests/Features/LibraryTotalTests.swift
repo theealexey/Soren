@@ -427,6 +427,60 @@ struct LibraryTotalTests {
         #expect(vm.filteredItems.map(\.title) == ["RUB", "USD"])
     }
 
+    @Test("A stale snapshot without a successful foreign subtotal has no Library stale metadata")
+    func staleSnapshotWithoutSuccessfulForeignConversionHasNoMetadata() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let age: TimeInterval = 7 * 3_600
+        let provider = RecordingExchangeRateProvider(responses: [
+            .success(snapshot(freshness: .stale(age: age)))
+        ])
+        let vm = viewModel(
+            items: [
+                item(title: "RUB", amount: 100, currencyCode: "RUB"),
+                item(title: "GBP", amount: 2, currencyCode: "GBP")
+            ],
+            preferences: fixture.repository,
+            provider: provider
+        )
+
+        vm.load()
+        await refresh(vm)
+
+        guard case let .partial(total, missingCodes, metadata) = vm.filteredMonthlyAggregation else {
+            Issue.record("Expected a partial Library subtotal")
+            return
+        }
+        #expect(total.amount == 100)
+        #expect(missingCodes == ["GBP"])
+        #expect(metadata == nil)
+    }
+
+    @Test("A stale snapshot without a convertible foreign Library amount remains unavailable")
+    func staleSnapshotWithoutConvertibleForeignAmountIsUnavailable() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let provider = RecordingExchangeRateProvider(responses: [
+            .success(snapshot(freshness: .stale(age: 7 * 3_600)))
+        ])
+        let vm = viewModel(
+            items: [item(title: "GBP", amount: 2, currencyCode: "GBP")],
+            preferences: fixture.repository,
+            provider: provider
+        )
+
+        vm.load()
+        await refresh(vm)
+
+        guard case let .unavailable(_, missingCodes, _, metadata) = vm.filteredMonthlyAggregation else {
+            Issue.record("Expected an unavailable Library aggregation")
+            return
+        }
+        #expect(missingCodes == ["GBP"])
+        #expect(metadata == nil)
+        #expect(vm.filteredMonthlyAggregation?.total == nil)
+    }
+
     @Test("Amount sorting compares monthly reporting values instead of raw cross-currency decimals")
     func amountSortingUsesConvertedMonthlyValues() async throws {
         let fixture = try preferences()

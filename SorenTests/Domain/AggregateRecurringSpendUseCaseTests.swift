@@ -40,13 +40,14 @@ struct AggregateRecurringSpendUseCaseTests {
 
     @Test("Same-currency values aggregate without an FX snapshot")
     func sameCurrencyDoesNotNeedRates() throws {
+        let staleSnapshot = snapshot(freshness: .stale(age: 7_200))
         let result = AggregateRecurringSpendUseCase().execute(
             projections: [
                 projection(amount: 100, currency: "RUB"),
                 projection(amount: 500, currency: "RUB")
             ],
             reportingCurrencyCode: "RUB",
-            snapshot: nil,
+            snapshot: staleSnapshot,
             range: range
         )
 
@@ -78,13 +79,14 @@ struct AggregateRecurringSpendUseCaseTests {
 
     @Test("Missing one currency produces a partial converted subtotal")
     func missingCurrencyProducesPartial() throws {
+        let staleSnapshot = snapshot(freshness: .stale(age: 7_200))
         let result = AggregateRecurringSpendUseCase().execute(
             projections: [
                 projection(amount: 500, currency: "RUB"),
                 projection(amount: 20, currency: "GBP")
             ],
             reportingCurrencyCode: "RUB",
-            snapshot: snapshot(),
+            snapshot: staleSnapshot,
             range: range
         )
 
@@ -95,7 +97,7 @@ struct AggregateRecurringSpendUseCaseTests {
         #expect(total.amount == 500)
         #expect(total.currencyCode == "RUB")
         #expect(missingCodes == ["GBP"])
-        #expect(metadata?.providerDate == snapshot().providerDate)
+        #expect(metadata == nil)
     }
 
     @Test("No snapshot never raw-sums foreign and reporting currencies")
@@ -144,13 +146,14 @@ struct AggregateRecurringSpendUseCaseTests {
         let result = AggregateRecurringSpendUseCase().execute(
             projections: [],
             reportingCurrencyCode: "RUB",
-            snapshot: nil,
+            snapshot: snapshot(freshness: .stale(age: 7_200)),
             range: range
         )
 
         let total = try #require(result.total)
         #expect(result.isComplete)
         #expect(total == (try Money(amount: 0, currencyCode: "RUB")))
+        #expect(result.rateMetadata == nil)
     }
 
     @Test("Stale rate metadata survives a successful aggregation")
@@ -164,6 +167,63 @@ struct AggregateRecurringSpendUseCaseTests {
         )
 
         #expect(result.rateMetadata?.freshness == .stale(age: age))
+    }
+
+    @Test("A partial stale subtotal retains metadata after a successful foreign contribution")
+    func partialStaleAggregationRetainsMetadataAfterSuccessfulConversion() throws {
+        let age: TimeInterval = 7_200
+        let result = AggregateRecurringSpendUseCase().execute(
+            projections: [
+                projection(amount: 100, currency: "RUB"),
+                projection(amount: 2, currency: "USD"),
+                projection(amount: 5, currency: "GBP")
+            ],
+            reportingCurrencyCode: "RUB",
+            snapshot: snapshot(rates: ["RUB": 10], freshness: .stale(age: age)),
+            range: range
+        )
+
+        guard case let .partial(total, missingCodes, metadata) = result else {
+            Issue.record("Expected partial aggregation")
+            return
+        }
+        #expect(total.amount == 120)
+        #expect(missingCodes == ["GBP"])
+        #expect(metadata?.freshness == .stale(age: age))
+    }
+
+    @Test("A successful stale zero conversion remains numeric and carries metadata")
+    func staleZeroForeignConversionRemainsAvailable() throws {
+        let age: TimeInterval = 7_200
+        let result = AggregateRecurringSpendUseCase().execute(
+            projections: [projection(amount: 0, currency: "USD")],
+            reportingCurrencyCode: "RUB",
+            snapshot: snapshot(rates: ["RUB": 90], freshness: .stale(age: age)),
+            range: range
+        )
+
+        let total = try #require(result.total)
+        #expect(result.isComplete)
+        #expect(total.amount == 0)
+        #expect(result.rateMetadata?.freshness == .stale(age: age))
+    }
+
+    @Test("Aggregation preserves original projection values")
+    func aggregationPreservesOriginalProjectionValues() {
+        let foreign = projection(amount: 12.99, currency: "USD")
+        let local = projection(amount: 100, currency: "RUB")
+
+        _ = AggregateRecurringSpendUseCase().execute(
+            projections: [foreign, local],
+            reportingCurrencyCode: "RUB",
+            snapshot: snapshot(rates: ["RUB": 90]),
+            range: range
+        )
+
+        #expect(foreign.amount == 12.99)
+        #expect(foreign.currencyCode == "USD")
+        #expect(local.amount == 100)
+        #expect(local.currencyCode == "RUB")
     }
 
     @Test("Only projections inside the requested range are included")
@@ -200,12 +260,12 @@ struct AggregateRecurringSpendUseCaseTests {
         #expect(metadata == nil)
     }
 
-    @Test("Missing target rate is reported without a raw fallback")
+    @Test("A stale snapshot without a convertible amount is unavailable without metadata")
     func missingTargetRate() {
         let result = AggregateRecurringSpendUseCase().execute(
             projections: [projection(amount: 10, currency: "EUR")],
             reportingCurrencyCode: "RUB",
-            snapshot: snapshot(rates: ["EUR": 2]),
+            snapshot: snapshot(rates: ["EUR": 2], freshness: .stale(age: 7_200)),
             range: range
         )
 
@@ -215,7 +275,7 @@ struct AggregateRecurringSpendUseCaseTests {
         }
         #expect(missingCodes == ["RUB"])
         #expect(reason == .noConvertibleAmounts)
-        #expect(metadata != nil)
+        #expect(metadata == nil)
     }
 
     @Test("Rate request detection ignores same-currency and invalid source codes")
