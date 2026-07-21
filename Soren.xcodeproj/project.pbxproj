@@ -32,6 +32,7 @@
 		14FAD191C47CD95CDF6C6518 /* StateViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20EC791707151DB425DF4523 /* StateViews.swift */; };
 		1B018893C9870B39545BE785 /* AppContainer+CalendarFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BC0056301AA302B544B628D /* AppContainer+CalendarFactory.swift */; };
 		1D8BAEA0072A517150500030 /* AddSubscriptionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B159CB7446D97BCE3FBBE7AE /* AddSubscriptionViewModel.swift */; };
+		20741D2FEFBB8A071EE15538 /* BundledRegionalPricingLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21961EEBD105D3EF40E11DBE /* BundledRegionalPricingLoader.swift */; };
 		21006C45289C9333966B24F9 /* InsightRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05A9D63C02EDF5AB21EF8D17 /* InsightRowView.swift */; };
 		2177D4E14F0174CC23AD944C /* SubscriptionFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB20EA2841D6985A5FDC19A7 /* SubscriptionFormView.swift */; };
 		21D834D02FA95A3E4267078B /* SorenWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50A69B4F445210C888148449 /* SorenWidgetBundle.swift */; };
@@ -127,6 +128,7 @@
 		8023BFBA5F06A3AF10AECFC8 /* ItemType+Display.swift in Sources */ = {isa = PBXBuildFile; fileRef = 803CF88A972DED7319CCF3B2 /* ItemType+Display.swift */; };
 		806854FCC83DC208E64A7D0A /* BillingLandscapeContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E92B61286089312242D1542C /* BillingLandscapeContainerView.swift */; };
 		80A081FE42E035CA4D9737DF /* TrialReminderOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72C8803311E601FEDA141BBD /* TrialReminderOption.swift */; };
+		828FCAF23725B389531218A8 /* BundledRegionalPricingLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 281582CB1E771444F451289B /* BundledRegionalPricingLoaderTests.swift */; };
 		833E57EE0A14F05786BFD72A /* OpenExchangeRateProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14D43EE06E81178231BCCD4 /* OpenExchangeRateProviderTests.swift */; };
 		84020A9857573194026531D7 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 044C4CC94022CAD6BD7876C3 /* CalendarView.swift */; };
 		85AF4F5E3E1C6D703BABF080 /* SorenListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA75DA9D8213E0F85264205F /* SorenListRow.swift */; };
@@ -270,12 +272,14 @@
 		20A03BEB8C0222E166300367 /* SorenWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = SorenWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		20E0A890641C92835FBE96BA /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
 		20EC791707151DB425DF4523 /* StateViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateViews.swift; sourceTree = "<group>"; };
+		21961EEBD105D3EF40E11DBE /* BundledRegionalPricingLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledRegionalPricingLoader.swift; sourceTree = "<group>"; };
 		2203EAEFB37E4D686C921789 /* SDRecurringItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDRecurringItem.swift; sourceTree = "<group>"; };
 		2264C0A5E995F4CE3A9289F4 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		25586C2B2B8CB65C46CAC7B0 /* BillingLandscapeChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillingLandscapeChartView.swift; sourceTree = "<group>"; };
 		25CFC227D504CBB0F5C2BEEC /* GetDashboardSummaryConversionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetDashboardSummaryConversionTests.swift; sourceTree = "<group>"; };
 		25E033DBD36185ED00092310 /* AlertsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertsViewModel.swift; sourceTree = "<group>"; };
 		264F2714A6B7E0174F18E1FF /* ExchangeRatesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRatesTests.swift; sourceTree = "<group>"; };
+		281582CB1E771444F451289B /* BundledRegionalPricingLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledRegionalPricingLoaderTests.swift; sourceTree = "<group>"; };
 		2A9B8583A80D8BD6F90A301D /* PlanTier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanTier.swift; sourceTree = "<group>"; };
 		2B0E4355CE761328C61F5EE0 /* RepositoryContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryContainer.swift; sourceTree = "<group>"; };
 		2B50D4B434DAA34DC9657942 /* MotionTokenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionTokenTests.swift; sourceTree = "<group>"; };
@@ -917,10 +921,19 @@
 			path = UseCases;
 			sourceTree = "<group>";
 		};
+		B18CDF0B73CA0FEB56F981BF /* RegionalPricing */ = {
+			isa = PBXGroup;
+			children = (
+				21961EEBD105D3EF40E11DBE /* BundledRegionalPricingLoader.swift */,
+			);
+			path = RegionalPricing;
+			sourceTree = "<group>";
+		};
 		B21F63BB631A5473F1152311 /* Data */ = {
 			isa = PBXGroup;
 			children = (
 				06BA485D3333CD7B7F8EF598 /* BillingCycleEncoderTests.swift */,
+				281582CB1E771444F451289B /* BundledRegionalPricingLoaderTests.swift */,
 				8579C0FCEC4862D8C6D9976C /* DatingCatalogTests.swift */,
 				E0EDB960B1DC5C94E25CA286 /* ExchangeRateCacheTests.swift */,
 				801DEE1F1ADBABC0F1ADEACC /* FoodDeliveryCatalogTests.swift */,
@@ -1093,6 +1106,7 @@
 				40E12E050A07F3EEC29AB1F0 /* Networking */,
 				5CBAE86E2CAA720D33AD0D08 /* Notifications */,
 				5AA50F0CEB5A3B17C374F21F /* Persistence */,
+				B18CDF0B73CA0FEB56F981BF /* RegionalPricing */,
 				432AAC70003325E60CD77D1A /* Repositories */,
 				B767ACAAC82C5DF99DB86D1C /* SwiftData */,
 			);
@@ -1365,6 +1379,7 @@
 				63C42BE31C36308D42C83DFC /* BillingLandscapePoint.swift in Sources */,
 				E50A73F87DB0D1EFFC86D9CF /* BillingLandscapeSelection.swift in Sources */,
 				F3FD5F08E064C7378A305F93 /* Bundle.swift in Sources */,
+				20741D2FEFBB8A071EE15538 /* BundledRegionalPricingLoader.swift in Sources */,
 				84020A9857573194026531D7 /* CalendarView.swift in Sources */,
 				258B7245AC9BD0C58B8C7759 /* CalendarViewModel.swift in Sources */,
 				6943DE8531F86DDCE40082AB /* ChargeReminderOption+Display.swift in Sources */,
@@ -1513,6 +1528,7 @@
 				76B1429399A84AD17AD1AD40 /* AnalyticsCurrencyAggregationTests.swift in Sources */,
 				C495539F7E533ACA7ABF6162 /* BillingCycleEncoderTests.swift in Sources */,
 				0B2E3988602DFFDC732E24E8 /* BillingCycleTests.swift in Sources */,
+				828FCAF23725B389531218A8 /* BundledRegionalPricingLoaderTests.swift in Sources */,
 				4F32C1A2B2B9CEE98E3184A0 /* CalendarCurrencyAggregationTests.swift in Sources */,
 				42BD4BC83B42D5FCE350B4AD /* CurrencyEstimateFormTests.swift in Sources */,
 				21EDA56E9EA6F376C89DB5BE /* DatingCatalogTests.swift in Sources */,
