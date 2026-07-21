@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "revision": "2026-07-21.1",
+  "market": "RU",
+  "prices": [
+    {
+      "providerID": "tbank_pro",
+      "tierID": "pro",
+      "channel": "providerDirect",
+      "amount": "299",
+      "currency": "RUB",
+      "billingCycle": "monthly",
+      "verifiedAt": "2026-07-21T21:18:03Z",
+      "reviewAfter": "2026-08-20T21:18:03Z",
+      "sourceURL": "https://www.tbank.ru/pro/"
+    }
+  ]
+}
