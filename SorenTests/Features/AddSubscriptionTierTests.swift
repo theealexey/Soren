@@ -33,13 +33,13 @@ struct AddSubscriptionTierTests {
     }
 
     private let singleTier = [
-        PlanTier(id: "basic", name: "Basic", amount: 9.99, billingCycle: .monthly)
+        PlanTier(id: "basic", name: "Basic", referenceAmount: 9.99, billingCycle: .monthly)
     ]
 
     private let multipleTiers = [
-        PlanTier(id: "basic", name: "Basic", amount: 9.99, billingCycle: .monthly),
-        PlanTier(id: "standard", name: "Standard", amount: 15.49, billingCycle: .monthly),
-        PlanTier(id: "premium", name: "Premium", amount: 22.99, billingCycle: .monthly,
+        PlanTier(id: "basic", name: "Basic", referenceAmount: 9.99, billingCycle: .monthly),
+        PlanTier(id: "standard", name: "Standard", referenceAmount: 15.49, billingCycle: .monthly),
+        PlanTier(id: "premium", name: "Premium", referenceAmount: 22.99, billingCycle: .monthly,
                  features: "4K HDR, 4 screens"),
     ]
 
@@ -91,13 +91,13 @@ struct AddSubscriptionTierTests {
         let tier = PlanTier(
             id: "annual",
             name: "Annual",
-            amount: 119.88,
+            referenceAmount: 119.88,
             billingCycle: .annual,
-            currencyCode: "EUR",
+            referenceCurrencyCode: "EUR",
             features: "Save 20%"
         )
         let provider = providerWithTiers([tier,
-            PlanTier(id: "monthly", name: "Monthly", amount: 12.99, billingCycle: .monthly)])
+            PlanTier(id: "monthly", name: "Monthly", referenceAmount: 12.99, billingCycle: .monthly)])
 
         vm.selectProvider(provider)
         vm.selectTier(tier)
@@ -111,10 +111,10 @@ struct AddSubscriptionTierTests {
     @Test("selectTier with nil currencyCode keeps provider's currency")
     func tierNilCurrencyKeepsProvider() throws {
         let vm = try makeViewModel()
-        let tier = PlanTier(id: "basic", name: "Basic", amount: 9.99,
-                            billingCycle: .monthly, currencyCode: nil)
+        let tier = PlanTier(id: "basic", name: "Basic", referenceAmount: 9.99,
+                            billingCycle: .monthly, referenceCurrencyCode: nil)
         let provider = providerWithTiers([tier,
-            PlanTier(id: "pro", name: "Pro", amount: 19.99, billingCycle: .monthly)])
+            PlanTier(id: "pro", name: "Pro", referenceAmount: 19.99, billingCycle: .monthly)])
 
         vm.selectProvider(provider)
         vm.selectTier(tier)
@@ -227,11 +227,11 @@ struct AddSubscriptionTierTests {
     @Test("Zero-amount tier clears amountText to empty, not '0'")
     func zeroAmountTierClearsField() throws {
         let vm = try makeViewModel()
-        let zeroTier = PlanTier(id: "standard", name: "Standard", amount: 0, billingCycle: .monthly,
+        let zeroTier = PlanTier(id: "standard", name: "Standard", referenceAmount: 0, billingCycle: .monthly,
                                 features: "Verified badge")
         let provider = providerWithTiers([
             zeroTier,
-            PlanTier(id: "plus", name: "Plus", amount: 0, billingCycle: .monthly),
+            PlanTier(id: "plus", name: "Plus", referenceAmount: 0, billingCycle: .monthly),
         ])
 
         vm.selectProvider(provider)
@@ -244,10 +244,10 @@ struct AddSubscriptionTierTests {
     @Test("Zero-amount tier: canSave is false until user fills actual amount")
     func zeroAmountTierBlocksSaveUntilFilled() throws {
         let vm = try makeViewModel()
-        let zeroTier = PlanTier(id: "standard", name: "Standard", amount: 0, billingCycle: .monthly)
+        let zeroTier = PlanTier(id: "standard", name: "Standard", referenceAmount: 0, billingCycle: .monthly)
         let provider = providerWithTiers([
             zeroTier,
-            PlanTier(id: "plus", name: "Plus", amount: 0, billingCycle: .monthly),
+            PlanTier(id: "plus", name: "Plus", referenceAmount: 0, billingCycle: .monthly),
         ])
 
         vm.selectProvider(provider)
@@ -262,9 +262,9 @@ struct AddSubscriptionTierTests {
     @Test("Non-zero tier still populates amountText correctly")
     func nonZeroTierPopulatesAmount() throws {
         let vm = try makeViewModel()
-        let tier = PlanTier(id: "premium", name: "Premium", amount: 8, billingCycle: .monthly)
+        let tier = PlanTier(id: "premium", name: "Premium", referenceAmount: 8, billingCycle: .monthly)
         let provider = providerWithTiers([
-            PlanTier(id: "basic", name: "Basic", amount: 3, billingCycle: .monthly),
+            PlanTier(id: "basic", name: "Basic", referenceAmount: 3, billingCycle: .monthly),
             tier,
         ])
 

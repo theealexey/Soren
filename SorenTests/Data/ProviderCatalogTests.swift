@@ -342,6 +342,195 @@ struct ProviderCatalogIntegrityTests {
     }
 }
 
+// MARK: - Regional Pricing Identity Bridge Tests
+
+@Suite("ProviderCatalog — Regional Pricing Identity")
+struct ProviderCatalogRegionalPricingIdentityTests {
+
+    private struct Manifest: Decodable {
+        let market: String
+        let prices: [ManifestPrice]
+    }
+
+    private struct ManifestPrice: Decodable {
+        let providerID: String
+        let tierID: String
+        let channel: String
+    }
+
+    @Test("Declared catalog tiers construct exact provider-plan keys")
+    func declaredTiersConstructExactProviderPlanKeys() throws {
+        for provider in ProviderCatalog.all {
+            for tier in provider.plans {
+                let key = try provider.providerPlanKey(for: tier)
+
+                #expect(key.providerID == provider.id)
+                #expect(key.tierID == tier.id)
+            }
+        }
+    }
+
+    @Test("Catalog preserves the accepted provider and tier inventory")
+    func catalogInventoryIsPreserved() throws {
+        let providers = ProviderCatalog.all
+        let tierCount = providers.reduce(0) { partialResult, provider in
+            partialResult + provider.plans.count
+        }
+        let tierlessProviderCount = providers.filter { $0.plans.isEmpty }.count
+
+        #expect(providers.count == 110)
+        #expect(tierCount == 201)
+        #expect(tierlessProviderCount == 31)
+        #expect(providers.allSatisfy { !$0.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
+        #expect(providers.map(\.id).count == Set(providers.map(\.id)).count)
+
+        for provider in providers {
+            let tierIDs = provider.plans.map(\.id)
+            #expect(tierIDs.allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
+            #expect(tierIDs.count == Set(tierIDs).count)
+        }
+    }
+
+    @Test("Catalog provider-plan keys are composite and collision-free")
+    func providerPlanKeysAreCompositeAndCollisionFree() throws {
+        let keys = try ProviderCatalog.all.flatMap { provider in
+            try provider.plans.map { tier in
+                try provider.providerPlanKey(for: tier)
+            }
+        }
+
+        #expect(keys.count == Set(keys).count)
+
+        let spotify = try #require(ProviderCatalog.template(forProviderID: "spotify"))
+        let appleMusic = try #require(ProviderCatalog.template(forProviderID: "apple_music"))
+        let spotifyIndividual = try #require(spotify.plans.first { $0.id == "individual" })
+        let appleMusicIndividual = try #require(appleMusic.plans.first { $0.id == "individual" })
+        let spotifyKey = try spotify.providerPlanKey(for: spotifyIndividual)
+        let appleMusicKey = try appleMusic.providerPlanKey(for: appleMusicIndividual)
+
+        #expect(spotifyKey != appleMusicKey)
+    }
+
+    @Test("Bridge is independent from provider and tier display names")
+    func bridgeUsesStableIDsRatherThanDisplayNames() throws {
+        var provider = ProviderTemplate(
+            id: "stable_provider",
+            displayName: "Localized provider name",
+            category: .other
+        )
+        var tier = PlanTier(
+            id: "stable_tier",
+            name: "Localized tier name",
+            referenceAmount: 12.99,
+            billingCycle: .monthly
+        )
+
+        let originalKey = try provider.providerPlanKey(for: tier)
+        provider.displayName = "Другое локализованное имя"
+        tier.name = "Другой локализованный тариф"
+        let renamedKey = try provider.providerPlanKey(for: tier)
+
+        #expect(renamedKey == originalKey)
+        #expect(originalKey.providerID == "stable_provider")
+        #expect(originalKey.tierID == "stable_tier")
+    }
+
+    @Test("Production manifest identities map exactly once to catalog tiers")
+    func productionManifestIdentitiesMapExactlyOnce() throws {
+        let manifests = try productionManifests()
+        let catalogKeys = try ProviderCatalog.all.flatMap { provider in
+            try provider.plans.map { tier in
+                try provider.providerPlanKey(for: tier)
+            }
+        }
+        let keyCounts = Dictionary(catalogKeys.map { ($0, 1) }, uniquingKeysWith: +)
+        let manifestPrices = manifests.flatMap(\.prices)
+        let snapshot = try BundledRegionalPricingLoader().load(
+            resourceNames: ["regional-pricing-us-v1", "regional-pricing-ru-v1"],
+            in: applicationBundle()
+        )
+
+        #expect(manifestPrices.count == 27)
+
+        for manifest in manifests {
+            let market = try PricingMarket(countryCode: manifest.market)
+
+            for price in manifest.prices {
+                let provider = try #require(ProviderCatalog.template(forProviderID: price.providerID))
+                let tier = try #require(provider.plans.first { $0.id == price.tierID })
+                let key = try provider.providerPlanKey(for: tier)
+
+                let expectedKey = try ProviderPlanKey(providerID: price.providerID, tierID: price.tierID)
+                #expect(key == expectedKey)
+                #expect(keyCounts[key] == 1)
+                #expect(price.channel == PricingChannel.providerDirect.rawValue)
+
+                let result = ResolveRegionalPlanPriceUseCase().execute(
+                    key: RegionalPriceKey(providerPlan: key, market: market, channel: .providerDirect),
+                    snapshot: snapshot,
+                    asOf: .distantPast
+                )
+                guard case .available = result else {
+                    Issue.record("Manifest key \(key.providerID)/\(key.tierID) did not resolve exactly")
+                    continue
+                }
+            }
+        }
+    }
+
+    @Test("Reference prices preserve Decimal data without Regional Pricing fallback")
+    func referencePricesRemainLegacyCatalogData() throws {
+        let appleMusic = try #require(ProviderCatalog.template(forProviderID: "apple_music"))
+        let individual = try #require(appleMusic.plans.first { $0.id == "individual" })
+        let expectedReferenceAmount = try #require(Decimal(string: "10.99", locale: Locale(identifier: "en_US_POSIX")))
+        let referenceFieldNames = Set(Mirror(reflecting: individual.referencePrice).children.compactMap(\.label))
+
+        #expect(individual.referencePrice.amount == expectedReferenceAmount)
+        #expect(individual.referencePrice.currencyCode == nil)
+        #expect(referenceFieldNames == Set(["amount", "currencyCode"]))
+
+        let snapshot = try BundledRegionalPricingLoader().load(
+            resourceNames: ["regional-pricing-us-v1", "regional-pricing-ru-v1"],
+            in: applicationBundle()
+        )
+        let key = RegionalPriceKey(
+            providerPlan: try appleMusic.providerPlanKey(for: individual),
+            market: try PricingMarket(countryCode: "US"),
+            channel: .providerDirect
+        )
+        let result = ResolveRegionalPlanPriceUseCase().execute(
+            key: key,
+            snapshot: snapshot,
+            asOf: .distantPast
+        )
+        let manifestAmount = try #require(Decimal(string: "11.99", locale: Locale(identifier: "en_US_POSIX")))
+        let manifestPrice = try #require(snapshot.price(for: key))
+
+        #expect(result == .available(manifestPrice))
+        #expect(manifestPrice.money.amount == manifestAmount)
+        #expect(manifestPrice.money.amount != individual.referencePrice.amount)
+    }
+
+    private func productionManifests() throws -> [Manifest] {
+        let bundle = try applicationBundle()
+
+        return try ["regional-pricing-us-v1", "regional-pricing-ru-v1"].map { resourceName in
+            let resourceURL = try #require(bundle.url(forResource: resourceName, withExtension: "json"))
+            return try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: resourceURL))
+        }
+    }
+
+    private func applicationBundle() throws -> Bundle {
+        if Bundle.main.bundleIdentifier == "com.alexey.soren" {
+            return Bundle.main
+        }
+
+        return try #require(Bundle.allBundles.first { bundle in
+            bundle.bundleIdentifier == "com.alexey.soren"
+        })
+    }
+}
+
 // MARK: - Logo Loader Tests
 
 @Suite("LogoLoader — Reliability")

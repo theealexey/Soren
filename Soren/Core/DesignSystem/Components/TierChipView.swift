@@ -20,7 +20,7 @@ struct TierChipView: View {
                 .font(Typography.captionMedium)
                 .foregroundStyle(isSelected ? .white : ColorTokens.textPrimary)
 
-            if tier.amount == 0 {
+            if tier.referencePrice.amount == 0 {
                 // No reliable default price — prompt the user to enter their actual charge.
                 Text(String(localized: "Введите цену"))
                     .font(Typography.caption)
@@ -28,8 +28,8 @@ struct TierChipView: View {
                     .foregroundStyle(isSelected ? .white.opacity(0.65) : ColorTokens.textTertiary)
             } else {
                 AmountLabel(
-                    tier.amount,
-                    currency: tier.currencyCode ?? currencyCode,
+                    tier.referencePrice.amount,
+                    currency: tier.referencePrice.currencyCode ?? currencyCode,
                     size: .small,
                     cycle: cycleLabel,
                     tint: isSelected ? .white : nil
@@ -79,9 +79,9 @@ struct TierChipView: View {
 
 #Preview {
     let tiers: [PlanTier] = [
-        .init(id: "standard_ads", name: "Standard с рекламой", amount: 7.99, billingCycle: .monthly, features: "1080p, 2 экрана"),
-        .init(id: "standard", name: "Standard", amount: 15.49, billingCycle: .monthly, features: "1080p, 2 экрана, скачивание"),
-        .init(id: "premium", name: "Premium", amount: 22.99, billingCycle: .monthly, features: "4K HDR, 4 экрана"),
+        .init(id: "standard_ads", name: "Standard с рекламой", referenceAmount: 7.99, billingCycle: .monthly, features: "1080p, 2 экрана"),
+        .init(id: "standard", name: "Standard", referenceAmount: 15.49, billingCycle: .monthly, features: "1080p, 2 экрана, скачивание"),
+        .init(id: "premium", name: "Premium", referenceAmount: 22.99, billingCycle: .monthly, features: "4K HDR, 4 экрана"),
     ]
 
     ScrollView(.horizontal, showsIndicators: false) {

@@ -3,11 +3,12 @@ import Foundation
 // MARK: - Russian Market Providers
 //
 // ЦЕНОВАЯ ПОЛИТИКА / PRICING POLICY
-// Все суммы — справочные значения для российского рынка на момент составления каталога.
+// Все reference prices — legacy справочные значения для российского рынка на момент составления каталога.
 // Реальные цены зависят от акций, региона, даты подписки и изменений тарифов сервисов.
 // Пользователь должен проверить и скорректировать сумму после добавления.
 //
-// All amounts are Russian-market reference values at the time the catalog was authored.
+// All reference prices are legacy Russian-market values at the time the catalog was authored.
+// They are not verified Regional Pricing.
 // Actual prices depend on promotions, region, subscription date, and service tariff changes.
 // Users are expected to verify and correct the amount after adding a subscription.
 
@@ -27,9 +28,9 @@ extension ProviderCatalog {
               serviceLogoSourceURL: URL(string: "https://avatars.mds.yandex.net/get-media-infra/3756502/d787faef9f2f25928f2306d47a099b9bc2de99f1/orig"),
               brandColorHex: "#FC3F1D",
               plans: [
-                  .init(id: "basic", name: "Базовый", amount: 199, billingCycle: .monthly, features: "Кешбэк, Музыка"),
-                  .init(id: "standard", name: "Стандарт", amount: 399, billingCycle: .monthly, features: "Кешбэк, Музыка, Кинопоиск"),
-                  .init(id: "family", name: "Семейный", amount: 599, billingCycle: .monthly, features: "До 4 участников"),
+                  .init(id: "basic", name: "Базовый", referenceAmount: 199, billingCycle: .monthly, features: "Кешбэк, Музыка"),
+                  .init(id: "standard", name: "Стандарт", referenceAmount: 399, billingCycle: .monthly, features: "Кешбэк, Музыка, Кинопоиск"),
+                  .init(id: "family", name: "Семейный", referenceAmount: 599, billingCycle: .monthly, features: "До 4 участников"),
               ]),
 
         .init(id: "sber_prime", displayName: "СберПрайм+",
@@ -39,8 +40,8 @@ extension ProviderCatalog {
               tags: ["ecosystem", "banking", "bundle"],
               brandColorHex: "#21A038", companyLogoFallbackDomain: "sber.ru",
               plans: [
-                  .init(id: "standard", name: "Стандарт", amount: 399, billingCycle: .monthly, features: "Кешбэк, Звук, Okko"),
-                  .init(id: "prime_plus", name: "Прайм+", amount: 599, billingCycle: .monthly, features: "Всё + повышенный кешбэк"),
+                  .init(id: "standard", name: "Стандарт", referenceAmount: 399, billingCycle: .monthly, features: "Кешбэк, Звук, Okko"),
+                  .init(id: "prime_plus", name: "Прайм+", referenceAmount: 599, billingCycle: .monthly, features: "Всё + повышенный кешбэк"),
               ]),
 
         .init(id: "mts_premium", displayName: "МТС Premium",
@@ -50,8 +51,8 @@ extension ProviderCatalog {
               tags: ["ecosystem", "telecom", "bundle", "popular"],
               brandColorHex: "#E30611", companyLogoFallbackDomain: "mts.ru",
               plans: [
-                  .init(id: "standard", name: "Стандарт", amount: 199, billingCycle: .monthly, features: "KION, музыка, кешбэк"),
-                  .init(id: "family", name: "Семейный", amount: 349, billingCycle: .monthly, features: "До 5 участников"),
+                  .init(id: "standard", name: "Стандарт", referenceAmount: 199, billingCycle: .monthly, features: "KION, музыка, кешбэк"),
+                  .init(id: "family", name: "Семейный", referenceAmount: 349, billingCycle: .monthly, features: "До 5 участников"),
               ]),
 
         .init(id: "tbank_pro", displayName: "Т-Банк Pro",
@@ -61,7 +62,7 @@ extension ProviderCatalog {
               tags: ["banking", "cashback"],
               brandColorHex: "#FFDD2D", companyLogoFallbackDomain: "tbank.ru",
               plans: [
-                  .init(id: "pro", name: "Pro", amount: 790, billingCycle: .monthly, features: "Кешбэк до 30%, страховка, консьерж"),
+                  .init(id: "pro", name: "Pro", referenceAmount: 790, billingCycle: .monthly, features: "Кешбэк до 30%, страховка, консьерж"),
               ]),
 
         // ────────────────────────────────────────
@@ -75,8 +76,8 @@ extension ProviderCatalog {
               tags: ["streaming", "yandex"],
               brandColorHex: "#FF5500", companyLogoFallbackDomain: "kinopoisk.ru",
               plans: [
-                  .init(id: "basic", name: "Базовый", amount: 299, billingCycle: .monthly, features: "FHD, онлайн-просмотр"),
-                  .init(id: "optimal", name: "Оптимальный", amount: 399, billingCycle: .monthly, features: "4K HDR, скачивание"),
+                  .init(id: "basic", name: "Базовый", referenceAmount: 299, billingCycle: .monthly, features: "FHD, онлайн-просмотр"),
+                  .init(id: "optimal", name: "Оптимальный", referenceAmount: 399, billingCycle: .monthly, features: "4K HDR, скачивание"),
               ]),
 
         .init(id: "okko", displayName: "Okko",
@@ -86,7 +87,7 @@ extension ProviderCatalog {
               tags: ["streaming"],
               brandColorHex: "#A033FF", companyLogoFallbackDomain: "okko.tv",
               plans: [
-                  .init(id: "optimal", name: "Оптимальный", amount: 399, billingCycle: .monthly, features: "4K HDR, скачивание"),
+                  .init(id: "optimal", name: "Оптимальный", referenceAmount: 399, billingCycle: .monthly, features: "4K HDR, скачивание"),
               ]),
 
         .init(id: "wink", displayName: "Wink",
@@ -96,7 +97,7 @@ extension ProviderCatalog {
               tags: ["streaming", "rostelecom"],
               brandColorHex: "#7B2BFC", companyLogoFallbackDomain: "wink.ru",
               plans: [
-                  .init(id: "basic", name: "Базовая", amount: 199, billingCycle: .monthly, features: "Фильмы и сериалы"),
+                  .init(id: "basic", name: "Базовая", referenceAmount: 199, billingCycle: .monthly, features: "Фильмы и сериалы"),
               ]),
 
         .init(id: "kion", displayName: "KION",
@@ -106,7 +107,7 @@ extension ProviderCatalog {
               tags: ["streaming", "mts"],
               brandColorHex: "#E30611", companyLogoFallbackDomain: "kion.ru",
               plans: [
-                  .init(id: "kion", name: "KION", amount: 299, billingCycle: .monthly, features: "Оригиналы МТС, 4K"),
+                  .init(id: "kion", name: "KION", referenceAmount: 299, billingCycle: .monthly, features: "Оригиналы МТС, 4K"),
               ]),
 
         .init(id: "start", displayName: "START",
@@ -116,7 +117,7 @@ extension ProviderCatalog {
               tags: ["streaming"],
               brandColorHex: "#F43B3B", companyLogoFallbackDomain: "start.ru",
               plans: [
-                  .init(id: "start", name: "START", amount: 399, billingCycle: .monthly, features: "Оригинальные сериалы, 4K"),
+                  .init(id: "start", name: "START", referenceAmount: 399, billingCycle: .monthly, features: "Оригинальные сериалы, 4K"),
               ]),
 
         .init(id: "premier", displayName: "PREMIER",
@@ -126,7 +127,7 @@ extension ProviderCatalog {
               tags: ["streaming"],
               brandColorHex: "#FF1F8E", companyLogoFallbackDomain: "premier.one",
               plans: [
-                  .init(id: "premier", name: "PREMIER", amount: 299, billingCycle: .monthly, features: "ТНТ, ТВ-3, 2×2, оригиналы"),
+                  .init(id: "premier", name: "PREMIER", referenceAmount: 299, billingCycle: .monthly, features: "ТНТ, ТВ-3, 2×2, оригиналы"),
               ]),
 
         .init(id: "ivi", displayName: "IVI",
@@ -136,8 +137,8 @@ extension ProviderCatalog {
               tags: ["streaming"],
               brandColorHex: "#EA003D", companyLogoFallbackDomain: "ivi.ru",
               plans: [
-                  .init(id: "ivi", name: "IVI", amount: 299, billingCycle: .monthly, features: "FHD, без рекламы"),
-                  .init(id: "ivi_plus", name: "IVI+", amount: 499, billingCycle: .monthly, features: "4K UHD, скачивание"),
+                  .init(id: "ivi", name: "IVI", referenceAmount: 299, billingCycle: .monthly, features: "FHD, без рекламы"),
+                  .init(id: "ivi_plus", name: "IVI+", referenceAmount: 499, billingCycle: .monthly, features: "4K UHD, скачивание"),
               ]),
 
         // ────────────────────────────────────────
@@ -151,8 +152,8 @@ extension ProviderCatalog {
               tags: ["music", "yandex"],
               brandColorHex: "#FFDB4D", companyLogoFallbackDomain: "music.yandex.ru",
               plans: [
-                  .init(id: "individual", name: "Индивидуальная", amount: 169, billingCycle: .monthly),
-                  .init(id: "family", name: "Семейная", amount: 349, billingCycle: .monthly, features: "До 6 участников"),
+                  .init(id: "individual", name: "Индивидуальная", referenceAmount: 169, billingCycle: .monthly),
+                  .init(id: "family", name: "Семейная", referenceAmount: 349, billingCycle: .monthly, features: "До 6 участников"),
               ]),
 
         .init(id: "zvuk", displayName: "Звук",
@@ -162,8 +163,8 @@ extension ProviderCatalog {
               tags: ["music", "sber"],
               brandColorHex: "#0DC268", companyLogoFallbackDomain: "zvuk.com",
               plans: [
-                  .init(id: "standard", name: "Стандарт", amount: 169, billingCycle: .monthly),
-                  .init(id: "family", name: "Семейный", amount: 349, billingCycle: .monthly, features: "До 6 участников"),
+                  .init(id: "standard", name: "Стандарт", referenceAmount: 169, billingCycle: .monthly),
+                  .init(id: "family", name: "Семейный", referenceAmount: 349, billingCycle: .monthly, features: "До 6 участников"),
               ]),
 
         .init(id: "vk_music", displayName: "VK Музыка",
@@ -173,8 +174,8 @@ extension ProviderCatalog {
               tags: ["music", "vk"],
               brandColorHex: "#0077FF", companyLogoFallbackDomain: "vk.com",
               plans: [
-                  .init(id: "individual", name: "Индивидуальная", amount: 169, billingCycle: .monthly),
-                  .init(id: "family", name: "Семейная", amount: 299, billingCycle: .monthly, features: "До 6 участников"),
+                  .init(id: "individual", name: "Индивидуальная", referenceAmount: 169, billingCycle: .monthly),
+                  .init(id: "family", name: "Семейная", referenceAmount: 299, billingCycle: .monthly, features: "До 6 участников"),
               ]),
 
         // ────────────────────────────────────────
@@ -188,7 +189,7 @@ extension ProviderCatalog {
               tags: ["marketplace", "delivery"],
               brandColorHex: "#005BFF", companyLogoFallbackDomain: "ozon.ru",
               plans: [
-                  .init(id: "standard", name: "Стандарт", amount: 199, billingCycle: .monthly, features: "Бесплатная доставка, баллы"),
+                  .init(id: "standard", name: "Стандарт", referenceAmount: 199, billingCycle: .monthly, features: "Бесплатная доставка, баллы"),
               ]),
 
         .init(id: "wb_club", displayName: "WB Клуб",
@@ -198,7 +199,7 @@ extension ProviderCatalog {
               tags: ["marketplace"],
               brandColorHex: "#CB11AB", companyLogoFallbackDomain: "wildberries.ru",
               plans: [
-                  .init(id: "standard", name: "WB Клуб", amount: 349, billingCycle: .monthly, features: "Скидки, бесплатная доставка"),
+                  .init(id: "standard", name: "WB Клуб", referenceAmount: 349, billingCycle: .monthly, features: "Скидки, бесплатная доставка"),
               ]),
 
         .init(id: "yandex_market_plus", displayName: "Яндекс Маркет Плюс",
@@ -208,7 +209,7 @@ extension ProviderCatalog {
               tags: ["marketplace", "yandex"],
               brandColorHex: "#FC3F1D", companyLogoFallbackDomain: "market.yandex.ru",
               plans: [
-                  .init(id: "standard", name: "Маркет Плюс", amount: 199, billingCycle: .monthly, features: "Кешбэк, бесплатная доставка"),
+                  .init(id: "standard", name: "Маркет Плюс", referenceAmount: 199, billingCycle: .monthly, features: "Кешбэк, бесплатная доставка"),
               ]),
 
         .init(id: "samokat", displayName: "Самокат Плюс",
@@ -218,7 +219,7 @@ extension ProviderCatalog {
               tags: ["delivery", "grocery"],
               brandColorHex: "#FF3366", companyLogoFallbackDomain: "samokat.ru",
               plans: [
-                  .init(id: "plus", name: "Плюс", amount: 199, billingCycle: .monthly, features: "Бесплатная доставка от 499₽"),
+                  .init(id: "plus", name: "Плюс", referenceAmount: 199, billingCycle: .monthly, features: "Бесплатная доставка от 499₽"),
               ]),
 
         // ────────────────────────────────────────
@@ -280,11 +281,11 @@ extension ProviderCatalog {
               serviceLogoSourceURL: URL(string: "https://yastatic.net/s3/tuning/static/pages/brand-services/versions/0.0.10/assets/downloads/%D0%B8%D0%BA%D0%BE%D0%BD%D0%BA%D0%B0_%D0%B4%D0%B8%D1%81%D0%BA.png"),
               brandColorHex: "#FC3F1D",
               plans: [
-                  .init(id: "100gb", name: "100 ГБ", amount: 69, billingCycle: .monthly),
-                  .init(id: "200gb", name: "200 ГБ", amount: 99, billingCycle: .monthly),
-                  .init(id: "500gb", name: "500 ГБ", amount: 149, billingCycle: .monthly),
-                  .init(id: "1tb", name: "1 ТБ", amount: 249, billingCycle: .monthly),
-                  .init(id: "3tb", name: "3 ТБ", amount: 449, billingCycle: .monthly),
+                  .init(id: "100gb", name: "100 ГБ", referenceAmount: 69, billingCycle: .monthly),
+                  .init(id: "200gb", name: "200 ГБ", referenceAmount: 99, billingCycle: .monthly),
+                  .init(id: "500gb", name: "500 ГБ", referenceAmount: 149, billingCycle: .monthly),
+                  .init(id: "1tb", name: "1 ТБ", referenceAmount: 249, billingCycle: .monthly),
+                  .init(id: "3tb", name: "3 ТБ", referenceAmount: 449, billingCycle: .monthly),
               ]),
 
         .init(id: "mail_cloud", displayName: "Облако Mail.ru",
@@ -294,11 +295,11 @@ extension ProviderCatalog {
               tags: ["storage", "vk"],
               brandColorHex: "#005FF9", companyLogoFallbackDomain: "mail.ru",
               plans: [
-                  .init(id: "64gb", name: "64 ГБ", amount: 49, billingCycle: .monthly),
-                  .init(id: "128gb", name: "128 ГБ", amount: 79, billingCycle: .monthly),
-                  .init(id: "256gb", name: "256 ГБ", amount: 149, billingCycle: .monthly),
-                  .init(id: "512gb", name: "512 ГБ", amount: 199, billingCycle: .monthly),
-                  .init(id: "1tb", name: "1 ТБ", amount: 299, billingCycle: .monthly),
+                  .init(id: "64gb", name: "64 ГБ", referenceAmount: 49, billingCycle: .monthly),
+                  .init(id: "128gb", name: "128 ГБ", referenceAmount: 79, billingCycle: .monthly),
+                  .init(id: "256gb", name: "256 ГБ", referenceAmount: 149, billingCycle: .monthly),
+                  .init(id: "512gb", name: "512 ГБ", referenceAmount: 199, billingCycle: .monthly),
+                  .init(id: "1tb", name: "1 ТБ", referenceAmount: 299, billingCycle: .monthly),
               ]),
 
         // ────────────────────────────────────────
@@ -319,7 +320,7 @@ extension ProviderCatalog {
               tags: ["courses"],
               brandColorHex: "#5AAF4C", companyLogoFallbackDomain: "stepik.org",
               plans: [
-                  .init(id: "pro", name: "Pro", amount: 1299, billingCycle: .monthly, features: "Все курсы без ограничений"),
+                  .init(id: "pro", name: "Pro", referenceAmount: 1299, billingCycle: .monthly, features: "Все курсы без ограничений"),
               ]),
 
         .init(id: "practicum", displayName: "Яндекс Практикум",
@@ -340,8 +341,8 @@ extension ProviderCatalog {
               tags: ["books", "audiobooks"],
               brandColorHex: "#FF6600", companyLogoFallbackDomain: "litres.ru",
               plans: [
-                  .init(id: "standard", name: "Стандарт", amount: 699, billingCycle: .monthly, features: "Книги + аудиокниги"),
-                  .init(id: "annual", name: "Годовой", amount: 4999, billingCycle: .annual, features: "Экономия ~3,4K₽"),
+                  .init(id: "standard", name: "Стандарт", referenceAmount: 699, billingCycle: .monthly, features: "Книги + аудиокниги"),
+                  .init(id: "annual", name: "Годовой", referenceAmount: 4999, billingCycle: .annual, features: "Экономия ~3,4K₽"),
               ]),
 
         .init(id: "bookmate", displayName: "Bookmate",
@@ -351,8 +352,8 @@ extension ProviderCatalog {
               tags: ["books"],
               brandColorHex: "#F43B40", companyLogoFallbackDomain: "bookmate.com",
               plans: [
-                  .init(id: "monthly", name: "Ежемесячно", amount: 449, billingCycle: .monthly, features: "Книги, аудио, комиксы"),
-                  .init(id: "annual", name: "Годовой", amount: 2499, billingCycle: .annual, features: "Экономия ~2,9K₽"),
+                  .init(id: "monthly", name: "Ежемесячно", referenceAmount: 449, billingCycle: .monthly, features: "Книги, аудио, комиксы"),
+                  .init(id: "annual", name: "Годовой", referenceAmount: 2499, billingCycle: .annual, features: "Экономия ~2,9K₽"),
               ]),
 
         // ────────────────────────────────────────
@@ -366,8 +367,8 @@ extension ProviderCatalog {
               tags: ["health", "telemedicine"],
               brandColorHex: "#00C1B4", companyLogoFallbackDomain: "docplus.ru",
               plans: [
-                  .init(id: "basic", name: "Базовый", amount: 590, billingCycle: .monthly, features: "3 консультации/мес"),
-                  .init(id: "premium", name: "Премиум", amount: 990, billingCycle: .monthly, features: "Безлимитные консультации"),
+                  .init(id: "basic", name: "Базовый", referenceAmount: 590, billingCycle: .monthly, features: "3 консультации/мес"),
+                  .init(id: "premium", name: "Премиум", referenceAmount: 990, billingCycle: .monthly, features: "Безлимитные консультации"),
               ]),
 
         // ────────────────────────────────────────
@@ -437,7 +438,7 @@ extension ProviderCatalog {
               tags: ["gaming", "vk"],
               brandColorHex: "#0077FF", companyLogoFallbackDomain: "vkplay.ru",
               plans: [
-                  .init(id: "monthly", name: "Play Pass", amount: 299, billingCycle: .monthly, features: "Каталог игр, без рекламы"),
+                  .init(id: "monthly", name: "Play Pass", referenceAmount: 299, billingCycle: .monthly, features: "Каталог игр, без рекламы"),
               ]),
     ]
 }

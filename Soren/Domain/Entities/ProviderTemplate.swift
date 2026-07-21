@@ -34,6 +34,11 @@ struct ProviderTemplate: Identifiable, Hashable, Sendable {
     /// Whether this provider has predefined plan tiers.
     var hasPlanTiers: Bool { !plans.isEmpty }
 
+    /// Constructs the canonical Regional Pricing identity from stable catalog IDs only.
+    func providerPlanKey(for tier: PlanTier) throws -> ProviderPlanKey {
+        try ProviderPlanKey(providerID: id, tierID: tier.id)
+    }
+
     init(
         id: String,
         displayName: String,

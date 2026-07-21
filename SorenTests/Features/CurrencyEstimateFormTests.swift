@@ -571,9 +571,9 @@ struct CurrencyEstimateFormTests {
         let tier = PlanTier(
             id: "monthly",
             name: "Monthly",
-            amount: 12,
+            referenceAmount: 12,
             billingCycle: .monthly,
-            currencyCode: "USD"
+            referenceCurrencyCode: "USD"
         )
         let template = ProviderTemplate(
             id: "test-service",

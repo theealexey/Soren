@@ -176,10 +176,10 @@ final class AddSubscriptionViewModel {
         // (e.g. Meta Verified — regional / platform-variable pricing).
         // Clear the field so the user sees an empty input and knows to fill it in,
         // rather than seeing "0" with a silently disabled Save button.
-        amountText = tier.amount == 0 ? "" : tier.amount.description
+        amountText = tier.referencePrice.amount == 0 ? "" : tier.referencePrice.amount.description
         isNextChargeDateManuallySet = false    // let billingCycle.didSet re-suggest below
         billingCycle = tier.billingCycle
-        if let override = tier.currencyCode {
+        if let override = tier.referencePrice.currencyCode {
             currencyCode = override
         }
     }
