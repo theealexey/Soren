@@ -11,7 +11,8 @@ extension AppContainer {
                 notificationScheduler: notificationScheduler
             ),
             currencyEstimateService: makeCurrencyEstimateService(),
-            preferences: preferences
+            preferences: preferences,
+            regionalPricingSnapshotResult: regionalPricingSnapshotResult
         )
     }
 

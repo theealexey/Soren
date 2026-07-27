@@ -2,16 +2,22 @@ import SwiftUI
 
 // MARK: - Tier Chip View
 
+enum TierChipPricingPresentation: Equatable {
+    case verified(money: Money, billingCycle: BillingCycle)
+    case requiresReview
+    case manualEntry
+}
+
 /// Compact card for selecting a plan tier in the Add Subscription flow.
 /// Shows tier name, formatted price with billing cycle, and optional features line.
 ///
 /// Usage:
 /// ```swift
-/// TierChipView(tier: tier, currencyCode: "USD", isSelected: true)
+/// TierChipView(tier: tier, pricingPresentation: .manualEntry, isSelected: true)
 /// ```
 struct TierChipView: View {
     let tier: PlanTier
-    let currencyCode: String
+    let pricingPresentation: TierChipPricingPresentation
     let isSelected: Bool
 
     var body: some View {
@@ -20,20 +26,27 @@ struct TierChipView: View {
                 .font(Typography.captionMedium)
                 .foregroundStyle(isSelected ? .white : ColorTokens.textPrimary)
 
-            if tier.referencePrice.amount == 0 {
-                // No reliable default price — prompt the user to enter their actual charge.
+            switch pricingPresentation {
+            case .verified(let money, let billingCycle):
+                AmountLabel(
+                    money.amount,
+                    currency: money.currencyCode,
+                    size: .small,
+                    cycle: cycleLabel(for: billingCycle),
+                    tint: isSelected ? .white : nil
+                )
+
+            case .requiresReview:
+                Text(String(localized: "Проверьте цену"))
+                    .font(Typography.caption)
+                    .italic()
+                    .foregroundStyle(isSelected ? .white.opacity(0.65) : ColorTokens.textTertiary)
+
+            case .manualEntry:
                 Text(String(localized: "Введите цену"))
                     .font(Typography.caption)
                     .italic()
                     .foregroundStyle(isSelected ? .white.opacity(0.65) : ColorTokens.textTertiary)
-            } else {
-                AmountLabel(
-                    tier.referencePrice.amount,
-                    currency: tier.referencePrice.currencyCode ?? currencyCode,
-                    size: .small,
-                    cycle: cycleLabel,
-                    tint: isSelected ? .white : nil
-                )
             }
 
             if let features = tier.features {
@@ -61,12 +74,12 @@ struct TierChipView: View {
         .animation(MotionTokens.snappy, value: isSelected)
     }
 
-    private var cycleLabel: AmountLabel.CycleLabel {
-        switch tier.billingCycle {
+    private func cycleLabel(for billingCycle: BillingCycle) -> AmountLabel.CycleLabel {
+        switch billingCycle {
         case .monthly: .monthly
         case .annual: .yearly
         case .weekly: .weekly
-        default: .custom(tier.billingCycle.shortName)
+        default: .custom(billingCycle.shortName)
         }
     }
 
@@ -86,9 +99,9 @@ struct TierChipView: View {
 
     ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: Spacing.sm) {
-            TierChipView(tier: tiers[0], currencyCode: "USD", isSelected: false)
-            TierChipView(tier: tiers[1], currencyCode: "USD", isSelected: true)
-            TierChipView(tier: tiers[2], currencyCode: "USD", isSelected: false)
+            TierChipView(tier: tiers[0], pricingPresentation: .manualEntry, isSelected: false)
+            TierChipView(tier: tiers[1], pricingPresentation: .requiresReview, isSelected: true)
+            TierChipView(tier: tiers[2], pricingPresentation: .manualEntry, isSelected: false)
         }
         .padding(.horizontal, Spacing.lg)
     }

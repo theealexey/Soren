@@ -12,6 +12,7 @@ final class AppContainer {
     let providerCatalog: any ProviderCatalogRepository
     let preferences: UserPreferencesRepository
     let exchangeRateProvider: any ExchangeRateProvider
+    let regionalPricingSnapshotResult: Result<RegionalPricingSnapshot, BundledRegionalPricingLoaderError>
     let notificationScheduler: NotificationScheduler
     let notificationRefreshCoordinator: NotificationRefreshCoordinator
 
@@ -27,6 +28,7 @@ final class AppContainer {
         self.providerCatalog = InMemoryProviderCatalogRepository()
         self.preferences = prefs
         self.exchangeRateProvider = OpenExchangeRateProvider()
+        self.regionalPricingSnapshotResult = Self.loadRegionalPricing()
         self.notificationScheduler = scheduler
         self.notificationRefreshCoordinator = NotificationRefreshCoordinator(
             repository: repos.recurringItems,
@@ -40,16 +42,36 @@ final class AppContainer {
         providerCatalog: any ProviderCatalogRepository = InMemoryProviderCatalogRepository(),
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
         exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider(),
+        regionalPricingSnapshotResult: Result<RegionalPricingSnapshot, BundledRegionalPricingLoaderError> = AppContainer.loadRegionalPricing(),
         notificationScheduler: NotificationScheduler = NotificationScheduler()
     ) {
         self.repositories = repositories
         self.providerCatalog = providerCatalog
         self.preferences = preferences
         self.exchangeRateProvider = exchangeRateProvider
+        self.regionalPricingSnapshotResult = regionalPricingSnapshotResult
         self.notificationScheduler = notificationScheduler
         self.notificationRefreshCoordinator = NotificationRefreshCoordinator(
             repository: repositories.recurringItems,
             scheduler: notificationScheduler
         )
+    }
+
+    static func loadRegionalPricing(
+        in bundle: Bundle = .main
+    ) -> Result<RegionalPricingSnapshot, BundledRegionalPricingLoaderError> {
+        do {
+            return .success(try BundledRegionalPricingLoader().load(
+                resourceNames: [
+                    "regional-pricing-us-v1",
+                    "regional-pricing-ru-v1"
+                ],
+                in: bundle
+            ))
+        } catch let error as BundledRegionalPricingLoaderError {
+            return .failure(error)
+        } catch {
+            return .failure(.resourceUnreadable("RegionalPricing"))
+        }
     }
 }

@@ -18,6 +18,7 @@ struct SettingsView: View {
         Form {
             generalSection(
                 currency:       $vm.defaultCurrencyCode,
+                pricingMarket:  $vm.pricingMarket,
                 appearance:     $appState.appearanceMode,
                 chargeReminder: $vm.defaultChargeReminder
             )
@@ -50,6 +51,7 @@ struct SettingsView: View {
     @ViewBuilder
     private func generalSection(
         currency:       Binding<String>,
+        pricingMarket:  Binding<PricingMarket>,
         appearance:     Binding<AppearanceMode>,
         chargeReminder: Binding<ChargeReminderOption>
     ) -> some View {
@@ -59,6 +61,16 @@ struct SettingsView: View {
                     Text(code).tag(code)
                 }
             }
+
+            Picker("Рынок цен", selection: pricingMarket) {
+                ForEach(SettingsViewModel.supportedPricingMarkets, id: \.self) { market in
+                    Text(pricingMarketName(market)).tag(market)
+                }
+            }
+
+            Text("Выберите рынок для цен из каталога. Это не влияет на валюту отчётов.")
+                .font(Typography.caption)
+                .foregroundStyle(ColorTokens.textSecondary)
 
             Picker("Внешний вид", selection: appearance) {
                 ForEach(AppearanceMode.allCases, id: \.self) { mode in
@@ -73,6 +85,13 @@ struct SettingsView: View {
                     Text(option.displayName).tag(option)
                 }
             }
+        }
+    }
+
+    private func pricingMarketName(_ market: PricingMarket) -> LocalizedStringKey {
+        switch market.countryCode {
+        case "RU": "Россия"
+        default: "США"
         }
     }
 

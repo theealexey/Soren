@@ -21,6 +21,90 @@ struct SettingsViewModelCurrencyPersistenceTests {
     }
 }
 
+// MARK: - Pricing Market Persistence
+
+@Suite("UserPreferencesRepository — pricing market")
+@MainActor
+struct UserPreferencesPricingMarketTests {
+
+    private func makeRepository(
+        regionCode: String?
+    ) throws -> (suiteName: String, defaults: UserDefaults, repository: UserPreferencesRepository) {
+        let suiteName = "UserPreferencesPricingMarketTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        return (
+            suiteName,
+            defaults,
+            UserPreferencesRepository(
+                defaults: defaults,
+                initialDeviceRegionCode: regionCode
+            )
+        )
+    }
+
+    @Test(arguments: [
+        ("RU", "RU"),
+        ("US", "US"),
+        ("GB", "US"),
+        (nil, "US")
+    ])
+    func firstLaunchSeedsDeterministicMarket(
+        regionCode: String?,
+        expectedMarketCode: String
+    ) throws {
+        let fixture = try makeRepository(regionCode: regionCode)
+        defer { fixture.defaults.removePersistentDomain(forName: fixture.suiteName) }
+
+        #expect(fixture.repository.load().pricingMarket.countryCode == expectedMarketCode)
+    }
+
+    @Test("Persisted market wins over a later device-region value")
+    func persistedMarketIgnoresLaterDeviceRegion() throws {
+        let fixture = try makeRepository(regionCode: "RU")
+        defer { fixture.defaults.removePersistentDomain(forName: fixture.suiteName) }
+        #expect(fixture.repository.load().pricingMarket.countryCode == "RU")
+
+        let laterRepository = UserPreferencesRepository(
+            defaults: fixture.defaults,
+            initialDeviceRegionCode: "US"
+        )
+        #expect(laterRepository.load().pricingMarket.countryCode == "RU")
+    }
+
+    @Test("Pricing market and reporting currency persist independently")
+    func marketAndReportingCurrencyAreIndependent() throws {
+        let fixture = try makeRepository(regionCode: "US")
+        defer { fixture.defaults.removePersistentDomain(forName: fixture.suiteName) }
+
+        var preferences = fixture.repository.load()
+        preferences.defaultCurrencyCode = "RUB"
+        preferences.pricingMarket = try PricingMarket(countryCode: "RU")
+        fixture.repository.save(preferences)
+
+        #expect(fixture.repository.load().pricingMarket.countryCode == "RU")
+        #expect(fixture.repository.load().defaultCurrencyCode == "RUB")
+
+        var changedCurrency = fixture.repository.load()
+        changedCurrency.defaultCurrencyCode = "USD"
+        fixture.repository.save(changedCurrency)
+        #expect(fixture.repository.load().pricingMarket.countryCode == "RU")
+    }
+
+    @Test("Settings persists only the typed supported pricing market choices")
+    func settingsPersistsPricingMarket() throws {
+        let fixture = try makeRepository(regionCode: "US")
+        defer { fixture.defaults.removePersistentDomain(forName: fixture.suiteName) }
+        let viewModel = SettingsViewModel(repository: fixture.repository)
+
+        #expect(SettingsViewModel.supportedPricingMarkets.map(\.countryCode) == ["US", "RU"])
+        viewModel.pricingMarket = try PricingMarket(countryCode: "RU")
+
+        #expect(fixture.repository.load().pricingMarket.countryCode == "RU")
+        #expect(viewModel.defaultCurrencyCode == fixture.repository.load().defaultCurrencyCode)
+    }
+}
+
 // MARK: - UserPreferencesRepository — defaultChargeReminder
 
 /// Adversarial tests for the `defaultChargeReminder` preference:

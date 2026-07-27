@@ -177,13 +177,15 @@ struct CurrencyEstimateFormTests {
         repository: RecordingRecurringItemRepository,
         preferences: UserPreferencesRepository,
         provider: Provider,
-        catalog: [ProviderTemplate] = []
+        catalog: [ProviderTemplate] = [],
+        regionalPricingSnapshotResult: Result<RegionalPricingSnapshot, BundledRegionalPricingLoaderError> = .failure(.resourceNotFound("RegionalPricing"))
     ) -> AddSubscriptionViewModel {
         AddSubscriptionViewModel(
             catalog: InMemoryProviderCatalogRepository(providers: catalog),
             saveRecurringItem: SaveRecurringItem(repository: repository),
             currencyEstimateService: makeService(provider: provider),
-            preferences: preferences
+            preferences: preferences,
+            regionalPricingSnapshotResult: regionalPricingSnapshotResult
         )
     }
 
@@ -566,6 +568,9 @@ struct CurrencyEstimateFormTests {
     func tierPrefillRemainsAuthoritative() async throws {
         let preferences = try makePreferences(reportingCurrency: "RUB")
         defer { preferences.cleanUp() }
+        var userPreferences = preferences.repository.load()
+        userPreferences.pricingMarket = try PricingMarket(countryCode: "US")
+        preferences.repository.save(userPreferences)
         let repository = RecordingRecurringItemRepository()
         let provider = StubExchangeRateProvider(responses: [.success(snapshot())])
         let tier = PlanTier(
@@ -583,11 +588,29 @@ struct CurrencyEstimateFormTests {
             suggestedCurrencyCode: "USD",
             plans: [tier]
         )
+        let regionalPrice = try RegionalPlanPrice(
+            key: RegionalPriceKey(
+                providerPlan: template.providerPlanKey(for: tier),
+                market: try PricingMarket(countryCode: "US"),
+                channel: .providerDirect
+            ),
+            money: Money(amount: 12, currencyCode: "USD"),
+            billingCycle: .monthly,
+            verifiedAt: .now,
+            reviewAfter: .distantFuture,
+            sourceURL: try #require(URL(string: "https://example.com/pricing"))
+        )
+        let pricingSnapshot = try RegionalPricingSnapshot(
+            schemaVersion: 1,
+            revision: "test",
+            prices: [regionalPrice]
+        )
         let viewModel = makeAddViewModel(
             repository: repository,
             preferences: preferences.repository,
             provider: provider,
-            catalog: [template]
+            catalog: [template],
+            regionalPricingSnapshotResult: .success(pricingSnapshot)
         )
 
         viewModel.selectProvider(template)

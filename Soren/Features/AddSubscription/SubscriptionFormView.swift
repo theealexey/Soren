@@ -55,7 +55,7 @@ struct SubscriptionFormView: View {
             Text(viewModel.saveErrorMessage ?? "")
         }
         .onAppear {
-            viewModel.refreshReportingCurrency()
+            viewModel.refreshPreferences()
         }
         .onDisappear {
             viewModel.cancelCurrencyEstimate()
@@ -119,7 +119,7 @@ struct SubscriptionFormView: View {
                         ForEach(viewModel.availableTiers) { tier in
                             TierChipView(
                                 tier: tier,
-                                currencyCode: viewModel.currencyCode,
+                                pricingPresentation: viewModel.tierPricingPresentation(for: tier),
                                 isSelected: viewModel.selectedTier?.id == tier.id
                             )
                             .onTapGesture {
@@ -141,6 +141,29 @@ struct SubscriptionFormView: View {
                     trailing: Spacing.xxs
                 ))
             }
+
+            if let pricingMessage = pricingMessage {
+                Section {
+                    Text(pricingMessage)
+                        .font(Typography.caption)
+                        .foregroundStyle(ColorTokens.textSecondary)
+                }
+            }
+        }
+    }
+
+    private var pricingMessage: String? {
+        switch viewModel.pricingState {
+        case .noTierSelected:
+            nil
+        case .verified:
+            String(localized: "Цена подтверждена для выбранного рынка")
+        case .requiresReview:
+            String(localized: "Последняя известная цена требует проверки. Введите сумму вручную.")
+        case .unavailable, .loadingUnavailable:
+            String(localized: "Для выбранного рынка нет подтверждённой цены. Введите сумму вручную.")
+        case .userModified:
+            String(localized: "Цена изменена вручную")
         }
     }
 

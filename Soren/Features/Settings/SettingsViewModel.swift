@@ -14,6 +14,10 @@ final class SettingsViewModel {
         didSet { save() }
     }
 
+    var pricingMarket: PricingMarket {
+        didSet { save() }
+    }
+
     var defaultChargeReminder: ChargeReminderOption {
         didSet { debouncedSave() }
     }
@@ -31,6 +35,7 @@ final class SettingsViewModel {
         self.repository = repository
         let prefs = repository.load()
         self.defaultCurrencyCode  = prefs.defaultCurrencyCode
+        self.pricingMarket = prefs.pricingMarket
         self.defaultChargeReminder = prefs.defaultChargeReminder
     }
 
@@ -51,6 +56,7 @@ final class SettingsViewModel {
         let current = repository.load()
         repository.save(UserPreferences(
             defaultCurrencyCode:   defaultCurrencyCode,
+            pricingMarket:          pricingMarket,
             defaultChargeReminder: defaultChargeReminder,
             chargeAlertDays:       current.chargeAlertDays,
             trialAlertDays:        current.trialAlertDays
@@ -70,4 +76,8 @@ final class SettingsViewModel {
     // MARK: - Supported Currencies
 
     static let supportedCurrencies = SupportedCurrency.codes
+
+    static var supportedPricingMarkets: [PricingMarket] {
+        ["US", "RU"].compactMap { try? PricingMarket(countryCode: $0) }
+    }
 }

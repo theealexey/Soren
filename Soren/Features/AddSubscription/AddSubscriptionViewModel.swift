@@ -2,6 +2,15 @@ import Foundation
 
 // MARK: - Add Subscription View Model
 
+enum AddSubscriptionPricingState: Equatable {
+    case noTierSelected
+    case loadingUnavailable
+    case verified(RegionalPlanPrice)
+    case requiresReview(RegionalPlanPrice)
+    case unavailable(RegionalPriceUnavailableReason)
+    case userModified
+}
+
 /// Drives the full Add Subscription flow: provider picker → form → save.
 /// Shared across both steps so state carries over seamlessly.
 @MainActor @Observable
@@ -21,18 +30,25 @@ final class AddSubscriptionViewModel {
     var title = ""
     var amountText = "" {
         didSet {
-            if oldValue != amountText { scheduleCurrencyEstimate() }
+            guard oldValue != amountText else { return }
+            markPricingInputAsUserModifiedIfNeeded()
+            scheduleCurrencyEstimate()
         }
     }
     var currencyCode: String {
         didSet {
-            if oldValue != currencyCode { scheduleCurrencyEstimate() }
+            guard oldValue != currencyCode else { return }
+            markPricingInputAsUserModifiedIfNeeded()
+            scheduleCurrencyEstimate()
         }
     }
     private(set) var reportingCurrencyCode: String
     private(set) var currencyEstimateState: CurrencyEstimateState = .hidden
     var billingCycle: BillingCycle = .monthly {
         didSet {
+            if oldValue != billingCycle {
+                markPricingInputAsUserModifiedIfNeeded()
+            }
             if !isNextChargeDateManuallySet {
                 nextChargeDate = Self.suggestNextChargeDate(from: startDate, cycle: billingCycle)
             }
@@ -41,6 +57,9 @@ final class AddSubscriptionViewModel {
     }
     var category: ItemCategory = .other
     var itemType: ItemType = .subscription
+    private(set) var pricingMarket: PricingMarket
+    private(set) var pricingState: AddSubscriptionPricingState = .noTierSelected
+    private(set) var isPricingInputUserModified = false
 
     var startDate = Date.now {
         didSet {
@@ -100,8 +119,11 @@ final class AddSubscriptionViewModel {
     private let saveRecurringItem: SaveRecurringItem
     private let currencyEstimateService: CurrencyEstimateService
     private let preferences: UserPreferencesRepository
+    private let regionalPricingSnapshotResult: Result<RegionalPricingSnapshot, BundledRegionalPricingLoaderError>
+    private let currentDate: () -> Date
     private var estimateTask: Task<Void, Never>?
     private var currentEstimateRequest: CurrencyEstimateRequest?
+    private var isApplyingPricingInput = false
 
     // MARK: - Init
 
@@ -109,15 +131,20 @@ final class AddSubscriptionViewModel {
         catalog: any ProviderCatalogRepository,
         saveRecurringItem: SaveRecurringItem,
         currencyEstimateService: CurrencyEstimateService = .preview,
-        preferences: UserPreferencesRepository = UserPreferencesRepository()
+        preferences: UserPreferencesRepository = UserPreferencesRepository(),
+        regionalPricingSnapshotResult: Result<RegionalPricingSnapshot, BundledRegionalPricingLoaderError> = .failure(.resourceNotFound("RegionalPricing")),
+        currentDate: @escaping () -> Date = { .now }
     ) {
         self.catalog = catalog
         self.saveRecurringItem = saveRecurringItem
         self.currencyEstimateService = currencyEstimateService
         self.preferences = preferences
+        self.regionalPricingSnapshotResult = regionalPricingSnapshotResult
+        self.currentDate = currentDate
         let prefs = preferences.load()
         self.currencyCode   = prefs.defaultCurrencyCode
         self.reportingCurrencyCode = prefs.defaultCurrencyCode
+        self.pricingMarket = prefs.pricingMarket
         self.chargeReminder = prefs.defaultChargeReminder
         // didSet observers don't fire during init — seed the suggestion explicitly.
         self.nextChargeDate = Self.suggestNextChargeDate(from: .now, cycle: .monthly)
@@ -156,10 +183,14 @@ final class AddSubscriptionViewModel {
     func selectProvider(_ provider: ProviderTemplate) {
         selectedProvider = provider
         selectedTier = nil
-        title = provider.displayName
-        currencyCode = provider.suggestedCurrencyCode
-        isNextChargeDateManuallySet = false   // let billingCycle.didSet re-suggest below
-        billingCycle = provider.suggestedCycle
+        pricingState = .noTierSelected
+        isPricingInputUserModified = false
+        applyPricingInput {
+            title = provider.displayName
+            currencyCode = provider.suggestedCurrencyCode
+            isNextChargeDateManuallySet = false   // let billingCycle.didSet re-suggest below
+            billingCycle = provider.suggestedCycle
+        }
         category = provider.category
         itemType = provider.itemType
 
@@ -172,34 +203,34 @@ final class AddSubscriptionViewModel {
 
     func selectTier(_ tier: PlanTier) {
         selectedTier = tier
-        // A zero amount means no reliable default price exists for this tier
-        // (e.g. Meta Verified — regional / platform-variable pricing).
-        // Clear the field so the user sees an empty input and knows to fill it in,
-        // rather than seeing "0" with a silently disabled Save button.
-        amountText = tier.referencePrice.amount == 0 ? "" : tier.referencePrice.amount.description
-        isNextChargeDateManuallySet = false    // let billingCycle.didSet re-suggest below
-        billingCycle = tier.billingCycle
-        if let override = tier.referencePrice.currencyCode {
-            currencyCode = override
-        }
+        isPricingInputUserModified = false
+        resolveSelectedTier(resetForManualEntry: true)
     }
 
     func clearTier() {
         selectedTier = nil
-        amountText = ""
+        pricingState = .noTierSelected
+        isPricingInputUserModified = false
         if let provider = selectedProvider {
-            billingCycle = provider.suggestedCycle
-            currencyCode = provider.suggestedCurrencyCode
+            applyPricingInput {
+                amountText = ""
+                billingCycle = provider.suggestedCycle
+                currencyCode = provider.suggestedCurrencyCode
+            }
         }
     }
 
     func startManualEntry() {
         selectedProvider = nil
         selectedTier = nil
-        title = ""
-        amountText = ""
-        currencyCode = preferences.load().defaultCurrencyCode
-        billingCycle = .monthly
+        pricingState = .noTierSelected
+        isPricingInputUserModified = false
+        applyPricingInput {
+            title = ""
+            amountText = ""
+            currencyCode = preferences.load().defaultCurrencyCode
+            billingCycle = .monthly
+        }
         category = .other
         itemType = .subscription
         isNextChargeDateManuallySet = false
@@ -275,6 +306,129 @@ final class AddSubscriptionViewModel {
             currentEstimateRequest = nil
         }
         scheduleCurrencyEstimate()
+    }
+
+    /// Reloads the user-selected market while preserving a manually edited form.
+    /// Called when the Add form becomes visible again after Settings changes.
+    func refreshPricingMarket() {
+        let latestMarket = preferences.load().pricingMarket
+        guard latestMarket != pricingMarket else { return }
+
+        pricingMarket = latestMarket
+        guard selectedTier != nil, !isPricingInputUserModified else { return }
+        resolveSelectedTier(resetForManualEntry: false)
+    }
+
+    func refreshPreferences() {
+        refreshReportingCurrency()
+        refreshPricingMarket()
+    }
+
+    func tierPricingPresentation(for tier: PlanTier) -> TierChipPricingPresentation {
+        guard let provider = selectedProvider else { return .manualEntry }
+        guard case .success(let snapshot) = regionalPricingSnapshotResult else {
+            return .manualEntry
+        }
+
+        do {
+            let key = RegionalPriceKey(
+                providerPlan: try provider.providerPlanKey(for: tier),
+                market: pricingMarket,
+                channel: .providerDirect
+            )
+            switch ResolveRegionalPlanPriceUseCase().execute(
+                key: key,
+                snapshot: snapshot,
+                asOf: currentDate()
+            ) {
+            case .available(let price):
+                return .verified(money: price.money, billingCycle: price.billingCycle)
+            case .requiresReview:
+                return .requiresReview
+            case .unavailable:
+                return .manualEntry
+            }
+        } catch {
+            return .manualEntry
+        }
+    }
+
+    private func resolveSelectedTier(resetForManualEntry: Bool) {
+        guard let provider = selectedProvider, let tier = selectedTier else {
+            pricingState = .noTierSelected
+            return
+        }
+
+        guard case .success(let snapshot) = regionalPricingSnapshotResult else {
+            pricingState = .loadingUnavailable
+            if resetForManualEntry || !isPricingInputUserModified {
+                resetPricingInputsForManualEntry()
+            }
+            return
+        }
+
+        do {
+            let key = RegionalPriceKey(
+                providerPlan: try provider.providerPlanKey(for: tier),
+                market: pricingMarket,
+                channel: .providerDirect
+            )
+            switch ResolveRegionalPlanPriceUseCase().execute(
+                key: key,
+                snapshot: snapshot,
+                asOf: currentDate()
+            ) {
+            case .available(let price):
+                pricingState = .verified(price)
+                applyVerifiedPrice(price)
+            case .requiresReview(let price):
+                pricingState = .requiresReview(price)
+                if resetForManualEntry || !isPricingInputUserModified {
+                    resetPricingInputsForManualEntry()
+                }
+            case .unavailable(let reason):
+                pricingState = .unavailable(reason)
+                if resetForManualEntry || !isPricingInputUserModified {
+                    resetPricingInputsForManualEntry()
+                }
+            }
+        } catch {
+            pricingState = .loadingUnavailable
+            if resetForManualEntry || !isPricingInputUserModified {
+                resetPricingInputsForManualEntry()
+            }
+        }
+    }
+
+    private func applyVerifiedPrice(_ price: RegionalPlanPrice) {
+        applyPricingInput {
+            amountText = price.money.amount.description
+            currencyCode = price.money.currencyCode
+            isNextChargeDateManuallySet = false
+            billingCycle = price.billingCycle
+        }
+    }
+
+    private func resetPricingInputsForManualEntry() {
+        guard let provider = selectedProvider else { return }
+        applyPricingInput {
+            amountText = ""
+            currencyCode = provider.suggestedCurrencyCode
+            isNextChargeDateManuallySet = false
+            billingCycle = provider.suggestedCycle
+        }
+    }
+
+    private func applyPricingInput(_ changes: () -> Void) {
+        isApplyingPricingInput = true
+        changes()
+        isApplyingPricingInput = false
+    }
+
+    private func markPricingInputAsUserModifiedIfNeeded() {
+        guard !isApplyingPricingInput, selectedTier != nil else { return }
+        isPricingInputUserModified = true
+        pricingState = .userModified
     }
 
     func cancelCurrencyEstimate() {
