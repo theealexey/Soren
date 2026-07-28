@@ -257,29 +257,26 @@ private struct ProviderLogoArtwork: View {
     let size: ProviderIcon.Size
 
     var body: some View {
-        ZStack {
-            surface
-            artwork
+        Group {
+            if presentation.usesAdaptiveSurface {
+                ZStack {
+                    ColorTokens.surfaceElevated
+                    artwork
+                }
+            } else {
+                artwork
+            }
         }
         .frame(width: size.frame, height: size.frame)
         .clipShape(.rect(cornerRadius: size.radius))
         .overlay {
-            if presentation.surfaceStyle == .adaptiveNeutral {
+            if presentation.usesAdaptiveSurface {
                 RoundedRectangle(cornerRadius: size.radius)
                     .strokeBorder(
                         ColorTokens.separator,
                         lineWidth: colorSchemeContrast == .increased ? 1 : 0.5
                     )
             }
-        }
-    }
-
-    private var surface: Color {
-        switch presentation.surfaceStyle {
-        case .adaptiveNeutral:
-            ColorTokens.surfaceElevated
-        case .transparent:
-            Color.clear
         }
     }
 
@@ -311,7 +308,7 @@ private struct ProviderLogoArtwork: View {
         case .bakedTile:
             image
                 .resizable()
-                .scaledToFit()
+                .scaledToFill()
         }
     }
 }

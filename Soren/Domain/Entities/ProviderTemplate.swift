@@ -16,6 +16,23 @@ struct ProviderLogoPresentation: Equatable, Hashable, Sendable {
     let contentStyle: ProviderLogoContentStyle
     let surfaceStyle: ProviderLogoSurfaceStyle
 
+    var usesAdaptiveSurface: Bool {
+        surfaceStyle == .adaptiveNeutral
+    }
+
+    var usesFullBleedArtwork: Bool {
+        switch contentStyle {
+        case .appIcon, .bakedTile:
+            true
+        case .glyph, .lightCanvasGlyph:
+            false
+        }
+    }
+
+    var usesGenericGlyphInset: Bool {
+        contentStyle == .glyph
+    }
+
     static let adaptiveGlyph = ProviderLogoPresentation(
         contentStyle: .glyph,
         surfaceStyle: .adaptiveNeutral

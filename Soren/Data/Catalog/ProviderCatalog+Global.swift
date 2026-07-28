@@ -12,7 +12,7 @@ import Foundation
 
 extension ProviderCatalog {
 
-    static let global: [ProviderTemplate] = [
+    static let global: [ProviderTemplate] = applyingBundledLogoPresentations(to: [
         // MARK: Video
         .init(id: "netflix", displayName: "Netflix", aliases: ["нетфликс"],
               category: .video, suggestedCurrencyCode: "USD", region: .global,
@@ -731,5 +731,5 @@ extension ProviderCatalog {
                   .init(id: "family", name: "Family", referenceAmount: 25.95, billingCycle: .monthly, features: "До 6 чел., iCloud+ 200 ГБ"),
                   .init(id: "premier", name: "Premier", referenceAmount: 37.95, billingCycle: .monthly, features: "Все + News+, Fitness+, iCloud+ 2 ТБ"),
               ]),
-    ]
+    ])
 }

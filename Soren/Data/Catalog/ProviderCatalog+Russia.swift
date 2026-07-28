@@ -14,7 +14,7 @@ import Foundation
 
 extension ProviderCatalog {
 
-    static let russia: [ProviderTemplate] = [
+    static let russia: [ProviderTemplate] = applyingBundledLogoPresentations(to: [
 
         // ────────────────────────────────────────
         // MARK: Экосистемы и бандлы
@@ -441,5 +441,5 @@ extension ProviderCatalog {
               plans: [
                   .init(id: "monthly", name: "Play Pass", referenceAmount: 299, billingCycle: .monthly, features: "Каталог игр, без рекламы"),
               ]),
-    ]
+    ])
 }

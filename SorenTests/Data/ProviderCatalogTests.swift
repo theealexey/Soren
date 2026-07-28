@@ -299,6 +299,177 @@ struct ProviderLogoResolutionTests {
         #expect(ProviderIcon.Size.large.frame == 56)
     }
 
+    @Test("Every static catalog provider resolves to deterministic bundled artwork")
+    @MainActor
+    func everyStaticProviderUsesBundledArtwork() {
+        for provider in ProviderCatalog.all {
+            #expect(
+                ProviderIcon.resolution(for: provider) == .asset("provider_\(provider.id)"),
+                "\(provider.id) must not fall back to initials or remote artwork"
+            )
+        }
+    }
+
+    @Test(
+        "Previously unresolved built-ins no longer use initials",
+        arguments: ["microsoft_365", "slack", "zoom"]
+    )
+    @MainActor
+    func previouslyUnresolvedBuiltInUsesBundledArtwork(providerID: String) throws {
+        let provider = try #require(ProviderCatalog.template(forProviderID: providerID))
+        #expect(ProviderIcon.resolution(for: provider) == .asset("provider_\(providerID)"))
+    }
+
+    @Test("Bundled artwork identities exactly match catalog identities")
+    func bundledArtworkIdentityCoverageIsExact() throws {
+        let assetIDs = try Set(
+            FileManager.default.contentsOfDirectory(
+                at: providersAssetDirectory(),
+                includingPropertiesForKeys: nil
+            )
+            .filter { $0.pathExtension == "imageset" }
+            .map {
+                $0.deletingPathExtension().lastPathComponent
+                    .replacingOccurrences(of: "provider_", with: "")
+            }
+        )
+        let catalogIDs = Set(ProviderCatalog.all.map(\.id))
+
+        #expect(assetIDs == catalogIDs)
+        #expect(assetIDs.count == ProviderCatalog.all.count)
+    }
+
+    @Test("Every provider has typed surface and content semantics")
+    func everyProviderHasTypedPresentationSemantics() {
+        for provider in ProviderCatalog.all {
+            switch provider.logoPresentation.contentStyle {
+            case .glyph, .lightCanvasGlyph:
+                #expect(provider.logoPresentation.usesAdaptiveSurface)
+                #expect(!provider.logoPresentation.usesFullBleedArtwork)
+            case .appIcon, .bakedTile:
+                #expect(!provider.logoPresentation.usesAdaptiveSurface)
+                #expect(provider.logoPresentation.usesFullBleedArtwork)
+            }
+        }
+    }
+
+    @Test("Generic inset is reserved for glyph artwork")
+    @MainActor
+    func genericInsetIsReservedForGlyphArtwork() {
+        #expect(ProviderIcon.Size.medium.glyphInset > 0)
+        #expect(ProviderIcon.Size.large.glyphInset > ProviderIcon.Size.medium.glyphInset)
+        #expect(ProviderLogoPresentation.adaptiveGlyph.usesGenericGlyphInset)
+        #expect(!ProviderLogoPresentation.adaptiveLightCanvasGlyph.usesGenericGlyphInset)
+        #expect(!ProviderLogoPresentation.appIcon.usesGenericGlyphInset)
+        #expect(!ProviderLogoPresentation.bakedTile.usesGenericGlyphInset)
+    }
+
+    @Test("Complete square artwork uses full-bleed presentation")
+    func completeSquareArtworkUsesFullBleedPresentation() throws {
+        let appIconIDs = [
+            "adobe_cc": ProviderLogoPresentation.adaptiveGlyph,
+            "apple_music": .appIcon,
+            "claude_pro": .appIcon,
+            "cursor": .appIcon,
+            "figma": .appIcon,
+            "midjourney": .appIcon,
+            "microsoft_365": .appIcon,
+            "notion_ai": .appIcon,
+            "ozon_premium": .appIcon,
+            "perplexity": .appIcon,
+            "qobuz": .bakedTile,
+            "slack": .appIcon,
+            "telegram_premium": .appIcon,
+            "youtube_premium": .appIcon,
+            "zoom": .appIcon,
+        ]
+
+        for (providerID, expectedPresentation) in appIconIDs {
+            let provider = try #require(ProviderCatalog.template(forProviderID: providerID))
+            #expect(provider.logoPresentation == expectedPresentation)
+        }
+    }
+
+    @Test(
+        "Nested-square regressions use one full-bleed artwork surface",
+        arguments: ["midjourney", "notion_ai", "perplexity"]
+    )
+    func nestedSquareRegressionUsesFullBleedArtwork(providerID: String) throws {
+        let provider = try #require(ProviderCatalog.template(forProviderID: providerID))
+        #expect(provider.logoPresentation.usesFullBleedArtwork)
+        #expect(!provider.logoPresentation.usesAdaptiveSurface)
+        #expect(!provider.logoPresentation.usesGenericGlyphInset)
+    }
+
+    @Test("Every imageset has exactly one bundled source artwork file")
+    func everyImagesetHasExactlyOneSourceArtworkFile() throws {
+        let assetDirectories = try FileManager.default.contentsOfDirectory(
+            at: providersAssetDirectory(),
+            includingPropertiesForKeys: nil
+        )
+        .filter { $0.pathExtension == "imageset" }
+
+        for assetDirectory in assetDirectories {
+            let files = try FileManager.default.contentsOfDirectory(
+                at: assetDirectory,
+                includingPropertiesForKeys: nil
+            )
+            .filter { $0.lastPathComponent != "Contents.json" }
+            #expect(
+                files.count == 1,
+                "\(assetDirectory.lastPathComponent) must contain one canonical source file"
+            )
+            let source = try #require(files.first)
+            #expect(["png", "jpg", "jpeg", "svg"].contains(source.pathExtension.lowercased()))
+        }
+    }
+
+    @Test("New artwork provenance is restricted to official source classes")
+    func newArtworkProvenanceUsesOfficialSources() throws {
+        let appStoreListingProviderIDs: Set<String> = [
+            "1password", "amazon_prime", "amazon_prime_video", "apple_tv_plus", "audible",
+            "beeline", "bookmate", "buy_me_a_coffee", "canva", "claude_pro", "coursera",
+            "crunchyroll", "deezer", "discord_nitro", "disney_plus", "dropbox", "duolingo",
+            "figma", "google_one", "grindr", "hbo_max", "headspace", "hornet", "ivi",
+            "kinopoisk", "kion", "linear", "litres", "megafon", "microsoft_365", "mts",
+            "mubi", "mullvad", "nintendo_online", "nordvpn", "notion", "ozon_premium",
+            "patreon", "perplexity", "practicum", "ps_plus", "reddit_premium", "samokat",
+            "slack", "soundcloud_go", "start", "stepik", "strava", "substack", "surfshark",
+            "t2", "telegram_premium", "twitch_sub", "uber_eats_pass", "wb_club", "wink",
+            "xbox_gamepass", "yandex_market_plus", "yandex_music", "youtube_membership", "zoom",
+        ]
+        let officialDirectSources: [String: String] = [
+            "adobe_cc": "https://www.adobe.com/creativecloud.html",
+            "cursor": "https://cursor.com/brand",
+            "docplus": "https://docplus.ru",
+            "donationalerts": "https://www.donationalerts.com",
+            "ko_fi": "https://ko-fi.com/brand",
+            "mail_cloud": "https://cloud.mail.ru",
+            "midjourney": "https://discord.com/api/v10/invites/midjourney?with_counts=true",
+            "okko": "https://brand.okko.tv",
+            "onlyfans": "https://onlyfans.com/brand",
+            "premier": "https://premier.one",
+            "sber_prime": "https://developers.sber.ru/docs/ru/sberid/elk/backend",
+            "skillbox": "https://skillbox.ru",
+            "sponsr": "https://sponsr.ru",
+            "tbank_pro": "https://www.tbank.ru/about/brand",
+            "vk_music": "https://cloud.mail.ru",
+            "vk_play": "https://vkplay.ru",
+            "yota": "https://www.yota.ru",
+            "zvuk": "https://www.rustore.ru/catalog/app/com.zvooq.openplay",
+        ]
+
+        for providerID in appStoreListingProviderIDs {
+            #expect(ProviderCatalog.template(forProviderID: providerID) != nil)
+        }
+        for (providerID, source) in officialDirectSources {
+            #expect(ProviderCatalog.template(forProviderID: providerID) != nil)
+            let url = try #require(URL(string: source))
+            #expect(url.scheme == "https")
+            #expect(url.host() != nil)
+        }
+    }
+
     @Test("Shared-domain service groups have explicit collision policies")
     @MainActor
     func sharedDomainGroupsDoNotCollapseAccidentally() throws {
@@ -386,9 +557,9 @@ struct ProviderLogoResolutionTests {
         let heightScale = availableSize.height / sourceSize.height
         let renderScale: CGFloat
         switch presentation.contentStyle {
-        case .appIcon:
+        case .appIcon, .bakedTile:
             renderScale = max(widthScale, heightScale)
-        case .glyph, .lightCanvasGlyph, .bakedTile:
+        case .glyph, .lightCanvasGlyph:
             renderScale = min(widthScale, heightScale)
         }
 
