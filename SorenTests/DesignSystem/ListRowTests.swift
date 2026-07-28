@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 import SwiftUI
 @testable import Soren
@@ -10,27 +11,47 @@ struct ListRowTests {
 
     @Test("Trial badge has correct title")
     func trialBadge() {
-        #expect(SorenListRow.Badge.trial.title == "Trial")
+        #expect(SorenListRow.Badge.trial.title == String(localized: "Пробный"))
     }
 
     @Test("Due soon badge has correct title")
     func dueSoonBadge() {
-        #expect(SorenListRow.Badge.dueSoon.title == "Due soon")
+        #expect(SorenListRow.Badge.dueSoon.title == String(localized: "Скоро"))
     }
 
     @Test("Failed badge has correct title")
     func failedBadge() {
-        #expect(SorenListRow.Badge.failed.title == "Failed")
+        #expect(SorenListRow.Badge.failed.title == String(localized: "Ошибка"))
     }
 
     @Test("Paused badge has correct title")
     func pausedBadge() {
-        #expect(SorenListRow.Badge.paused.title == "Paused")
+        #expect(SorenListRow.Badge.paused.title == String(localized: "Пауза"))
     }
 
     @Test("Annual badge has correct title")
     func annualBadge() {
-        #expect(SorenListRow.Badge.annual.title == "Annual")
+        #expect(SorenListRow.Badge.annual.title == String(localized: "Годовая"))
+    }
+
+    @Test("Badge localization resources provide Russian and English titles")
+    func badgeLocalizationResources() throws {
+        let englishBundle = try localizationBundle("en")
+        let russianBundle = try localizationBundle("ru")
+        let english = Locale(identifier: "en")
+        let russian = Locale(identifier: "ru")
+
+        #expect(String(localized: "Пробный", bundle: englishBundle, locale: english) == "Trial")
+        #expect(String(localized: "Скоро", bundle: englishBundle, locale: english) == "Soon")
+        #expect(String(localized: "Ошибка", bundle: englishBundle, locale: english) == "Error")
+        #expect(String(localized: "Пауза", bundle: englishBundle, locale: english) == "Paused")
+        #expect(String(localized: "Годовая", bundle: englishBundle, locale: english) == "Annual")
+
+        #expect(String(localized: "Пробный", bundle: russianBundle, locale: russian) == "Пробный")
+        #expect(String(localized: "Скоро", bundle: russianBundle, locale: russian) == "Скоро")
+        #expect(String(localized: "Ошибка", bundle: russianBundle, locale: russian) == "Ошибка")
+        #expect(String(localized: "Пауза", bundle: russianBundle, locale: russian) == "Пауза")
+        #expect(String(localized: "Годовая", bundle: russianBundle, locale: russian) == "Годовая")
     }
 
     // MARK: - Badge colors are semantically correct
@@ -75,5 +96,11 @@ struct ListRowTests {
     func emptyTitle() {
         let row = SorenListRow(title: "", amount: 100)
         #expect(row.title.isEmpty)
+    }
+
+    private func localizationBundle(_ languageCode: String) throws -> Bundle {
+        let appBundle = try #require(Bundle(identifier: "com.alexey.soren"))
+        let path = try #require(appBundle.path(forResource: languageCode, ofType: "lproj"))
+        return try #require(Bundle(path: path))
     }
 }
