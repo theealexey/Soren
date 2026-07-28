@@ -380,7 +380,8 @@ extension ProviderCatalog {
               category: .creators, itemType: .membership,
               suggestedCurrencyCode: "RUB", region: .russia,
               tags: ["creators", "donations"],
-              brandColorHex: "#F15F2C", companyLogoFallbackDomain: "boosty.to"),
+              brandColorHex: "#F15F2C", companyLogoFallbackDomain: "boosty.to",
+              logoPresentation: .adaptiveGlyph),
 
         .init(id: "donationalerts", displayName: "DonationAlerts",
               aliases: ["донейшн алертс", "da"],

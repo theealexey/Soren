@@ -18,6 +18,7 @@ extension ProviderCatalog {
               category: .video, suggestedCurrencyCode: "USD", region: .global,
               tags: ["streaming", "popular"], managementURL: URL(string: "https://www.netflix.com/account"),
               brandColorHex: "#E50914", companyLogoFallbackDomain: "netflix.com",
+              logoPresentation: .appIcon,
               plans: [
                   // US prices as of March 2026
                   .init(id: "standard_ads", name: "Standard с рекламой", referenceAmount: 8.99, billingCycle: .monthly, features: "1080p, 2 экрана"),
@@ -29,6 +30,7 @@ extension ProviderCatalog {
               category: .video, suggestedCurrencyCode: "USD", region: .global,
               tags: ["streaming", "ad-free", "popular"],
               brandColorHex: "#FF0000", companyLogoFallbackDomain: "youtube.com",
+              logoPresentation: .appIcon,
               plans: [
                   // US prices raised April 2026
                   .init(id: "individual", name: "Individual", referenceAmount: 15.99, billingCycle: .monthly),
@@ -104,6 +106,7 @@ extension ProviderCatalog {
               category: .music, suggestedCurrencyCode: "USD", region: .global,
               tags: ["music", "streaming", "popular"],
               brandColorHex: "#1DB954", companyLogoFallbackDomain: "spotify.com",
+              logoPresentation: .appIcon,
               plans: [
                   // US prices raised January 2026
                   .init(id: "individual", name: "Individual", referenceAmount: 12.99, billingCycle: .monthly),
@@ -117,6 +120,7 @@ extension ProviderCatalog {
               tags: ["music", "apple"],
               serviceLogoSourceURL: URL(string: "https://music.apple.com/favicon.ico"),
               brandColorHex: "#FC3C44",
+              logoPresentation: .appIcon,
               plans: [
                   .init(id: "individual", name: "Individual", referenceAmount: 10.99, billingCycle: .monthly),
                   .init(id: "family", name: "Family", referenceAmount: 16.99, billingCycle: .monthly, features: "До 6 участников"),
@@ -127,6 +131,7 @@ extension ProviderCatalog {
               category: .music, suggestedCurrencyCode: "USD", region: .global,
               tags: ["music", "hifi"],
               brandColorHex: "#000000", companyLogoFallbackDomain: "tidal.com",
+              logoPresentation: .bakedTile,
               plans: [
                   // HiFi and HiFi+ merged into a single plan (April 2024)
                   .init(id: "individual", name: "Individual", referenceAmount: 10.99, billingCycle: .monthly, features: "Lossless, HiRes 24-bit, Dolby Atmos"),
@@ -157,6 +162,7 @@ extension ProviderCatalog {
               category: .music, suggestedCurrencyCode: "USD", region: .global,
               tags: ["music", "hifi", "lossless"],
               brandColorHex: "#000000", companyLogoFallbackDomain: "qobuz.com",
+              logoPresentation: .bakedTile,
               plans: [
                   .init(id: "studio", name: "Studio", referenceAmount: 12.99, billingCycle: .monthly, features: "Hi-Res 24-bit, без рекламы"),
                   .init(id: "studio_annual", name: "Studio (год)", referenceAmount: 129.99, billingCycle: .annual, features: "Hi-Res 24-bit, без рекламы"),
@@ -168,6 +174,7 @@ extension ProviderCatalog {
               tags: ["apple", "storage", "popular"],
               serviceLogoSourceURL: URL(string: "https://www.icloud.com/favicon.ico"),
               brandColorHex: "#3693F5",
+              logoPresentation: .appIcon,
               plans: [
                   .init(id: "50gb", name: "50 ГБ", referenceAmount: 0.99, billingCycle: .monthly),
                   .init(id: "200gb", name: "200 ГБ", referenceAmount: 2.99, billingCycle: .monthly),
@@ -216,6 +223,7 @@ extension ProviderCatalog {
               category: .aiTools, suggestedCurrencyCode: "USD", region: .global,
               tags: ["ai", "popular"],
               brandColorHex: "#10A37F", companyLogoFallbackDomain: "openai.com",
+              logoPresentation: .appIcon,
               plans: [
                   // Go ($8) and Pro-100 ($100) added in 2026
                   .init(id: "go", name: "Go", referenceAmount: 8, billingCycle: .monthly, features: "Базовый доступ к моделям"),
@@ -453,6 +461,7 @@ extension ProviderCatalog {
               category: .games, suggestedCurrencyCode: "USD", region: .global,
               tags: ["gaming", "apple"],
               brandColorHex: "#0070C9",
+              logoPresentation: .appIcon,
               plans: [
                   .init(id: "monthly", name: "Monthly", referenceAmount: 6.99, billingCycle: .monthly, features: "200+ игр, до 6 чел."),
                   .init(id: "annual", name: "Annual", referenceAmount: 49.99, billingCycle: .annual, features: "200+ игр, до 6 чел., экономия ~$34"),
@@ -481,6 +490,7 @@ extension ProviderCatalog {
               category: .health, suggestedCurrencyCode: "USD", region: .global,
               tags: ["fitness", "apple"],
               brandColorHex: "#97D608",
+              logoPresentation: .appIcon,
               plans: [
                   .init(id: "monthly", name: "Monthly", referenceAmount: 9.99, billingCycle: .monthly),
                   .init(id: "annual", name: "Annual", referenceAmount: 79.99, billingCycle: .annual, features: "Экономия ~$40"),
@@ -582,6 +592,7 @@ extension ProviderCatalog {
               tags: ["social", "creator", "verified"],
               managementURL: URL(string: "https://www.meta.com/verified"),
               brandColorHex: "#0866FF", companyLogoFallbackDomain: "meta.com",
+              logoPresentation: .adaptiveGlyph,
               plans: [
                   // Prices are per-profile, US-web only, and vary significantly by country
                   // and platform (iOS App Store adds ~30%). No reliable default exists.
@@ -602,6 +613,7 @@ extension ProviderCatalog {
               tags: ["social", "creator", "twitter"],
               managementURL: URL(string: "https://x.com/settings/premium"),
               brandColorHex: "#000000", companyLogoFallbackDomain: "x.com",
+              logoPresentation: .appIcon,
               plans: [
                   // US prices at x.com/i/premium; Premium+ doubled in Feb 2025 (Grok 3)
                   .init(id: "basic_monthly", name: "Basic", referenceAmount: 3, billingCycle: .monthly),

@@ -1,5 +1,42 @@
 import Foundation
 
+enum ProviderLogoContentStyle: Equatable, Hashable, Sendable {
+    case glyph
+    case lightCanvasGlyph
+    case appIcon
+    case bakedTile
+}
+
+enum ProviderLogoSurfaceStyle: Equatable, Hashable, Sendable {
+    case adaptiveNeutral
+    case transparent
+}
+
+struct ProviderLogoPresentation: Equatable, Hashable, Sendable {
+    let contentStyle: ProviderLogoContentStyle
+    let surfaceStyle: ProviderLogoSurfaceStyle
+
+    static let adaptiveGlyph = ProviderLogoPresentation(
+        contentStyle: .glyph,
+        surfaceStyle: .adaptiveNeutral
+    )
+
+    static let adaptiveLightCanvasGlyph = ProviderLogoPresentation(
+        contentStyle: .lightCanvasGlyph,
+        surfaceStyle: .adaptiveNeutral
+    )
+
+    static let appIcon = ProviderLogoPresentation(
+        contentStyle: .appIcon,
+        surfaceStyle: .transparent
+    )
+
+    static let bakedTile = ProviderLogoPresentation(
+        contentStyle: .bakedTile,
+        surfaceStyle: .transparent
+    )
+}
+
 /// A pre-defined service template from the provider catalog.
 /// When a user picks a provider, these values pre-fill the AddItem form.
 struct ProviderTemplate: Identifiable, Hashable, Sendable {
@@ -28,6 +65,8 @@ struct ProviderTemplate: Identifiable, Hashable, Sendable {
     /// (e.g. "netflix.com", "yandex.ru").
     /// Pass to `ProviderLogoResolver.logoURLs(for:)` to obtain fetch URLs.
     var companyLogoFallbackDomain: String?
+    /// Typed visual treatment for bundled and remote provider artwork.
+    var logoPresentation: ProviderLogoPresentation
     /// Available pricing tiers. Empty means no predefined plans.
     var plans: [PlanTier]
 
@@ -55,6 +94,7 @@ struct ProviderTemplate: Identifiable, Hashable, Sendable {
         serviceLogoSourceURL: URL? = nil,
         brandColorHex: String? = nil,
         companyLogoFallbackDomain: String? = nil,
+        logoPresentation: ProviderLogoPresentation = .adaptiveGlyph,
         plans: [PlanTier] = []
     ) {
         self.id = id
@@ -72,6 +112,7 @@ struct ProviderTemplate: Identifiable, Hashable, Sendable {
         self.serviceLogoSourceURL = serviceLogoSourceURL
         self.brandColorHex = brandColorHex
         self.companyLogoFallbackDomain = companyLogoFallbackDomain
+        self.logoPresentation = logoPresentation
         self.plans = plans
     }
 }

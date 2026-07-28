@@ -62,7 +62,8 @@ struct ProviderLogoResolutionTests {
         arguments: [
             "spotify", "yandex_plus", "mts_premium", "mts", "chatgpt_plus", "apple_music",
             "icloud", "netflix", "nordvpn", "x_premium", "youtube_premium",
-            "telegram_premium", "qobuz", "github_copilot",
+            "telegram_premium", "tidal", "qobuz", "meta_verified", "boosty",
+            "github_copilot",
         ]
     )
     @MainActor
@@ -114,6 +115,72 @@ struct ProviderLogoResolutionTests {
         }
     }
 
+    @Test("Every bundled raster meets its real 40 and 56 point 3x render requirement")
+    @MainActor
+    func allBundledRasterArtworkMeetsProductionResolutionFloor() throws {
+        let providersDirectory = try providersAssetDirectory()
+        let assetDirectories = try FileManager.default.contentsOfDirectory(
+            at: providersDirectory,
+            includingPropertiesForKeys: nil
+        )
+        .filter { $0.pathExtension == "imageset" }
+        .sorted { $0.lastPathComponent < $1.lastPathComponent }
+
+        for assetDirectory in assetDirectories {
+            let contentsURL = assetDirectory.appendingPathComponent("Contents.json")
+            let contents = try JSONDecoder().decode(
+                ProviderAssetContents.self,
+                from: Data(contentsOf: contentsURL)
+            )
+            let filename = try #require(contents.images.compactMap(\.filename).first)
+            let artworkURL = assetDirectory.appendingPathComponent(filename)
+
+            guard !["svg", "pdf"].contains(artworkURL.pathExtension.lowercased()) else {
+                continue
+            }
+
+            let providerID = assetDirectory.deletingPathExtension().lastPathComponent
+                .replacingOccurrences(of: "provider_", with: "")
+            let provider = try #require(
+                ProviderCatalog.template(forProviderID: providerID),
+                "Bundled artwork has no stable provider identity: \(providerID)"
+            )
+            let image = try #require(UIImage(contentsOfFile: artworkURL.path))
+            let cgImage = try #require(image.cgImage)
+            let sourceSize = CGSize(width: cgImage.width, height: cgImage.height)
+
+            for iconSize in [ProviderIcon.Size.medium, .large] {
+                let required = requiredSourcePixels(
+                    sourceSize: sourceSize,
+                    presentation: provider.logoPresentation,
+                    iconSize: iconSize,
+                    displayScale: 3
+                )
+                let dimensions = "\(cgImage.width)×\(cgImage.height)"
+                let requiredDimensions = "\(Int(required.width))×\(Int(required.height))"
+
+                #expect(
+                    cgImage.width >= Int(required.width)
+                        && cgImage.height >= Int(required.height),
+                    "\(providerID) uses \(dimensions), below \(requiredDimensions) for \(Int(iconSize.frame))pt @3x"
+                )
+            }
+        }
+    }
+
+    @Test(
+        "Required built-in providers use deterministic curated artwork",
+        arguments: [
+            "apple_music", "icloud", "tidal", "meta_verified", "boosty",
+            "chatgpt_plus", "qobuz", "youtube_premium",
+        ]
+    )
+    @MainActor
+    func requiredBuiltInProviderUsesCuratedArtwork(providerID: String) throws {
+        let provider = try #require(ProviderCatalog.template(forProviderID: providerID))
+        #expect(ProviderIcon.resolution(for: provider) == .asset("provider_\(providerID)"))
+    }
+
     @Test("Every Apple service resolves to its own bundled service asset")
     @MainActor
     func appleServicesUseDistinctAssets() throws {
@@ -151,6 +218,85 @@ struct ProviderLogoResolutionTests {
         let provider = try #require(item.providerTemplate)
         #expect(provider.id == providerID)
         #expect(ProviderIcon.resolution(for: provider) == .asset("provider_\(providerID)"))
+    }
+
+    @Test("Provider logo presentation uses typed stable metadata")
+    func providerLogoPresentationUsesStableMetadata() throws {
+        let expected: [String: ProviderLogoPresentation] = [
+            "tidal": .bakedTile,
+            "qobuz": .bakedTile,
+            "meta_verified": .adaptiveGlyph,
+            "boosty": .adaptiveGlyph,
+            "apple_music": .appIcon,
+            "icloud": .appIcon,
+            "chatgpt_plus": .appIcon,
+            "youtube_premium": .appIcon,
+        ]
+
+        for (providerID, presentation) in expected {
+            let provider = try #require(ProviderCatalog.template(forProviderID: providerID))
+            #expect(provider.logoPresentation == presentation)
+        }
+    }
+
+    @Test("Logo presentation is independent from provider display name")
+    func logoPresentationIsIndependentFromDisplayName() throws {
+        var provider = try #require(ProviderCatalog.template(forProviderID: "tidal"))
+        let originalPresentation = provider.logoPresentation
+
+        provider.displayName = "Localized replacement"
+
+        #expect(provider.logoPresentation == originalPresentation)
+        #expect(provider.logoPresentation == .bakedTile)
+    }
+
+    @Test("Default logo treatment uses an adaptive non-white semantic surface")
+    func defaultLogoTreatmentUsesAdaptiveSurface() {
+        let provider = ProviderTemplate(
+            id: "transparent_glyph",
+            displayName: "Transparent glyph",
+            category: .other
+        )
+
+        #expect(provider.logoPresentation.contentStyle == .glyph)
+        #expect(provider.logoPresentation.surfaceStyle == .adaptiveNeutral)
+    }
+
+    @Test("Complete icons and baked tiles do not receive a second strong surface")
+    func completeArtworkDoesNotReceiveDuplicatedSurface() throws {
+        for providerID in [
+            "tidal", "qobuz", "apple_music", "icloud", "chatgpt_plus",
+            "youtube_premium", "netflix", "spotify", "x_premium",
+            "apple_arcade", "apple_fitness_plus",
+        ] {
+            let provider = try #require(ProviderCatalog.template(forProviderID: providerID))
+            #expect(provider.logoPresentation.surfaceStyle == .transparent)
+        }
+
+        #expect(
+            ProviderCatalog.template(forProviderID: "tidal")?.logoPresentation.contentStyle
+                == .bakedTile
+        )
+        #expect(
+            ProviderCatalog.template(forProviderID: "qobuz")?.logoPresentation.contentStyle
+                == .bakedTile
+        )
+    }
+
+    @Test("Curated Meta and ChatGPT artwork does not use a luminance mask")
+    func curatedArtworkDoesNotUseLightCanvasMask() throws {
+        for providerID in ["meta_verified", "chatgpt_plus"] {
+            let provider = try #require(ProviderCatalog.template(forProviderID: providerID))
+            #expect(provider.logoPresentation.contentStyle != .lightCanvasGlyph)
+        }
+    }
+
+    @Test("Provider logo external frames remain stable")
+    @MainActor
+    func providerLogoExternalFramesRemainStable() {
+        #expect(ProviderIcon.Size.small.frame == 28)
+        #expect(ProviderIcon.Size.medium.frame == 40)
+        #expect(ProviderIcon.Size.large.frame == 56)
     }
 
     @Test("Shared-domain service groups have explicit collision policies")
@@ -199,6 +345,66 @@ struct ProviderLogoResolutionTests {
                 .value
         }
     }
+
+    private func providersAssetDirectory() throws -> URL {
+        let repositoryRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let providersDirectory = repositoryRoot
+            .appendingPathComponent("Soren/Resources/Assets.xcassets/Providers", isDirectory: true)
+
+        var isDirectory: ObjCBool = false
+        #expect(
+            FileManager.default.fileExists(
+                atPath: providersDirectory.path,
+                isDirectory: &isDirectory
+            )
+        )
+        #expect(isDirectory.boolValue)
+        return providersDirectory
+    }
+
+    private func requiredSourcePixels(
+        sourceSize: CGSize,
+        presentation: ProviderLogoPresentation,
+        iconSize: ProviderIcon.Size,
+        displayScale: CGFloat
+    ) -> CGSize {
+        let availableSize: CGSize
+        switch presentation.contentStyle {
+        case .glyph:
+            let side = iconSize.frame - (2 * iconSize.glyphInset)
+            availableSize = CGSize(width: side, height: side)
+        case .lightCanvasGlyph, .appIcon:
+            availableSize = CGSize(width: iconSize.frame, height: iconSize.frame)
+        case .bakedTile:
+            availableSize = CGSize(width: iconSize.frame, height: iconSize.frame)
+        }
+
+        let widthScale = availableSize.width / sourceSize.width
+        let heightScale = availableSize.height / sourceSize.height
+        let renderScale: CGFloat
+        switch presentation.contentStyle {
+        case .appIcon:
+            renderScale = max(widthScale, heightScale)
+        case .glyph, .lightCanvasGlyph, .bakedTile:
+            renderScale = min(widthScale, heightScale)
+        }
+
+        return CGSize(
+            width: ceil(sourceSize.width * renderScale * displayScale),
+            height: ceil(sourceSize.height * renderScale * displayScale)
+        )
+    }
+}
+
+private struct ProviderAssetContents: Decodable {
+    struct ImageEntry: Decodable {
+        let filename: String?
+    }
+
+    let images: [ImageEntry]
 }
 
 // MARK: - Provider Catalog Tests (Aggressive)
@@ -595,6 +801,64 @@ struct LogoLoaderReliabilityTests {
         }
     }
 
+    @Test("Remote raster below the requested pixel floor is rejected")
+    @MainActor
+    func undersizedRemoteRasterIsRejected() async throws {
+        let url = try #require(URL(string: "https://example.test/undersized.png"))
+        let stub = LogoDataStub(responses: [
+            .init(statusCode: 200, mimeType: "image/png", data: pngData(side: 119)),
+        ])
+        let loader = makeLoader(stub: stub)
+
+        let image = await loader.image(
+            for: [url],
+            minimumPixelSize: CGSize(width: 120, height: 120)
+        )
+
+        #expect(image == nil)
+        #expect(await stub.requestCount == 1)
+    }
+
+    @Test("Remote raster meeting the requested pixel floor is accepted")
+    @MainActor
+    func sufficientRemoteRasterIsAccepted() async throws {
+        let url = try #require(URL(string: "https://example.test/sufficient.png"))
+        let stub = LogoDataStub(responses: [
+            .init(statusCode: 200, mimeType: "image/png", data: pngData(side: 168)),
+        ])
+        let loader = makeLoader(stub: stub)
+
+        let image = await loader.image(
+            for: [url],
+            minimumPixelSize: CGSize(width: 168, height: 168)
+        )
+
+        #expect(image?.cgImage?.width == 168)
+        #expect(image?.cgImage?.height == 168)
+        #expect(await stub.requestCount == 1)
+    }
+
+    @Test("An undersized remote source cannot block a later sufficient source")
+    @MainActor
+    func undersizedSourceFallsThroughToSufficientSource() async throws {
+        let lowURL = try #require(URL(string: "https://example.test/low.png"))
+        let highURL = try #require(URL(string: "https://example.test/high.png"))
+        let stub = LogoDataStub(responses: [
+            .init(statusCode: 200, mimeType: "image/png", data: pngData(side: 48)),
+            .init(statusCode: 200, mimeType: "image/png", data: pngData(side: 256)),
+        ])
+        let loader = makeLoader(stub: stub)
+
+        let image = await loader.image(
+            for: [lowURL, highURL],
+            minimumPixelSize: CGSize(width: 168, height: 168)
+        )
+
+        #expect(image?.cgImage?.width == 256)
+        #expect(image?.cgImage?.height == 256)
+        #expect(await stub.requestCount == 2)
+    }
+
     private func makeLoader(stub: LogoDataStub) -> LogoLoader {
         LogoLoader { url in
             try await stub.load(url)
@@ -605,6 +869,20 @@ struct LogoLoaderReliabilityTests {
         try #require(Data(base64Encoded:
             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
         ))
+    }
+
+    @MainActor
+    private func pngData(side: CGFloat) -> Data {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let renderer = UIGraphicsImageRenderer(
+            size: CGSize(width: side, height: side),
+            format: format
+        )
+        return renderer.pngData { context in
+            UIColor.systemBlue.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: side, height: side))
+        }
     }
 }
 

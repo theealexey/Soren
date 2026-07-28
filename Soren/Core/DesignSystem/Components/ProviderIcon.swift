@@ -14,11 +14,17 @@ actor LogoLoader {
 
     typealias DataLoader = @Sendable (URL) async throws -> (Data, URLResponse)
 
+    private struct RequestKey: Hashable, Sendable {
+        let firstURL: URL
+        let minimumPixelWidth: Int
+        let minimumPixelHeight: Int
+    }
+
     static let shared = LogoLoader()
 
     private let loadData: DataLoader
     private let memory = NSCache<NSURL, UIImage>()
-    private var inFlight: [NSURL: Task<UIImage?, Never>] = [:]
+    private var inFlight: [RequestKey: Task<UIImage?, Never>] = [:]
 
     private init() {
         let config = URLSessionConfiguration.default
@@ -38,30 +44,50 @@ actor LogoLoader {
         memory.countLimit = 300
     }
 
-    func image(for urls: [URL]) async -> UIImage? {
-        guard let key = urls.first else { return nil }
-        let cacheKey = key as NSURL
+    func image(
+        for urls: [URL],
+        minimumPixelSize: CGSize = .zero
+    ) async -> UIImage? {
+        guard let firstURL = urls.first else { return nil }
+        let requiredWidth = max(0, Int(ceil(minimumPixelSize.width)))
+        let requiredHeight = max(0, Int(ceil(minimumPixelSize.height)))
+        let requestKey = RequestKey(
+            firstURL: firstURL,
+            minimumPixelWidth: requiredWidth,
+            minimumPixelHeight: requiredHeight
+        )
+        let cacheKey = firstURL as NSURL
 
-        if let cached = memory.object(forKey: cacheKey) {
+        if let cached = memory.object(forKey: cacheKey),
+           Self.hasMinimumSourcePixels(
+               cached,
+               requiredWidth: requiredWidth,
+               requiredHeight: requiredHeight
+           ) {
             return cached
         }
-        if let existing = inFlight[cacheKey] {
+        if let existing = inFlight[requestKey] {
             return await existing.value
         }
 
         let loadData = self.loadData
         let task = Task<UIImage?, Never> {
             for url in urls {
-                if let image = await Self.fetch(url, using: loadData) {
+                if let image = await Self.fetch(
+                    url,
+                    using: loadData,
+                    requiredWidth: requiredWidth,
+                    requiredHeight: requiredHeight
+                ) {
                     return image
                 }
             }
             return nil
         }
-        inFlight[cacheKey] = task
+        inFlight[requestKey] = task
 
         let image = await task.value
-        inFlight[cacheKey] = nil
+        inFlight[requestKey] = nil
 
         if let image {
             memory.setObject(image, forKey: cacheKey)
@@ -69,14 +95,33 @@ actor LogoLoader {
         return image
     }
 
-    private nonisolated static func fetch(_ url: URL, using loadData: DataLoader) async -> UIImage? {
+    private static func fetch(
+        _ url: URL,
+        using loadData: DataLoader,
+        requiredWidth: Int,
+        requiredHeight: Int
+    ) async -> UIImage? {
         guard let (data, response) = try? await loadData(url),
               let http = response as? HTTPURLResponse,
               (200..<300).contains(http.statusCode),
               http.mimeType?.lowercased().hasPrefix("image/") == true,
               !data.isEmpty,
-              let image = UIImage(data: data) else { return nil }
+              let image = UIImage(data: data),
+              hasMinimumSourcePixels(
+                  image,
+                  requiredWidth: requiredWidth,
+                  requiredHeight: requiredHeight
+              ) else { return nil }
         return image
+    }
+
+    private static func hasMinimumSourcePixels(
+        _ image: UIImage,
+        requiredWidth: Int,
+        requiredHeight: Int
+    ) -> Bool {
+        guard let cgImage = image.cgImage else { return false }
+        return cgImage.width >= requiredWidth && cgImage.height >= requiredHeight
     }
 }
 
@@ -106,7 +151,11 @@ struct ProviderIcon: View {
     init(provider: ProviderTemplate, size: Size = .medium) {
         switch Self.resolution(for: provider) {
         case .asset(let assetName):
-            self.content = .asset(assetName)
+            self.content = .asset(
+                assetName,
+                provider.logoPresentation,
+                provider.brandColorHex
+            )
         case .remote(let logoURLs):
             self.content = .remoteLogo(logoURLs, provider)
         case .letterMark:
@@ -152,28 +201,27 @@ struct ProviderIcon: View {
     // MARK: - Body
 
     var body: some View {
-        switch content {
-        case .asset(let name):
-            Image(name)
-                .resizable()
-                .scaledToFit()
-                .frame(width: size.frame * 0.72, height: size.frame * 0.72)
-                .frame(width: size.frame, height: size.frame)
-                .background(Color.white, in: RoundedRectangle(cornerRadius: size.radius))
-                .overlay(
-                    RoundedRectangle(cornerRadius: size.radius)
-                        .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
+        Group {
+            switch content {
+            case .asset(let name, let presentation, let brandColorHex):
+                ProviderLogoArtwork(
+                    image: Image(name),
+                    presentation: presentation,
+                    brandColor: brandColor(for: brandColorHex),
+                    size: size
                 )
 
-        case .remoteLogo(let urls, let provider):
-            RemoteLogoIcon(urls: urls, provider: provider, size: size)
+            case .remoteLogo(let urls, let provider):
+                RemoteLogoIcon(urls: urls, provider: provider, size: size)
 
-        case .letterMark(let letters, let color):
-            letterMarkView(letters: letters, color: color)
+            case .letterMark(let letters, let color):
+                letterMarkView(letters: letters, color: color)
 
-        case .symbol(let name, let color):
-            symbolView(name: name, color: color)
+            case .symbol(let name, let color):
+                symbolView(name: name, color: color)
+            }
         }
+        .accessibilityHidden(true)
     }
 
     private func letterMarkView(letters: String, color: Color) -> some View {
@@ -191,6 +239,81 @@ struct ProviderIcon: View {
             .frame(width: size.frame, height: size.frame)
             .background(color.gradient, in: RoundedRectangle(cornerRadius: size.radius))
     }
+
+    private func brandColor(for hex: String?) -> Color {
+        guard let hex else { return ColorTokens.textPrimary }
+        return Color(hex: hex)
+    }
+}
+
+// MARK: - Provider Logo Artwork
+
+private struct ProviderLogoArtwork: View {
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
+
+    let image: Image
+    let presentation: ProviderLogoPresentation
+    let brandColor: Color
+    let size: ProviderIcon.Size
+
+    var body: some View {
+        ZStack {
+            surface
+            artwork
+        }
+        .frame(width: size.frame, height: size.frame)
+        .clipShape(.rect(cornerRadius: size.radius))
+        .overlay {
+            if presentation.surfaceStyle == .adaptiveNeutral {
+                RoundedRectangle(cornerRadius: size.radius)
+                    .strokeBorder(
+                        ColorTokens.separator,
+                        lineWidth: colorSchemeContrast == .increased ? 1 : 0.5
+                    )
+            }
+        }
+    }
+
+    private var surface: Color {
+        switch presentation.surfaceStyle {
+        case .adaptiveNeutral:
+            ColorTokens.surfaceElevated
+        case .transparent:
+            Color.clear
+        }
+    }
+
+    @ViewBuilder
+    private var artwork: some View {
+        switch presentation.contentStyle {
+        case .glyph:
+            image
+                .resizable()
+                .scaledToFit()
+                .padding(size.glyphInset)
+
+        case .lightCanvasGlyph:
+            brandColor
+                .mask {
+                    image
+                        .resizable()
+                        .scaledToFit()
+                        .colorInvert()
+                        .luminanceToAlpha()
+                        .scaleEffect(size.lightCanvasScale)
+                }
+
+        case .appIcon:
+            image
+                .resizable()
+                .scaledToFill()
+
+        case .bakedTile:
+            image
+                .resizable()
+                .scaledToFit()
+        }
+    }
 }
 
 // MARK: - Remote Logo Icon
@@ -198,6 +321,8 @@ struct ProviderIcon: View {
 /// Shows a letter-mark immediately, then fades in the real logo when loaded.
 /// Uses LogoLoader for coalesced memory + disk-cached remote fallback loading.
 private struct RemoteLogoIcon: View {
+    @Environment(\.displayScale) private var displayScale
+
     let urls: [URL]
     let provider: ProviderTemplate
     let size: ProviderIcon.Size
@@ -210,23 +335,30 @@ private struct RemoteLogoIcon: View {
             letterMark
 
             if let image = loaded {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: size.frame * 0.72, height: size.frame * 0.72)
-                    .frame(width: size.frame, height: size.frame)
-                    .background(Color.white, in: RoundedRectangle(cornerRadius: size.radius))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: size.radius)
-                            .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-                    )
+                ProviderLogoArtwork(
+                    image: Image(uiImage: image),
+                    presentation: provider.logoPresentation,
+                    brandColor: Color(hex: provider.brandColorHex ?? "#888888"),
+                    size: size
+                )
                     .transition(.opacity.animation(.easeIn(duration: 0.15)))
             }
         }
-        .task(id: urls.first) {
+        .task(id: request) {
             loaded = nil
-            loaded = await LogoLoader.shared.image(for: urls)
+            loaded = await LogoLoader.shared.image(
+                for: urls,
+                minimumPixelSize: request.minimumPixelSize
+            )
         }
+    }
+
+    private var request: RemoteLogoRequest {
+        let minimumPixelDimension = Int(ceil(size.frame * displayScale))
+        return RemoteLogoRequest(
+            firstURL: urls.first,
+            minimumPixelDimension: minimumPixelDimension
+        )
     }
 
     private var letterMark: some View {
@@ -241,11 +373,20 @@ private struct RemoteLogoIcon: View {
     }
 }
 
+private struct RemoteLogoRequest: Hashable {
+    let firstURL: URL?
+    let minimumPixelDimension: Int
+
+    var minimumPixelSize: CGSize {
+        CGSize(width: minimumPixelDimension, height: minimumPixelDimension)
+    }
+}
+
 // MARK: - Content
 
 extension ProviderIcon {
     private enum Content {
-        case asset(String)
+        case asset(String, ProviderLogoPresentation, String?)
         case remoteLogo([URL], ProviderTemplate)
         case letterMark(String, Color)
         case symbol(String, Color)
@@ -255,7 +396,7 @@ extension ProviderIcon {
 // MARK: - Size
 
 extension ProviderIcon {
-    enum Size {
+    enum Size: Hashable {
         case small   // 28pt — compact lists
         case medium  // 40pt — standard list rows
         case large   // 56pt — detail screen hero, catalog cards
@@ -278,6 +419,14 @@ extension ProviderIcon {
             case .medium: CornerRadius.medium
             case .large:  CornerRadius.medium
             }
+        }
+
+        var glyphInset: CGFloat {
+            frame * 0.12
+        }
+
+        var lightCanvasScale: CGFloat {
+            1.15
         }
     }
 }
