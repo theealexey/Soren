@@ -2128,6 +2128,36 @@
         }
       }
     },
+    "Введённые вручную сумма, валюта и период будут сохранены." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The manually entered amount, currency, and billing period will be saved."
+          }
+        }
+      }
+    },
+    "Введите сумму вручную" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter the amount manually"
+          }
+        }
+      }
+    },
+    "Введите сумму вручную. Сохранение подписки остаётся доступным." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter the amount manually. You can still save the subscription."
+          }
+        }
+      }
+    },
     "Введите цену" : {
       "localizations" : {
         "en" : {
@@ -2363,6 +2393,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Georgian Lari"
+          }
+        }
+      }
+    },
+    "Данные о ценах недоступны" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pricing data unavailable"
           }
         }
       }
@@ -2677,6 +2717,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Other"
+          }
+        }
+      }
+    },
+    "Другой рынок (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other market (%@)"
           }
         }
       }
@@ -3793,6 +3843,16 @@
         }
       }
     },
+    "Нет подтверждённой цены" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No verified price"
+          }
+        }
+      }
+    },
     "Нет предстоящих списаний" : {
       "localizations" : {
         "en" : {
@@ -4009,6 +4069,16 @@
         }
       }
     },
+    "Открыть официальный источник цены" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open official pricing source"
+          }
+        }
+      }
+    },
     "Отмена" : {
       "localizations" : {
         "en" : {
@@ -4055,6 +4125,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cancel"
+          }
+        }
+      }
+    },
+    "Официальный источник цены" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Official pricing source"
           }
         }
       }
@@ -4305,6 +4385,16 @@
         }
       }
     },
+    "Подтверждённая цена" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verified price"
+          }
+        }
+      }
+    },
     "Поиск подписок" : {
       "localizations" : {
         "en" : {
@@ -4389,7 +4479,18 @@
         }
       }
     },
+    "Последняя известная цена" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last known price"
+          }
+        }
+      }
+    },
     "Последняя известная цена требует проверки. Введите сумму вручную." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4660,6 +4761,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "trials"
+          }
+        }
+      }
+    },
+    "Проверено" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verified"
           }
         }
       }
@@ -5475,6 +5586,26 @@
         }
       }
     },
+    "Цена вручную" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manual price"
+          }
+        }
+      }
+    },
+    "Цена для выбранного рынка" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price for selected market"
+          }
+        }
+      }
+    },
     "Цена изменена вручную" : {
       "localizations" : {
         "en" : {
@@ -5485,12 +5616,33 @@
         }
       }
     },
+    "Цена по рынку" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Market price"
+          }
+        }
+      }
+    },
     "Цена подтверждена для выбранного рынка" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Price verified for the selected market"
+          }
+        }
+      }
+    },
+    "Цена требует проверки" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price needs verification"
           }
         }
       }

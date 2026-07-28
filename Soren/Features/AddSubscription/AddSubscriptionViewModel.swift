@@ -11,6 +11,57 @@ enum AddSubscriptionPricingState: Equatable {
     case userModified
 }
 
+enum AddSubscriptionPricingMarketPresentation: Equatable {
+    case unitedStates
+    case russia
+    case other(countryCode: String)
+
+    init(market: PricingMarket) {
+        switch market.countryCode {
+        case "US":
+            self = .unitedStates
+        case "RU":
+            self = .russia
+        default:
+            self = .other(countryCode: market.countryCode)
+        }
+    }
+
+    var displayName: LocalizedStringResource {
+        switch self {
+        case .unitedStates:
+            "США"
+        case .russia:
+            "Россия"
+        case .other(let countryCode):
+            "Другой рынок (\(countryCode))"
+        }
+    }
+}
+
+struct AddSubscriptionRegionalQuotePresentation: Equatable {
+    let money: Money
+    let billingCycle: BillingCycle
+    let verifiedAt: Date
+    let sourceURL: URL
+
+    init(price: RegionalPlanPrice) {
+        self.money = price.money
+        self.billingCycle = price.billingCycle
+        self.verifiedAt = price.verifiedAt
+        self.sourceURL = price.sourceURL
+    }
+}
+
+enum AddSubscriptionPricingPresentation: Equatable {
+    case noTierSelected
+    case verified(AddSubscriptionRegionalQuotePresentation)
+    case requiresReview(AddSubscriptionRegionalQuotePresentation)
+    case unavailable(RegionalPriceUnavailableReason)
+    case loaderFailure
+    case userModified
+}
+
 /// Drives the full Add Subscription flow: provider picker → form → save.
 /// Shared across both steps so state carries over seamlessly.
 @MainActor @Observable
@@ -324,7 +375,32 @@ final class AddSubscriptionViewModel {
         refreshPricingMarket()
     }
 
+    var pricingMarketPresentation: AddSubscriptionPricingMarketPresentation {
+        AddSubscriptionPricingMarketPresentation(market: pricingMarket)
+    }
+
+    var pricingPresentation: AddSubscriptionPricingPresentation {
+        switch pricingState {
+        case .noTierSelected:
+            .noTierSelected
+        case .verified(let price):
+            .verified(AddSubscriptionRegionalQuotePresentation(price: price))
+        case .requiresReview(let price):
+            .requiresReview(AddSubscriptionRegionalQuotePresentation(price: price))
+        case .unavailable(let reason):
+            .unavailable(reason)
+        case .loadingUnavailable:
+            .loaderFailure
+        case .userModified:
+            .userModified
+        }
+    }
+
     func tierPricingPresentation(for tier: PlanTier) -> TierChipPricingPresentation {
+        if selectedTier?.id == tier.id, isPricingInputUserModified {
+            return .userModified
+        }
+
         guard let provider = selectedProvider else { return .manualEntry }
         guard case .success(let snapshot) = regionalPricingSnapshotResult else {
             return .manualEntry

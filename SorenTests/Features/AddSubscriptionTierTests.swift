@@ -414,4 +414,235 @@ struct AddSubscriptionTierTests {
         #expect(fixture.viewModel.billingCycle == .monthly)
         #expect(fixture.viewModel.currencyCode == "USD")
     }
+
+    @Test("Active pricing market presentation is human-readable and independent from reporting currency")
+    func activePricingMarketPresentation() throws {
+        let us = try makeFixture(marketCode: "US", reportingCurrencyCode: "RUB")
+        defer { us.cleanUp() }
+        let ru = try makeFixture(marketCode: "RU", reportingCurrencyCode: "USD")
+        defer { ru.cleanUp() }
+        let englishBundle = try localizationBundle("en")
+        let english = Locale(identifier: "en")
+
+        #expect(us.viewModel.pricingMarketPresentation == .unitedStates)
+        #expect(ru.viewModel.pricingMarketPresentation == .russia)
+        #expect(us.viewModel.reportingCurrencyCode == "RUB")
+        #expect(ru.viewModel.reportingCurrencyCode == "USD")
+        #expect(
+            String(localized: "США", bundle: englishBundle, locale: english)
+                == "United States"
+        )
+        #expect(
+            String(localized: "Россия", bundle: englishBundle, locale: english)
+                == "Russia"
+        )
+    }
+
+    @Test("Verified presentation exposes exact regional quote provenance without reference-price fallback")
+    func verifiedPresentationUsesRegionalQuote() throws {
+        let tier = PlanTier(
+            id: "individual",
+            name: "Individual",
+            referenceAmount: 999,
+            billingCycle: .annual,
+            referenceCurrencyCode: "EUR"
+        )
+        let provider = provider(tiers: [tier])
+        let regionalPrice = try price(
+            provider: provider,
+            tier: tier,
+            amount: 12.99,
+            currencyCode: "USD",
+            billingCycle: .monthly
+        )
+        let fixture = try makeFixture(result: result([regionalPrice]))
+        defer { fixture.cleanUp() }
+
+        fixture.viewModel.selectProvider(provider)
+
+        let expected = AddSubscriptionRegionalQuotePresentation(price: regionalPrice)
+        #expect(fixture.viewModel.pricingPresentation == .verified(expected))
+        #expect(expected.money.amount == 12.99)
+        #expect(expected.money.currencyCode == "USD")
+        #expect(expected.billingCycle == .monthly)
+        #expect(expected.verifiedAt == asOf)
+        #expect(expected.sourceURL == URL(string: "https://example.com/pricing"))
+        #expect(expected.money.amount != tier.referencePrice.amount)
+        #expect(expected.money.currencyCode != tier.referencePrice.currencyCode)
+        #expect(fixture.viewModel.amountText == "12.99")
+        #expect(!fixture.viewModel.isPricingInputUserModified)
+    }
+
+    @Test("Requires-review presentation preserves last-known provenance but requires manual input")
+    func requiresReviewPresentationPreservesQuote() throws {
+        let tier = PlanTier(
+            id: "annual",
+            name: "Annual",
+            referenceAmount: 5,
+            billingCycle: .monthly
+        )
+        let provider = provider(tiers: [tier])
+        let regionalPrice = try price(
+            provider: provider,
+            tier: tier,
+            amount: 120,
+            currencyCode: "USD",
+            billingCycle: .annual,
+            reviewAfter: afterReview
+        )
+        let fixture = try makeFixture(
+            result: result([regionalPrice]),
+            date: afterReview.addingTimeInterval(1)
+        )
+        defer { fixture.cleanUp() }
+
+        fixture.viewModel.selectProvider(provider)
+
+        let expected = AddSubscriptionRegionalQuotePresentation(price: regionalPrice)
+        #expect(fixture.viewModel.pricingPresentation == .requiresReview(expected))
+        #expect(expected.money.amount == 120)
+        #expect(expected.money.currencyCode == "USD")
+        #expect(expected.billingCycle == .annual)
+        #expect(expected.verifiedAt == asOf)
+        #expect(expected.sourceURL == URL(string: "https://example.com/pricing"))
+        #expect(fixture.viewModel.amountText.isEmpty)
+        #expect(!fixture.viewModel.canSave)
+        #expect(fixture.viewModel.tierPricingPresentation(for: tier) == .requiresReview)
+    }
+
+    @Test("Typed unavailable presentation contains no quote, zero, source, or reference price")
+    func unavailablePresentationRemainsManual() throws {
+        let missingTier = PlanTier(
+            id: "missing",
+            name: "Missing",
+            referenceAmount: 42,
+            billingCycle: .annual,
+            referenceCurrencyCode: "EUR"
+        )
+        let missingProvider = provider(tiers: [missingTier])
+        let availableTier = PlanTier(
+            id: "available",
+            name: "Available",
+            referenceAmount: 1,
+            billingCycle: .monthly
+        )
+        let availableProvider = provider(tiers: [availableTier])
+        let fixture = try makeFixture(result: result([
+            try price(
+                provider: availableProvider,
+                tier: availableTier,
+                amount: 10,
+                currencyCode: "USD",
+                billingCycle: .monthly
+            )
+        ]))
+        defer { fixture.cleanUp() }
+
+        fixture.viewModel.selectProvider(missingProvider)
+
+        #expect(fixture.viewModel.pricingPresentation == .unavailable(.priceNotFound))
+        #expect(fixture.viewModel.amountText.isEmpty)
+        #expect(fixture.viewModel.amountText != "0")
+        #expect(fixture.viewModel.amountText != missingTier.referencePrice.amount.description)
+        #expect(fixture.viewModel.tierPricingPresentation(for: missingTier) == .manualEntry)
+    }
+
+    @Test("Loader failure remains distinct from normal price-not-found")
+    func loaderFailurePresentationIsDistinct() throws {
+        let tier = PlanTier(
+            id: "basic",
+            name: "Basic",
+            referenceAmount: 9.99,
+            billingCycle: .monthly
+        )
+        let provider = provider(tiers: [tier])
+        let fixture = try makeFixture(
+            result: .failure(.jsonDecodingFailed("private decoder details"))
+        )
+        defer { fixture.cleanUp() }
+
+        fixture.viewModel.selectProvider(provider)
+
+        #expect(fixture.viewModel.pricingPresentation == .loaderFailure)
+        #expect(fixture.viewModel.pricingPresentation != .unavailable(.priceNotFound))
+        #expect(fixture.viewModel.amountText.isEmpty)
+        #expect(fixture.viewModel.tierPricingPresentation(for: tier) == .manualEntry)
+    }
+
+    @Test("Manual amount, currency, and cycle edits each become authoritative presentation state")
+    func eachPricingFieldCanBecomeUserModified() throws {
+        let tier = PlanTier(
+            id: "individual",
+            name: "Individual",
+            referenceAmount: 1,
+            billingCycle: .monthly
+        )
+        let provider = provider(tiers: [tier])
+        let regionalPrice = try price(
+            provider: provider,
+            tier: tier,
+            amount: 12.99,
+            currencyCode: "USD",
+            billingCycle: .monthly
+        )
+
+        let amountFixture = try makeFixture(result: result([regionalPrice]))
+        defer { amountFixture.cleanUp() }
+        amountFixture.viewModel.selectProvider(provider)
+        amountFixture.viewModel.amountText = "15"
+        #expect(amountFixture.viewModel.pricingPresentation == .userModified)
+        #expect(amountFixture.viewModel.tierPricingPresentation(for: tier) == .userModified)
+
+        let currencyFixture = try makeFixture(result: result([regionalPrice]))
+        defer { currencyFixture.cleanUp() }
+        currencyFixture.viewModel.selectProvider(provider)
+        currencyFixture.viewModel.currencyCode = "EUR"
+        #expect(currencyFixture.viewModel.pricingPresentation == .userModified)
+        #expect(currencyFixture.viewModel.amountText == "12.99")
+
+        let cycleFixture = try makeFixture(result: result([regionalPrice]))
+        defer { cycleFixture.cleanUp() }
+        cycleFixture.viewModel.selectProvider(provider)
+        cycleFixture.viewModel.billingCycle = .quarterly
+        #expect(cycleFixture.viewModel.pricingPresentation == .userModified)
+        #expect(cycleFixture.viewModel.amountText == "12.99")
+    }
+
+    @Test("Review boundary remains verified in semantic presentation")
+    func reviewBoundaryPresentationIsVerified() throws {
+        let tier = PlanTier(
+            id: "boundary",
+            name: "Boundary",
+            referenceAmount: 1,
+            billingCycle: .monthly
+        )
+        let provider = provider(tiers: [tier])
+        let regionalPrice = try price(
+            provider: provider,
+            tier: tier,
+            amount: 10,
+            currencyCode: "USD",
+            billingCycle: .monthly,
+            reviewAfter: afterReview
+        )
+        let fixture = try makeFixture(
+            result: result([regionalPrice]),
+            date: afterReview
+        )
+        defer { fixture.cleanUp() }
+
+        fixture.viewModel.selectProvider(provider)
+
+        #expect(
+            fixture.viewModel.pricingPresentation
+                == .verified(AddSubscriptionRegionalQuotePresentation(price: regionalPrice))
+        )
+        #expect(fixture.viewModel.amountText == "10")
+    }
+
+    private func localizationBundle(_ languageCode: String) throws -> Bundle {
+        let appBundle = try #require(Bundle(identifier: "com.alexey.soren"))
+        let path = try #require(appBundle.path(forResource: languageCode, ofType: "lproj"))
+        return try #require(Bundle(path: path))
+    }
 }

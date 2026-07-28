@@ -6,6 +6,7 @@ enum TierChipPricingPresentation: Equatable {
     case verified(money: Money, billingCycle: BillingCycle)
     case requiresReview
     case manualEntry
+    case userModified
 }
 
 /// Compact card for selecting a plan tier in the Add Subscription flow.
@@ -47,6 +48,12 @@ struct TierChipView: View {
                     .font(Typography.caption)
                     .italic()
                     .foregroundStyle(isSelected ? .white.opacity(0.65) : ColorTokens.textTertiary)
+
+            case .userModified:
+                Text(String(localized: "Цена вручную"))
+                    .font(Typography.caption)
+                    .italic()
+                    .foregroundStyle(isSelected ? .white.opacity(0.65) : ColorTokens.textTertiary)
             }
 
             if let features = tier.features {
@@ -72,6 +79,8 @@ struct TierChipView: View {
         )
         .contentShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
         .animation(MotionTokens.snappy, value: isSelected)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private func cycleLabel(for billingCycle: BillingCycle) -> AmountLabel.CycleLabel {

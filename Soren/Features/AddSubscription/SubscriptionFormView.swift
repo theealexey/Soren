@@ -15,6 +15,8 @@ struct SubscriptionFormView: View {
 
             tierSection
 
+            regionalPricingSection
+
             RecurringItemFormFields(
                 title: $viewModel.title,
                 amountText: $viewModel.amountText,
@@ -117,19 +119,21 @@ struct SubscriptionFormView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: Spacing.sm) {
                         ForEach(viewModel.availableTiers) { tier in
-                            TierChipView(
-                                tier: tier,
-                                pricingPresentation: viewModel.tierPricingPresentation(for: tier),
-                                isSelected: viewModel.selectedTier?.id == tier.id
-                            )
-                            .onTapGesture {
+                            Button {
                                 if viewModel.selectedTier?.id == tier.id {
                                     viewModel.clearTier()
                                 } else {
                                     viewModel.selectTier(tier)
                                 }
                                 HapticEngine.selection()
+                            } label: {
+                                TierChipView(
+                                    tier: tier,
+                                    pricingPresentation: viewModel.tierPricingPresentation(for: tier),
+                                    isSelected: viewModel.selectedTier?.id == tier.id
+                                )
                             }
+                            .buttonStyle(.plain)
                         }
                     }
                     .padding(.horizontal, Spacing.xxs)
@@ -141,29 +145,25 @@ struct SubscriptionFormView: View {
                     trailing: Spacing.xxs
                 ))
             }
-
-            if let pricingMessage = pricingMessage {
-                Section {
-                    Text(pricingMessage)
-                        .font(Typography.caption)
-                        .foregroundStyle(ColorTokens.textSecondary)
-                }
-            }
         }
     }
 
-    private var pricingMessage: String? {
-        switch viewModel.pricingState {
-        case .noTierSelected:
-            nil
-        case .verified:
-            String(localized: "Цена подтверждена для выбранного рынка")
-        case .requiresReview:
-            String(localized: "Последняя известная цена требует проверки. Введите сумму вручную.")
-        case .unavailable, .loadingUnavailable:
-            String(localized: "Для выбранного рынка нет подтверждённой цены. Введите сумму вручную.")
-        case .userModified:
-            String(localized: "Цена изменена вручную")
+    // MARK: - Regional Pricing
+
+    @ViewBuilder
+    private var regionalPricingSection: some View {
+        if viewModel.selectedProvider != nil {
+            Section("Цена по рынку") {
+                LabeledContent("Рынок цен") {
+                    Text(viewModel.pricingMarketPresentation.displayName)
+                        .foregroundStyle(ColorTokens.textSecondary)
+                }
+                .accessibilityElement(children: .combine)
+
+                RegionalPricingStatusView(
+                    presentation: viewModel.pricingPresentation
+                )
+            }
         }
     }
 
@@ -180,6 +180,152 @@ struct SubscriptionFormView: View {
         }
     }
 
+}
+
+// MARK: - Regional Pricing Status
+
+private struct RegionalPricingStatusView: View {
+    let presentation: AddSubscriptionPricingPresentation
+
+    @ViewBuilder
+    var body: some View {
+        switch presentation {
+        case .noTierSelected:
+            EmptyView()
+
+        case .verified(let quote):
+            RegionalQuoteDetailsView(
+                quote: quote,
+                statusTitle: "Подтверждённая цена",
+                quoteTitle: "Цена для выбранного рынка",
+                systemImage: "checkmark.seal.fill",
+                tint: ColorTokens.success,
+                guidance: nil
+            )
+
+        case .requiresReview(let quote):
+            RegionalQuoteDetailsView(
+                quote: quote,
+                statusTitle: "Цена требует проверки",
+                quoteTitle: "Последняя известная цена",
+                systemImage: "exclamationmark.triangle.fill",
+                tint: ColorTokens.warning,
+                guidance: "Введите сумму вручную"
+            )
+
+        case .unavailable:
+            RegionalManualPricingStatusView(
+                title: "Нет подтверждённой цены",
+                message: "Для выбранного рынка нет подтверждённой цены. Введите сумму вручную.",
+                systemImage: "pencil.circle",
+                tint: ColorTokens.info
+            )
+
+        case .loaderFailure:
+            RegionalManualPricingStatusView(
+                title: "Данные о ценах недоступны",
+                message: "Введите сумму вручную. Сохранение подписки остаётся доступным.",
+                systemImage: "exclamationmark.circle",
+                tint: ColorTokens.info
+            )
+
+        case .userModified:
+            RegionalManualPricingStatusView(
+                title: "Цена изменена вручную",
+                message: "Введённые вручную сумма, валюта и период будут сохранены.",
+                systemImage: "pencil.circle.fill",
+                tint: ColorTokens.info
+            )
+        }
+    }
+}
+
+private struct RegionalQuoteDetailsView: View {
+    let quote: AddSubscriptionRegionalQuotePresentation
+    let statusTitle: LocalizedStringResource
+    let quoteTitle: LocalizedStringResource
+    let systemImage: String
+    let tint: Color
+    let guidance: LocalizedStringResource?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            Label {
+                Text(statusTitle)
+                    .font(Typography.captionMedium)
+            } icon: {
+                Image(systemName: systemImage)
+                    .foregroundStyle(tint)
+                    .accessibilityHidden(true)
+            }
+
+            VStack(alignment: .leading, spacing: Spacing.xxxs) {
+                Text(quoteTitle)
+                    .font(Typography.caption)
+                    .foregroundStyle(ColorTokens.textSecondary)
+
+                Text(
+                    quote.money.amount,
+                    format: .currency(code: quote.money.currencyCode)
+                )
+                .font(Typography.amountMedium)
+                .foregroundStyle(ColorTokens.textPrimary)
+
+                Text(quote.billingCycle.displayName)
+                    .font(Typography.caption)
+                    .foregroundStyle(ColorTokens.textSecondary)
+            }
+            .accessibilityElement(children: .combine)
+
+            LabeledContent("Проверено") {
+                Text(
+                    quote.verifiedAt,
+                    format: .dateTime.day().month(.wide).year()
+                )
+                .foregroundStyle(ColorTokens.textSecondary)
+            }
+            .font(Typography.caption)
+            .accessibilityElement(children: .combine)
+
+            if let guidance {
+                Text(guidance)
+                    .font(Typography.caption)
+                    .foregroundStyle(ColorTokens.textSecondary)
+            }
+
+            Link(destination: quote.sourceURL) {
+                Label("Официальный источник цены", systemImage: "arrow.up.right.square")
+                    .font(Typography.captionMedium)
+            }
+            .accessibilityLabel("Открыть официальный источник цены")
+            .padding(.vertical, Spacing.xxxs)
+        }
+    }
+}
+
+private struct RegionalManualPricingStatusView: View {
+    let title: LocalizedStringResource
+    let message: LocalizedStringResource
+    let systemImage: String
+    let tint: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.xxs) {
+            Label {
+                Text(title)
+                    .font(Typography.captionMedium)
+            } icon: {
+                Image(systemName: systemImage)
+                    .foregroundStyle(tint)
+                    .accessibilityHidden(true)
+            }
+
+            Text(message)
+                .font(Typography.caption)
+                .foregroundStyle(ColorTokens.textSecondary)
+        }
+        .accessibilityElement(children: .combine)
+    }
 }
 
 // MARK: - Preview
