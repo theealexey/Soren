@@ -5,9 +5,10 @@ import Foundation
 @Suite("BillingCycle — multipliers and helpers")
 struct BillingCycleTests {
 
-    @Test("Weekly multiplier is approximately 4.33")
-    func weeklyMultiplier() {
-        #expect(BillingCycle.weekly.monthlyMultiplier == Decimal(string: "4.33")!)
+    @Test("Weekly multiplier preserves the 52/12 three-decimal contract")
+    func weeklyMultiplier() throws {
+        let expected = try #require(Decimal(string: "4.333"))
+        #expect(BillingCycle.weekly.monthlyMultiplier == expected)
     }
 
     @Test("Monthly multiplier is exactly 1")
