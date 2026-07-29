@@ -155,9 +155,23 @@ struct TrialIdentifierSeparationTests {
 @MainActor
 struct ItemDetailsViewModelTrialReminderTests {
 
-    private func makeRepositories() throws -> RepositoryContainer {
-        let container = try SorenModelContainer.inMemory()
-        return RepositoryContainer(context: container.mainContext)
+    @MainActor
+    private struct Fixture {
+        let persistence: InMemoryPersistenceFixture
+        let viewModel: ItemDetailsViewModel
+
+        init(item: RecurringItem) throws {
+            let persistence = try InMemoryPersistenceFixture()
+            try persistence.repositories.recurringItems.save(item)
+
+            self.persistence = persistence
+            self.viewModel = ItemDetailsViewModel(
+                item: item,
+                repositories: persistence.repositories,
+                exchangeRateProvider: StaticExchangeRateProvider(),
+                notificationScheduler: MockNotificationScheduler()
+            )
+        }
     }
 
     private func makeItem(trialReminder: TrialReminderOption) -> RecurringItem {
@@ -170,29 +184,22 @@ struct ItemDetailsViewModelTrialReminderTests {
         )
     }
 
-    private func makeVM(item: RecurringItem) throws -> ItemDetailsViewModel {
-        let repos = try makeRepositories()
-        try repos.recurringItems.save(item)
-        return ItemDetailsViewModel(
-            item: item,
-            repositories: repos,
-            exchangeRateProvider: StaticExchangeRateProvider(),
-            notificationScheduler: MockNotificationScheduler()
-        )
+    private func makeFixture(item: RecurringItem) throws -> Fixture {
+        try Fixture(item: item)
     }
 
     @Test("startEditing seeds editTrialReminder from stored item")
     func startEditingSeedsTrialReminder() throws {
-        let vm = try makeVM(item: makeItem(trialReminder: .sevenDaysBefore))
-        vm.startEditing()
-        #expect(vm.editTrialReminder == .sevenDaysBefore)
+        let fixture = try makeFixture(item: makeItem(trialReminder: .sevenDaysBefore))
+        fixture.viewModel.startEditing()
+        #expect(fixture.viewModel.editTrialReminder == .sevenDaysBefore)
     }
 
     @Test("startEditing seeds .never when item has .never")
     func startEditingSeedsNever() throws {
-        let vm = try makeVM(item: makeItem(trialReminder: .never))
-        vm.startEditing()
-        #expect(vm.editTrialReminder == .never)
+        let fixture = try makeFixture(item: makeItem(trialReminder: .never))
+        fixture.viewModel.startEditing()
+        #expect(fixture.viewModel.editTrialReminder == .never)
     }
 
     @Test("saveChanges persists editTrialReminder = .threeDaysBefore")

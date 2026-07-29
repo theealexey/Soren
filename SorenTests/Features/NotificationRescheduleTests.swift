@@ -10,9 +10,27 @@ struct NotificationRefreshCoordinatorTests {
 
     // MARK: - Fixtures
 
-    private func makeRepos() throws -> RepositoryContainer {
-        let container = try SorenModelContainer.inMemory()
-        return RepositoryContainer(context: container.mainContext)
+    @MainActor
+    private struct Fixture {
+        let persistence: InMemoryPersistenceFixture
+        let scheduler: MockNotificationScheduler
+        let coordinator: NotificationRefreshCoordinator
+
+        init() throws {
+            let persistence = try InMemoryPersistenceFixture()
+            let scheduler = MockNotificationScheduler()
+
+            self.persistence = persistence
+            self.scheduler = scheduler
+            self.coordinator = NotificationRefreshCoordinator(
+                repository: persistence.repositories.recurringItems,
+                scheduler: scheduler
+            )
+        }
+    }
+
+    private func makeFixture() throws -> Fixture {
+        try Fixture()
     }
 
     private func freshItem(
@@ -34,75 +52,55 @@ struct NotificationRefreshCoordinatorTests {
 
     @Test("didBecomeActive passes all stored items to rescheduleAll")
     func reschedulesAllStoredItems() async throws {
-        let repos = try makeRepos()
-        let mock  = MockNotificationScheduler()
-        let coordinator = NotificationRefreshCoordinator(
-            repository: repos.recurringItems,
-            scheduler:  mock
-        )
+        let fixture = try makeFixture()
 
         let a = freshItem()
         let b = freshItem()
-        try repos.recurringItems.save(a)
-        try repos.recurringItems.save(b)
+        try fixture.persistence.repositories.recurringItems.save(a)
+        try fixture.persistence.repositories.recurringItems.save(b)
 
-        coordinator.didBecomeActive()
-        await Task.yield()
+        fixture.coordinator.didBecomeActive()
+        await fixture.scheduler.waitUntilRescheduled(count: 1)
 
-        #expect(mock.rescheduleAllCallCount == 1)
-        let ids = Set(mock.lastRescheduledItems.map(\.id))
+        #expect(fixture.scheduler.rescheduleAllCallCount == 1)
+        let ids = Set(fixture.scheduler.lastRescheduledItems.map(\.id))
         #expect(ids == Set([a.id, b.id]))
     }
 
     @Test("empty repository triggers rescheduleAll with empty list")
     func emptyRepositoryPassesEmptyList() async throws {
-        let repos = try makeRepos()
-        let mock  = MockNotificationScheduler()
-        let coordinator = NotificationRefreshCoordinator(
-            repository: repos.recurringItems,
-            scheduler:  mock
-        )
+        let fixture = try makeFixture()
 
-        coordinator.didBecomeActive()
-        await Task.yield()
+        fixture.coordinator.didBecomeActive()
+        await fixture.scheduler.waitUntilRescheduled(count: 1)
 
-        #expect(mock.rescheduleAllCallCount == 1)
-        #expect(mock.lastRescheduledItems.isEmpty)
+        #expect(fixture.scheduler.rescheduleAllCallCount == 1)
+        #expect(fixture.scheduler.lastRescheduledItems.isEmpty)
     }
 
     @Test("paused, archived, and .never items are forwarded — scheduler owns eligibility")
     func ineligibleItemsForwardedToScheduler() async throws {
-        let repos = try makeRepos()
-        let mock  = MockNotificationScheduler()
-        let coordinator = NotificationRefreshCoordinator(
-            repository: repos.recurringItems,
-            scheduler:  mock
-        )
+        let fixture = try makeFixture()
 
         var paused   = freshItem(); paused.status   = .paused
         var archived = freshItem(); archived.status = .archived
         let neverR   = freshItem(chargeReminder: .never)
-        try repos.recurringItems.save(paused)
-        try repos.recurringItems.save(archived)
-        try repos.recurringItems.save(neverR)
+        try fixture.persistence.repositories.recurringItems.save(paused)
+        try fixture.persistence.repositories.recurringItems.save(archived)
+        try fixture.persistence.repositories.recurringItems.save(neverR)
 
-        coordinator.didBecomeActive()
-        await Task.yield()
+        fixture.coordinator.didBecomeActive()
+        await fixture.scheduler.waitUntilRescheduled(count: 1)
 
         // Coordinator passes every stored item; real NotificationScheduler filters
         // via isEligible() inside schedule(for:).
-        #expect(mock.rescheduleAllCallCount == 1)
-        #expect(mock.lastRescheduledItems.count == 3)
+        #expect(fixture.scheduler.rescheduleAllCallCount == 1)
+        #expect(fixture.scheduler.lastRescheduledItems.count == 3)
     }
 
     @Test("item with both charge and trial reminders is forwarded intact")
     func itemWithBothRemindersForwardedIntact() async throws {
-        let repos = try makeRepos()
-        let mock  = MockNotificationScheduler()
-        let coordinator = NotificationRefreshCoordinator(
-            repository: repos.recurringItems,
-            scheduler:  mock
-        )
+        let fixture = try makeFixture()
 
         let trialEnd = Calendar.current.date(byAdding: .day, value: 7, to: .now)!
         let item = freshItem(
@@ -110,12 +108,12 @@ struct NotificationRefreshCoordinatorTests {
             trialReminder:  .oneDayBefore,
             trialEndDate:   trialEnd
         )
-        try repos.recurringItems.save(item)
+        try fixture.persistence.repositories.recurringItems.save(item)
 
-        coordinator.didBecomeActive()
-        await Task.yield()
+        fixture.coordinator.didBecomeActive()
+        await fixture.scheduler.waitUntilRescheduled(count: 1)
 
-        let forwarded = mock.lastRescheduledItems.first
+        let forwarded = fixture.scheduler.lastRescheduledItems.first
         #expect(forwarded?.id == item.id)
         #expect(forwarded?.chargeReminder == .threeDaysBefore)
         #expect(forwarded?.trialReminder  == .oneDayBefore)
@@ -124,19 +122,14 @@ struct NotificationRefreshCoordinatorTests {
 
     @Test("rapid calls produce at most one reschedule run")
     func rapidCallsProduceAtMostOneRun() async throws {
-        let repos = try makeRepos()
-        let mock  = MockNotificationScheduler()
-        let coordinator = NotificationRefreshCoordinator(
-            repository: repos.recurringItems,
-            scheduler:  mock
-        )
+        let fixture = try makeFixture()
 
-        coordinator.didBecomeActive()
-        coordinator.didBecomeActive()
-        coordinator.didBecomeActive()
+        fixture.coordinator.didBecomeActive()
+        fixture.coordinator.didBecomeActive()
+        fixture.coordinator.didBecomeActive()
         await Task.yield()
 
-        #expect(mock.rescheduleAllCallCount <= 1)
+        #expect(fixture.scheduler.rescheduleAllCallCount <= 1)
     }
 }
 

@@ -351,14 +351,49 @@ final class MockNotificationScheduler: NotificationScheduling, @unchecked Sendab
     private(set) var cancelAllCallCount = 0
     private(set) var rescheduleAllCallCount = 0
     private(set) var lastRescheduledItems: [RecurringItem] = []
+    private var scheduleWaiters: [(count: Int, continuation: CheckedContinuation<Void, Never>)] = []
+    private var rescheduleWaiters: [(count: Int, continuation: CheckedContinuation<Void, Never>)] = []
 
-    func schedule(for item: RecurringItem) async { scheduledIDs.append(item.id) }
+    func schedule(for item: RecurringItem) async {
+        scheduledIDs.append(item.id)
+        resumeSatisfiedScheduleWaiters()
+    }
+
     func cancel(for itemID: UUID) async          { cancelledIDs.append(itemID) }
     func cancelAll() async                       { cancelAllCallCount += 1 }
 
     func rescheduleAll(items: [RecurringItem]) async {
         rescheduleAllCallCount += 1
         lastRescheduledItems = items
+        resumeSatisfiedRescheduleWaiters()
+    }
+
+    func waitUntilScheduled(count: Int) async {
+        guard scheduledIDs.count < count else { return }
+
+        await withCheckedContinuation { continuation in
+            scheduleWaiters.append((count, continuation))
+        }
+    }
+
+    func waitUntilRescheduled(count: Int) async {
+        guard rescheduleAllCallCount < count else { return }
+
+        await withCheckedContinuation { continuation in
+            rescheduleWaiters.append((count, continuation))
+        }
+    }
+
+    private func resumeSatisfiedScheduleWaiters() {
+        let satisfied = scheduleWaiters.filter { scheduledIDs.count >= $0.count }
+        scheduleWaiters.removeAll { scheduledIDs.count >= $0.count }
+        satisfied.forEach { $0.continuation.resume() }
+    }
+
+    private func resumeSatisfiedRescheduleWaiters() {
+        let satisfied = rescheduleWaiters.filter { rescheduleAllCallCount >= $0.count }
+        rescheduleWaiters.removeAll { rescheduleAllCallCount >= $0.count }
+        satisfied.forEach { $0.continuation.resume() }
     }
 }
 

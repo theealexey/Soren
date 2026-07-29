@@ -14,10 +14,8 @@ struct RecurringItemRepositoryTests {
 
     // MARK: - Helpers
 
-    private func makeRepo() throws -> (SwiftDataRecurringItemRepository, ModelContext) {
-        let container = try SorenModelContainer.inMemory()
-        let context = container.mainContext
-        return (SwiftDataRecurringItemRepository(context: context), context)
+    private func makeFixture() throws -> InMemoryPersistenceFixture {
+        try InMemoryPersistenceFixture()
     }
 
     private func makeItem(
@@ -59,11 +57,11 @@ struct RecurringItemRepositoryTests {
 
     @Test("save and fetch by ID roundtrips correctly")
     func saveAndFetchByID() throws {
-        let (repo, _) = try makeRepo()
+        let fixture = try makeFixture()
         let item = makeItem(title: "Spotify")
 
-        try repo.save(item)
-        let fetched = try repo.fetch(id: item.id)
+        try fixture.recurringItems.save(item)
+        let fetched = try fixture.recurringItems.fetch(id: item.id)
 
         #expect(fetched?.id == item.id)
         #expect(fetched?.title == "Spotify")
@@ -72,16 +70,16 @@ struct RecurringItemRepositoryTests {
 
     @Test("fetch unknown ID returns nil, not a crash")
     func fetchUnknownID() throws {
-        let (repo, _) = try makeRepo()
-        let result = try repo.fetch(id: UUID())
+        let fixture = try makeFixture()
+        let result = try fixture.recurringItems.fetch(id: UUID())
         #expect(result == nil)
     }
 
     @Test("save duplicate ID throws or silently overwrites — never corrupts")
     func saveDuplicateID() throws {
-        let (repo, _) = try makeRepo()
+        let fixture = try makeFixture()
         let item = makeItem(title: "Original")
-        try repo.save(item)
+        try fixture.recurringItems.save(item)
 
         // Saving same ID again should not leave two records
         let duplicate = RecurringItem(
@@ -93,17 +91,17 @@ struct RecurringItemRepositoryTests {
             bundleID: nil, managementURL: nil, createdAt: .now, updatedAt: .now, archivedAt: nil
         )
         // We expect either a throw or upsert — never two items with same ID
-        let _ = try? repo.save(duplicate)
-        let all = try repo.fetchAll()
+        let _ = try? fixture.recurringItems.save(duplicate)
+        let all = try fixture.recurringItems.fetchAll()
         let matching = all.filter { $0.id == item.id }
         #expect(matching.count <= 1)
     }
 
     @Test("update changes title and amount correctly")
     func updateItem() throws {
-        let (repo, _) = try makeRepo()
+        let fixture = try makeFixture()
         var item = makeItem(title: "Old Title")
-        try repo.save(item)
+        try fixture.recurringItems.save(item)
 
         item = RecurringItem(
             id: item.id, title: "New Title", providerID: nil, providerName: "New",
@@ -115,40 +113,46 @@ struct RecurringItemRepositoryTests {
             bundleID: nil, managementURL: nil, createdAt: item.createdAt,
             updatedAt: .now, archivedAt: nil
         )
-        try repo.update(item)
+        try fixture.recurringItems.update(item)
 
-        let fetched = try repo.fetch(id: item.id)
+        let fetched = try fixture.recurringItems.fetch(id: item.id)
+        let expectedAmount = try #require(
+            Decimal(
+                string: "19.99",
+                locale: Locale(identifier: "en_US_POSIX")
+            )
+        )
         #expect(fetched?.title == "New Title")
-        #expect(fetched?.amount == 19.99)
+        #expect(fetched?.amount == expectedAmount)
     }
 
     @Test("update non-existent ID throws RepositoryError.notFound")
     func updateNonExistent() throws {
-        let (repo, _) = try makeRepo()
+        let fixture = try makeFixture()
         let ghost = makeItem(title: "Ghost")
 
         #expect(throws: RepositoryError.self) {
-            try repo.update(ghost)
+            try fixture.recurringItems.update(ghost)
         }
     }
 
     @Test("delete removes item and subsequent fetch returns nil")
     func deleteItem() throws {
-        let (repo, _) = try makeRepo()
+        let fixture = try makeFixture()
         let item = makeItem()
-        try repo.save(item)
-        try repo.delete(id: item.id)
+        try fixture.recurringItems.save(item)
+        try fixture.recurringItems.delete(id: item.id)
 
-        let fetched = try repo.fetch(id: item.id)
+        let fetched = try fixture.recurringItems.fetch(id: item.id)
         #expect(fetched == nil)
     }
 
     @Test("delete non-existent ID does not throw")
     func deleteNonExistent() throws {
-        let (repo, _) = try makeRepo()
+        let fixture = try makeFixture()
         // Should not throw — idempotent delete
         #expect(throws: Never.self) {
-            try repo.delete(id: UUID())
+            try fixture.recurringItems.delete(id: UUID())
         }
     }
 
@@ -156,31 +160,31 @@ struct RecurringItemRepositoryTests {
 
     @Test("fetchActive excludes archived items")
     func fetchActiveExcludesArchived() throws {
-        let (repo, _) = try makeRepo()
-        try repo.save(makeItem(title: "Active", archived: false))
-        try repo.save(makeItem(title: "Archived", archived: true))
+        let fixture = try makeFixture()
+        try fixture.recurringItems.save(makeItem(title: "Active", archived: false))
+        try fixture.recurringItems.save(makeItem(title: "Archived", archived: true))
 
-        let active = try repo.fetchActive()
+        let active = try fixture.recurringItems.fetchActive()
         #expect(active.count == 1)
         #expect(active[0].title == "Active")
     }
 
     @Test("fetchActive excludes cancelled and paused statuses")
     func fetchActiveExcludesCancelled() throws {
-        let (repo, _) = try makeRepo()
-        try repo.save(makeItem(title: "A", status: .active))
-        try repo.save(makeItem(title: "B", status: .cancelled))
-        try repo.save(makeItem(title: "C", status: .paused))
-        try repo.save(makeItem(title: "D", status: .trial))
+        let fixture = try makeFixture()
+        try fixture.recurringItems.save(makeItem(title: "A", status: .active))
+        try fixture.recurringItems.save(makeItem(title: "B", status: .cancelled))
+        try fixture.recurringItems.save(makeItem(title: "C", status: .paused))
+        try fixture.recurringItems.save(makeItem(title: "D", status: .trial))
 
-        let active = try repo.fetchActive()
+        let active = try fixture.recurringItems.fetchActive()
         let titles = active.map(\.title).sorted()
         #expect(titles == ["A", "D"])
     }
 
     @Test("fetchUpcoming with 7 days returns only items in window")
     func fetchUpcomingWindow() throws {
-        let (repo, _) = try makeRepo()
+        let fixture = try makeFixture()
         let now = Date()
         let cal = Calendar.current
 
@@ -188,33 +192,33 @@ struct RecurringItemRepositoryTests {
         let in10 = cal.date(byAdding: .day, value: 10, to: now)!
         let yesterday = cal.date(byAdding: .day, value: -1, to: now)!
 
-        try repo.save(makeItem(title: "Tomorrow", nextCharge: tomorrow))
-        try repo.save(makeItem(title: "In10", nextCharge: in10))
-        try repo.save(makeItem(title: "Yesterday", nextCharge: yesterday))
+        try fixture.recurringItems.save(makeItem(title: "Tomorrow", nextCharge: tomorrow))
+        try fixture.recurringItems.save(makeItem(title: "In10", nextCharge: in10))
+        try fixture.recurringItems.save(makeItem(title: "Yesterday", nextCharge: yesterday))
 
-        let upcoming = try repo.fetchUpcoming(within: 7, from: now)
+        let upcoming = try fixture.recurringItems.fetchUpcoming(within: 7, from: now)
         #expect(upcoming.count == 1)
         #expect(upcoming[0].title == "Tomorrow")
     }
 
     @Test("fetchUpcoming with 0 days returns empty")
     func fetchUpcomingZeroDays() throws {
-        let (repo, _) = try makeRepo()
+        let fixture = try makeFixture()
         let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: .now)!
-        try repo.save(makeItem(nextCharge: tomorrow))
+        try fixture.recurringItems.save(makeItem(nextCharge: tomorrow))
 
-        let result = try repo.fetchUpcoming(within: 0, from: .now)
+        let result = try fixture.recurringItems.fetchUpcoming(within: 0, from: .now)
         #expect(result.isEmpty)
     }
 
     @Test("fetchByCategory returns only matching category")
     func fetchByCategory() throws {
-        let (repo, _) = try makeRepo()
-        try repo.save(makeItem(title: "Netflix", category: .video))
-        try repo.save(makeItem(title: "Spotify", category: .music))
-        try repo.save(makeItem(title: "YouTube", category: .video))
+        let fixture = try makeFixture()
+        try fixture.recurringItems.save(makeItem(title: "Netflix", category: .video))
+        try fixture.recurringItems.save(makeItem(title: "Spotify", category: .music))
+        try fixture.recurringItems.save(makeItem(title: "YouTube", category: .video))
 
-        let video = try repo.fetchByCategory(.video)
+        let video = try fixture.recurringItems.fetchByCategory(.video)
         #expect(video.count == 2)
         #expect(video.allSatisfy { $0.category == .video })
     }
@@ -223,29 +227,29 @@ struct RecurringItemRepositoryTests {
 
     @Test("saveAll then fetchAll returns all items")
     func saveAllAndFetchAll() throws {
-        let (repo, _) = try makeRepo()
+        let fixture = try makeFixture()
         let items = (0..<50).map { makeItem(title: "Item \($0)") }
 
-        try repo.saveAll(items)
-        let fetched = try repo.fetchAll()
+        try fixture.recurringItems.saveAll(items)
+        let fetched = try fixture.recurringItems.fetchAll()
         #expect(fetched.count == 50)
     }
 
     @Test("deleteAll wipes entire store")
     func deleteAll() throws {
-        let (repo, _) = try makeRepo()
-        try repo.saveAll((0..<10).map { makeItem(title: "Item \($0)") })
-        try repo.deleteAll()
+        let fixture = try makeFixture()
+        try fixture.recurringItems.saveAll((0..<10).map { makeItem(title: "Item \($0)") })
+        try fixture.recurringItems.deleteAll()
 
-        let remaining = try repo.fetchAll()
+        let remaining = try fixture.recurringItems.fetchAll()
         #expect(remaining.isEmpty)
     }
 
     @Test("saveAll with 0 items does not throw")
     func saveAllEmpty() throws {
-        let (repo, _) = try makeRepo()
+        let fixture = try makeFixture()
         #expect(throws: Never.self) {
-            try repo.saveAll([])
+            try fixture.recurringItems.saveAll([])
         }
     }
 
@@ -253,7 +257,7 @@ struct RecurringItemRepositoryTests {
 
     @Test("BillingCycle.custom roundtrips through persistence")
     func billingCycleCustomRoundtrip() throws {
-        let (repo, _) = try makeRepo()
+        let fixture = try makeFixture()
         var item = makeItem()
         item = RecurringItem(
             id: item.id, title: item.title, providerID: nil, providerName: item.providerName,
@@ -265,8 +269,8 @@ struct RecurringItemRepositoryTests {
             bundleID: nil, managementURL: nil, createdAt: item.createdAt,
             updatedAt: item.updatedAt, archivedAt: nil
         )
-        try repo.save(item)
-        let fetched = try repo.fetch(id: item.id)
+        try fixture.recurringItems.save(item)
+        let fetched = try fixture.recurringItems.fetch(id: item.id)
 
         if case .custom(let days) = fetched?.billingCycle {
             #expect(days == 45)
@@ -277,7 +281,7 @@ struct RecurringItemRepositoryTests {
 
     @Test("tags roundtrip through persistence unchanged")
     func tagsRoundtrip() throws {
-        let (repo, _) = try makeRepo()
+        let fixture = try makeFixture()
         let tags = ["annual", "family", "high-cost"]
         var item = makeItem()
         item = RecurringItem(
@@ -290,14 +294,14 @@ struct RecurringItemRepositoryTests {
             bundleID: nil, managementURL: nil, createdAt: item.createdAt,
             updatedAt: item.updatedAt, archivedAt: nil
         )
-        try repo.save(item)
-        let fetched = try repo.fetch(id: item.id)
+        try fixture.recurringItems.save(item)
+        let fetched = try fixture.recurringItems.fetch(id: item.id)
         #expect(fetched?.tags == tags)
     }
 
     @Test("managementURL roundtrips as valid URL")
     func managementURLRoundtrip() throws {
-        let (repo, _) = try makeRepo()
+        let fixture = try makeFixture()
         let url = URL(string: "https://netflix.com/account")!
         var item = makeItem()
         item = RecurringItem(
@@ -310,8 +314,8 @@ struct RecurringItemRepositoryTests {
             bundleID: nil, managementURL: url, createdAt: item.createdAt,
             updatedAt: item.updatedAt, archivedAt: nil
         )
-        try repo.save(item)
-        let fetched = try repo.fetch(id: item.id)
+        try fixture.recurringItems.save(item)
+        let fetched = try fixture.recurringItems.fetch(id: item.id)
         #expect(fetched?.managementURL == url)
     }
 }
@@ -322,9 +326,8 @@ struct RecurringItemRepositoryTests {
 @MainActor
 struct PaymentMethodRepositoryTests {
 
-    private func makeRepo() throws -> SwiftDataPaymentMethodRepository {
-        let container = try SorenModelContainer.inMemory()
-        return SwiftDataPaymentMethodRepository(context: container.mainContext)
+    private func makeFixture() throws -> InMemoryPersistenceFixture {
+        try InMemoryPersistenceFixture()
     }
 
     private func makeMethod(title: String = "Visa", isDefault: Bool = false) -> PaymentMethod {
@@ -339,44 +342,44 @@ struct PaymentMethodRepositoryTests {
 
     @Test("setDefault clears previous default")
     func setDefaultClearsPrevious() throws {
-        let repo = try makeRepo()
+        let fixture = try makeFixture()
         let first = makeMethod(title: "Visa", isDefault: true)
         let second = makeMethod(title: "Mastercard", isDefault: false)
-        try repo.save(first)
-        try repo.save(second)
+        try fixture.paymentMethods.save(first)
+        try fixture.paymentMethods.save(second)
 
-        try repo.setDefault(id: second.id)
+        try fixture.paymentMethods.setDefault(id: second.id)
 
-        let defaultMethod = try repo.fetchDefault()
+        let defaultMethod = try fixture.paymentMethods.fetchDefault()
         #expect(defaultMethod?.title == "Mastercard")
 
-        let all = try repo.fetchAll()
+        let all = try fixture.paymentMethods.fetchAll()
         let defaults = all.filter(\.isDefault)
         #expect(defaults.count == 1)
     }
 
     @Test("setDefault on unknown ID throws notFound")
     func setDefaultUnknown() throws {
-        let repo = try makeRepo()
+        let fixture = try makeFixture()
         #expect(throws: RepositoryError.self) {
-            try repo.setDefault(id: UUID())
+            try fixture.paymentMethods.setDefault(id: UUID())
         }
     }
 
     @Test("fetchDefault returns nil when no methods exist")
     func fetchDefaultEmpty() throws {
-        let repo = try makeRepo()
-        let result = try repo.fetchDefault()
+        let fixture = try makeFixture()
+        let result = try fixture.paymentMethods.fetchDefault()
         #expect(result == nil)
     }
 
     @Test("delete removes method from fetchAll")
     func deleteMethod() throws {
-        let repo = try makeRepo()
+        let fixture = try makeFixture()
         let method = makeMethod()
-        try repo.save(method)
-        try repo.delete(id: method.id)
-        let all = try repo.fetchAll()
+        try fixture.paymentMethods.save(method)
+        try fixture.paymentMethods.delete(id: method.id)
+        let all = try fixture.paymentMethods.fetchAll()
         #expect(all.isEmpty)
     }
 }

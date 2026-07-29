@@ -16,12 +16,27 @@ struct SaveRecurringItemNotificationTests {
 
     // MARK: - Fixtures
 
-    private func makeUseCase(
-        mock: MockNotificationScheduler
-    ) throws -> SaveRecurringItem {
-        let container = try SorenModelContainer.inMemory()
-        let repo = SwiftDataRecurringItemRepository(context: container.mainContext)
-        return SaveRecurringItem(repository: repo, notificationScheduler: mock)
+    @MainActor
+    private struct Fixture {
+        let persistence: InMemoryPersistenceFixture
+        let scheduler: MockNotificationScheduler
+        let useCase: SaveRecurringItem
+
+        init() throws {
+            let persistence = try InMemoryPersistenceFixture()
+            let scheduler = MockNotificationScheduler()
+
+            self.persistence = persistence
+            self.scheduler = scheduler
+            self.useCase = SaveRecurringItem(
+                repository: persistence.recurringItems,
+                notificationScheduler: scheduler
+            )
+        }
+    }
+
+    private func makeFixture() throws -> Fixture {
+        try Fixture()
     }
 
     private func validItem(title: String = "Spotify") -> RecurringItem {
@@ -36,25 +51,23 @@ struct SaveRecurringItemNotificationTests {
 
     @Test("Successful save triggers schedule(for:) with the saved item")
     func schedulesFiredOnSuccess() async throws {
-        let mock = MockNotificationScheduler()
-        let uc   = try makeUseCase(mock: mock)
+        let fixture = try makeFixture()
 
         let item = validItem()
-        try uc.execute(item)
-        await Task.yield()
+        try fixture.useCase.execute(item)
+        await fixture.scheduler.waitUntilScheduled(count: 1)
 
-        #expect(mock.scheduledIDs.contains(item.id))
+        #expect(fixture.scheduler.scheduledIDs.contains(item.id))
     }
 
     @Test("Successful save triggers schedule exactly once")
     func scheduledExactlyOnce() async throws {
-        let mock = MockNotificationScheduler()
-        let uc   = try makeUseCase(mock: mock)
+        let fixture = try makeFixture()
 
-        try uc.execute(validItem())
-        await Task.yield()
+        try fixture.useCase.execute(validItem())
+        await fixture.scheduler.waitUntilScheduled(count: 1)
 
-        #expect(mock.scheduledIDs.count == 1)
+        #expect(fixture.scheduler.scheduledIDs.count == 1)
     }
 
     @Test("Scheduler is not called when notificationScheduler is nil")
@@ -77,8 +90,7 @@ struct SaveRecurringItemNotificationTests {
 
     @Test("Empty title validation failure does not schedule")
     func emptyTitleNoSchedule() async throws {
-        let mock = MockNotificationScheduler()
-        let uc   = try makeUseCase(mock: mock)
+        let fixture = try makeFixture()
 
         let item = RecurringItem(
             title: "   ",
@@ -87,17 +99,16 @@ struct SaveRecurringItemNotificationTests {
         )
 
         #expect(throws: SaveRecurringItem.ValidationError.emptyTitle) {
-            try uc.execute(item)
+            try fixture.useCase.execute(item)
         }
         await Task.yield()
 
-        #expect(mock.scheduledIDs.isEmpty)
+        #expect(fixture.scheduler.scheduledIDs.isEmpty)
     }
 
     @Test("Zero amount validation failure does not schedule")
     func zeroAmountNoSchedule() async throws {
-        let mock = MockNotificationScheduler()
-        let uc   = try makeUseCase(mock: mock)
+        let fixture = try makeFixture()
 
         let item = RecurringItem(
             title: "Spotify",
@@ -106,17 +117,16 @@ struct SaveRecurringItemNotificationTests {
         )
 
         #expect(throws: SaveRecurringItem.ValidationError.invalidAmount) {
-            try uc.execute(item)
+            try fixture.useCase.execute(item)
         }
         await Task.yield()
 
-        #expect(mock.scheduledIDs.isEmpty)
+        #expect(fixture.scheduler.scheduledIDs.isEmpty)
     }
 
     @Test("End-date-before-next-charge validation failure does not schedule")
     func endDateBeforeChargeNoSchedule() async throws {
-        let mock = MockNotificationScheduler()
-        let uc   = try makeUseCase(mock: mock)
+        let fixture = try makeFixture()
 
         let nextCharge = Calendar.current.date(byAdding: .day, value: 10, to: .now)!
         let endDate    = Calendar.current.date(byAdding: .day, value: 5,  to: .now)!  // before nextCharge
@@ -130,11 +140,11 @@ struct SaveRecurringItemNotificationTests {
         )
 
         #expect(throws: SaveRecurringItem.ValidationError.endDateBeforeNextCharge) {
-            try uc.execute(item)
+            try fixture.useCase.execute(item)
         }
         await Task.yield()
 
-        #expect(mock.scheduledIDs.isEmpty)
+        #expect(fixture.scheduler.scheduledIDs.isEmpty)
     }
 
     // MARK: - Normalization happens before both persistence and scheduling

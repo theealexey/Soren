@@ -431,30 +431,29 @@ struct HomeViewModelTests {
 @MainActor
 struct GetDashboardSummaryTests {
 
-    private func makeRepo() throws -> SwiftDataRecurringItemRepository {
-        let container = try SorenModelContainer.inMemory()
-        return SwiftDataRecurringItemRepository(context: container.mainContext)
+    private func makeFixture() throws -> InMemoryPersistenceFixture {
+        try InMemoryPersistenceFixture()
     }
 
     @Test("Empty repo returns empty summary")
     func emptyReturnsEmpty() throws {
-        let repo = try makeRepo()
-        let items = try repo.fetchActive()
+        let fixture = try makeFixture()
+        let items = try fixture.recurringItems.fetchActive()
         let summary = GetDashboardSummary().execute(items: items)
         #expect(summary == .empty)
     }
 
     @Test("Yearly projection is exactly 12x monthly")
     func yearlyIs12xMonthly() throws {
-        let repo = try makeRepo()
+        let fixture = try makeFixture()
         let item = RecurringItem(
             title: "Test",
             amount: 333,
             nextChargeDate: .now
         )
-        try repo.save(item)
+        try fixture.recurringItems.save(item)
 
-        let items = try repo.fetchActive()
+        let items = try fixture.recurringItems.fetchActive()
         let summary = GetDashboardSummary().execute(items: items)
         #expect(summary.yearlyProjection == summary.monthlyTotal * 12)
     }
@@ -464,14 +463,13 @@ struct GetDashboardSummaryTests {
 @MainActor
 struct GetUpcomingChargesTests {
 
-    private func makeRepo() throws -> SwiftDataRecurringItemRepository {
-        let container = try SorenModelContainer.inMemory()
-        return SwiftDataRecurringItemRepository(context: container.mainContext)
+    private func makeFixture() throws -> InMemoryPersistenceFixture {
+        try InMemoryPersistenceFixture()
     }
 
     @Test("Custom day window works")
     func customDayWindow() throws {
-        let repo = try makeRepo()
+        let fixture = try makeFixture()
 
         let day3 = RecurringItem(
             title: "Day3",
@@ -484,28 +482,34 @@ struct GetUpcomingChargesTests {
             nextChargeDate: Calendar.current.date(byAdding: .day, value: 10, to: .now)!
         )
 
-        try repo.save(day3)
-        try repo.save(day10)
+        try fixture.recurringItems.save(day3)
+        try fixture.recurringItems.save(day10)
 
-        let within5 = try GetUpcomingCharges(repository: repo).execute(days: 5)
+        let within5 = try GetUpcomingCharges(
+            repository: fixture.recurringItems
+        ).execute(days: 5)
         #expect(within5.count == 1)
         #expect(within5.first?.title == "Day3")
 
-        let within15 = try GetUpcomingCharges(repository: repo).execute(days: 15)
+        let within15 = try GetUpcomingCharges(
+            repository: fixture.recurringItems
+        ).execute(days: 15)
         #expect(within15.count == 2)
     }
 
     @Test("Zero day window returns nothing")
     func zeroDayWindow() throws {
-        let repo = try makeRepo()
+        let fixture = try makeFixture()
         let item = RecurringItem(
             title: "Tomorrow",
             amount: 100,
             nextChargeDate: Calendar.current.date(byAdding: .day, value: 1, to: .now)!
         )
-        try repo.save(item)
+        try fixture.recurringItems.save(item)
 
-        let result = try GetUpcomingCharges(repository: repo).execute(days: 0)
+        let result = try GetUpcomingCharges(
+            repository: fixture.recurringItems
+        ).execute(days: 0)
         #expect(result.isEmpty)
     }
 }
@@ -514,14 +518,13 @@ struct GetUpcomingChargesTests {
 @MainActor
 struct GetActiveTrialsTests {
 
-    private func makeRepo() throws -> SwiftDataRecurringItemRepository {
-        let container = try SorenModelContainer.inMemory()
-        return SwiftDataRecurringItemRepository(context: container.mainContext)
+    private func makeFixture() throws -> InMemoryPersistenceFixture {
+        try InMemoryPersistenceFixture()
     }
 
     @Test("Only trial status with future trialEndDate qualifies")
     func onlyActiveTrials() throws {
-        let repo = try makeRepo()
+        let fixture = try makeFixture()
 
         // Active trial — should appear
         let good = RecurringItem(
@@ -550,11 +553,13 @@ struct GetActiveTrialsTests {
             status: .active
         )
 
-        try repo.save(good)
-        try repo.save(expired)
-        try repo.save(notTrial)
+        try fixture.recurringItems.save(good)
+        try fixture.recurringItems.save(expired)
+        try fixture.recurringItems.save(notTrial)
 
-        let result = try GetActiveTrials(repository: repo).execute()
+        let result = try GetActiveTrials(
+            repository: fixture.recurringItems
+        ).execute()
         #expect(result.count == 1)
         #expect(result.first?.title == "Good Trial")
     }
