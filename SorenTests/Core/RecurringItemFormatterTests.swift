@@ -38,19 +38,19 @@ struct RecurringItemFormatterTests {
         #expect(RecurringItemFormatter.cycleLabel(for: .annual) == .yearly)
 
         if case .custom(let text) = RecurringItemFormatter.cycleLabel(for: .quarterly) {
-            #expect(text == "кв")
+            #expect(text == String(localized: "кв"))
         } else {
             Issue.record("Quarterly should produce .custom")
         }
 
         if case .custom(let text) = RecurringItemFormatter.cycleLabel(for: .semiannual) {
-            #expect(text == "п/г")
+            #expect(text == String(localized: "п/г"))
         } else {
             Issue.record("Semiannual should produce .custom")
         }
 
         if case .custom(let text) = RecurringItemFormatter.cycleLabel(for: .custom(days: 14)) {
-            #expect(text == "14д")
+            #expect(text == String(localized: "\(14)д"))
         } else {
             Issue.record("Custom(14) should produce .custom")
         }
@@ -59,7 +59,7 @@ struct RecurringItemFormatterTests {
     @Test("cycleLabel custom with 1 day")
     func cycleLabelSingleDay() {
         if case .custom(let text) = RecurringItemFormatter.cycleLabel(for: .custom(days: 1)) {
-            #expect(text == "1д")
+            #expect(text == String(localized: "\(1)д"))
         } else {
             Issue.record("Custom(1) should produce .custom")
         }
@@ -103,30 +103,37 @@ struct RecurringItemFormatterTests {
     // MARK: - chargeSubtitle
 
     @Test("chargeSubtitle handles edge days correctly")
-    func chargeSubtitleEdgeCases() {
-        let cal = Calendar.current
-        let todayNoon = cal.date(bySettingHour: 12, minute: 0, second: 0, of: .now)!
+    func chargeSubtitleEdgeCases() throws {
+        let now = Date.now
 
-        let today = makeItem(nextCharge: todayNoon)
+        let today = makeItem(nextCharge: now)
         let todaySubtitle = RecurringItemFormatter.chargeSubtitle(for: today)
-        #expect(!todaySubtitle.contains("Просрочено"))
+        #expect(todaySubtitle == String(localized: "Списание сегодня"))
 
-        let overdue = makeItem(nextCharge: cal.date(byAdding: .day, value: -3, to: todayNoon))
-        let subtitle = RecurringItemFormatter.chargeSubtitle(for: overdue)
-        #expect(subtitle.contains("Просрочено"))
+        let overdue = makeItem(
+            status: .paused,
+            nextCharge: now.addingTimeInterval(-10 * 24 * 60 * 60)
+        )
+        let overdueSubtitle = RecurringItemFormatter.chargeSubtitle(for: overdue)
+        let overdueDays = try #require(
+            Calendar.current.dateComponents([.day], from: Date.now, to: overdue.nextChargeDate).day
+        )
+        #expect(overdueSubtitle == String(localized: "Дата списания была \(abs(overdueDays)) дн. назад"))
 
-        let future = makeItem(nextCharge: cal.date(byAdding: .day, value: 10, to: todayNoon))
+        let future = makeItem(nextCharge: now.addingTimeInterval(10 * 24 * 60 * 60 + 12 * 60 * 60))
         let futureSubtitle = RecurringItemFormatter.chargeSubtitle(for: future)
-        #expect(futureSubtitle.contains("Через"))
+        let futureDays = try #require(
+            Calendar.current.dateComponents([.day], from: Date.now, to: future.nextChargeDate).day
+        )
+        #expect(futureSubtitle == String(localized: "Через \(futureDays) дн."))
     }
 
-    @Test("chargeSubtitle for tomorrow")
+    @Test("chargeSubtitle uses tomorrow label for one full day remaining")
     func chargeSubtitleTomorrow() {
-        let cal = Calendar.current
-        let tomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: .now).addingTimeInterval(43200))!
+        let tomorrow = Date.now.addingTimeInterval(36 * 60 * 60)
         let item = makeItem(nextCharge: tomorrow)
         let subtitle = RecurringItemFormatter.chargeSubtitle(for: item)
-        #expect(subtitle.contains("завтра") || subtitle.contains("Через"))
+        #expect(subtitle == String(localized: "Списание завтра"))
     }
 
     // MARK: - subtitle (full status handling)
@@ -134,13 +141,13 @@ struct RecurringItemFormatterTests {
     @Test("subtitle handles all statuses")
     func subtitleAllStatuses() {
         let cancelled = makeItem(status: .cancelled)
-        #expect(RecurringItemFormatter.subtitle(for: cancelled) == "Отменена")
+        #expect(RecurringItemFormatter.subtitle(for: cancelled) == String(localized: "Отменена"))
 
         let paused = makeItem(status: .paused)
-        #expect(RecurringItemFormatter.subtitle(for: paused) == "На паузе")
+        #expect(RecurringItemFormatter.subtitle(for: paused) == String(localized: "На паузе"))
 
         let archived = makeItem(status: .archived)
-        #expect(RecurringItemFormatter.subtitle(for: archived) == "В архиве")
+        #expect(RecurringItemFormatter.subtitle(for: archived) == String(localized: "В архиве"))
 
         let active = makeItem(status: .active)
         let activeSubtitle = RecurringItemFormatter.subtitle(for: active)
@@ -152,32 +159,31 @@ struct RecurringItemFormatterTests {
     @Test("trialSubtitle handles nil and edge cases")
     func trialSubtitleEdgeCases() {
         let noTrial = makeItem(status: .active)
-        #expect(RecurringItemFormatter.trialSubtitle(for: noTrial) == "Пробный период")
+        #expect(RecurringItemFormatter.trialSubtitle(for: noTrial) == String(localized: "Пробный период"))
 
         let endingToday = makeItem(
             status: .trial,
-            trialEndDate: Calendar.current.startOfDay(for: .now)
+            trialEndDate: Date.now.addingTimeInterval(12 * 60 * 60)
         )
         let todaySubtitle = RecurringItemFormatter.trialSubtitle(for: endingToday)
-        #expect(todaySubtitle.contains("Пробный период"))
+        #expect(todaySubtitle == String(localized: "Пробный период заканчивается сегодня"))
 
         let manyDays = makeItem(
             status: .trial,
-            trialEndDate: Calendar.current.date(byAdding: .day, value: 30, to: .now)
+            trialEndDate: Date.now.addingTimeInterval(30 * 24 * 60 * 60 + 12 * 60 * 60)
         )
         let manySubtitle = RecurringItemFormatter.trialSubtitle(for: manyDays)
-        #expect(manySubtitle.contains("Осталось"))
-        #expect(manySubtitle.contains("дн."))
+        #expect(manySubtitle == String(localized: "Осталось \(30) дн."))
     }
 
-    @Test("trialSubtitle 1 day left")
+    @Test("trialSubtitle uses one-day label with one full day remaining")
     func trialSubtitleOneDay() {
         let item = makeItem(
             status: .trial,
-            trialEndDate: Calendar.current.date(byAdding: .day, value: 1, to: .now)
+            trialEndDate: Date.now.addingTimeInterval(36 * 60 * 60)
         )
         let subtitle = RecurringItemFormatter.trialSubtitle(for: item)
-        #expect(subtitle.contains("1 день") || subtitle.contains("Пробный период"))
+        #expect(subtitle == String(localized: "Остался 1 день"))
     }
 
     // MARK: - trialSeverity

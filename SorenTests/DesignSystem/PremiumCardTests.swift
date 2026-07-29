@@ -38,11 +38,12 @@ struct PremiumCardTests {
         #expect(PremiumCard<EmptyView>.Style.elevated != .glass)
     }
 
-    @Test("Tinted with different colors still considered equal — design decision")
+    @Test("Tinted equality includes the color payload")
     func tintedEquality() {
-        let a = PremiumCard<EmptyView>.Style.tinted(.red)
-        let b = PremiumCard<EmptyView>.Style.tinted(.blue)
-        #expect(a == b)
+        let red = PremiumCard<EmptyView>.Style.tinted(.red)
+        let blue = PremiumCard<EmptyView>.Style.tinted(.blue)
+        #expect(red == .tinted(.red))
+        #expect(red != blue)
     }
 
     @Test("Tinted != Standard")

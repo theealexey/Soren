@@ -7,11 +7,16 @@ struct RecurringItemTests {
 
     // MARK: - Monthly Equivalent
 
-    @Test("Monthly equivalent for weekly billing is ~4.33x weekly amount")
-    func monthlyEquivalentWeekly() {
+    @Test("Monthly equivalent for weekly billing uses the 4.333 multiplier")
+    func monthlyEquivalentWeekly() throws {
         let item = RecurringItem.stub(amount: 100, cycle: .weekly)
-        // 100 * 4.33 = 433
-        #expect(item.monthlyEquivalent == Decimal(string: "433")!)
+        let expectedAmount = try #require(
+            Decimal(
+                string: "433.3",
+                locale: Locale(identifier: "en_US_POSIX")
+            )
+        )
+        #expect(item.monthlyEquivalent == expectedAmount)
     }
 
     @Test("Monthly equivalent for monthly billing equals amount exactly")
