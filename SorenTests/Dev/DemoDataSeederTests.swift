@@ -25,33 +25,47 @@ struct DemoDataSeederTests {
 
     private static let cal = Calendar.current
 
-    /// Creates an isolated seeder + repository pair backed by an in-memory store.
-    private func makeSeeder() throws -> (seeder: DemoDataSeeder, repo: any RecurringItemRepository) {
-        let mc   = try SorenModelContainer.inMemory()
-        let repos = RepositoryContainer(context: mc.mainContext)
-        let seeder = DemoDataSeeder(
-            repositories: repos,
-            preferences: UserPreferencesRepository()
+    /// Retains the in-memory container for the full lifetime of each test.
+    @MainActor
+    private struct Fixture {
+        let modelContainer: ModelContainer
+        let repositories: RepositoryContainer
+        let seeder: DemoDataSeeder
+
+        var repo: any RecurringItemRepository {
+            repositories.recurringItems
+        }
+    }
+
+    private func makeFixture() throws -> Fixture {
+        let modelContainer = try SorenModelContainer.inMemory()
+        let repositories = RepositoryContainer(context: modelContainer.mainContext)
+        return Fixture(
+            modelContainer: modelContainer,
+            repositories: repositories,
+            seeder: DemoDataSeeder(
+                repositories: repositories,
+                preferences: UserPreferencesRepository()
+            )
         )
-        return (seeder, repos.recurringItems)
     }
 
     // MARK: - Count
 
     @Test("seed() inserts exactly 15 items")
     func seedCreatesExpectedCount() throws {
-        let (seeder, repo) = try makeSeeder()
-        try seeder.seed(relativeTo: Self.refDate)
-        #expect(try repo.fetchAll().count == 15)
+        let fixture = try makeFixture()
+        try fixture.seeder.seed(relativeTo: Self.refDate)
+        #expect(try fixture.repo.fetchAll().count == 15)
     }
 
     // MARK: - Tag
 
     @Test("every seeded item carries the demo tag")
     func allSeededItemsHaveDemoTag() throws {
-        let (seeder, repo) = try makeSeeder()
-        try seeder.seed(relativeTo: Self.refDate)
-        let all = try repo.fetchAll()
+        let fixture = try makeFixture()
+        try fixture.seeder.seed(relativeTo: Self.refDate)
+        let all = try fixture.repo.fetchAll()
         #expect(all.allSatisfy { $0.tags.contains(DemoDataSeeder.demoTag) })
     }
 
@@ -59,25 +73,25 @@ struct DemoDataSeederTests {
 
     @Test("calling seed() twice still yields exactly 15 items")
     func seedIsIdempotent() throws {
-        let (seeder, repo) = try makeSeeder()
-        try seeder.seed(relativeTo: Self.refDate)
-        try seeder.seed(relativeTo: Self.refDate)  // second call must be a no-op
-        #expect(try repo.fetchAll().count == 15)
+        let fixture = try makeFixture()
+        try fixture.seeder.seed(relativeTo: Self.refDate)
+        try fixture.seeder.seed(relativeTo: Self.refDate)  // second call must be a no-op
+        #expect(try fixture.repo.fetchAll().count == 15)
     }
 
     // MARK: - Clear
 
     @Test("clear() removes all demo-tagged items")
     func clearRemovesDemoItems() throws {
-        let (seeder, repo) = try makeSeeder()
-        try seeder.seed(relativeTo: Self.refDate)
-        try seeder.clear()
-        #expect(try repo.fetchAll().isEmpty)
+        let fixture = try makeFixture()
+        try fixture.seeder.seed(relativeTo: Self.refDate)
+        try fixture.seeder.clear()
+        #expect(try fixture.repo.fetchAll().isEmpty)
     }
 
     @Test("clear() does not remove items without the demo tag")
     func clearDoesNotRemoveRealItems() throws {
-        let (seeder, repo) = try makeSeeder()
+        let fixture = try makeFixture()
 
         // Plant a real user item (no demo tag)
         let real = RecurringItem(
@@ -89,12 +103,12 @@ struct DemoDataSeederTests {
             startDate: Self.refDate,
             nextChargeDate: Self.cal.date(byAdding: .month, value: 1, to: Self.refDate)!
         )
-        try repo.save(real)
+        try fixture.repo.save(real)
 
-        try seeder.seed(relativeTo: Self.refDate)
-        try seeder.clear()
+        try fixture.seeder.seed(relativeTo: Self.refDate)
+        try fixture.seeder.clear()
 
-        let remaining = try repo.fetchAll()
+        let remaining = try fixture.repo.fetchAll()
         #expect(remaining.count == 1)
         #expect(remaining.first?.title == "My Subscription")
     }
@@ -103,33 +117,33 @@ struct DemoDataSeederTests {
 
     @Test("isDemoDataPresent is false before seeding")
     func isDemoDataPresentFalseInitially() throws {
-        let (seeder, _) = try makeSeeder()
-        #expect(!seeder.isDemoDataPresent)
+        let fixture = try makeFixture()
+        #expect(!fixture.seeder.isDemoDataPresent)
     }
 
     @Test("isDemoDataPresent is true after seeding")
     func isDemoDataPresentTrueAfterSeed() throws {
-        let (seeder, _) = try makeSeeder()
-        try seeder.seed(relativeTo: Self.refDate)
-        #expect(seeder.isDemoDataPresent)
+        let fixture = try makeFixture()
+        try fixture.seeder.seed(relativeTo: Self.refDate)
+        #expect(fixture.seeder.isDemoDataPresent)
     }
 
     @Test("isDemoDataPresent is false after seeding then clearing")
     func isDemoDataPresentFalseAfterClear() throws {
-        let (seeder, _) = try makeSeeder()
-        try seeder.seed(relativeTo: Self.refDate)
-        try seeder.clear()
-        #expect(!seeder.isDemoDataPresent)
+        let fixture = try makeFixture()
+        try fixture.seeder.seed(relativeTo: Self.refDate)
+        try fixture.seeder.clear()
+        #expect(!fixture.seeder.isDemoDataPresent)
     }
 
     // MARK: - Relative Dates
 
     @Test("YouTube Premium nextChargeDate is exactly T+1 from reference date")
     func youTubeDateIsRelativeToReferenceDate() throws {
-        let (seeder, repo) = try makeSeeder()
-        try seeder.seed(relativeTo: Self.refDate)
+        let fixture = try makeFixture()
+        try fixture.seeder.seed(relativeTo: Self.refDate)
 
-        let all    = try repo.fetchAll()
+        let all    = try fixture.repo.fetchAll()
         let item   = try #require(all.first { $0.providerID == "youtube_premium" })
         let today  = Self.cal.startOfDay(for: Self.refDate)
         let expected = Self.cal.date(byAdding: .day, value: 1, to: today)!
@@ -138,20 +152,20 @@ struct DemoDataSeederTests {
 
     @Test("X Premium nextChargeDate is in the past relative to reference date")
     func overdueDateIsBeforeReferenceDate() throws {
-        let (seeder, repo) = try makeSeeder()
-        try seeder.seed(relativeTo: Self.refDate)
+        let fixture = try makeFixture()
+        try fixture.seeder.seed(relativeTo: Self.refDate)
 
-        let all  = try repo.fetchAll()
+        let all  = try fixture.repo.fetchAll()
         let item = try #require(all.first { $0.providerID == "x_premium" })
         #expect(item.nextChargeDate < Self.refDate)
     }
 
     @Test("Boosty nextChargeDate equals start of the reference day")
     func dueTodayDateEqualsStartOfReferenceDay() throws {
-        let (seeder, repo) = try makeSeeder()
-        try seeder.seed(relativeTo: Self.refDate)
+        let fixture = try makeFixture()
+        try fixture.seeder.seed(relativeTo: Self.refDate)
 
-        let all    = try repo.fetchAll()
+        let all    = try fixture.repo.fetchAll()
         let item   = try #require(all.first { $0.providerID == "boosty" })
         let today  = Self.cal.startOfDay(for: Self.refDate)
         #expect(item.nextChargeDate == today)
@@ -159,10 +173,10 @@ struct DemoDataSeederTests {
 
     @Test("NordVPN nextChargeDate falls in the calendar month after the reference date")
     func nordVpnChargeIsInNextMonth() throws {
-        let (seeder, repo) = try makeSeeder()
-        try seeder.seed(relativeTo: Self.refDate)
+        let fixture = try makeFixture()
+        try fixture.seeder.seed(relativeTo: Self.refDate)
 
-        let all  = try repo.fetchAll()
+        let all  = try fixture.repo.fetchAll()
         let item = try #require(all.first { $0.providerID == "nordvpn" })
         let refMonth  = Self.cal.component(.month, from: Self.refDate)
         let itemMonth = Self.cal.component(.month, from: item.nextChargeDate)
@@ -173,42 +187,42 @@ struct DemoDataSeederTests {
 
     @Test("X Premium has status .overdue")
     func xPremiumIsOverdue() throws {
-        let (seeder, repo) = try makeSeeder()
-        try seeder.seed(relativeTo: Self.refDate)
-        let item = try #require(try repo.fetchAll().first { $0.providerID == "x_premium" })
+        let fixture = try makeFixture()
+        try fixture.seeder.seed(relativeTo: Self.refDate)
+        let item = try #require(try fixture.repo.fetchAll().first { $0.providerID == "x_premium" })
         #expect(item.status == .overdue)
     }
 
     @Test("Boosty has status .dueToday")
     func boostyIsDueToday() throws {
-        let (seeder, repo) = try makeSeeder()
-        try seeder.seed(relativeTo: Self.refDate)
-        let item = try #require(try repo.fetchAll().first { $0.providerID == "boosty" })
+        let fixture = try makeFixture()
+        try fixture.seeder.seed(relativeTo: Self.refDate)
+        let item = try #require(try fixture.repo.fetchAll().first { $0.providerID == "boosty" })
         #expect(item.status == .dueToday)
     }
 
     @Test("ChatGPT Plus has status .trial and a non-nil trialEndDate")
     func chatGptHasTrialEndDate() throws {
-        let (seeder, repo) = try makeSeeder()
-        try seeder.seed(relativeTo: Self.refDate)
-        let item = try #require(try repo.fetchAll().first { $0.providerID == "chatgpt_plus" })
+        let fixture = try makeFixture()
+        try fixture.seeder.seed(relativeTo: Self.refDate)
+        let item = try #require(try fixture.repo.fetchAll().first { $0.providerID == "chatgpt_plus" })
         #expect(item.status == .trial)
         #expect(item.trialEndDate != nil)
     }
 
     @Test("Notion has usageStatus .unused")
     func notionIsUnused() throws {
-        let (seeder, repo) = try makeSeeder()
-        try seeder.seed(relativeTo: Self.refDate)
-        let item = try #require(try repo.fetchAll().first { $0.providerID == "notion" })
+        let fixture = try makeFixture()
+        try fixture.seeder.seed(relativeTo: Self.refDate)
+        let item = try #require(try fixture.repo.fetchAll().first { $0.providerID == "notion" })
         #expect(item.usageStatus == .unused)
     }
 
     @Test("NordVPN has billingCycle .annual")
     func nordVpnIsAnnual() throws {
-        let (seeder, repo) = try makeSeeder()
-        try seeder.seed(relativeTo: Self.refDate)
-        let item = try #require(try repo.fetchAll().first { $0.providerID == "nordvpn" })
+        let fixture = try makeFixture()
+        try fixture.seeder.seed(relativeTo: Self.refDate)
+        let item = try #require(try fixture.repo.fetchAll().first { $0.providerID == "nordvpn" })
         #expect(item.billingCycle == .annual)
     }
 
@@ -216,9 +230,9 @@ struct DemoDataSeederTests {
 
     @Test("dataset contains at least one item for each of RUB, USD, EUR, TRY")
     func datasetHasMixedCurrencies() throws {
-        let (seeder, repo) = try makeSeeder()
-        try seeder.seed(relativeTo: Self.refDate)
-        let currencies = Set(try repo.fetchAll().map(\.currencyCode))
+        let fixture = try makeFixture()
+        try fixture.seeder.seed(relativeTo: Self.refDate)
+        let currencies = Set(try fixture.repo.fetchAll().map(\.currencyCode))
         #expect(currencies.contains("RUB"))
         #expect(currencies.contains("USD"))
         #expect(currencies.contains("EUR"))
