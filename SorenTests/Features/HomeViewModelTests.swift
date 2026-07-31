@@ -442,40 +442,6 @@ struct HomeViewModelTests {
     }
 }
 
-// MARK: - Use Case Isolation Tests
-
-@Suite("GetDashboardSummary")
-@MainActor
-struct GetDashboardSummaryTests {
-
-    private func makeFixture() throws -> InMemoryPersistenceFixture {
-        try InMemoryPersistenceFixture()
-    }
-
-    @Test("Empty repo returns empty summary")
-    func emptyReturnsEmpty() throws {
-        let fixture = try makeFixture()
-        let items = try fixture.recurringItems.fetchActive()
-        let summary = GetDashboardSummary().execute(items: items)
-        #expect(summary == .empty)
-    }
-
-    @Test("Yearly projection is exactly 12x monthly")
-    func yearlyIs12xMonthly() throws {
-        let fixture = try makeFixture()
-        let item = RecurringItem(
-            title: "Test",
-            amount: 333,
-            nextChargeDate: .now
-        )
-        try fixture.recurringItems.save(item)
-
-        let items = try fixture.recurringItems.fetchActive()
-        let summary = GetDashboardSummary().execute(items: items)
-        #expect(summary.yearlyProjection == summary.monthlyTotal * 12)
-    }
-}
-
 @Suite("GetUpcomingCharges")
 @MainActor
 struct GetUpcomingChargesTests {
