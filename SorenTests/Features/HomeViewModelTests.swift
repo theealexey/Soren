@@ -14,15 +14,30 @@ struct HomeViewModelTests {
 
     // MARK: - Helpers
 
-    private func makeRepo() throws -> SwiftDataRecurringItemRepository {
-        let container = try SorenModelContainer.inMemory()
-        return SwiftDataRecurringItemRepository(context: container.mainContext)
+    @MainActor
+    private struct Fixture {
+        let persistence: InMemoryPersistenceFixture
+        let repository: SwiftDataRecurringItemRepository
+
+        init() throws {
+            let persistence = try InMemoryPersistenceFixture()
+            self.persistence = persistence
+            self.repository = persistence.recurringItems
+        }
+
+        func save(_ item: RecurringItem) throws {
+            try repository.save(item)
+        }
     }
 
-    private func makeViewModel(repo: SwiftDataRecurringItemRepository) -> HomeViewModel {
+    private func makeRepo() throws -> Fixture {
+        try Fixture()
+    }
+
+    private func makeViewModel(repo: Fixture) -> HomeViewModel {
         HomeViewModel(
-            getUpcomingCharges: GetUpcomingCharges(repository: repo),
-            getActiveTrials: GetActiveTrials(repository: repo),
+            getUpcomingCharges: GetUpcomingCharges(repository: repo.repository),
+            getActiveTrials: GetActiveTrials(repository: repo.repository),
             preferences: UserPreferencesRepository(),
             exchangeRateProvider: StaticExchangeRateProvider()
         )
@@ -62,7 +77,9 @@ struct HomeViewModelTests {
         #expect(!vm.hasError)
         #expect(vm.landscapePoints.count == 30)
         #expect(vm.landscapePoints.allSatisfy { $0.chargeCount == 0 })
-        #expect(vm.insights.isEmpty)
+        #expect(vm.insights.count == 1)
+        #expect(vm.insights.first?.id == .quiet)
+        #expect(vm.insights.first?.amount == nil)
         #expect(vm.upcomingCharges.isEmpty)
     }
 
