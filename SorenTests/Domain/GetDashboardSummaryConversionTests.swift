@@ -12,17 +12,51 @@ import SwiftData
 @MainActor
 struct GetDashboardSummaryConversionTests {
 
-    private func makeRepo() throws -> SwiftDataRecurringItemRepository {
-        let container = try SorenModelContainer.inMemory()
-        return SwiftDataRecurringItemRepository(context: container.mainContext)
+    @MainActor
+    private struct Fixture {
+        private static let posixLocale = Locale(identifier: "en_US_POSIX")
+
+        let persistence: InMemoryPersistenceFixture
+        let repository: SwiftDataRecurringItemRepository
+        let rates: ExchangeRates
+
+        init() throws {
+            let persistence = try InMemoryPersistenceFixture()
+            self.persistence = persistence
+            self.repository = persistence.recurringItems
+            self.rates = ExchangeRates(
+                base: "USD",
+                date: .now,
+                rates: [
+                    "RUB": try Self.decimal("87.5"),
+                    "EUR": try Self.decimal("0.92"),
+                    "GBP": try Self.decimal("0.79"),
+                    "TRY": try Self.decimal("38.2")
+                ],
+                fetchedAt: .now
+            )
+        }
+
+        func save(_ item: RecurringItem) throws {
+            try repository.save(item)
+        }
+
+        func fetchActive() throws -> [RecurringItem] {
+            try repository.fetchActive()
+        }
+
+        func decimal(_ value: String) throws -> Decimal {
+            try Self.decimal(value)
+        }
+
+        private static func decimal(_ value: String) throws -> Decimal {
+            try #require(Decimal(string: value, locale: posixLocale))
+        }
     }
 
-    private let rates = ExchangeRates(
-        base: "USD",
-        date: .now,
-        rates: ["RUB": 87.5, "EUR": 0.92, "GBP": 0.79, "TRY": 38.2],
-        fetchedAt: .now
-    )
+    private func makeRepo() throws -> Fixture {
+        try Fixture()
+    }
 
     private func makeItem(
         amount: Decimal,
@@ -47,7 +81,7 @@ struct GetDashboardSummaryConversionTests {
         try repo.save(makeItem(amount: 200, currency: "RUB"))
 
         let items = try repo.fetchActive()
-        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: rates)
+        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: repo.rates)
 
         #expect(summary.monthlyTotal == 300)
         #expect(!summary.containsMixedCurrencies)
@@ -63,11 +97,11 @@ struct GetDashboardSummaryConversionTests {
         try repo.save(makeItem(amount: 10, currency: "USD"))
 
         let items = try repo.fetchActive()
-        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: rates)
+        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: repo.rates)
 
         // $10 USD → RUB: 10 * 87.5 / 1 = 875
         // Total: 100 + 875 = 975
-        let usdInRub = Decimal(10) * Decimal(string: "87.5")!
+        let usdInRub = Decimal(10) * (try repo.decimal("87.5"))
         #expect(summary.monthlyTotal == 100 + usdInRub)
         #expect(summary.containsMixedCurrencies)
         #expect(summary.ratesAvailable)
@@ -81,12 +115,12 @@ struct GetDashboardSummaryConversionTests {
         try repo.save(makeItem(amount: 5, currency: "GBP"))
 
         let items = try repo.fetchActive()
-        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: rates)
+        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: repo.rates)
 
         // EUR→RUB: 10 * 87.5 / 0.92
-        let eurInRub = Decimal(10) * Decimal(string: "87.5")! / Decimal(string: "0.92")!
+        let eurInRub = Decimal(10) * (try repo.decimal("87.5")) / (try repo.decimal("0.92"))
         // GBP→RUB: 5 * 87.5 / 0.79
-        let gbpInRub = Decimal(5) * Decimal(string: "87.5")! / Decimal(string: "0.79")!
+        let gbpInRub = Decimal(5) * (try repo.decimal("87.5")) / (try repo.decimal("0.79"))
 
         #expect(summary.monthlyTotal == 500 + eurInRub + gbpInRub)
         #expect(summary.containsMixedCurrencies)
@@ -131,7 +165,7 @@ struct GetDashboardSummaryConversionTests {
         try repo.save(makeItem(amount: 50, currency: "XYZ"))  // Not in rates
 
         let items = try repo.fetchActive()
-        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: rates)
+        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: repo.rates)
 
         // XYZ can't convert → falls back to raw 50
         // Total: 100 (RUB no conversion needed) + 50 (raw fallback)
@@ -148,7 +182,7 @@ struct GetDashboardSummaryConversionTests {
         try repo.save(makeItem(amount: 200, currency: "USD"))
 
         let items = try repo.fetchActive()
-        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "USD", rates: rates)
+        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "USD", rates: repo.rates)
 
         // No conversion needed — all USD
         #expect(summary.monthlyTotal == 300)
@@ -163,10 +197,10 @@ struct GetDashboardSummaryConversionTests {
         try repo.save(makeItem(amount: 20, currency: "USD"))
 
         let items = try repo.fetchActive()
-        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "EUR", rates: rates)
+        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "EUR", rates: repo.rates)
 
         // 30 USD → EUR: 30 * 0.92 / 1 = 27.6
-        let expected = Decimal(30) * Decimal(string: "0.92")!
+        let expected = Decimal(30) * (try repo.decimal("0.92"))
         #expect(summary.monthlyTotal == expected)
         #expect(!summary.containsMixedCurrencies)
         #expect(summary.ratesAvailable)
@@ -181,7 +215,7 @@ struct GetDashboardSummaryConversionTests {
         try repo.save(makeItem(amount: 10, currency: "EUR"))
 
         let items = try repo.fetchActive()
-        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: rates)
+        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: repo.rates)
 
         #expect(summary.yearlyProjection == summary.monthlyTotal * 12)
     }
@@ -192,9 +226,14 @@ struct GetDashboardSummaryConversionTests {
     func emptyState() throws {
         let repo = try makeRepo()
         let items = try repo.fetchActive()
-        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: rates)
+        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: repo.rates)
 
-        #expect(summary == .empty)
+        #expect(summary.monthlyTotal == 0)
+        #expect(summary.yearlyProjection == 0)
+        #expect(summary.activeItemCount == 0)
+        #expect(summary.activeTrialCount == 0)
+        #expect(!summary.containsMixedCurrencies)
+        #expect(summary.ratesAvailable)
     }
 
     // MARK: - Trial Items Counted
@@ -214,7 +253,7 @@ struct GetDashboardSummaryConversionTests {
         try repo.save(trial)
 
         let items = try repo.fetchActive()
-        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: rates)
+        let summary = GetDashboardSummary().execute(items: items, targetCurrency: "RUB", rates: repo.rates)
 
         #expect(summary.monthlyTotal == 500)
         #expect(summary.activeTrialCount == 1)
