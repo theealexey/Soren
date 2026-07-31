@@ -53,11 +53,13 @@ struct ItemDetailsEditFormTests {
 
     // MARK: - Recompute on startDate change
 
-    @Test("Changing startDate to one cycle ago recomputes nextChargeDate to today")
+    @Test("Changing startDate applies the calendar-aware automatic monthly suggestion")
     func changingStartDateRecomputesNextCharge() throws {
         let cal = Calendar.current
         let today = todayStartOfDay
-        let oneMonthFromToday = cal.date(byAdding: .month, value: 1, to: today)!
+        let oneMonthFromToday = try #require(
+            cal.date(byAdding: .month, value: 1, to: today)
+        )
         let stored = makeItem(startDate: today, nextChargeDate: oneMonthFromToday)
 
         let vm = ItemDetailsViewModel(
@@ -70,14 +72,30 @@ struct ItemDetailsEditFormTests {
         // Seed preserved: next-charge stayed at the stored value.
         #expect(cal.isDate(vm.editNextChargeDate, inSameDayAs: oneMonthFromToday))
 
-        // User changes startDate to one month ago.
-        let oneMonthAgo = cal.date(byAdding: .month, value: -1, to: today)!
-        vm.editStartDate = oneMonthAgo
+        // Use the first of the month so calendar clamping at days 29–31 cannot
+        // change the intended billing occurrence. The VM owns the current-day
+        // lookup; its pure date arithmetic is covered with fixed UTC dates by
+        // NextChargeDateSuggestionTests.
+        let currentMonth = try #require(cal.dateInterval(of: .month, for: today))
+        let firstOfCurrentMonth = currentMonth.start
+        let previousMonthFirst = try #require(
+            cal.date(byAdding: .month, value: -1, to: firstOfCurrentMonth)
+        )
+        let expectedNextChargeDate = if cal.isDate(today, inSameDayAs: firstOfCurrentMonth) {
+            firstOfCurrentMonth
+        } else {
+            try #require(
+                cal.date(byAdding: .month, value: 1, to: firstOfCurrentMonth)
+            )
+        }
 
-        // Expect next-charge recomputed to today (one cycle after one-month-ago).
+        vm.editStartDate = previousMonthFirst
+
+        // A selected relationship start date is never reused as the next charge.
+        // The next charge is the first monthly occurrence on or after today.
         #expect(
-            cal.isDate(vm.editNextChargeDate, inSameDayAs: today),
-            "Expected nextChargeDate on today's calendar day, got \(vm.editNextChargeDate)"
+            vm.editNextChargeDate == expectedNextChargeDate,
+            "Expected \(expectedNextChargeDate), got \(vm.editNextChargeDate)"
         )
     }
 
