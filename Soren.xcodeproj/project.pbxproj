@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0050A4D1600A744F59A20613 /* ItemStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = E95E33778D21F29F937EC9AC /* ItemStatus.swift */; };
 		0304D391A4D32450161A19AD /* AppThemeModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4945A41473DF1A051717D89B /* AppThemeModifier.swift */; };
+		03FEF1178F04115DBF67328E /* NotificationReliabilityTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D69F1AF1DE5E4A45AF2AB5F /* NotificationReliabilityTestSupport.swift */; };
 		042D5B9FB9C433D5E19511D9 /* LandscapeBarResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E64C464F9C99450775A110 /* LandscapeBarResolver.swift */; };
 		04646804567EAE64683EDBCC /* StatBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F935C51942C260D6EE1004A /* StatBlock.swift */; };
 		051FAD3976769942DAEFA932 /* SaveRecurringItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6937BB77EA2ED3E831320FCE /* SaveRecurringItem.swift */; };
@@ -32,6 +33,7 @@
 		14FAD191C47CD95CDF6C6518 /* StateViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20EC791707151DB425DF4523 /* StateViews.swift */; };
 		18426D5BA4A2693D046067AD /* ProductionRegionalPricingManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67BBD3C58DF6005C7B4E91E2 /* ProductionRegionalPricingManifestTests.swift */; };
 		1B018893C9870B39545BE785 /* AppContainer+CalendarFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BC0056301AA302B544B628D /* AppContainer+CalendarFactory.swift */; };
+		1D6168AF90B0641766DDE8E7 /* NotificationCenterClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCC512F7AEBE44B52785489 /* NotificationCenterClient.swift */; };
 		1D8BAEA0072A517150500030 /* AddSubscriptionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B159CB7446D97BCE3FBBE7AE /* AddSubscriptionViewModel.swift */; };
 		20741D2FEFBB8A071EE15538 /* BundledRegionalPricingLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21961EEBD105D3EF40E11DBE /* BundledRegionalPricingLoader.swift */; };
 		21006C45289C9333966B24F9 /* InsightRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05A9D63C02EDF5AB21EF8D17 /* InsightRowView.swift */; };
@@ -41,6 +43,7 @@
 		2310FE7B5B1B97190A18B413 /* SwiftDataPaymentRecordRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABF2C435F1328325A12FBB44 /* SwiftDataPaymentRecordRepository.swift */; };
 		23A2B76519313745EC0D1795 /* BillingCycle+Display.swift in Sources */ = {isa = PBXBuildFile; fileRef = 576B9168138E632EE336B830 /* BillingCycle+Display.swift */; };
 		23F0694BDB7E4CC237816D88 /* Materials.swift in Sources */ = {isa = PBXBuildFile; fileRef = F95FABB15A6F0EE1E4D13898 /* Materials.swift */; };
+		2489449DBD1FC88F558DB3C5 /* NotificationRequestPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F2A74F97EBF469D0A25D24C /* NotificationRequestPlanner.swift */; };
 		24B721CF97AA2287C4604C53 /* ColorTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12BB3E94FC82A75A10ADB2E6 /* ColorTokens.swift */; };
 		258B7245AC9BD0C58B8C7759 /* CalendarViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32D559E2D2DF29D539F3D1AB /* CalendarViewModel.swift */; };
 		260324042BCE56791C95104A /* DemoSeedItems.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AC53E887D5ECEF43BBEC314 /* DemoSeedItems.swift */; };
@@ -57,7 +60,6 @@
 		3185C5DD77457E44D73D7463 /* ProviderTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAC69E24F7112B4A8F468D2D /* ProviderTemplate.swift */; };
 		318BC245F0A0CE7EEBD2F869 /* ItemCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEBC8639DFC777ED725C07D3 /* ItemCategory.swift */; };
 		3308EDAE7F9C1B8C82D95613 /* DemoDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46961296F43E1E647598ABBC /* DemoDataSeeder.swift */; };
-		3331A9D3A042D4EF592CDD17 /* NotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20E49623CDEDE2B14F27BAA /* NotificationScheduler.swift */; };
 		33E19E039BEEA816734656AB /* RecurringItemRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3442B666B8433A69DB9762E2 /* RecurringItemRepository.swift */; };
 		377F9332945C01B59C36825D /* ExchangeRateSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A47FC404B1EE34E23818B7E /* ExchangeRateSnapshot.swift */; };
 		37824B4D22214723C43814E4 /* PlanTier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A9B8583A80D8BD6F90A301D /* PlanTier.swift */; };
@@ -197,6 +199,7 @@
 		DF4F4CF1BB92C1C381CE9011 /* ThirdPartyNotices.txt in Resources */ = {isa = PBXBuildFile; fileRef = E00E7BDDB03429DA209B37C0 /* ThirdPartyNotices.txt */; };
 		E01CF41ECC10C2676A49E5E3 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20E0A890641C92835FBE96BA /* Typography.swift */; };
 		E1B1D3C77391D10CC31EF694 /* RecurringItem+ProviderTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46369C987E666D41860F0D98 /* RecurringItem+ProviderTemplate.swift */; };
+		E2C36B8466721F7AE50216A8 /* NotificationReconciler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C636E67E26EE9E9E0EB649 /* NotificationReconciler.swift */; };
 		E34E6599E65A32E0D0B53DCA /* ItemCategory+UI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0ABFF3976C352E0D7805781 /* ItemCategory+UI.swift */; };
 		E44AF6E3B1193D1539D9F6DF /* StatBlockTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D894AE57EE24BDE2C349DB /* StatBlockTests.swift */; };
 		E50A73F87DB0D1EFFC86D9CF /* BillingLandscapeSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C591C7CFE8E7B0CC4EC21A4 /* BillingLandscapeSelection.swift */; };
@@ -312,6 +315,7 @@
 		4945A41473DF1A051717D89B /* AppThemeModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppThemeModifier.swift; sourceTree = "<group>"; };
 		4A97F884F05552C0F6B3D2C0 /* DeleteRecurringItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteRecurringItem.swift; sourceTree = "<group>"; };
 		4AC53E887D5ECEF43BBEC314 /* DemoSeedItems.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoSeedItems.swift; sourceTree = "<group>"; };
+		4D69F1AF1DE5E4A45AF2AB5F /* NotificationReliabilityTestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationReliabilityTestSupport.swift; sourceTree = "<group>"; };
 		4D6D373FF90E36B6391BC878 /* ProviderPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderPickerView.swift; sourceTree = "<group>"; };
 		4DDCE10FBEA592108BF24705 /* GetLibraryItems.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetLibraryItems.swift; sourceTree = "<group>"; };
 		4FCE264B1237CC5C9285E83D /* TrialReminderSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrialReminderSchedulerTests.swift; sourceTree = "<group>"; };
@@ -376,6 +380,7 @@
 		948A56E413765945A9D3956F /* AmountLabelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmountLabelTests.swift; sourceTree = "<group>"; };
 		96C23F0287FFE6BD2405D175 /* ProviderCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderCatalog.swift; sourceTree = "<group>"; };
 		9919E7D1AA6504324DFE6232 /* regional-pricing-us-v1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "regional-pricing-us-v1.json"; sourceTree = "<group>"; };
+		9F2A74F97EBF469D0A25D24C /* NotificationRequestPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationRequestPlanner.swift; sourceTree = "<group>"; };
 		A02EF7C7AC416F7F58020CA5 /* AnalyticsScreenState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsScreenState.swift; sourceTree = "<group>"; };
 		A241AE4DF892153A82322147 /* ItemType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemType.swift; sourceTree = "<group>"; };
 		A24F4A666D09CE7D6B730480 /* PaymentMethodMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethodMapper.swift; sourceTree = "<group>"; };
@@ -402,6 +407,7 @@
 		B6AD358CDCB53D8F2605A5C6 /* AppThemeKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppThemeKey.swift; sourceTree = "<group>"; };
 		B7BBB1166961C6AAC57ADD94 /* CurrencyEstimateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyEstimateView.swift; sourceTree = "<group>"; };
 		B9876CEEF8945568154B43B6 /* SorenSchemaVersions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SorenSchemaVersions.swift; sourceTree = "<group>"; };
+		BBCC512F7AEBE44B52785489 /* NotificationCenterClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCenterClient.swift; sourceTree = "<group>"; };
 		BC57DBA9A5801A488865A4AA /* UpdateRecurringItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateRecurringItem.swift; sourceTree = "<group>"; };
 		BE0FB55547E3EC178EADC11B /* SorenTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SorenTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		BE3B6CE90A1085CAD36539E5 /* AppearanceMode+SwiftUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppearanceMode+SwiftUI.swift"; sourceTree = "<group>"; };
@@ -418,6 +424,7 @@
 		CD92113C1D03A64942CA712B /* SDPaymentMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDPaymentMethod.swift; sourceTree = "<group>"; };
 		CF8C244B377699468B225A22 /* LifecycleInvariantTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifecycleInvariantTests.swift; sourceTree = "<group>"; };
 		D0FCEDA034825514200F7242 /* HapticEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticEngine.swift; sourceTree = "<group>"; };
+		D5C636E67E26EE9E9E0EB649 /* NotificationReconciler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationReconciler.swift; sourceTree = "<group>"; };
 		D608B428CBCD3D27DA555CD0 /* PremiumCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumCard.swift; sourceTree = "<group>"; };
 		D87F6D00CB43C4EEAD6FD3F7 /* SorenModelContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SorenModelContainer.swift; sourceTree = "<group>"; };
 		DE04ACFA4CA0C434A7F14B3E /* BillingCycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillingCycle.swift; sourceTree = "<group>"; };
@@ -427,7 +434,6 @@
 		E0ABFF3976C352E0D7805781 /* ItemCategory+UI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ItemCategory+UI.swift"; sourceTree = "<group>"; };
 		E0EDB960B1DC5C94E25CA286 /* ExchangeRateCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRateCacheTests.swift; sourceTree = "<group>"; };
 		E1BBC3EE63F2DC4F7A0ECAF6 /* SorenUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SorenUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		E20E49623CDEDE2B14F27BAA /* NotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationScheduler.swift; sourceTree = "<group>"; };
 		E39F73908BA8F60FD861BBD2 /* NotificationSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSchedulerTests.swift; sourceTree = "<group>"; };
 		E52D3F451BE12EB14780CCCD /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		E55A14CE84C8CD53BD4E3F1A /* Soren.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Soren.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -490,8 +496,10 @@
 			isa = PBXGroup;
 			children = (
 				1842B87EAB2C0F30A1057D5D /* CurrencyEstimateService.swift */,
+				BBCC512F7AEBE44B52785489 /* NotificationCenterClient.swift */,
+				D5C636E67E26EE9E9E0EB649 /* NotificationReconciler.swift */,
 				62CB17C3F3C062CD73153CE9 /* NotificationRefreshCoordinator.swift */,
-				E20E49623CDEDE2B14F27BAA /* NotificationScheduler.swift */,
+				9F2A74F97EBF469D0A25D24C /* NotificationRequestPlanner.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -867,6 +875,7 @@
 				73E70FF01D62E8695DF85DEF /* LibrarySearchDebounceTests.swift */,
 				AF7BD15F0BA562AB78DC878E /* LibraryTotalTests.swift */,
 				8CEEF7B37513315DE9DE3C6C /* NextChargeDateSuggestionTests.swift */,
+				4D69F1AF1DE5E4A45AF2AB5F /* NotificationReliabilityTestSupport.swift */,
 				A6C2E055BDD0151E36374123 /* NotificationRescheduleTests.swift */,
 				E39F73908BA8F60FD861BBD2 /* NotificationSchedulerTests.swift */,
 				A420A6845C8D36C45DCE355E /* NotificationSchedulerTitleTests.swift */,
@@ -1451,8 +1460,10 @@
 				5968C0D9F8158A03E4378934 /* MotionTokens.swift in Sources */,
 				E8B8BAA278833A03DFDAF8BB /* NextPaymentCalloutState.swift in Sources */,
 				3C5D0047E7D4DC39ADD5FC7C /* NextPaymentCalloutView.swift in Sources */,
+				1D6168AF90B0641766DDE8E7 /* NotificationCenterClient.swift in Sources */,
+				E2C36B8466721F7AE50216A8 /* NotificationReconciler.swift in Sources */,
 				FF01F0C9A757641429A77D4F /* NotificationRefreshCoordinator.swift in Sources */,
-				3331A9D3A042D4EF592CDD17 /* NotificationScheduler.swift in Sources */,
+				2489449DBD1FC88F558DB3C5 /* NotificationRequestPlanner.swift in Sources */,
 				45D8007054C0DC0DC22CEF7E /* OpenExchangeRateProvider.swift in Sources */,
 				28A24336DA2E58C4068B93E0 /* PaymentMethod.swift in Sources */,
 				A11365CE9B1226921CDEE2BE /* PaymentMethodMapper.swift in Sources */,
@@ -1565,6 +1576,7 @@
 				0F4567F8108DB3C654451546 /* MoneyConversionTests.swift in Sources */,
 				446776A4B4A8B61EACD9791E /* MotionTokenTests.swift in Sources */,
 				F3A0EDAD0443BF22B192AA40 /* NextChargeDateSuggestionTests.swift in Sources */,
+				03FEF1178F04115DBF67328E /* NotificationReliabilityTestSupport.swift in Sources */,
 				54516CDDEADDDC15D25431B3 /* NotificationRescheduleTests.swift in Sources */,
 				C446BA4D8718E2915E28D7CE /* NotificationSchedulerTests.swift in Sources */,
 				4E694388778785AFE5CCCE72 /* NotificationSchedulerTitleTests.swift in Sources */,

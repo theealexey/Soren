@@ -37,6 +37,16 @@
         }
       }
     },
+    "Ожидаемое списание: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expected charge: %@"
+          }
+        }
+      }
+    },
     "«%@» списывается через %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4630,6 +4640,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Trial Period"
+          }
+        }
+      }
+    },
+    "Пробный период заканчивается: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trial ends: %@"
           }
         }
       }

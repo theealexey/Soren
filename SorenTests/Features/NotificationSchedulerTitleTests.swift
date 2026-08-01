@@ -2,150 +2,161 @@ import Testing
 import Foundation
 @testable import Soren
 
-// MARK: - NotificationScheduler — title formatting tests (Adversarial)
-
-/// Validates that notification titles are built from CLDR xcstrings plural rules,
-/// not from hardcoded Russian plural arithmetic.
-///
-/// These tests run in whatever locale the test host uses (typically English).
-/// Locale-neutral assertions check:
-///   - the title is non-empty (localization key resolved successfully)
-///   - the title contains the subscription name (string substitution worked)
-///   - the title contains the day count as digits (integer substitution worked)
-///
-/// If `pluralDays()` is accidentally re-introduced, the day count would be
-/// embedded inside a pre-built string argument — the digit-presence checks below
-/// still catch broken key lookups (empty fallback) and missing substitutions.
-
-@Suite("NotificationScheduler — chargeTitle")
-struct NotificationSchedulerChargeTitleTests {
-
-    // MARK: - Today / tomorrow paths (unchanged)
-
-    @Test("0 days → title is non-empty and contains name")
-    func chargeTodayContainsName() {
-        let title = NotificationScheduler.chargeTitle(itemTitle: "Netflix", chargeAlertDays: 0)
-        #expect(!title.isEmpty)
-        #expect(title.contains("Netflix"))
+@Suite("Notification request copy")
+struct NotificationRequestCopyTests {
+    private func planner(locale: String) throws -> NotificationRequestPlanner {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Moscow") ?? .gmt
+        let appBundle = try #require(Bundle(identifier: "com.alexey.soren"))
+        let languageCode = locale.hasPrefix("ru") ? "ru" : "en"
+        let path = try #require(appBundle.path(forResource: languageCode, ofType: "lproj"))
+        let bundle = try #require(Bundle(path: path))
+        return NotificationRequestPlanner(
+            calendar: calendar,
+            locale: Locale(identifier: locale),
+            bundle: bundle
+        )
     }
 
-    @Test("1 day → title is non-empty and contains name")
-    func chargeTomorrowContainsName() {
-        let title = NotificationScheduler.chargeTitle(itemTitle: "Spotify", chargeAlertDays: 1)
-        #expect(!title.isEmpty)
-        #expect(title.contains("Spotify"))
+    private func date(_ year: Int, _ month: Int, _ day: Int) throws -> Date {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Moscow") ?? .gmt
+        var components = DateComponents()
+        components.year = year
+        components.month = month
+        components.day = day
+        components.hour = 12
+        components.timeZone = calendar.timeZone
+        return try #require(calendar.date(from: components))
     }
 
-    // MARK: - CLDR plural paths (default branch)
-
-    @Test("3 days → contains name and digit '3'")
-    func chargeThreeDays() {
-        let title = NotificationScheduler.chargeTitle(itemTitle: "YouTube Premium", chargeAlertDays: 3)
-        #expect(!title.isEmpty)
-        #expect(title.contains("YouTube Premium"), "subscription name missing from title")
-        #expect(title.contains("3"), "day count '3' missing from title")
+    private func item(trial: Bool = false) throws -> RecurringItem {
+        RecurringItem(
+            title: "Spotify",
+            amount: 599,
+            currencyCode: "RUB",
+            nextChargeDate: try date(2026, 8, 12),
+            trialEndDate: trial ? try date(2026, 8, 15) : nil,
+            trialReminder: trial ? .threeDaysBefore : .never
+        )
     }
 
-    @Test("5 days → contains name and digit '5'")
-    func chargeFiveDays() {
-        let title = NotificationScheduler.chargeTitle(itemTitle: "Apple Music", chargeAlertDays: 5)
-        #expect(!title.isEmpty)
-        #expect(title.contains("Apple Music"))
-        #expect(title.contains("5"))
+    @Test("English charge copy uses an absolute occurrence date")
+    func englishChargeCopy() throws {
+        let notificationPlanner = try planner(locale: "en_US")
+        let subscription = try item()
+        let now = try date(2026, 8, 1)
+        let request = try #require(notificationPlanner.plan(items: [subscription], now: now).requests.first)
+        #expect(request.title.contains("Expected charge"))
+        #expect(request.title.contains("Spotify"))
+        #expect(request.body.contains("2026"))
     }
 
-    @Test("7 days → contains name and digit '7'")
-    func chargeSevenDays() {
-        let title = NotificationScheduler.chargeTitle(itemTitle: "iCloud+", chargeAlertDays: 7)
-        #expect(!title.isEmpty)
-        #expect(title.contains("iCloud+"))
-        #expect(title.contains("7"))
+    @Test("Russian charge copy uses an absolute occurrence date")
+    func russianChargeCopy() throws {
+        let notificationPlanner = try planner(locale: "ru_RU")
+        let subscription = try item()
+        let now = try date(2026, 8, 1)
+        let request = try #require(notificationPlanner.plan(items: [subscription], now: now).requests.first)
+        #expect(request.title.contains("Ожидаемое списание"))
+        #expect(request.body.contains("2026"))
     }
 
-    // MARK: - Invariants
-
-    @Test("All ChargeReminderOption alert-day values produce non-empty titles")
-    func allReminderOptionsDaysNonEmpty() {
-        // The alertDays values exercised by ChargeReminderOption: 0, 1, 3, 7.
-        for days in [0, 1, 3, 7] {
-            let title = NotificationScheduler.chargeTitle(itemTitle: "TestSub", chargeAlertDays: days)
-            #expect(!title.isEmpty, "chargeTitle is empty for alertDays=\(days)")
+    @Test("trial copy remains distinct and absolute in both supported locales")
+    func trialCopy() throws {
+        for locale in ["en_US", "ru_RU"] {
+            let notificationPlanner = try planner(locale: locale)
+            let subscription = try item(trial: true)
+            let now = try date(2026, 8, 1)
+            let request = try #require(notificationPlanner.plan(items: [subscription], now: now).requests.first(where: { $0.kind == .trial }))
+            #expect(request.title.contains("Spotify"))
+            #expect(request.body.contains("2026"))
+            #expect(!request.title.localizedCaseInsensitiveContains("today"))
+            #expect(!request.title.localizedCaseInsensitiveContains("tomorrow"))
         }
     }
 
-    @Test("Title never equals the raw xcstrings key (key lookup succeeded)")
-    func chargeTitleIsNotRawKey() {
-        // If xcstrings lookup fails entirely, String(localized:) returns the key string itself.
-        // The key contains "%@" and "%lld" which are never present in a resolved title.
-        for days in [3, 5, 7] {
-            let title = NotificationScheduler.chargeTitle(itemTitle: "App", chargeAlertDays: days)
-            #expect(!title.contains("%@"), "title contains raw %@ placeholder for days=\(days)")
-            #expect(!title.contains("%lld"), "title contains raw %lld placeholder for days=\(days)")
-        }
-    }
-}
-
-@Suite("NotificationScheduler — trialTitle")
-struct NotificationSchedulerTrialTitleTests {
-
-    // MARK: - Today / tomorrow paths (unchanged)
-
-    @Test("0 days → title is non-empty and contains name")
-    func trialTodayContainsName() {
-        let title = NotificationScheduler.trialTitle(itemTitle: "Netflix", trialAlertDays: 0)
-        #expect(!title.isEmpty)
-        #expect(title.contains("Netflix"))
+    @Test("English charge title is not the String Catalog key")
+    func englishChargeTitleIsLocalized() throws {
+        let notificationPlanner = try planner(locale: "en_US")
+        let subscription = try item()
+        let request = try #require(notificationPlanner.plan(items: [subscription], now: try date(2026, 8, 1)).requests.first)
+        #expect(request.title != "Ожидаемое списание: %@")
     }
 
-    @Test("1 day → title is non-empty and contains name")
-    func trialTomorrowContainsName() {
-        let title = NotificationScheduler.trialTitle(itemTitle: "Spotify", trialAlertDays: 1)
-        #expect(!title.isEmpty)
-        #expect(title.contains("Spotify"))
+    @Test("Russian charge title is not the String Catalog key")
+    func russianChargeTitleIsLocalized() throws {
+        let notificationPlanner = try planner(locale: "ru_RU")
+        let subscription = try item()
+        let request = try #require(notificationPlanner.plan(items: [subscription], now: try date(2026, 8, 1)).requests.first)
+        #expect(request.title != "Ожидаемое списание: %@")
     }
 
-    // MARK: - CLDR plural paths (default branch)
-
-    @Test("3 days → contains name and digit '3'")
-    func trialThreeDays() {
-        let title = NotificationScheduler.trialTitle(itemTitle: "YouTube Premium", trialAlertDays: 3)
-        #expect(!title.isEmpty)
-        #expect(title.contains("YouTube Premium"), "subscription name missing from title")
-        #expect(title.contains("3"), "day count '3' missing from title")
+    @Test("English trial title uses the trial-specific absolute wording")
+    func englishTrialTitleIsDistinct() throws {
+        let notificationPlanner = try planner(locale: "en_US")
+        let subscription = try item(trial: true)
+        let request = try #require(notificationPlanner.plan(items: [subscription], now: try date(2026, 8, 1)).requests.first(where: { $0.kind == .trial }))
+        #expect(request.title.contains("Trial ends"))
     }
 
-    @Test("5 days → contains name and digit '5'")
-    func trialFiveDays() {
-        let title = NotificationScheduler.trialTitle(itemTitle: "Apple TV+", trialAlertDays: 5)
-        #expect(!title.isEmpty)
-        #expect(title.contains("Apple TV+"))
-        #expect(title.contains("5"))
+    @Test("Russian trial title uses the trial-specific absolute wording")
+    func russianTrialTitleIsDistinct() throws {
+        let notificationPlanner = try planner(locale: "ru_RU")
+        let subscription = try item(trial: true)
+        let request = try #require(notificationPlanner.plan(items: [subscription], now: try date(2026, 8, 1)).requests.first(where: { $0.kind == .trial }))
+        #expect(request.title.contains("Пробный период заканчивается"))
     }
 
-    @Test("7 days → contains name and digit '7'")
-    func trialSevenDays() {
-        let title = NotificationScheduler.trialTitle(itemTitle: "iCloud+", trialAlertDays: 7)
-        #expect(!title.isEmpty)
-        #expect(title.contains("iCloud+"))
-        #expect(title.contains("7"))
+    @Test("English charge body retains the occurrence date rather than fire-day wording")
+    func englishChargeBodyContainsOccurrenceYear() throws {
+        let notificationPlanner = try planner(locale: "en_US")
+        let subscription = try item()
+        let request = try #require(notificationPlanner.plan(items: [subscription], now: try date(2026, 8, 1)).requests.first)
+        #expect(request.body.contains("2026"))
     }
 
-    // MARK: - Invariants
-
-    @Test("All alertDays values produce non-empty trial titles")
-    func allAlertDaysNonEmpty() {
-        for days in [0, 1, 3, 7] {
-            let title = NotificationScheduler.trialTitle(itemTitle: "TestSub", trialAlertDays: days)
-            #expect(!title.isEmpty, "trialTitle is empty for alertDays=\(days)")
-        }
+    @Test("Russian charge body retains the occurrence date rather than fire-day wording")
+    func russianChargeBodyContainsOccurrenceYear() throws {
+        let notificationPlanner = try planner(locale: "ru_RU")
+        let subscription = try item()
+        let request = try #require(notificationPlanner.plan(items: [subscription], now: try date(2026, 8, 1)).requests.first)
+        #expect(request.body.contains("2026"))
     }
 
-    @Test("Title never equals the raw xcstrings key (key lookup succeeded)")
-    func trialTitleIsNotRawKey() {
-        for days in [3, 5, 7] {
-            let title = NotificationScheduler.trialTitle(itemTitle: "App", trialAlertDays: days)
-            #expect(!title.contains("%@"), "title contains raw %@ placeholder for days=\(days)")
-            #expect(!title.contains("%lld"), "title contains raw %lld placeholder for days=\(days)")
-        }
+    @Test("charge copy does not promise today")
+    func chargeCopyDoesNotPromiseToday() throws {
+        let notificationPlanner = try planner(locale: "en_US")
+        let subscription = try item()
+        let request = try #require(notificationPlanner.plan(items: [subscription], now: try date(2026, 8, 1)).requests.first)
+        #expect(!request.title.localizedCaseInsensitiveContains("today"))
+        #expect(!request.body.localizedCaseInsensitiveContains("today"))
+    }
+
+    @Test("charge copy does not promise tomorrow")
+    func chargeCopyDoesNotPromiseTomorrow() throws {
+        let notificationPlanner = try planner(locale: "en_US")
+        let subscription = try item()
+        let request = try #require(notificationPlanner.plan(items: [subscription], now: try date(2026, 8, 1)).requests.first)
+        #expect(!request.title.localizedCaseInsensitiveContains("tomorrow"))
+        #expect(!request.body.localizedCaseInsensitiveContains("tomorrow"))
+    }
+
+    @Test("trial copy does not promise today")
+    func trialCopyDoesNotPromiseToday() throws {
+        let notificationPlanner = try planner(locale: "en_US")
+        let subscription = try item(trial: true)
+        let request = try #require(notificationPlanner.plan(items: [subscription], now: try date(2026, 8, 1)).requests.first(where: { $0.kind == .trial }))
+        #expect(!request.title.localizedCaseInsensitiveContains("today"))
+        #expect(!request.body.localizedCaseInsensitiveContains("today"))
+    }
+
+    @Test("trial copy does not promise tomorrow")
+    func trialCopyDoesNotPromiseTomorrow() throws {
+        let notificationPlanner = try planner(locale: "en_US")
+        let subscription = try item(trial: true)
+        let request = try #require(notificationPlanner.plan(items: [subscription], now: try date(2026, 8, 1)).requests.first(where: { $0.kind == .trial }))
+        #expect(!request.title.localizedCaseInsensitiveContains("tomorrow"))
+        #expect(!request.body.localizedCaseInsensitiveContains("tomorrow"))
     }
 }

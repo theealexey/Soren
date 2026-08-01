@@ -2,43 +2,70 @@ import Foundation
 
 // MARK: - Notification Refresh Coordinator
 
-/// Fetches the current set of recurring items and calls
-/// `NotificationScheduling.rescheduleAll(items:)` when the app foregrounds.
-///
-/// Owned by `AppContainer`; triggered from `scenePhase` observation in `SorenApp`.
-///
-/// Storing a cancellable Task handle ensures that rapid foreground activations
-/// — e.g. iPad Split View bringing multiple windows active, or Mac window cycling —
-/// never produce overlapping reschedule runs. Only the most recent activation wins.
+enum NotificationRefreshOutcome: Sendable, Equatable {
+    case reconciled(NotificationReconciliationReport)
+    case superseded
+    case repositoryFetchFailed
+}
+
 @MainActor
-final class NotificationRefreshCoordinator {
+protocol NotificationStateReconciling: AnyObject {
+    func reconcileCurrentState() async -> NotificationRefreshOutcome
+}
+
+/// Loads authoritative persistence state and submits its complete desired plan
+/// to the serialized reconciler. It owns app-lifecycle orchestration, not
+/// UserNotifications details.
+@MainActor
+final class NotificationRefreshCoordinator: NotificationStateReconciling {
 
     // MARK: - Dependencies
 
     private let repository: any RecurringItemRepository
-    private let scheduler: any NotificationScheduling
+    private let planner: NotificationRequestPlanner
+    private let reconciler: any NotificationReconciling
     private var refreshTask: Task<Void, Never>?
+    private var latestRefreshRevision = 0
 
     // MARK: - Init
 
     init(
         repository: any RecurringItemRepository,
-        scheduler: any NotificationScheduling
+        planner: NotificationRequestPlanner = NotificationRequestPlanner(
+            calendar: .current,
+            locale: .current
+        ),
+        reconciler: any NotificationReconciling
     ) {
         self.repository = repository
-        self.scheduler = scheduler
+        self.planner = planner
+        self.reconciler = reconciler
     }
 
     // MARK: - Activation
 
-    /// Called when the app scene transitions to `.active`.
-    /// Cancels any in-flight reschedule before starting a fresh one.
+    func reconcileCurrentState() async -> NotificationRefreshOutcome {
+        latestRefreshRevision += 1
+        let revision = latestRefreshRevision
+
+        do {
+            let items = try repository.fetchAll()
+            guard revision == latestRefreshRevision else {
+                return .superseded
+            }
+            let plan = planner.plan(items: items, now: .now)
+            return .reconciled(await reconciler.reconcile(plan: plan))
+        } catch {
+            return .repositoryFetchFailed
+        }
+    }
+
+    /// Called when the app scene transitions to `.active`. The task is owned by
+    /// the lifecycle coordinator; reconciliation itself serializes and coalesces
+    /// concurrent desired plans to guarantee the latest final state.
     func didBecomeActive() {
-        refreshTask?.cancel()
         refreshTask = Task { [weak self] in
-            guard let self, !Task.isCancelled else { return }
-            guard let items = try? repository.fetchAll() else { return }
-            await scheduler.rescheduleAll(items: items)
+            _ = await self?.reconcileCurrentState()
         }
     }
 }

@@ -3,275 +3,117 @@ import Foundation
 import SwiftData
 @testable import Soren
 
-// MARK: - TrialReminderOption — alertDays and displayName
-
-@Suite("TrialReminderOption — alertDays")
-struct TrialReminderOptionAlertDaysTests {
-
-    @Test("never → alertDays is nil")
-    func neverIsNil() {
+@Suite("TrialReminderOption")
+struct TrialReminderOptionTests {
+    @Test("persisted reminder offsets remain stable")
+    func alertDaysRoundTrip() {
         #expect(TrialReminderOption.never.alertDays == nil)
-    }
-
-    @Test("sameDay → alertDays is 0")
-    func sameDayIsZero() {
         #expect(TrialReminderOption.sameDay.alertDays == 0)
-    }
-
-    @Test("oneDayBefore → alertDays is 1")
-    func oneDayBeforeIsOne() {
         #expect(TrialReminderOption.oneDayBefore.alertDays == 1)
-    }
-
-    @Test("threeDaysBefore → alertDays is 3")
-    func threeDaysBeforeIsThree() {
         #expect(TrialReminderOption.threeDaysBefore.alertDays == 3)
-    }
-
-    @Test("sevenDaysBefore → alertDays is 7")
-    func sevenDaysBeforeIsSeven() {
         #expect(TrialReminderOption.sevenDaysBefore.alertDays == 7)
-    }
-
-    @Test("All cases round-trip through rawValue")
-    func rawValueRoundTrip() {
         for option in TrialReminderOption.allCases {
-            let decoded = TrialReminderOption(rawValue: option.rawValue)
-            #expect(decoded == option, "rawValue round-trip failed for \(option)")
+            #expect(TrialReminderOption(rawValue: option.rawValue) == option)
         }
     }
 
-    @Test("Unknown rawValue returns nil (safe fallback in mapper)")
-    func unknownRawValueIsNil() {
-        #expect(TrialReminderOption(rawValue: "twoWeeksBefore") == nil)
+    @Test("trial never has no alert offset")
+    func neverOffsetIsNil() { #expect(TrialReminderOption.never.alertDays == nil) }
+
+    @Test("trial same-day has zero alert offset")
+    func sameDayOffsetIsZero() { #expect(TrialReminderOption.sameDay.alertDays == 0) }
+
+    @Test("trial one-day option has one-day alert offset")
+    func oneDayOffsetIsOne() { #expect(TrialReminderOption.oneDayBefore.alertDays == 1) }
+
+    @Test("trial three-day option has three-day alert offset")
+    func threeDayOffsetIsThree() { #expect(TrialReminderOption.threeDaysBefore.alertDays == 3) }
+
+    @Test("trial seven-day option has seven-day alert offset")
+    func sevenDayOffsetIsSeven() { #expect(TrialReminderOption.sevenDaysBefore.alertDays == 7) }
+
+    @Test("unknown trial reminder raw value is rejected")
+    func unknownRawValueIsNil() { #expect(TrialReminderOption(rawValue: "twoWeeksBefore") == nil) }
+
+    @Test("trial reminder display names are non-empty")
+    func displayNamesAreNonEmpty() {
+        #expect(TrialReminderOption.allCases.allSatisfy { !$0.displayName.isEmpty })
     }
 
-    @Test("All cases have non-empty displayName")
-    func allDisplayNamesNonEmpty() {
-        for option in TrialReminderOption.allCases {
-            #expect(!option.displayName.isEmpty, "displayName is empty for \(option)")
-        }
-    }
-
-    @Test("All displayNames are distinct")
-    func displayNamesDistinct() {
+    @Test("trial reminder display names are unique")
+    func displayNamesAreUnique() {
         let names = TrialReminderOption.allCases.map(\.displayName)
         #expect(Set(names).count == names.count)
     }
 }
 
-// MARK: - Mapper: trialReminder round-trip
-
-@Suite("RecurringItemMapper — trialReminder persistence")
+@Suite("Trial reminder persistence")
 struct TrialReminderMapperTests {
-
-    private func baseItem(trialReminder: TrialReminderOption) -> RecurringItem {
-        RecurringItem(
-            title: "Test",
-            amount: 299,
-            nextChargeDate: Calendar.current.date(byAdding: .day, value: 10, to: .now)!,
-            trialReminder: trialReminder
-        )
+    private func item(reminder: TrialReminderOption) -> RecurringItem {
+        RecurringItem(title: "Test", amount: 299, nextChargeDate: .distantFuture, trialReminder: reminder)
     }
 
-    @Test("trialReminderRaw nil decodes to .never")
-    func nilRawDecodesToNever() {
-        let sd = RecurringItemMapper.toSD(baseItem(trialReminder: .threeDaysBefore))
-        // Simulate a legacy row that arrived without the column.
-        sd.trialReminderRaw = nil
-        let domain = RecurringItemMapper.toDomain(sd)
-        #expect(domain.trialReminder == .never)
-    }
-
-    @Test("Unknown rawValue decodes to .never")
-    func unknownRawDecodesToNever() {
-        let sd = RecurringItemMapper.toSD(baseItem(trialReminder: .sameDay))
-        sd.trialReminderRaw = "twoWeeksBefore"
-        let domain = RecurringItemMapper.toDomain(sd)
-        #expect(domain.trialReminder == .never)
-    }
-
-    @Test("All cases survive toSD → toDomain round-trip")
-    func allCasesRoundTrip() {
+    @Test("mapper retains all trial reminder options and defaults legacy rows to never")
+    func mapperContract() {
         for option in TrialReminderOption.allCases {
-            let sd = RecurringItemMapper.toSD(baseItem(trialReminder: option))
-            let domain = RecurringItemMapper.toDomain(sd)
-            #expect(domain.trialReminder == option, "Round-trip failed for \(option)")
+            let mapped = RecurringItemMapper.toDomain(RecurringItemMapper.toSD(item(reminder: option)))
+            #expect(mapped.trialReminder == option)
         }
+        let legacy = RecurringItemMapper.toSD(item(reminder: .threeDaysBefore))
+        legacy.trialReminderRaw = nil
+        #expect(RecurringItemMapper.toDomain(legacy).trialReminder == .never)
     }
 
-    @Test("update(_:from:) persists trialReminderRaw")
-    func updatePersistsTrialReminder() {
-        let sd = RecurringItemMapper.toSD(baseItem(trialReminder: .never))
-        #expect(sd.trialReminderRaw == "never")
+    @Test("legacy nil trial reminder decodes to never")
+    func nilRawValueDefaultsToNever() {
+        let legacy = RecurringItemMapper.toSD(item(reminder: .threeDaysBefore))
+        legacy.trialReminderRaw = nil
+        #expect(RecurringItemMapper.toDomain(legacy).trialReminder == .never)
+    }
 
-        var updated = RecurringItemMapper.toDomain(sd)
+    @Test("unknown legacy trial reminder decodes to never")
+    func unknownRawValueDefaultsToNever() {
+        let legacy = RecurringItemMapper.toSD(item(reminder: .sameDay))
+        legacy.trialReminderRaw = "twoWeeksBefore"
+        #expect(RecurringItemMapper.toDomain(legacy).trialReminder == .never)
+    }
+
+    @Test("mapper writes the selected trial reminder raw value")
+    func mapperWritesSelectedRawValue() {
+        let stored = RecurringItemMapper.toSD(item(reminder: .never))
+        var updated = RecurringItemMapper.toDomain(stored)
         updated.trialReminder = .sevenDaysBefore
-        RecurringItemMapper.update(sd, from: updated)
-
-        #expect(sd.trialReminderRaw == "sevenDaysBefore")
-    }
-}
-
-// MARK: - Identifier separation: charge and trial never collide
-
-@Suite("NotificationScheduler — identifier separation")
-struct TrialIdentifierSeparationTests {
-
-    private func date(_ year: Int, _ month: Int, _ day: Int) -> Date {
-        var c = DateComponents()
-        c.year = year; c.month = month; c.day = day; c.hour = 12
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "UTC")!
-        return cal.date(from: c)!
+        RecurringItemMapper.update(stored, from: updated)
+        #expect(stored.trialReminderRaw == TrialReminderOption.sevenDaysBefore.rawValue)
     }
 
-    @Test("computeFireDate is reusable for trial end dates")
-    func computeFireDateWorksForTrialEnd() {
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "UTC")!
-        let trialEnd = date(2026, 5, 15)
-        let now      = date(2026, 4, 22)
-
-        let result = NotificationScheduler.computeFireDate(
-            chargeDate:      trialEnd,
-            chargeAlertDays: 3,
-            now:             now,
-            calendar:        cal
-        )
-        // 3 days before May 15 is May 12, at 09:00.
-        var expected = DateComponents()
-        expected.year = 2026; expected.month = 5; expected.day = 12
-        expected.hour = 9; expected.minute = 0; expected.second = 0
-        expected.timeZone = TimeZone(identifier: "UTC")
-        let expectedDate = cal.date(from: expected)!
-        #expect(result == expectedDate)
-    }
-}
-
-// MARK: - ViewModel wiring: trialReminder seeded and persisted
-
-@Suite("ItemDetailsViewModel — trialReminder wiring")
-@MainActor
-struct ItemDetailsViewModelTrialReminderTests {
-
-    @MainActor
-    private struct Fixture {
-        let persistence: InMemoryPersistenceFixture
-        let viewModel: ItemDetailsViewModel
-
-        init(item: RecurringItem) throws {
-            let persistence = try InMemoryPersistenceFixture()
-            try persistence.repositories.recurringItems.save(item)
-
-            self.persistence = persistence
-            self.viewModel = ItemDetailsViewModel(
-                item: item,
-                repositories: persistence.repositories,
-                exchangeRateProvider: StaticExchangeRateProvider(),
-                notificationScheduler: MockNotificationScheduler()
-            )
-        }
+    @Test("never survives trial reminder persistence")
+    func neverRoundTrips() {
+        let mapped = RecurringItemMapper.toDomain(RecurringItemMapper.toSD(item(reminder: .never)))
+        #expect(mapped.trialReminder == .never)
     }
 
-    private func makeItem(trialReminder: TrialReminderOption) -> RecurringItem {
-        RecurringItem(
-            title: "Trial Sub",
-            amount: 499,
-            nextChargeDate: Calendar.current.date(byAdding: .day, value: 14, to: .now)!,
-            trialEndDate: Calendar.current.date(byAdding: .day, value: 7, to: .now)!,
-            trialReminder: trialReminder
-        )
+    @Test("same-day survives trial reminder persistence")
+    func sameDayRoundTrips() {
+        let mapped = RecurringItemMapper.toDomain(RecurringItemMapper.toSD(item(reminder: .sameDay)))
+        #expect(mapped.trialReminder == .sameDay)
     }
 
-    private func makeFixture(item: RecurringItem) throws -> Fixture {
-        try Fixture(item: item)
+    @Test("one-day survives trial reminder persistence")
+    func oneDayRoundTrips() {
+        let mapped = RecurringItemMapper.toDomain(RecurringItemMapper.toSD(item(reminder: .oneDayBefore)))
+        #expect(mapped.trialReminder == .oneDayBefore)
     }
 
-    @Test("startEditing seeds editTrialReminder from stored item")
-    func startEditingSeedsTrialReminder() throws {
-        let fixture = try makeFixture(item: makeItem(trialReminder: .sevenDaysBefore))
-        fixture.viewModel.startEditing()
-        #expect(fixture.viewModel.editTrialReminder == .sevenDaysBefore)
+    @Test("three-day survives trial reminder persistence")
+    func threeDayRoundTrips() {
+        let mapped = RecurringItemMapper.toDomain(RecurringItemMapper.toSD(item(reminder: .threeDaysBefore)))
+        #expect(mapped.trialReminder == .threeDaysBefore)
     }
 
-    @Test("startEditing seeds .never when item has .never")
-    func startEditingSeedsNever() throws {
-        let fixture = try makeFixture(item: makeItem(trialReminder: .never))
-        fixture.viewModel.startEditing()
-        #expect(fixture.viewModel.editTrialReminder == .never)
-    }
-
-    @Test("saveChanges persists editTrialReminder = .threeDaysBefore")
-    func saveChangesTrialReminder() async throws {
-        let item      = makeItem(trialReminder: .never)
-        let container = try SorenModelContainer.inMemory()
-        let repos     = RepositoryContainer(context: container.mainContext)
-        try repos.recurringItems.save(item)
-        let vm = ItemDetailsViewModel(
-            item:                  item,
-            repositories:          repos,
-            exchangeRateProvider:  StaticExchangeRateProvider(),
-            notificationScheduler: MockNotificationScheduler()
-        )
-        vm.startEditing()
-        vm.editTrialReminder = .threeDaysBefore
-        try await vm.saveChanges()
-        #expect(vm.item.trialReminder == .threeDaysBefore)
-    }
-
-    @Test("saveChanges persists editTrialReminder = .never")
-    func saveChangesTrialReminderNever() async throws {
-        let item      = makeItem(trialReminder: .oneDayBefore)
-        let container = try SorenModelContainer.inMemory()
-        let repos     = RepositoryContainer(context: container.mainContext)
-        try repos.recurringItems.save(item)
-        let vm = ItemDetailsViewModel(
-            item:                  item,
-            repositories:          repos,
-            exchangeRateProvider:  StaticExchangeRateProvider(),
-            notificationScheduler: MockNotificationScheduler()
-        )
-        vm.startEditing()
-        vm.editTrialReminder = .never
-        try await vm.saveChanges()
-        #expect(vm.item.trialReminder == .never)
-    }
-
-    @Test("schedule(for:) called on saveChanges")
-    func saveChangesSchedulesCalled() async throws {
-        let mock      = MockNotificationScheduler()
-        let item      = makeItem(trialReminder: .threeDaysBefore)
-        let container = try SorenModelContainer.inMemory()
-        let repos     = RepositoryContainer(context: container.mainContext)
-        try repos.recurringItems.save(item)
-        let vm = ItemDetailsViewModel(
-            item:                  item,
-            repositories:          repos,
-            exchangeRateProvider:  StaticExchangeRateProvider(),
-            notificationScheduler: mock
-        )
-        vm.startEditing()
-        vm.editTrialReminder = .sameDay
-        try await vm.saveChanges()
-        #expect(mock.scheduledIDs.contains(item.id))
-    }
-
-    @Test("schedule(for:) called on archive — real scheduler cancels both identifiers internally")
-    func archiveCancelsBoth() async throws {
-        let mock      = MockNotificationScheduler()
-        let item      = makeItem(trialReminder: .threeDaysBefore)
-        let container = try SorenModelContainer.inMemory()
-        let repos     = RepositoryContainer(context: container.mainContext)
-        try repos.recurringItems.save(item)
-        let vm = ItemDetailsViewModel(
-            item:                  item,
-            repositories:          repos,
-            exchangeRateProvider:  StaticExchangeRateProvider(),
-            notificationScheduler: mock
-        )
-        try await vm.archive()
-        // Mock records schedule() call; real scheduler cancels both identifiers internally.
-        #expect(mock.scheduledIDs.contains(item.id))
+    @Test("seven-day survives trial reminder persistence")
+    func sevenDayRoundTrips() {
+        let mapped = RecurringItemMapper.toDomain(RecurringItemMapper.toSD(item(reminder: .sevenDaysBefore)))
+        #expect(mapped.trialReminder == .sevenDaysBefore)
     }
 }

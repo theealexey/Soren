@@ -13,7 +13,6 @@ final class AppContainer {
     let preferences: UserPreferencesRepository
     let exchangeRateProvider: any ExchangeRateProvider
     let regionalPricingSnapshotResult: Result<RegionalPricingSnapshot, BundledRegionalPricingLoaderError>
-    let notificationScheduler: NotificationScheduler
     let notificationRefreshCoordinator: NotificationRefreshCoordinator
 
     /// Incremented whenever recurring items are mutated.
@@ -23,16 +22,15 @@ final class AppContainer {
     init(modelContext: ModelContext) {
         let prefs      = UserPreferencesRepository()
         let repos      = RepositoryContainer(context: modelContext)
-        let scheduler  = NotificationScheduler()
+        let reconciler = NotificationReconciler(center: UNUserNotificationCenterClient())
         self.repositories = repos
         self.providerCatalog = InMemoryProviderCatalogRepository()
         self.preferences = prefs
         self.exchangeRateProvider = OpenExchangeRateProvider()
         self.regionalPricingSnapshotResult = Self.loadRegionalPricing()
-        self.notificationScheduler = scheduler
         self.notificationRefreshCoordinator = NotificationRefreshCoordinator(
             repository: repos.recurringItems,
-            scheduler: scheduler
+            reconciler: reconciler
         )
     }
 
@@ -43,17 +41,18 @@ final class AppContainer {
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
         exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider(),
         regionalPricingSnapshotResult: Result<RegionalPricingSnapshot, BundledRegionalPricingLoaderError> = AppContainer.loadRegionalPricing(),
-        notificationScheduler: NotificationScheduler = NotificationScheduler()
+        notificationReconciler: any NotificationReconciling = NotificationReconciler(
+            center: UNUserNotificationCenterClient()
+        )
     ) {
         self.repositories = repositories
         self.providerCatalog = providerCatalog
         self.preferences = preferences
         self.exchangeRateProvider = exchangeRateProvider
         self.regionalPricingSnapshotResult = regionalPricingSnapshotResult
-        self.notificationScheduler = notificationScheduler
         self.notificationRefreshCoordinator = NotificationRefreshCoordinator(
             repository: repositories.recurringItems,
-            scheduler: notificationScheduler
+            reconciler: notificationReconciler
         )
     }
 

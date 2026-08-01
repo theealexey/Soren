@@ -8,7 +8,7 @@ extension AppContainer {
             catalog: providerCatalog,
             saveRecurringItem: SaveRecurringItem(
                 repository: repositories.recurringItems,
-                notificationScheduler: notificationScheduler
+                notificationCoordinator: notificationRefreshCoordinator
             ),
             currencyEstimateService: makeCurrencyEstimateService(),
             preferences: preferences,
@@ -21,11 +21,11 @@ extension AppContainer {
             item: item,
             updateRecurringItem: UpdateRecurringItem(
                 repository: repositories.recurringItems,
-                notificationScheduler: notificationScheduler
+                notificationCoordinator: notificationRefreshCoordinator
             ),
             deleteRecurringItem: DeleteRecurringItem(
                 repository: repositories.recurringItems,
-                notificationScheduler: notificationScheduler
+                notificationCoordinator: notificationRefreshCoordinator
             ),
             currencyEstimateService: makeCurrencyEstimateService(),
             preferences: preferences

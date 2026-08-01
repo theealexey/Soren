@@ -262,7 +262,7 @@ struct CurrencyEstimateFormTests {
         viewModel.amountText = "12"
         viewModel.currencyCode = "USD"
         _ = try await waitForAvailable { viewModel.currencyEstimateState }
-        try viewModel.save()
+        try await viewModel.save()
 
         let saved = try #require(repository.savedItems.first)
         #expect(saved.amount == 12)
@@ -459,7 +459,7 @@ struct CurrencyEstimateFormTests {
         try await waitForUnavailable { viewModel.currencyEstimateState }
 
         #expect(viewModel.canSave)
-        try viewModel.save()
+        try await viewModel.save()
         #expect(repository.savedItems.count == 1)
     }
 
@@ -621,7 +621,7 @@ struct CurrencyEstimateFormTests {
         #expect(estimate.original.amount == 12)
         #expect(estimate.original.currencyCode == "USD")
 
-        try viewModel.save()
+        try await viewModel.save()
         let saved = try #require(repository.savedItems.first)
         #expect(saved.amount == 12)
         #expect(saved.currencyCode == "USD")

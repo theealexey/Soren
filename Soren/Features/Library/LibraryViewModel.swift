@@ -105,7 +105,7 @@ final class LibraryViewModel {
     init(
         repositories: RepositoryContainer,
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
-        notificationScheduler: (any NotificationScheduling)? = nil,
+        notificationCoordinator: (any NotificationStateReconciling)? = nil,
         exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider(),
         aggregateRecurringSpend: AggregateRecurringSpendUseCase = AggregateRecurringSpendUseCase(),
         convertMoney: ConvertMoneyUseCase = ConvertMoneyUseCase(),
@@ -114,7 +114,7 @@ final class LibraryViewModel {
         self.getLibraryItems = GetLibraryItems(repository: repositories.recurringItems)
         self.deleteRecurringItem = DeleteRecurringItem(
             repository: repositories.recurringItems,
-            notificationScheduler: notificationScheduler
+            notificationCoordinator: notificationCoordinator
         )
         self.preferences = preferences
         self.exchangeRateProvider = exchangeRateProvider

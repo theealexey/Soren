@@ -2,26 +2,25 @@ import Foundation
 
 // MARK: - Use Case: Delete Recurring Item
 
-/// Permanently removes a recurring item from persistence and cancels its
-/// pending notification as a deterministic side effect.
+/// Permanently removes a recurring item, then reconciles the full desired
+/// notification state from persistence.
 @MainActor
 struct DeleteRecurringItem {
 
     private let repository: any RecurringItemRepository
-    private let notificationScheduler: (any NotificationScheduling)?
+    private let notificationCoordinator: (any NotificationStateReconciling)?
 
     init(
         repository: any RecurringItemRepository,
-        notificationScheduler: (any NotificationScheduling)? = nil
+        notificationCoordinator: (any NotificationStateReconciling)? = nil
     ) {
         self.repository = repository
-        self.notificationScheduler = notificationScheduler
+        self.notificationCoordinator = notificationCoordinator
     }
 
-    func execute(id: UUID) async throws {
+    @discardableResult
+    func execute(id: UUID) async throws -> NotificationRefreshOutcome? {
         try repository.delete(id: id)
-        if let scheduler = notificationScheduler {
-            await scheduler.cancel(for: id)
-        }
+        return await notificationCoordinator?.reconcileCurrentState()
     }
 }

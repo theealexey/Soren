@@ -3,37 +3,35 @@ import Foundation
 // MARK: - Use Case: Update Recurring Item
 
 /// Validates and persists changes to an existing recurring item.
+struct UpdateRecurringItemResult: Sendable, Equatable {
+    let item: RecurringItem
+    let notificationOutcome: NotificationRefreshOutcome?
+}
+
 @MainActor
 struct UpdateRecurringItem {
 
     private let repository: any RecurringItemRepository
-    private let notificationScheduler: (any NotificationScheduling)?
+    private let notificationCoordinator: (any NotificationStateReconciling)?
 
     init(
         repository: any RecurringItemRepository,
-        notificationScheduler: (any NotificationScheduling)? = nil
+        notificationCoordinator: (any NotificationStateReconciling)? = nil
     ) {
         self.repository = repository
-        self.notificationScheduler = notificationScheduler
+        self.notificationCoordinator = notificationCoordinator
     }
 
-    /// Normalizes, validates, stamps `updatedAt`, persists, and reschedules the notification.
-    ///
-    /// The scheduler's `schedule(for:)` handles all eligibility cases internally —
-    /// it cancels the existing notification for paused, archived, cancelled, or
-    /// `.never`-reminder items, so no branching by status is needed here.
-    ///
-    /// Returns the saved copy with `updatedAt` set to the current time.
+    /// Normalizes, validates, stamps `updatedAt`, persists, then reconciles the
+    /// complete desired notification state from fresh repository data.
     @discardableResult
-    func execute(_ item: RecurringItem) async throws -> RecurringItem {
+    func execute(_ item: RecurringItem) async throws -> UpdateRecurringItemResult {
         var normalized = normalize(item)
         try validate(normalized)
         normalized.updatedAt = .now
         try repository.update(normalized)
-        if let scheduler = notificationScheduler {
-            await scheduler.schedule(for: normalized)
-        }
-        return normalized
+        let outcome = await notificationCoordinator?.reconcileCurrentState()
+        return UpdateRecurringItemResult(item: normalized, notificationOutcome: outcome)
     }
 
     // MARK: - Write-time normalization

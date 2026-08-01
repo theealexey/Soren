@@ -592,7 +592,7 @@ final class AddSubscriptionViewModel {
 
     // MARK: - Save
 
-    func save() throws {
+    func save() async throws {
         saveError = nil
 
         guard let amount = Decimal(string: amountText.replacingOccurrences(of: ",", with: ".")) else {
@@ -620,7 +620,7 @@ final class AddSubscriptionViewModel {
         )
 
         do {
-            try saveRecurringItem.execute(item)
+            _ = try await saveRecurringItem.execute(item)
             isSaved = true
         } catch {
             saveError = error

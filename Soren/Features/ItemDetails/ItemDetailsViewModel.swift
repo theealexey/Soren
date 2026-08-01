@@ -86,18 +86,18 @@ final class ItemDetailsViewModel {
         item: RecurringItem,
         repositories: RepositoryContainer,
         exchangeRateProvider: Provider,
-        notificationScheduler: (any NotificationScheduling)? = nil,
+        notificationCoordinator: (any NotificationStateReconciling)? = nil,
         convertMoney: ConvertMoneyUseCase = ConvertMoneyUseCase(),
         preferences: UserPreferencesRepository = UserPreferencesRepository()
     ) {
         self.item = item
         self.updateRecurringItem = UpdateRecurringItem(
             repository: repositories.recurringItems,
-            notificationScheduler: notificationScheduler
+            notificationCoordinator: notificationCoordinator
         )
         self.deleteRecurringItem = DeleteRecurringItem(
             repository: repositories.recurringItems,
-            notificationScheduler: notificationScheduler
+            notificationCoordinator: notificationCoordinator
         )
         self.currencyEstimateService = CurrencyEstimateService(
             exchangeRateProvider: exchangeRateProvider,
@@ -205,8 +205,8 @@ final class ItemDetailsViewModel {
         updated.usageStatus = editUsageStatus
 
         // Use the returned copy — it carries the updatedAt stamp set by the use case.
-        // The use case also reschedules the notification directly after a successful persist.
-        item = try await updateRecurringItem.execute(updated)
+        // Notification work is a complete reconciliation after persistence.
+        item = try await updateRecurringItem.execute(updated).item
         cancelCurrencyEstimate()
         isEditing = false
     }
@@ -216,20 +216,19 @@ final class ItemDetailsViewModel {
     func togglePause() async throws {
         var updated = item
         updated.status = item.status == .paused ? .active : .paused
-        // The scheduler handles eligibility: it cancels for paused items, reschedules for active.
-        item = try await updateRecurringItem.execute(updated)
+        // Eligibility is evaluated from the complete persisted state.
+        item = try await updateRecurringItem.execute(updated).item
     }
 
     func archive() async throws {
         var updated = item
         updated.status = .archived
         updated.archivedAt = .now
-        // The scheduler cancels automatically because archived items are ineligible.
-        item = try await updateRecurringItem.execute(updated)
+        item = try await updateRecurringItem.execute(updated).item
     }
 
     func delete() async throws {
-        try await deleteRecurringItem.execute(id: item.id)
+        _ = try await deleteRecurringItem.execute(id: item.id)
         isDeleted = true
     }
 

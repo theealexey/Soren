@@ -170,13 +170,15 @@ struct SubscriptionFormView: View {
     // MARK: - Save
 
     private func saveAndDismiss() {
-        do {
-            try viewModel.save()
-            HapticEngine.success()
-            dismiss()
-        } catch {
-            HapticEngine.error()
-            showSaveError = true
+        Task { @MainActor in
+            do {
+                try await viewModel.save()
+                HapticEngine.success()
+                dismiss()
+            } catch {
+                HapticEngine.error()
+                showSaveError = true
+            }
         }
     }
 

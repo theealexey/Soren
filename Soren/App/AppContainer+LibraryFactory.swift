@@ -9,7 +9,7 @@ extension AppContainer {
         LibraryViewModel(
             repositories: repositories,
             preferences: preferences,
-            notificationScheduler: notificationScheduler,
+            notificationCoordinator: notificationRefreshCoordinator,
             exchangeRateProvider: exchangeRateProvider,
             aggregateRecurringSpend: AggregateRecurringSpendUseCase()
         )

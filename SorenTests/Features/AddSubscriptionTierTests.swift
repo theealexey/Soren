@@ -316,7 +316,7 @@ struct AddSubscriptionTierTests {
     }
 
     @Test("Manual edits preserve final original money and do not get overwritten on market refresh")
-    func userModifiedPriceWinsOverMarketRefreshAndSave() throws {
+    func userModifiedPriceWinsOverMarketRefreshAndSave() async throws {
         let tier = PlanTier(id: "individual", name: "Individual", referenceAmount: 1, billingCycle: .monthly)
         let provider = provider(tiers: [tier])
         let usPrice = try price(provider: provider, tier: tier, amount: 12.99, currencyCode: "USD", billingCycle: .monthly)
@@ -340,7 +340,7 @@ struct AddSubscriptionTierTests {
         #expect(fixture.viewModel.currencyCode == "EUR")
         #expect(fixture.viewModel.billingCycle == .quarterly)
 
-        try fixture.viewModel.save()
+        try await fixture.viewModel.save()
         let saved = try #require(fixture.repository.savedItems.first)
         #expect(saved.amount == 15.50)
         #expect(saved.currencyCode == "EUR")
