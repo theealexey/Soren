@@ -4,6 +4,7 @@ import Foundation
 @MainActor
 final class NotificationReconciliationSpy: NotificationStateReconciling {
     private(set) var callCount = 0
+    private(set) var sources: [NotificationReconciliationSource] = []
     var outcome = NotificationRefreshOutcome.reconciled(
         NotificationReconciliationReport(
             desiredCount: 0,
@@ -16,8 +17,9 @@ final class NotificationReconciliationSpy: NotificationStateReconciling {
         )
     )
 
-    func reconcileCurrentState() async -> NotificationRefreshOutcome {
+    func reconcileCurrentState(source: NotificationReconciliationSource) async -> NotificationRefreshOutcome {
         callCount += 1
+        sources.append(source)
         return outcome
     }
 }
@@ -52,12 +54,21 @@ final class FakeNotificationCenterClient: NotificationCenterClient {
     var delivered: Set<String>
     var rejectedIDs: Set<String> = []
     private(set) var added: [PlannedNotificationRequest] = []
+    private(set) var authorizationRequestCount = 0
     private(set) var removedPending: [String] = []
     private(set) var removedDelivered: [String] = []
     private var suspendsNextAdd = false
     private var didSuspendAdd = false
     private var addSuspendedContinuation: CheckedContinuation<Void, Never>?
     private var resumeAddContinuation: CheckedContinuation<Void, Never>?
+    private var suspendsNextAuthorizationRequest = false
+    private var didSuspendAuthorizationRequest = false
+    private var authorizationSuspendedContinuation: CheckedContinuation<Void, Never>?
+    private var resumeAuthorizationContinuation: CheckedContinuation<Void, Never>?
+    #if DEBUG
+    var diagnosticPendingOverride: [NotificationDiagnosticPendingRequest]?
+    var diagnosticDeliveredOverride: [NotificationDiagnosticDeliveredRequest]?
+    #endif
 
     init(
         status: NotificationAuthorizationStatus = .authorized,
@@ -72,6 +83,18 @@ final class FakeNotificationCenterClient: NotificationCenterClient {
     func authorizationStatus() async -> NotificationAuthorizationStatus { status }
 
     func requestAuthorization() async throws -> NotificationAuthorizationStatus {
+        authorizationRequestCount += 1
+        if suspendsNextAuthorizationRequest {
+            suspendsNextAuthorizationRequest = false
+            didSuspendAuthorizationRequest = true
+            let suspendedContinuation = authorizationSuspendedContinuation
+            authorizationSuspendedContinuation = nil
+            suspendedContinuation?.resume()
+
+            await withCheckedContinuation { continuation in
+                resumeAuthorizationContinuation = continuation
+            }
+        }
         if let authorizationResult {
             switch authorizationResult {
             case .success(let result):
@@ -123,6 +146,23 @@ final class FakeNotificationCenterClient: NotificationCenterClient {
         continuation?.resume()
     }
 
+    func suspendNextAuthorizationRequest() {
+        suspendsNextAuthorizationRequest = true
+    }
+
+    func waitUntilAuthorizationRequestIsSuspended() async {
+        guard !didSuspendAuthorizationRequest else { return }
+        await withCheckedContinuation { continuation in
+            authorizationSuspendedContinuation = continuation
+        }
+    }
+
+    func resumeSuspendedAuthorizationRequest() {
+        let continuation = resumeAuthorizationContinuation
+        resumeAuthorizationContinuation = nil
+        continuation?.resume()
+    }
+
     func removePending(identifiers: [String]) {
         removedPending.append(contentsOf: identifiers)
         pending.subtract(identifiers)
@@ -133,3 +173,24 @@ final class FakeNotificationCenterClient: NotificationCenterClient {
         delivered.subtract(identifiers)
     }
 }
+
+#if DEBUG
+extension FakeNotificationCenterClient: NotificationDiagnosticsReading {
+    var diagnosticPending: [NotificationDiagnosticPendingRequest] {
+        if let diagnosticPendingOverride { return diagnosticPendingOverride }
+        return pending.sorted().map {
+            NotificationDiagnosticPendingRequest(identifier: $0, fireDate: nil, triggerKind: "calendar", repeats: false)
+        }
+    }
+
+    var diagnosticDelivered: [NotificationDiagnosticDeliveredRequest] {
+        if let diagnosticDeliveredOverride { return diagnosticDeliveredOverride }
+        return delivered.sorted().map {
+            NotificationDiagnosticDeliveredRequest(identifier: $0, deliveredDate: .distantPast)
+        }
+    }
+
+    func pendingNotificationDiagnostics() async -> [NotificationDiagnosticPendingRequest] { diagnosticPending }
+    func deliveredNotificationDiagnostics() async -> [NotificationDiagnosticDeliveredRequest] { diagnosticDelivered }
+}
+#endif

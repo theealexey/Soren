@@ -14,6 +14,12 @@ final class AppContainer {
     let exchangeRateProvider: any ExchangeRateProvider
     let regionalPricingSnapshotResult: Result<RegionalPricingSnapshot, BundledRegionalPricingLoaderError>
     let notificationRefreshCoordinator: NotificationRefreshCoordinator
+    let notificationPermissionCoordinator: NotificationPermissionCoordinator
+    let applicationSettingsOpener: any ApplicationSettingsOpening
+    let notificationObservation: NotificationReconciliationObservation
+    #if DEBUG
+    let notificationDiagnosticsProvider: NotificationDiagnosticsProvider?
+    #endif
 
     /// Incremented whenever recurring items are mutated.
     /// Views observe this to know when to reload their ViewModels.
@@ -22,16 +28,33 @@ final class AppContainer {
     init(modelContext: ModelContext) {
         let prefs      = UserPreferencesRepository()
         let repos      = RepositoryContainer(context: modelContext)
-        let reconciler = NotificationReconciler(center: UNUserNotificationCenterClient())
+        let notificationCenter = UNUserNotificationCenterClient()
+        let reconciler = NotificationReconciler(center: notificationCenter)
+        let notificationObservation = NotificationReconciliationObservation()
         self.repositories = repos
         self.providerCatalog = InMemoryProviderCatalogRepository()
         self.preferences = prefs
         self.exchangeRateProvider = OpenExchangeRateProvider()
         self.regionalPricingSnapshotResult = Self.loadRegionalPricing()
-        self.notificationRefreshCoordinator = NotificationRefreshCoordinator(
+        let refreshCoordinator = NotificationRefreshCoordinator(
             repository: repos.recurringItems,
-            reconciler: reconciler
+            reconciler: reconciler,
+            observation: notificationObservation
         )
+        self.notificationRefreshCoordinator = refreshCoordinator
+        self.notificationPermissionCoordinator = NotificationPermissionCoordinator(
+            center: notificationCenter,
+            refreshCoordinator: refreshCoordinator,
+            observation: notificationObservation
+        )
+        self.applicationSettingsOpener = UIApplicationSettingsOpener()
+        self.notificationObservation = notificationObservation
+        #if DEBUG
+        self.notificationDiagnosticsProvider = NotificationDiagnosticsProvider(
+            center: notificationCenter,
+            observation: notificationObservation
+        )
+        #endif
     }
 
     /// For SwiftUI Previews and tests — fully in-memory, no disk persistence.
@@ -41,18 +64,39 @@ final class AppContainer {
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
         exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider(),
         regionalPricingSnapshotResult: Result<RegionalPricingSnapshot, BundledRegionalPricingLoaderError> = AppContainer.loadRegionalPricing(),
-        notificationReconciler: any NotificationReconciling = NotificationReconciler(
-            center: UNUserNotificationCenterClient()
-        )
+        notificationCenter: any NotificationCenterClient = UNUserNotificationCenterClient(),
+        notificationReconciler: (any NotificationReconciling)? = nil,
+        applicationSettingsOpener: any ApplicationSettingsOpening = UIApplicationSettingsOpener()
     ) {
         self.repositories = repositories
         self.providerCatalog = providerCatalog
         self.preferences = preferences
         self.exchangeRateProvider = exchangeRateProvider
         self.regionalPricingSnapshotResult = regionalPricingSnapshotResult
-        self.notificationRefreshCoordinator = NotificationRefreshCoordinator(
+        let reconciler = notificationReconciler ?? NotificationReconciler(center: notificationCenter)
+        let notificationObservation = NotificationReconciliationObservation()
+        let refreshCoordinator = NotificationRefreshCoordinator(
             repository: repositories.recurringItems,
-            reconciler: notificationReconciler
+            reconciler: reconciler,
+            observation: notificationObservation
+        )
+        self.notificationRefreshCoordinator = refreshCoordinator
+        self.notificationPermissionCoordinator = NotificationPermissionCoordinator(
+            center: notificationCenter,
+            refreshCoordinator: refreshCoordinator,
+            observation: notificationObservation
+        )
+        self.applicationSettingsOpener = applicationSettingsOpener
+        self.notificationObservation = notificationObservation
+        #if DEBUG
+        self.notificationDiagnosticsProvider = nil
+        #endif
+    }
+
+    func makeSettingsViewModel() -> SettingsViewModel {
+        SettingsViewModel(
+            permissionManager: notificationPermissionCoordinator,
+            settingsOpener: applicationSettingsOpener
         )
     }
 

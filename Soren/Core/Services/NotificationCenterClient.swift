@@ -98,3 +98,59 @@ final class UNUserNotificationCenterClient: NotificationCenterClient {
         }
     }
 }
+
+#if DEBUG
+struct NotificationDiagnosticPendingRequest: Sendable, Equatable {
+    let identifier: String
+    let fireDate: Date?
+    let triggerKind: String
+    let repeats: Bool?
+}
+
+struct NotificationDiagnosticDeliveredRequest: Sendable, Equatable {
+    let identifier: String
+    let deliveredDate: Date
+}
+
+/// DEBUG-only read boundary for non-sensitive, Soren-owned request metadata.
+@MainActor
+protocol NotificationDiagnosticsReading: AnyObject {
+    func pendingNotificationDiagnostics() async -> [NotificationDiagnosticPendingRequest]
+    func deliveredNotificationDiagnostics() async -> [NotificationDiagnosticDeliveredRequest]
+}
+
+extension UNUserNotificationCenterClient: NotificationDiagnosticsReading {
+    func pendingNotificationDiagnostics() async -> [NotificationDiagnosticPendingRequest] {
+        await center.pendingNotificationRequests().map { request in
+            if let trigger = request.trigger as? UNCalendarNotificationTrigger {
+                return NotificationDiagnosticPendingRequest(
+                    identifier: request.identifier,
+                    fireDate: trigger.nextTriggerDate(),
+                    triggerKind: "calendar",
+                    repeats: trigger.repeats
+                )
+            }
+            if let trigger = request.trigger as? UNTimeIntervalNotificationTrigger {
+                return NotificationDiagnosticPendingRequest(
+                    identifier: request.identifier,
+                    fireDate: trigger.nextTriggerDate(),
+                    triggerKind: "timeInterval",
+                    repeats: trigger.repeats
+                )
+            }
+            return NotificationDiagnosticPendingRequest(
+                identifier: request.identifier,
+                fireDate: nil,
+                triggerKind: "other",
+                repeats: nil
+            )
+        }
+    }
+
+    func deliveredNotificationDiagnostics() async -> [NotificationDiagnosticDeliveredRequest] {
+        await center.deliveredNotifications().map {
+            NotificationDiagnosticDeliveredRequest(identifier: $0.request.identifier, deliveredDate: $0.date)
+        }
+    }
+}
+#endif

@@ -6,11 +6,13 @@ import SwiftUI
 /// Presented as a sheet from the gear icon on Home and Alerts screens.
 struct SettingsView: View {
     @Environment(AppState.self) private var appState
-    @State private var viewModel = SettingsViewModel()
-    @Environment(\.dismiss) private var dismiss
-    #if DEBUG
     @Environment(AppContainer.self) private var container
-    #endif
+    @State private var viewModel: SettingsViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    init(viewModel: SettingsViewModel = SettingsViewModel()) {
+        _viewModel = State(initialValue: viewModel)
+    }
 
     var body: some View {
         @Bindable var vm = viewModel
@@ -22,6 +24,8 @@ struct SettingsView: View {
                 appearance:     $appState.appearanceMode,
                 chargeReminder: $vm.defaultChargeReminder
             )
+
+            notificationPermissionSection
 
             aboutSection
 
@@ -43,6 +47,13 @@ struct SettingsView: View {
         }
         .onChange(of: appState.appearanceMode) {
             dismiss()
+        }
+        .task {
+            await viewModel.loadNotificationAuthorizationStatus()
+        }
+        .task(id: container.notificationObservation.revision) {
+            guard container.notificationObservation.revision > 0 else { return }
+            viewModel.applyForegroundAuthorizationStatus(container.notificationObservation.authorizationStatus)
         }
     }
 
@@ -88,6 +99,53 @@ struct SettingsView: View {
         }
     }
 
+    private var notificationPermissionSection: some View {
+        Section(String(localized: "Разрешение на уведомления")) {
+            Text(String(localized: "Soren использует системное разрешение iOS для напоминаний о списаниях и пробных периодах."))
+                .font(Typography.caption)
+                .foregroundStyle(ColorTokens.textSecondary)
+
+            HStack {
+                Text(String(localized: "Статус"))
+                Spacer()
+                if viewModel.isNotificationStatusLoading {
+                    ProgressView()
+                } else {
+                    Text(viewModel.notificationStatusText)
+                        .foregroundStyle(ColorTokens.textSecondary)
+                }
+            }
+
+            if viewModel.isNotificationActionInFlight {
+                HStack(spacing: Spacing.sm) {
+                    ProgressView()
+                    Text(String(localized: "Обновляем настройки уведомлений"))
+                }
+                .font(Typography.caption)
+                .foregroundStyle(ColorTokens.textSecondary)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(String(localized: "Обновляем настройки уведомлений"))
+            } else if let actionTitle = viewModel.notificationPrimaryActionTitle {
+                Button(actionTitle) {
+                    Task { await viewModel.performNotificationPrimaryAction() }
+                }
+                .accessibilityLabel(actionTitle)
+            }
+
+            if let errorText = viewModel.notificationErrorText {
+                Text(errorText)
+                    .font(Typography.caption)
+                    .foregroundStyle(.red)
+            }
+
+            if let warningText = viewModel.notificationWarningText {
+                Text(warningText)
+                    .font(Typography.caption)
+                    .foregroundStyle(ColorTokens.textSecondary)
+            }
+        }
+    }
+
     private func pricingMarketName(_ market: PricingMarket) -> LocalizedStringKey {
         switch market.countryCode {
         case "RU": "Россия"
@@ -106,6 +164,12 @@ struct SettingsView: View {
             preferences: container.preferences
         )
         return Section("Разработка") {
+            if let provider = container.notificationDiagnosticsProvider {
+                NavigationLink(String(localized: "Диагностика уведомлений")) {
+                    NotificationDiagnosticsView(provider: provider)
+                }
+            }
+
             Button("Загрузить демо-данные") {
                 try? seeder.seed()
                 container.itemsVersion += 1

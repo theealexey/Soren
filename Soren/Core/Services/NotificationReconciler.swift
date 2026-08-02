@@ -1,7 +1,6 @@
 import Foundation
 
 enum NotificationReconciliationFailure: Sendable, Equatable {
-    case authorizationRequestFailed
     case addFailed(identifier: String)
 }
 
@@ -62,17 +61,8 @@ final class NotificationReconciler: NotificationReconciling {
     }
 
     private func reconcileOnce(_ plan: NotificationRequestPlan) async -> NotificationReconciliationReport {
-        var status = await center.authorizationStatus()
+        let status = await center.authorizationStatus()
         var failures: [NotificationReconciliationFailure] = []
-
-        if status == .notDetermined {
-            do {
-                status = try await center.requestAuthorization()
-            } catch {
-                failures.append(.authorizationRequestFailed)
-                status = .unknown
-            }
-        }
 
         let pending = await center.pendingRequestIdentifiers()
         let delivered = await center.deliveredNotificationIdentifiers()

@@ -30,7 +30,7 @@ struct UpdateRecurringItem {
         try validate(normalized)
         normalized.updatedAt = .now
         try repository.update(normalized)
-        let outcome = await notificationCoordinator?.reconcileCurrentState()
+        let outcome = await notificationCoordinator?.reconcileCurrentState(source: .update)
         return UpdateRecurringItemResult(item: normalized, notificationOutcome: outcome)
     }
 

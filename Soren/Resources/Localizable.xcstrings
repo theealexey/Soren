@@ -4,6 +4,204 @@
     "" : {
 
     },
+    "Авторизация" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Authorization" } } }
+    },
+    "Включены" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Enabled" } } }
+    },
+    "Включены тихо" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Delivered quietly" } } }
+    },
+    "Включить уведомления" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Enable Notifications" } } }
+    },
+    "Временно включены" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Temporarily enabled" } } }
+    },
+    "Диагностика" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Diagnostics" } } }
+    },
+    "Диагностика уведомлений" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Notification Diagnostics" } } }
+    },
+    "Доставленные уведомления" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Delivered Notifications" } } }
+    },
+    "Не удалось открыть настройки iOS. Попробуйте ещё раз." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Could not open iOS Settings. Try again." } } }
+    },
+    "Не удалось запросить разрешение. Попробуйте ещё раз." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Could not request permission. Try again." } } }
+    },
+    "Нет уведомлений" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "No notifications" } } }
+    },
+    "Ожидающие уведомления" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Pending Notifications" } } }
+    },
+    "Открыть настройки iOS" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Open System Settings" } } }
+    },
+    "Повторить" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Retry" } } }
+    },
+    "Разрешение на уведомления" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Notification Permission" } } }
+    },
+    "Статус" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Status" } } }
+    },
+    "Статус недоступен" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Status unavailable" } } }
+    },
+    "Уведомления не включены" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Notifications are not enabled" } } }
+    },
+    "Отключены в настройках iOS" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Disabled in iOS Settings" } } }
+    },
+    "Обновить" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Refresh" } } }
+    },
+    "Обновить снимок" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Refresh Snapshot" } } }
+    },
+    "Время снимка" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Snapshot Time" } } }
+    },
+    "Последняя синхронизация" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Last Reconciliation" } } }
+    },
+    "Источник" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Source" } } }
+    },
+    "Начато" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Started" } } }
+    },
+    "Завершено" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Completed" } } }
+    },
+    "Запланировано" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Desired" } } }
+    },
+    "Удалено из ожидающих" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Removed Pending" } } }
+    },
+    "Удалено из доставленных" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Removed Delivered" } } }
+    },
+    "Добавлено" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Added" } } }
+    },
+    "Не удалось добавить" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Failed Adds" } } }
+    },
+    "Ошибки планирования" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Planning Failures" } } }
+    },
+    "Нет данных о синхронизации" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "No reconciliation data" } } }
+    },
+    "Нет ожидающих уведомлений" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "No pending notifications" } } }
+    },
+    "Нет доставленных уведомлений" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "No delivered notifications" } } }
+    },
+    "Тип" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Kind" } } }
+    },
+    "Элемент" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Item" } } }
+    },
+    "Дата события" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Occurrence" } } }
+    },
+    "Смещение" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Offset" } } }
+    },
+    "Тип триггера" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Trigger Type" } } }
+    },
+    "Повторяется" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Repeats" } } }
+    },
+    "Время срабатывания" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Fire Date" } } }
+    },
+    "Дата доставки" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Delivery Date" } } }
+    },
+    "Недоступно" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Unavailable" } } }
+    },
+    "Загрузка диагностики уведомлений" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Loading notification diagnostics" } } }
+    },
+    "Да" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Yes" } } }
+    },
+    "Нет" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "No" } } }
+    },
+    "Списание" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Charge" } } }
+    },
+    "Окончание пробного периода" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Trial end" } } }
+    },
+    "Календарь" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Calendar" } } }
+    },
+    "Интервал" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Time interval" } } }
+    },
+    "Возврат в приложение" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Foreground" } } }
+    },
+    "Создание подписки" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Subscription created" } } }
+    },
+    "Изменение подписки" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Subscription updated" } } }
+    },
+    "Удаление подписки" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Subscription deleted" } } }
+    },
+    "Soren использует системное разрешение iOS для напоминаний о списаниях и пробных периодах." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Soren uses the iOS system permission for charge and trial reminders." } } }
+    },
+    "Обновляем настройки уведомлений" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Updating notification settings…" } } }
+    },
+    "Уведомления включены, но некоторые напоминания не удалось запланировать." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Notifications are enabled, but some reminders could not be scheduled." } } }
+    },
+    "Уведомления включены, но не удалось обновить напоминания." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Notifications are enabled, but reminders could not be refreshed." } } }
+    },
+    "Итоговая авторизация" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Final Authorization" } } }
+    },
+    "Категория ошибки" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Failure Category" } } }
+    },
+    "Нет ошибок" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "None" } } }
+    },
+    "Ошибка планирования" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Planning failure" } } }
+    },
+    "Ошибка добавления" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Add failure" } } }
+    },
+    "Ошибки планирования и добавления" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Planning and add failures" } } }
+    },
+    "Ошибка загрузки данных" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Data loading failure" } } }
+    },
     "·" : {
 
     },

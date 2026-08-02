@@ -31,7 +31,7 @@ struct SaveRecurringItem {
         let normalized = normalize(item)
         try validate(normalized)
         try repository.save(normalized)
-        let outcome = await notificationCoordinator?.reconcileCurrentState()
+        let outcome = await notificationCoordinator?.reconcileCurrentState(source: .create)
         return SaveRecurringItemResult(item: normalized, notificationOutcome: outcome)
     }
 

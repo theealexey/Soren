@@ -131,39 +131,55 @@ struct NotificationReconcilerTests {
         #expect(center.removedPending == [old.id])
     }
 
-    @Test("not-determined authorization granted adds desired requests")
-    func authorizationGrantAddsRequests() async {
+    @Test("not-determined authorization does not request permission or add desired requests")
+    func notDeterminedDoesNotRequestAuthorization() async {
         let desired = request()
         let center = FakeNotificationCenterClient(status: .notDetermined)
         center.authorizationResult = .success(.authorized)
         let report = await NotificationReconciler(center: center).reconcile(
             plan: NotificationRequestPlan(requests: [desired], failures: [])
         )
-        #expect(report.authorizationStatus == .authorized)
-        #expect(report.addedCount == 1)
-        #expect(center.pending == [desired.id])
+        #expect(report.authorizationStatus == .notDetermined)
+        #expect(report.addedCount == 0)
+        #expect(center.authorizationRequestCount == 0)
+        #expect(center.pending.isEmpty)
     }
 
-    @Test("not-determined authorization denied returns an explicit denied result")
-    func authorizationDenialIsExplicit() async {
+    @Test("not-determined authorization remains explicit without a prompt")
+    func authorizationNotDeterminedIsExplicit() async {
         let center = FakeNotificationCenterClient(status: .notDetermined)
         center.authorizationResult = .success(.denied)
         let report = await NotificationReconciler(center: center).reconcile(
             plan: NotificationRequestPlan(requests: [request()], failures: [])
         )
-        #expect(report.authorizationStatus == .denied)
+        #expect(report.authorizationStatus == .notDetermined)
         #expect(report.addedCount == 0)
+        #expect(center.authorizationRequestCount == 0)
     }
 
-    @Test("authorization-request failure remains visible in the typed report")
-    func authorizationRequestFailureIsReported() async {
-        let center = FakeNotificationCenterClient(status: .notDetermined)
-        center.authorizationResult = .failure(FakeNotificationCenterClient.AddError.rejected)
+    @Test("provisional authorization adds desired requests")
+    func provisionalAuthorizationAddsRequests() async {
+        let desired = request()
+        let center = FakeNotificationCenterClient(status: .provisional)
         let report = await NotificationReconciler(center: center).reconcile(
-            plan: NotificationRequestPlan(requests: [request()], failures: [])
+            plan: NotificationRequestPlan(requests: [desired], failures: [])
         )
-        #expect(report.authorizationStatus == .unknown)
-        #expect(report.addFailures == [.authorizationRequestFailed])
+        #expect(report.authorizationStatus == .provisional)
+        #expect(report.addedCount == 1)
+        #expect(center.pending == [desired.id])
+    }
+
+    @Test("ephemeral authorization adds desired requests without requesting permission")
+    func ephemeralAuthorizationAddsRequests() async {
+        let desired = request()
+        let center = FakeNotificationCenterClient(status: .ephemeral)
+        let report = await NotificationReconciler(center: center).reconcile(
+            plan: NotificationRequestPlan(requests: [desired], failures: [])
+        )
+        #expect(report.authorizationStatus == .ephemeral)
+        #expect(report.addedCount == 1)
+        #expect(center.authorizationRequestCount == 0)
+        #expect(center.pending == [desired.id])
     }
 
     @Test("planning failures are preserved in the reconciliation report")
@@ -185,6 +201,7 @@ struct NotificationReconcilerTests {
         #expect(report.authorizationStatus == .unknown)
         #expect(report.addedCount == 0)
         #expect(center.pending.isEmpty)
+        #expect(center.authorizationRequestCount == 0)
     }
 
     @Test("concurrent submission leaves newest plan as final pending state")

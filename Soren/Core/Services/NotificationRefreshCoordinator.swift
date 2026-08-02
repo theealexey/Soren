@@ -10,7 +10,13 @@ enum NotificationRefreshOutcome: Sendable, Equatable {
 
 @MainActor
 protocol NotificationStateReconciling: AnyObject {
-    func reconcileCurrentState() async -> NotificationRefreshOutcome
+    func reconcileCurrentState(source: NotificationReconciliationSource) async -> NotificationRefreshOutcome
+}
+
+extension NotificationStateReconciling {
+    func reconcileCurrentState() async -> NotificationRefreshOutcome {
+        await reconcileCurrentState(source: .other)
+    }
 }
 
 /// Loads authoritative persistence state and submits its complete desired plan
@@ -24,6 +30,7 @@ final class NotificationRefreshCoordinator: NotificationStateReconciling {
     private let repository: any RecurringItemRepository
     private let planner: NotificationRequestPlanner
     private let reconciler: any NotificationReconciling
+    private let observation: NotificationReconciliationObservation?
     private var refreshTask: Task<Void, Never>?
     private var latestRefreshRevision = 0
 
@@ -35,16 +42,19 @@ final class NotificationRefreshCoordinator: NotificationStateReconciling {
             calendar: .current,
             locale: .current
         ),
-        reconciler: any NotificationReconciling
+        reconciler: any NotificationReconciling,
+        observation: NotificationReconciliationObservation? = nil
     ) {
         self.repository = repository
         self.planner = planner
         self.reconciler = reconciler
+        self.observation = observation
     }
 
     // MARK: - Activation
 
-    func reconcileCurrentState() async -> NotificationRefreshOutcome {
+    func reconcileCurrentState(source: NotificationReconciliationSource = .other) async -> NotificationRefreshOutcome {
+        let startedAt = Date.now
         latestRefreshRevision += 1
         let revision = latestRefreshRevision
 
@@ -54,9 +64,13 @@ final class NotificationRefreshCoordinator: NotificationStateReconciling {
                 return .superseded
             }
             let plan = planner.plan(items: items, now: .now)
-            return .reconciled(await reconciler.reconcile(plan: plan))
+            let outcome = NotificationRefreshOutcome.reconciled(await reconciler.reconcile(plan: plan))
+            observation?.record(outcome: outcome, source: source, startedAt: startedAt, completedAt: .now)
+            return outcome
         } catch {
-            return .repositoryFetchFailed
+            let outcome = NotificationRefreshOutcome.repositoryFetchFailed
+            observation?.record(outcome: outcome, source: source, startedAt: startedAt, completedAt: .now)
+            return outcome
         }
     }
 
@@ -65,7 +79,7 @@ final class NotificationRefreshCoordinator: NotificationStateReconciling {
     /// concurrent desired plans to guarantee the latest final state.
     func didBecomeActive() {
         refreshTask = Task { [weak self] in
-            _ = await self?.reconcileCurrentState()
+            _ = await self?.reconcileCurrentState(source: .foreground)
         }
     }
 }

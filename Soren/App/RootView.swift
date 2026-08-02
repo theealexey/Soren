@@ -91,7 +91,7 @@ struct RootView: View {
                 )
             }
         case .settings:
-            NavigationStack { SettingsView() }
+            NavigationStack { SettingsView(viewModel: container.makeSettingsViewModel()) }
         }
     }
 

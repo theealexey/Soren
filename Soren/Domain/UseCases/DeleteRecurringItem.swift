@@ -21,6 +21,6 @@ struct DeleteRecurringItem {
     @discardableResult
     func execute(id: UUID) async throws -> NotificationRefreshOutcome? {
         try repository.delete(id: id)
-        return await notificationCoordinator?.reconcileCurrentState()
+        return await notificationCoordinator?.reconcileCurrentState(source: .delete)
     }
 }
