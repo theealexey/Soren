@@ -2,1081 +2,852 @@ import Foundation
 import Testing
 @testable import Soren
 
-@Suite("Home currency aggregation")
+@Suite("Home Overview integration and currency coherence")
 @MainActor
 struct HomeCurrencyAggregationTests {
-    @MainActor
-    private final class InMemoryRecurringItemRepository: RecurringItemRepository {
+    private final class Repository: RecurringItemRepository {
         var items: [RecurringItem]
+        var fetchError: Error?
 
-        init(items: [RecurringItem]) {
-            self.items = items
+        init(items: [RecurringItem]) { self.items = items }
+
+        func fetchAll() throws -> [RecurringItem] {
+            if let fetchError { throw fetchError }
+            return items
         }
-
-        func fetchAll() throws -> [RecurringItem] { items }
-
-        func fetchActive() throws -> [RecurringItem] {
-            items.filter { $0.archivedAt == nil && $0.status.countsInTotals }
-        }
-
+        func fetchActive() throws -> [RecurringItem] { try fetchAll().filter(\.status.countsInTotals) }
         func fetchUpcoming(within days: Int, from date: Date) throws -> [RecurringItem] {
+            if let fetchError { throw fetchError }
             let cutoff = Calendar.current.date(byAdding: .day, value: days, to: date) ?? date
-            return items.filter {
-                $0.archivedAt == nil
-                    && $0.nextChargeDate >= date
-                    && $0.nextChargeDate <= cutoff
-            }
+            return items.filter { $0.nextChargeDate >= date && $0.nextChargeDate <= cutoff }
         }
-
         func fetchByCategory(_ category: ItemCategory) throws -> [RecurringItem] {
-            items.filter { $0.category == category }
+            try fetchAll().filter { $0.category == category }
         }
-
-        func fetch(id: UUID) throws -> RecurringItem? {
-            items.first { $0.id == id }
-        }
-
+        func fetch(id: UUID) throws -> RecurringItem? { try fetchAll().first { $0.id == id } }
         func save(_ item: RecurringItem) throws { items.append(item) }
-
-        func update(_ item: RecurringItem) throws {
-            guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
-            items[index] = item
-        }
-
-        func delete(id: UUID) throws {
-            items.removeAll { $0.id == id }
-        }
-
-        func saveAll(_ items: [RecurringItem]) throws {
-            self.items.append(contentsOf: items)
-        }
-
+        func update(_ item: RecurringItem) throws {}
+        func delete(id: UUID) throws { items.removeAll { $0.id == id } }
+        func saveAll(_ items: [RecurringItem]) throws { self.items.append(contentsOf: items) }
         func deleteAll() throws { items.removeAll() }
     }
 
-    private actor RecordingExchangeRateProvider: ExchangeRateProvider {
-        private let result: Result<ExchangeRateSnapshot, TestRateError>
-        private var requestCount = 0
+    private actor RecordingRates: ExchangeRateProvider {
+        private let result: Result<ExchangeRateSnapshot, RateError>
+        private var count = 0
 
-        init(result: Result<ExchangeRateSnapshot, TestRateError>) {
-            self.result = result
-        }
-
+        init(_ result: Result<ExchangeRateSnapshot, RateError>) { self.result = result }
         func latestSnapshot() async throws -> ExchangeRateSnapshot {
-            requestCount += 1
+            count += 1
             return try result.get()
         }
-
-        func requests() -> Int { requestCount }
+        func requests() -> Int { count }
     }
 
-    private actor SequenceExchangeRateProvider: ExchangeRateProvider {
-        private var results: [Result<ExchangeRateSnapshot, TestRateError>]
-        private var requestCount = 0
-
-        init(results: [Result<ExchangeRateSnapshot, TestRateError>]) {
-            self.results = results
-        }
-
-        func latestSnapshot() async throws -> ExchangeRateSnapshot {
-            requestCount += 1
-            guard !results.isEmpty else { throw TestRateError.unavailable }
-            return try results.removeFirst().get()
-        }
-
-        func requests() -> Int { requestCount }
-    }
-
-    private actor DeferredExchangeRateProvider: ExchangeRateProvider {
+    private actor DeferredRates: ExchangeRateProvider {
         private var continuations: [CheckedContinuation<ExchangeRateSnapshot, Error>] = []
         private var requestCount = 0
-        private var requestWaiters: [CheckedContinuation<Void, Never>] = []
+        private var waiters: [CheckedContinuation<Void, Never>] = []
 
         func latestSnapshot() async throws -> ExchangeRateSnapshot {
             requestCount += 1
-            let waiters = requestWaiters
-            requestWaiters.removeAll()
-            for waiter in waiters {
-                waiter.resume()
-            }
-
-            return try await withCheckedThrowingContinuation { continuation in
-                continuations.append(continuation)
-            }
+            let currentWaiters = waiters
+            waiters.removeAll()
+            currentWaiters.forEach { $0.resume() }
+            return try await withCheckedThrowingContinuation { continuations.append($0) }
         }
 
-        func waitForRequests(_ expectedCount: Int) async {
-            guard requestCount < expectedCount else { return }
-            await withCheckedContinuation { continuation in
-                requestWaiters.append(continuation)
-            }
+        func waitForRequests(_ count: Int) async {
+            guard requestCount < count else { return }
+            await withCheckedContinuation { waiters.append($0) }
         }
 
-        func resumeRequest(at index: Int, with snapshot: ExchangeRateSnapshot) {
+        func resume(at index: Int, snapshot: ExchangeRateSnapshot) {
             guard continuations.indices.contains(index) else { return }
             continuations.remove(at: index).resume(returning: snapshot)
         }
+    }
 
-        func failRequest(at index: Int) {
-            guard continuations.indices.contains(index) else { return }
-            continuations.remove(at: index).resume(throwing: TestRateError.unavailable)
+    private actor CurrencyRecorder {
+        private var values: [String] = []
+        func append(_ value: String) { values.append(value) }
+        func last() -> String? { values.last }
+    }
+
+    private actor PlanSequence {
+        private var values: [MonthlySubscriptionPlan]
+        init(_ values: [MonthlySubscriptionPlan]) { self.values = values }
+        func next() -> MonthlySubscriptionPlan? {
+            guard !values.isEmpty else { return nil }
+            return values.removeFirst()
         }
     }
 
-    private enum TestRateError: Error, Sendable {
-        case unavailable
+    private enum RateError: Error { case unavailable }
+    private enum RepositoryError: Error { case unavailable }
+
+    private func calendar() -> Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = Locale(identifier: "ru_RU")
+        calendar.timeZone = TimeZone(identifier: "Europe/Moscow") ?? .gmt
+        return calendar
     }
 
-    private func snapshot(
-        rubRate: Decimal = 90,
-        freshness: ExchangeRateFreshness = .fresh
-    ) -> ExchangeRateSnapshot {
-        let now = Date.now
-        return ExchangeRateSnapshot(
-            exchangeRates: ExchangeRates(
-                base: "USD",
-                date: now,
-                rates: ["RUB": rubRate],
-                fetchedAt: now
-            ),
-            freshness: freshness
-        )
+    private func today() throws -> Date {
+        try #require(calendar().date(from: DateComponents(year: 2026, month: 8, day: 13, hour: 12)))
+    }
+
+    private func date(day: Int, month: Int = 8) throws -> Date {
+        try #require(calendar().date(from: DateComponents(year: 2026, month: month, day: day, hour: 12)))
     }
 
     private func item(
         title: String,
-        amount: Decimal,
-        currencyCode: String,
-        nextChargeDate: Date,
-        status: ItemStatus = .active
-    ) -> RecurringItem {
+        providerID: String? = nil,
+        providerName: String = "",
+        amount: Decimal = 100,
+        currencyCode: String = "RUB",
+        day: Int,
+        month: Int = 8,
+        status: ItemStatus = .active,
+        autoRenew: Bool = true,
+        endDate: Date? = nil,
+        archivedAt: Date? = nil
+    ) throws -> RecurringItem {
         RecurringItem(
             title: title,
+            providerID: providerID,
+            providerName: providerName,
             amount: amount,
             currencyCode: currencyCode,
-            nextChargeDate: nextChargeDate,
-            status: status
+            billingCycle: .monthly,
+            startDate: try date(day: 1),
+            nextChargeDate: try date(day: day, month: month),
+            autoRenew: autoRenew,
+            endDate: endDate,
+            status: status,
+            archivedAt: archivedAt
         )
     }
 
-    private func preferences() throws -> (UserPreferencesRepository, UserDefaults, String) {
-        let suiteName = "HomeCurrencyAggregationTests.\(UUID().uuidString)"
-        let defaults = try #require(UserDefaults(suiteName: suiteName))
-        let repository = UserPreferencesRepository(defaults: defaults)
-        savePreferences(repository, currencyCode: "RUB")
-        return (repository, defaults, suiteName)
+    private func money(_ amount: Decimal, _ currency: String = "RUB") throws -> Money {
+        try Money(amount: amount, currencyCode: currency)
     }
 
-    private func savePreferences(
-        _ repository: UserPreferencesRepository,
-        currencyCode: String
-    ) {
+    private func plan(
+        amount: Decimal,
+        count: Int = 3,
+        remaining: Decimal? = nil,
+        remainingCount: Int? = nil,
+        currency: String = "RUB"
+    ) throws -> MonthlySubscriptionPlan {
+        MonthlySubscriptionPlan(
+            plannedTotal: try money(amount, currency),
+            chargeCount: count,
+            remainingTotal: try money(remaining ?? amount, currency),
+            remainingChargeCount: remainingCount ?? count
+        )
+    }
+
+    private func snapshot(rubRate: Decimal = 90) -> ExchangeRateSnapshot {
+        let date = Date(timeIntervalSince1970: 1_786_610_400)
+        return ExchangeRateSnapshot(
+            exchangeRates: ExchangeRates(
+                base: "USD",
+                date: date,
+                rates: ["RUB": rubRate],
+                fetchedAt: date
+            ),
+            freshness: .fresh
+        )
+    }
+
+    private func preferences(currency: String = "RUB") throws -> (UserPreferencesRepository, UserDefaults, String) {
+        let suite = "HomeCurrencyAggregationTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        let repository = UserPreferencesRepository(defaults: defaults)
         repository.save(UserPreferences(
-            defaultCurrencyCode: currencyCode,
+            defaultCurrencyCode: currency,
             defaultChargeReminder: .threeDaysBefore,
             chargeAlertDays: 3,
             trialAlertDays: 3
         ))
+        return (repository, defaults, suite)
     }
 
     private func viewModel<Provider: ExchangeRateProvider>(
-        items: [RecurringItem],
-        preferences: UserPreferencesRepository,
-        provider: Provider
-    ) -> HomeViewModel {
-        let repository = InMemoryRecurringItemRepository(items: items)
-        return HomeViewModel(
-            getUpcomingCharges: GetUpcomingCharges(repository: repository),
-            getActiveTrials: GetActiveTrials(repository: repository),
-            preferences: preferences,
-            aggregateRecurringSpend: AggregateRecurringSpendUseCase(),
-            exchangeRateProvider: provider
+        items: [RecurringItem] = [],
+        provider: Provider,
+        reportingCurrency: String = "RUB",
+        plan: @escaping MonthlySubscriptionPlanCalculation,
+        insight: @escaping OverviewInsightCalculation = { _, _, _, _ in nil }
+    ) throws -> (HomeViewModel, UserDefaults, String, Repository) {
+        let repository = Repository(items: items)
+        let (preferences, defaults, suite) = try preferences(currency: reportingCurrency)
+        let fixedToday = try today()
+        return (
+            HomeViewModel(
+                getUpcomingCharges: GetUpcomingCharges(repository: repository),
+                preferences: preferences,
+                exchangeRateProvider: provider,
+                calculateMonthlyPlan: plan,
+                calculateOverviewInsight: insight,
+                now: { fixedToday },
+                calendar: calendar()
+            ),
+            defaults,
+            suite,
+            repository
         )
     }
 
-    @Test("Home converts mixed currencies before forecast and landscape aggregation")
-    func mixedCurrenciesConvertBeforeHomeTotals() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
+    private func digits(_ value: String) -> String { String(value.filter(\.isNumber)) }
 
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
-        let provider = RecordingExchangeRateProvider(result: .success(snapshot()))
-        let vm = viewModel(
-            items: [
-                item(title: "USD item", amount: 100, currencyCode: "USD", nextChargeDate: chargeDate),
-                item(title: "RUB item", amount: 500, currencyCode: "RUB", nextChargeDate: chargeDate)
-            ],
-            preferences: preferences,
-            provider: provider
+    // MARK: Insight mapping
+
+    @Test("Annual Scale maps as the supplied financial insight")
+    func annualScale() async throws {
+        let monthly = try plan(amount: 797)
+        let annual = OverviewInsight.annualScale(try money(9_564))
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: RecordingRates(.failure(.unavailable)),
+            plan: { _, _, _, _ in monthly },
+            insight: { _, _, _, _ in annual }
         )
-
-        vm.load()
-
-        guard case let .partial(initialTotal, missingCodes, _) = vm.forecastAggregation else {
-            Issue.record("Expected a safe partial result before rates arrive")
-            return
-        }
-        #expect(initialTotal.amount == 500)
-        #expect(initialTotal.amount != 600)
-        #expect(missingCodes == ["USD"])
-
-        await vm.refreshCurrencyAggregation()
-
-        let total = try #require(vm.forecastAggregation?.total)
-        #expect(vm.forecastAggregation?.isComplete == true)
-        #expect(total.amount == 9_500)
-        #expect(total.currencyCode == "RUB")
-        #expect(vm.landscapePoints.first(where: { $0.chargeCount == 2 })?.rawTotal == 9_500)
-        let requestCount = await provider.requests()
-        #expect(requestCount == 1)
-
-        let usdItem = try #require(vm.upcomingCharges.first { $0.title == "USD item" })
-        #expect(usdItem.amount == 100)
-        #expect(usdItem.currencyCode == "USD")
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.overviewInsight?.kind == .annualScale)
+        #expect(digits(vm.overviewInsight?.primary ?? "") == "9564")
     }
 
-    @Test("Same-currency Home skips the exchange-rate provider")
-    func sameCurrencySkipsProvider() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 3, to: .now) ?? .now
-        let provider = RecordingExchangeRateProvider(
-            result: .success(snapshot(freshness: .stale(age: 7_200)))
-        )
-        let vm = viewModel(
-            items: [
-                item(title: "A", amount: 100, currencyCode: "RUB", nextChargeDate: chargeDate),
-                item(title: "B", amount: 500, currencyCode: "RUB", nextChargeDate: chargeDate)
-            ],
-            preferences: preferences,
-            provider: provider
-        )
-
-        vm.load()
-        await vm.refreshCurrencyAggregation()
-
-        #expect(vm.forecastAggregation?.isComplete == true)
-        #expect(vm.forecastAggregation?.total?.amount == 600)
-        let requestCount = await provider.requests()
-        #expect(requestCount == 0)
-        #expect(vm.exchangeRateNotice == .none)
-        #expect(vm.screenState.exchangeRateNotice == .none)
-    }
-
-    @Test("Fresh foreign conversion has no Home stale-rate notice")
-    func freshForeignConversionHasNoStaleNotice() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
-        let provider = RecordingExchangeRateProvider(result: .success(snapshot()))
-        let vm = viewModel(
-            items: [item(title: "USD", amount: 2, currencyCode: "USD", nextChargeDate: chargeDate)],
-            preferences: preferences,
-            provider: provider
-        )
-
-        vm.load()
-        await vm.refreshCurrencyAggregation()
-
-        #expect(vm.forecastAggregation?.total?.amount == 180)
-        #expect(vm.exchangeRateNotice == .none)
-        #expect(vm.landscapePoints.first { $0.chargeCount == 1 }?.rateMetadata?.freshness == .fresh)
-    }
-
-    @Test("Stale foreign conversion retains values and presents one Home stale-rate notice")
-    func staleForeignConversionPresentsNoticeAndPreservesDailyMetadata() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let age: TimeInterval = 7_200
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
-        let usd = item(title: "USD", amount: 2, currencyCode: "USD", nextChargeDate: chargeDate)
-        let provider = RecordingExchangeRateProvider(result: .success(snapshot(freshness: .stale(age: age))))
-        let vm = viewModel(items: [usd], preferences: preferences, provider: provider)
-
-        vm.load()
-        await vm.refreshCurrencyAggregation()
-
-        #expect(vm.forecastAggregation?.total?.amount == 180)
-        #expect(vm.exchangeRateNotice == .stale(age: age))
-        #expect(vm.screenState.exchangeRateNotice == .stale(age: age))
-
-        let point = try #require(vm.landscapePoints.first { $0.chargeCount == 1 })
-        #expect(point.rawTotal == 180)
-        #expect(point.rateMetadata?.freshness == .stale(age: age))
-
-        vm.selectDate(chargeDate)
-        let selection = try #require(vm.selection)
-        #expect(selection.totalFormatted.contains("180"))
-        #expect(selection.rateMetadata?.freshness == .stale(age: age))
-        #expect(usd.amount == 2)
-        #expect(usd.currencyCode == "USD")
-        #expect(await provider.requests() == 1)
-    }
-
-    @Test("An empty Home does not request or present stale FX")
-    func emptyHomeHasNoStaleNotice() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let provider = RecordingExchangeRateProvider(
-            result: .success(snapshot(freshness: .stale(age: 7_200)))
-        )
-        let vm = viewModel(items: [], preferences: preferences, provider: provider)
-
-        vm.load()
-        await vm.refreshCurrencyAggregation()
-
-        #expect(vm.forecastAggregation?.total?.amount == 0)
-        #expect(vm.exchangeRateNotice == .none)
-        #expect(await provider.requests() == 0)
-    }
-
-    @Test("Foreign charges outside the Home window do not present stale FX")
-    func outsideWindowForeignChargeHasNoStaleNotice() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let outsideWindow = Calendar.current.date(byAdding: .day, value: 40, to: .now) ?? .now
-        let provider = RecordingExchangeRateProvider(
-            result: .success(snapshot(freshness: .stale(age: 7_200)))
-        )
-        let vm = viewModel(
-            items: [item(title: "Later USD", amount: 2, currencyCode: "USD", nextChargeDate: outsideWindow)],
-            preferences: preferences,
-            provider: provider
-        )
-
-        vm.load()
-        await vm.refreshCurrencyAggregation()
-
-        #expect(vm.forecastAggregation?.total?.amount == 0)
-        #expect(vm.exchangeRateNotice == .none)
-        #expect(await provider.requests() == 0)
-    }
-
-    @Test("Partial Home aggregate keeps stale notice only when a foreign conversion succeeded")
-    func partialStaleAggregatePreservesBothMetadataKinds() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let age: TimeInterval = 7_200
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
-        let provider = RecordingExchangeRateProvider(result: .success(snapshot(freshness: .stale(age: age))))
-        let vm = viewModel(
-            items: [
-                item(title: "USD", amount: 1, currencyCode: "USD", nextChargeDate: chargeDate),
-                item(title: "EUR", amount: 1, currencyCode: "EUR", nextChargeDate: chargeDate)
-            ],
-            preferences: preferences,
-            provider: provider
-        )
-
-        vm.load()
-        await vm.refreshCurrencyAggregation()
-
-        guard case let .partial(total, missingCodes, metadata) = vm.forecastAggregation else {
-            Issue.record("Expected stale partial aggregation")
-            return
-        }
-        #expect(total.amount == 90)
-        #expect(missingCodes == ["EUR"])
-        #expect(metadata?.freshness == .stale(age: age))
-        #expect(vm.exchangeRateNotice == .stale(age: age))
-
-        let point = try #require(vm.landscapePoints.first { $0.chargeCount == 2 })
-        #expect(point.financialState == .partial(amount: 90, missingCurrencyCodes: ["EUR"]))
-        #expect(point.rateMetadata?.freshness == .stale(age: age))
-    }
-
-    @Test("Unavailable Home aggregate never presents stale FX as a successful value")
-    func unavailableStaleSnapshotHasNoNotice() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
-        let provider = RecordingExchangeRateProvider(
-            result: .success(snapshot(freshness: .stale(age: 7_200)))
-        )
-        let vm = viewModel(
-            items: [item(title: "EUR", amount: 1, currencyCode: "EUR", nextChargeDate: chargeDate)],
-            preferences: preferences,
-            provider: provider
-        )
-
-        vm.load()
-        await vm.refreshCurrencyAggregation()
-
-        #expect(vm.forecastAggregation?.total == nil)
-        #expect(vm.exchangeRateNotice == .none)
-        #expect(vm.landscapePoints.first { $0.chargeCount == 1 }?.rawTotal == nil)
-    }
-
-    @Test("A stale partial subtotal without a successful foreign conversion has no Home stale-rate notice")
-    func stalePartialWithoutForeignConversionHasNoNotice() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
-        let provider = RecordingExchangeRateProvider(
-            result: .success(snapshot(freshness: .stale(age: 7_200)))
-        )
-        let vm = viewModel(
-            items: [
-                item(title: "RUB", amount: 100, currencyCode: "RUB", nextChargeDate: chargeDate),
-                item(title: "EUR", amount: 1, currencyCode: "EUR", nextChargeDate: chargeDate)
-            ],
-            preferences: preferences,
-            provider: provider
-        )
-
-        vm.load()
-        await vm.refreshCurrencyAggregation()
-
-        guard case let .partial(total, missingCodes, metadata) = vm.forecastAggregation else {
-            Issue.record("Expected stale partial aggregation without a foreign conversion")
-            return
-        }
-        #expect(total.amount == 100)
-        #expect(missingCodes == ["EUR"])
-        #expect(metadata == nil)
-        #expect(vm.exchangeRateNotice == .none)
-    }
-
-    @Test("A stale conversion of a real foreign zero remains available and visible")
-    func staleForeignZeroRetainsNumericStateAndNotice() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let age: TimeInterval = 7_200
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
-        let provider = RecordingExchangeRateProvider(result: .success(snapshot(freshness: .stale(age: age))))
-        let vm = viewModel(
-            items: [item(title: "Free USD", amount: 0, currencyCode: "USD", nextChargeDate: chargeDate)],
-            preferences: preferences,
-            provider: provider
-        )
-
-        vm.load()
-        await vm.refreshCurrencyAggregation()
-
-        #expect(vm.forecastAggregation?.total?.amount == 0)
-        #expect(vm.exchangeRateNotice == .stale(age: age))
-        let point = try #require(vm.landscapePoints.first { $0.chargeCount == 1 })
-        #expect(point.financialState == .complete(amount: 0))
-        #expect(point.rawTotal == 0)
-        #expect(point.rateMetadata?.freshness == .stale(age: age))
-    }
-
-    @Test("Fresh and stale reloads replace the Home FX notice atomically")
-    func freshAndStaleReloadsReplaceNotice() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let age: TimeInterval = 7_200
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
-        let provider = SequenceExchangeRateProvider(results: [
-            .success(snapshot(freshness: .stale(age: age))),
-            .success(snapshot()),
-            .success(snapshot(freshness: .stale(age: age)))
-        ])
-        let vm = viewModel(
-            items: [item(title: "USD", amount: 1, currencyCode: "USD", nextChargeDate: chargeDate)],
-            preferences: preferences,
-            provider: provider
-        )
-
-        vm.load()
-        await vm.refreshCurrencyAggregation()
-        #expect(vm.exchangeRateNotice == .stale(age: age))
-
-        vm.load(forceReload: true)
-        await vm.refreshCurrencyAggregation()
-        #expect(vm.exchangeRateNotice == .none)
-
-        vm.load(forceReload: true)
-        await vm.refreshCurrencyAggregation()
-        #expect(vm.exchangeRateNotice == .stale(age: age))
-        #expect(await provider.requests() == 3)
-    }
-
-    @Test("Reporting currency recalculates the Home stale notice")
-    func reportingCurrencyChangeRecalculatesStaleNotice() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let age: TimeInterval = 7_200
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
-        let provider = RecordingExchangeRateProvider(result: .success(snapshot(freshness: .stale(age: age))))
-        let vm = viewModel(
-            items: [item(title: "USD", amount: 1, currencyCode: "USD", nextChargeDate: chargeDate)],
-            preferences: preferences,
-            provider: provider
-        )
-
-        vm.load()
-        await vm.refreshCurrencyAggregation()
-        #expect(vm.exchangeRateNotice == .stale(age: age))
-
-        savePreferences(preferences, currencyCode: "USD")
-        vm.load(forceReload: true)
-        await vm.refreshCurrencyAggregation()
-
-        #expect(vm.forecastAggregation?.total?.currencyCode == "USD")
-        #expect(vm.exchangeRateNotice == .none)
-        #expect(await provider.requests() == 1)
-    }
-
-    @Test("An obsolete stale snapshot cannot restore a stale notice over current fresh Home values")
-    func obsoleteStaleSnapshotCannotOverwriteFreshNotice() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
-        let provider = DeferredExchangeRateProvider()
-        let vm = viewModel(
-            items: [item(title: "USD", amount: 1, currencyCode: "USD", nextChargeDate: chargeDate)],
-            preferences: preferences,
-            provider: provider
-        )
-
-        vm.load()
-        let staleRefresh = Task { await vm.refreshCurrencyAggregation() }
-        await provider.waitForRequests(1)
-
-        vm.load(forceReload: true)
-        let freshRefresh = Task { await vm.refreshCurrencyAggregation() }
-        await provider.waitForRequests(2)
-
-        await provider.resumeRequest(at: 1, with: snapshot())
-        await freshRefresh.value
-        #expect(vm.exchangeRateNotice == .none)
-
-        await provider.resumeRequest(at: 0, with: snapshot(freshness: .stale(age: 7_200)))
-        await staleRefresh.value
-        #expect(vm.exchangeRateNotice == .none)
-    }
-
-    @Test("An obsolete fresh snapshot cannot hide a current stale Home notice")
-    func obsoleteFreshSnapshotCannotOverwriteStaleNotice() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let age: TimeInterval = 7_200
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
-        let provider = DeferredExchangeRateProvider()
-        let vm = viewModel(
-            items: [item(title: "USD", amount: 1, currencyCode: "USD", nextChargeDate: chargeDate)],
-            preferences: preferences,
-            provider: provider
-        )
-
-        vm.load()
-        let freshRefresh = Task { await vm.refreshCurrencyAggregation() }
-        await provider.waitForRequests(1)
-
-        vm.load(forceReload: true)
-        let staleRefresh = Task { await vm.refreshCurrencyAggregation() }
-        await provider.waitForRequests(2)
-
-        await provider.resumeRequest(at: 1, with: snapshot(freshness: .stale(age: age)))
-        await staleRefresh.value
-        #expect(vm.exchangeRateNotice == .stale(age: age))
-
-        await provider.resumeRequest(at: 0, with: snapshot())
-        await freshRefresh.value
-        #expect(vm.exchangeRateNotice == .stale(age: age))
-    }
-
-    @Test("FX failure keeps Home partial and never restores a raw mixed sum")
-    func rateFailureKeepsSafePartialResult() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 4, to: .now) ?? .now
-        let provider = RecordingExchangeRateProvider(result: .failure(.unavailable))
-        let vm = viewModel(
-            items: [
-                item(title: "USD item", amount: 100, currencyCode: "USD", nextChargeDate: chargeDate),
-                item(title: "RUB item", amount: 500, currencyCode: "RUB", nextChargeDate: chargeDate)
-            ],
-            preferences: preferences,
-            provider: provider
-        )
-
-        vm.load()
-        await vm.refreshCurrencyAggregation()
-
-        guard case let .partial(total, missingCodes, metadata) = vm.forecastAggregation else {
-            Issue.record("Expected partial aggregation after FX failure")
-            return
-        }
-        #expect(total.amount == 500)
-        #expect(total.amount != 600)
-        #expect(missingCodes == ["USD"])
-        #expect(metadata == nil)
-        let requestCount = await provider.requests()
-        #expect(requestCount == 1)
-        #expect(!vm.insights.contains { $0.id == .peak })
-    }
-
-    @Test("All-foreign Home is unavailable until a snapshot arrives")
-    func allForeignWithoutRatesIsUnavailable() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 5, to: .now) ?? .now
-        let provider = RecordingExchangeRateProvider(result: .failure(.unavailable))
-        let vm = viewModel(
-            items: [item(
-                title: "USD item",
-                amount: 12,
-                currencyCode: "USD",
-                nextChargeDate: chargeDate
-            )],
-            preferences: preferences,
-            provider: provider
-        )
-
-        vm.load()
-        await vm.refreshCurrencyAggregation()
-
-        guard case let .unavailable(code, missingCodes, reason, _) = vm.forecastAggregation else {
-            Issue.record("Expected unavailable aggregation")
-            return
-        }
-        #expect(code == "RUB")
-        #expect(missingCodes == ["USD"])
-        #expect(reason == .noConvertibleAmounts)
-        let point = try #require(vm.landscapePoints.first { $0.chargeCount == 1 })
-        #expect(point.financialState == .unavailable(
-            missingCurrencyCodes: ["USD"],
-            reason: .noConvertibleAmounts
+    @Test("Dense Week with total keeps amount and date range")
+    func denseWeekTotal() async throws {
+        let first = try date(day: 15)
+        let last = try date(day: 20)
+        let insight = OverviewInsight.denseWeek(.init(
+            firstChargeDate: first,
+            lastChargeDate: last,
+            itemIDs: [UUID(), UUID(), UUID()],
+            total: try money(797)
         ))
-        #expect(point.rawTotal == nil)
-        #expect(point.normalizedHeight == nil)
-        #expect(BillingLandscapeChartView.numericPoints(from: vm.landscapePoints).isEmpty)
-        #expect(!vm.insights.contains { $0.id == .peak })
-
-        guard case let .nextPayment(_, _, amountFormatted, _) = vm.callout else {
-            Issue.record("Expected the unavailable charge to remain the Home hero")
-            return
-        }
-        #expect(amountFormatted == String(localized: "Курсы валют недоступны"))
+        let monthly = try plan(amount: 797)
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: RecordingRates(.failure(.unavailable)),
+            plan: { _, _, _, _ in monthly },
+            insight: { _, _, _, _ in insight }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.overviewInsight?.kind == .denseWeek)
+        #expect(vm.overviewInsight?.supporting.contains("797") == true)
     }
 
-    @Test("Paused and cancelled items never contribute to the Home forecast or selected day")
-    func inactiveItemsAreExcludedFromForecastAndSelection() throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
-        let active = item(
-            title: "Active",
-            amount: 299,
-            currencyCode: "RUB",
-            nextChargeDate: chargeDate
+    @Test("Dense Week without total never invents money")
+    func denseWeekNoTotal() async throws {
+        let insight = OverviewInsight.denseWeek(.init(
+            firstChargeDate: try date(day: 15),
+            lastChargeDate: try date(day: 20),
+            itemIDs: [UUID(), UUID(), UUID()],
+            total: nil
+        ))
+        let monthly = try plan(amount: 797)
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: RecordingRates(.failure(.unavailable)),
+            plan: { _, _, _, _ in monthly },
+            insight: { _, _, _, _ in insight }
         )
-        let paused = item(
-            title: "Paused",
-            amount: 500,
-            currencyCode: "RUB",
-            nextChargeDate: chargeDate,
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.overviewInsight?.supporting.contains("₽") == false)
+        #expect(vm.overviewInsight?.supporting.contains("15") == true)
+    }
+
+    @Test("Trial Attention without terms contains only the truthful title")
+    func trialWithoutTerms() async throws {
+        let insight = OverviewInsight.attention(.trialEnding(.init(
+            itemID: UUID(),
+            itemTitle: "Apple Music",
+            trialEndDate: try date(day: 16),
+            renewalTerms: nil
+        )))
+        let monthly = try plan(amount: 767)
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: RecordingRates(.failure(.unavailable)),
+            plan: { _, _, _, _ in monthly },
+            insight: { _, _, _, _ in insight }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.overviewInsight?.kind == .trialAttention)
+        #expect(vm.overviewInsight?.supporting == "Apple Music")
+    }
+
+    @Test("Trial Attention includes only proven renewal terms")
+    func trialWithTerms() async throws {
+        let insight = OverviewInsight.attention(.trialEnding(.init(
+            itemID: UUID(),
+            itemTitle: "Apple Music",
+            trialEndDate: try date(day: 14),
+            renewalTerms: .init(amount: try money(169), billingCycle: .monthly)
+        )))
+        let monthly = try plan(amount: 169)
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: RecordingRates(.failure(.unavailable)),
+            plan: { _, _, _, _ in monthly },
+            insight: { _, _, _, _ in insight }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.overviewInsight?.supporting.contains("169") == true)
+        #expect(vm.overviewInsight?.supporting.contains(String(localized: "затем")) == true)
+    }
+
+    @Test("Same-day Attention remains valid without aggregate money")
+    func sameDayNoTotal() async throws {
+        let insight = OverviewInsight.attention(.sameDayRenewals(.init(
+            chargeDate: try date(day: 15),
+            itemIDs: [UUID(), UUID(), UUID()],
+            total: nil
+        )))
+        let monthly = try plan(amount: 797)
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: RecordingRates(.failure(.unavailable)),
+            plan: { _, _, _, _ in monthly },
+            insight: { _, _, _, _ in insight }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.overviewInsight?.kind == .sameDayAttention)
+        #expect(vm.overviewInsight?.supporting.contains("₽") == false)
+    }
+
+    @Test("Same-day Attention maps a complete total")
+    func sameDayTotal() async throws {
+        let insight = OverviewInsight.attention(.sameDayRenewals(.init(
+            chargeDate: try date(day: 15),
+            itemIDs: [UUID(), UUID(), UUID()],
+            total: try money(797)
+        )))
+        let monthly = try plan(amount: 797)
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: RecordingRates(.failure(.unavailable)),
+            plan: { _, _, _, _ in monthly },
+            insight: { _, _, _, _ in insight }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.overviewInsight?.supporting.contains("797") == true)
+    }
+
+    @Test("Nil Domain insight stays nil")
+    func nilInsight() async throws {
+        let monthly = try plan(amount: 797)
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: RecordingRates(.failure(.unavailable)),
+            plan: { _, _, _, _ in monthly }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.overviewInsight == nil)
+    }
+
+    @Test("ViewModel maps the supplied insight without re-selecting priority")
+    func noPriorityDuplication() async throws {
+        let supplied = OverviewInsight.denseWeek(.init(
+            firstChargeDate: try date(day: 15),
+            lastChargeDate: try date(day: 18),
+            itemIDs: [UUID(), UUID(), UUID()],
+            total: nil
+        ))
+        let monthly = try plan(amount: 797)
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: RecordingRates(.failure(.unavailable)),
+            plan: { _, _, _, _ in monthly },
+            insight: { _, _, _, _ in supplied }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.overviewInsight?.kind == .denseWeek)
+    }
+
+    // MARK: FX completeness
+
+    @Test("Complete mixed-currency FX updates the Hero")
+    func mixedFXHero() async throws {
+        let provider = RecordingRates(.success(snapshot()))
+        let items = [try item(title: "USD", amount: 2, currencyCode: "USD", day: 15)]
+        let completePlan = try plan(amount: 180)
+        let (vm, defaults, suite, _) = try viewModel(
+            items: items,
+            provider: provider,
+            plan: { _, _, _, snapshot in
+                snapshot == nil ? nil : completePlan
+            }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(digits(vm.monthlyPlan.primary) == "180")
+    }
+
+    @Test("Complete mixed-currency FX updates Upcoming aggregate metadata")
+    func mixedFXUpcoming() async throws {
+        let provider = RecordingRates(.success(snapshot()))
+        let items = [
+            try item(title: "USD", amount: 2, currencyCode: "USD", day: 15),
+            try item(title: "RUB", amount: 100, day: 18),
+        ]
+        let completePlan = try plan(amount: 280, count: 2)
+        let (vm, defaults, suite, _) = try viewModel(
+            items: items,
+            provider: provider,
+            plan: { _, _, _, snapshot in
+                snapshot == nil ? nil : completePlan
+            }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(digits(vm.upcoming.aggregateMetadata ?? "") == "2280")
+    }
+
+    @Test("Missing FX leaves the Hero unavailable rather than partial")
+    func missingFXHero() async throws {
+        let provider = RecordingRates(.failure(.unavailable))
+        let items = [try item(title: "USD", amount: 2, currencyCode: "USD", day: 15)]
+        let (vm, defaults, suite, _) = try viewModel(
+            items: items,
+            provider: provider,
+            plan: { _, _, _, _ in nil }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.monthlyPlan.primary == String(localized: "План недоступен"))
+    }
+
+    @Test("Missing FX keeps truthful Upcoming count without a partial amount")
+    func missingFXUpcomingCountOnly() async throws {
+        let provider = RecordingRates(.failure(.unavailable))
+        let items = [
+            try item(title: "USD", amount: 2, currencyCode: "USD", day: 15),
+            try item(title: "RUB", amount: 100, day: 18),
+        ]
+        let (vm, defaults, suite, _) = try viewModel(
+            items: items,
+            provider: provider,
+            plan: { _, _, _, _ in nil }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(digits(vm.upcoming.aggregateMetadata ?? "") == "2")
+        #expect(vm.upcoming.aggregateMetadata?.contains("100") == false)
+    }
+
+    @Test("Missing FX is never converted to zero")
+    func missingFXNotZero() async throws {
+        let provider = RecordingRates(.failure(.unavailable))
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: provider,
+            plan: { _, _, _, _ in nil }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(!vm.monthlyPlan.primary.contains("0"))
+    }
+
+    @Test("One logical load requests at most one FX snapshot")
+    func oneFXRequest() async throws {
+        let provider = RecordingRates(.success(snapshot()))
+        let completePlan = try plan(amount: 100)
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: provider,
+            plan: { _, _, _, snapshot in
+                snapshot == nil ? nil : completePlan
+            }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(await provider.requests() == 1)
+    }
+
+    @Test("Same-currency complete state skips FX")
+    func sameCurrencySkipsFX() async throws {
+        let provider = RecordingRates(.success(snapshot()))
+        let monthly = try plan(amount: 100)
+        let annual = OverviewInsight.annualScale(try money(1_200))
+        let items = [try item(title: "RUB", amount: 100, day: 15)]
+        let (vm, defaults, suite, _) = try viewModel(
+            items: items,
+            provider: provider,
+            plan: { _, _, _, _ in monthly },
+            insight: { _, _, _, _ in annual }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(await provider.requests() == 0)
+    }
+
+    @Test("A truthful empty state skips FX")
+    func emptySkipsFX() async throws {
+        let provider = RecordingRates(.success(snapshot()))
+        let monthly = try plan(amount: 0, count: 0, remainingCount: 0)
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: provider,
+            plan: { _, _, _, _ in monthly }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(await provider.requests() == 0)
+    }
+
+    @Test("FX failure does not turn optional enrichment into a Home error")
+    func fxFailureIsolated() async throws {
+        let provider = RecordingRates(.failure(.unavailable))
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: provider,
+            plan: { _, _, _, _ in nil }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.isLoaded)
+        #expect(!vm.hasError)
+    }
+
+    @Test("Stale FX completion cannot overwrite a newer load")
+    func staleFXRevision() async throws {
+        let provider = DeferredRates()
+        let usd = try item(title: "USD", amount: 1, currencyCode: "USD", day: 15)
+        let (vm, defaults, suite, _) = try viewModel(
+            items: [usd],
+            provider: provider,
+            plan: { _, _, _, snapshot in
+                guard let rate = snapshot?.rates["RUB"] else { return nil }
+                let total = try Money(amount: rate, currencyCode: "RUB")
+                return MonthlySubscriptionPlan(
+                    plannedTotal: total,
+                    chargeCount: 1,
+                    remainingTotal: total,
+                    remainingChargeCount: 1
+                )
+            }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let oldLoad = Task { await vm.load() }
+        await provider.waitForRequests(1)
+        let newLoad = Task { await vm.load(forceReload: true) }
+        await provider.waitForRequests(2)
+
+        await provider.resume(at: 1, snapshot: snapshot(rubRate: 200))
+        await newLoad.value
+        #expect(digits(vm.monthlyPlan.primary) == "200")
+
+        await provider.resume(at: 0, snapshot: snapshot(rubRate: 100))
+        await oldLoad.value
+        #expect(digits(vm.monthlyPlan.primary) == "200")
+    }
+
+    @Test("Forced reload replaces Hero and Insight as one current snapshot")
+    func forcedReload() async throws {
+        let first = try plan(amount: 100)
+        let second = try plan(amount: 200)
+        let sequence = PlanSequence([first, second])
+        let provider = RecordingRates(.failure(.unavailable))
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: provider,
+            plan: { _, _, _, _ in await sequence.next() }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        await vm.load(forceReload: true)
+        #expect(digits(vm.monthlyPlan.primary) == "200")
+    }
+
+    @Test("Reporting currency is passed unchanged to the Domain calculations")
+    func reportingCurrencyInput() async throws {
+        let recorder = CurrencyRecorder()
+        let monthly = try plan(amount: 10, currency: "USD")
+        let provider = RecordingRates(.failure(.unavailable))
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: provider,
+            reportingCurrency: "USD",
+            plan: { _, _, currency, _ in
+                await recorder.append(currency)
+                return monthly
+            }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(await recorder.last() == "USD")
+    }
+
+    // MARK: Eligibility and presentation details
+
+    @Test("Excluded foreign subscriptions do not request FX")
+    func excludedForeignSkipsFX() async throws {
+        let paused = try item(
+            title: "Paused USD",
+            amount: 10,
+            currencyCode: "USD",
+            day: 15,
             status: .paused
         )
-        let cancelled = item(
-            title: "Cancelled",
-            amount: 700,
-            currencyCode: "RUB",
-            nextChargeDate: chargeDate,
-            status: .cancelled
+        let provider = RecordingRates(.success(snapshot()))
+        let monthly = try plan(amount: 0, count: 0, remainingCount: 0)
+        let (vm, defaults, suite, _) = try viewModel(
+            items: [paused],
+            provider: provider,
+            plan: { _, _, _, _ in monthly }
         )
-        let provider = RecordingExchangeRateProvider(result: .failure(.unavailable))
-        let vm = viewModel(
-            items: [active, paused, cancelled],
-            preferences: preferences,
-            provider: provider
-        )
-
-        vm.load()
-
-        #expect(vm.forecastAggregation?.total?.amount == 299)
-        let dayPoint = try #require(vm.landscapePoints.first { $0.chargeCount > 0 })
-        #expect(dayPoint.chargeCount == 1)
-        #expect(dayPoint.rawTotal == 299)
-
-        vm.selectDate(chargeDate)
-        let selection = try #require(vm.selection)
-        #expect(selection.charges.map(\.id) == [active.id])
-        #expect(vm.calloutNavigationItem?.id == active.id)
-
-        // Home's existing upcoming-row contract stays status-filtered and the originals stay intact.
-        #expect(vm.upcomingCharges.map(\.id) == [active.id])
-        #expect(paused.status == .paused)
-        #expect(cancelled.status == .cancelled)
-        #expect(paused.amount == 500)
-        #expect(cancelled.amount == 700)
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(await provider.requests() == 0)
     }
 
-    @Test("Paused and cancelled items never become the default Home hero", arguments: [
-        ItemStatus.paused,
-        ItemStatus.cancelled
-    ])
-    func inactiveStatusNeverBecomesDefaultHero(status: ItemStatus) throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 1, to: .now) ?? .now
-        let provider = RecordingExchangeRateProvider(result: .failure(.unavailable))
-        let vm = viewModel(
-            items: [item(
-                title: status.rawValue,
-                amount: 999,
-                currencyCode: "RUB",
-                nextChargeDate: chargeDate,
-                status: status
-            )],
-            preferences: preferences,
-            provider: provider
+    @Test("Paused subscriptions never appear in Upcoming")
+    func pausedExcluded() async throws {
+        let paused = try item(title: "Paused", day: 15, status: .paused)
+        let provider = RecordingRates(.failure(.unavailable))
+        let monthly = try plan(amount: 0, count: 0, remainingCount: 0)
+        let (vm, defaults, suite, _) = try viewModel(
+            items: [paused],
+            provider: provider,
+            plan: { _, _, _, _ in monthly }
         )
-
-        vm.load()
-
-        #expect(vm.callout == .noUpcoming)
-        #expect(vm.calloutNavigationItem == nil)
-        #expect(vm.forecastAggregation?.total?.amount == 0)
-        #expect(vm.landscapePoints.allSatisfy { $0.chargeCount == 0 && $0.rawTotal == 0 })
-        #expect(!vm.insights.contains { $0.id == .peak })
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.upcoming.rows.isEmpty)
     }
 
-    @Test("Home converts active foreign items while excluded foreign items do not make the result partial")
-    func activeMixedCurrencyStillConvertsAfterStatusFiltering() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 3, to: .now) ?? .now
-        let provider = RecordingExchangeRateProvider(result: .success(snapshot()))
-        let vm = viewModel(
-            items: [
-                item(title: "Active RUB", amount: 500, currencyCode: "RUB", nextChargeDate: chargeDate),
-                item(title: "Active USD", amount: 10, currencyCode: "USD", nextChargeDate: chargeDate),
-                item(
-                    title: "Paused USD",
-                    amount: 90,
-                    currencyCode: "USD",
-                    nextChargeDate: chargeDate,
-                    status: .paused
-                )
-            ],
-            preferences: preferences,
-            provider: provider
+    @Test("A stale active charge rolls into the upcoming window")
+    func staleDateRollover() async throws {
+        let stale = try item(title: "Stale", day: 15, month: 7)
+        let provider = RecordingRates(.failure(.unavailable))
+        let monthly = try plan(amount: 100)
+        let (vm, defaults, suite, _) = try viewModel(
+            items: [stale],
+            provider: provider,
+            plan: { _, _, _, _ in monthly }
         )
-
-        vm.load()
-        guard case let .partial(initialTotal, missingCodes, _) = vm.forecastAggregation else {
-            Issue.record("Expected only the active USD charge to await conversion")
-            return
-        }
-        #expect(initialTotal.amount == 500)
-        #expect(missingCodes == ["USD"])
-
-        await vm.refreshCurrencyAggregation()
-
-        #expect(vm.forecastAggregation?.isComplete == true)
-        #expect(vm.forecastAggregation?.total?.amount == 1_400)
-        #expect(vm.landscapePoints.first(where: { $0.chargeCount == 2 })?.rawTotal == 1_400)
-        let requestCount = await provider.requests()
-        #expect(requestCount == 1)
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.upcoming.rows.first?.providerName == "Stale")
+        #expect(vm.upcoming.rows.first?.chargeDate.contains("15") == true)
     }
 
-    @Test("Unavailable daily state remains non-numeric while an available day remains chartable")
-    func unavailableDailyStateDoesNotBecomeZeroPointOrSelectedDayTotal() throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let calendar = Calendar.current
-        let rubDate = calendar.date(byAdding: .day, value: 2, to: .now) ?? .now
-        let usdDate = calendar.date(byAdding: .day, value: 4, to: .now) ?? .now
-        let usd = item(title: "USD", amount: 3, currencyCode: "USD", nextChargeDate: usdDate)
-        let vm = viewModel(
-            items: [
-                item(title: "RUB", amount: 100, currencyCode: "RUB", nextChargeDate: rubDate),
-                usd
-            ],
-            preferences: preferences,
-            provider: RecordingExchangeRateProvider(result: .failure(.unavailable))
+    @Test("Expired finite subscriptions never appear in Upcoming")
+    func expiredFiniteExcluded() async throws {
+        let expired = try item(
+            title: "Expired",
+            day: 15,
+            autoRenew: false,
+            endDate: try date(day: 12)
         )
+        let provider = RecordingRates(.failure(.unavailable))
+        let monthly = try plan(amount: 0, count: 0, remainingCount: 0)
+        let (vm, defaults, suite, _) = try viewModel(
+            items: [expired],
+            provider: provider,
+            plan: { _, _, _, _ in monthly }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.upcoming.rows.isEmpty)
+    }
 
-        vm.load()
+    @Test("A zero Domain plan is rendered as zero, not unavailable")
+    func zeroPlan() async throws {
+        let monthly = try plan(amount: 0, count: 0, remainingCount: 0)
+        let provider = RecordingRates(.failure(.unavailable))
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: provider,
+            plan: { _, _, _, _ in monthly }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.monthlyPlan.primaryStyle == .financialValue)
+        #expect(vm.monthlyPlan.primary.contains("0"))
+    }
 
-        let rubPoint = try #require(vm.landscapePoints.first {
-            calendar.isDate($0.date, inSameDayAs: rubDate)
-        })
-        let usdPoint = try #require(vm.landscapePoints.first {
-            calendar.isDate($0.date, inSameDayAs: usdDate)
-        })
-        #expect(rubPoint.financialState == .complete(amount: 100))
-        #expect(rubPoint.rawTotal == 100)
-        #expect(rubPoint.normalizedHeight == 1)
-        #expect(usdPoint.financialState == .unavailable(
-            missingCurrencyCodes: ["USD"],
-            reason: .noConvertibleAmounts
+    @Test("Decimal financial values preserve cents in presentation")
+    func decimalPrecisionPresentation() async throws {
+        let monthly = try plan(amount: Decimal(string: "19.99") ?? 0)
+        let provider = RecordingRates(.failure(.unavailable))
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: provider,
+            plan: { _, _, _, _ in monthly }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(digits(vm.monthlyPlan.primary) == "1999")
+    }
+
+    @Test("One charge uses localized singular copy")
+    func singularChargeCopy() async throws {
+        let monthly = try plan(amount: 100, count: 1, remainingCount: 1)
+        let provider = RecordingRates(.failure(.unavailable))
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: provider,
+            plan: { _, _, _, _ in monthly }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.monthlyPlan.leadingSupport == String(localized: "\(1) списаний"))
+    }
+
+    @Test("Multiple charges use localized plural copy")
+    func pluralChargeCopy() async throws {
+        let monthly = try plan(amount: 200, count: 2, remainingCount: 2)
+        let provider = RecordingRates(.failure(.unavailable))
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: provider,
+            plan: { _, _, _, _ in monthly }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.monthlyPlan.leadingSupport == String(localized: "\(2) списаний"))
+    }
+
+    @Test("Remaining charge count is retained in VoiceOver semantics")
+    func remainingCountAccessibility() async throws {
+        let monthly = try plan(amount: 500, count: 5, remaining: 200, remainingCount: 2)
+        let provider = RecordingRates(.failure(.unavailable))
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: provider,
+            plan: { _, _, _, _ in monthly }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.monthlyPlan.accessibilityLabel.contains("2"))
+    }
+
+    @Test("Upcoming dates use calendar and locale presentation")
+    func upcomingDateFormatting() async throws {
+        let charge = try item(title: "Charge", day: 18)
+        let monthly = try plan(amount: 100)
+        let provider = RecordingRates(.failure(.unavailable))
+        let (vm, defaults, suite, _) = try viewModel(
+            items: [charge],
+            provider: provider,
+            plan: { _, _, _, _ in monthly }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.upcoming.rows.first?.chargeDate.contains("18") == true)
+    }
+
+    @Test("iCloud artwork keeps its accepted optical enlargement")
+    func iCloudArtworkScale() async throws {
+        let charge = try item(title: "iCloud+", providerID: "icloud", day: 18)
+        let monthly = try plan(amount: 100)
+        let provider = RecordingRates(.failure(.unavailable))
+        let (vm, defaults, suite, _) = try viewModel(
+            items: [charge], provider: provider, plan: { _, _, _, _ in monthly }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.upcoming.rows.first?.artworkScale == 1.10)
+    }
+
+    @Test("YouTube artwork keeps its accepted optical scale")
+    func youtubeArtworkScale() async throws {
+        let charge = try item(title: "YouTube Premium", providerID: "youtube_premium", day: 18)
+        let monthly = try plan(amount: 100)
+        let provider = RecordingRates(.failure(.unavailable))
+        let (vm, defaults, suite, _) = try viewModel(
+            items: [charge], provider: provider, plan: { _, _, _, _ in monthly }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.upcoming.rows.first?.artworkScale == 0.975)
+    }
+
+    @Test("Unknown providers retain neutral artwork scale")
+    func genericArtworkScale() async throws {
+        let charge = try item(title: "Manual", day: 18)
+        let monthly = try plan(amount: 100)
+        let provider = RecordingRates(.failure(.unavailable))
+        let (vm, defaults, suite, _) = try viewModel(
+            items: [charge], provider: provider, plan: { _, _, _, _ in monthly }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.upcoming.rows.first?.artworkScale == 1)
+    }
+
+    @Test("Published Home state is coherent across Hero Insight and Upcoming")
+    func coherentPublishedState() async throws {
+        let charge = try item(title: "Spotify", amount: 199, day: 15)
+        let monthly = try plan(amount: 199, count: 1, remainingCount: 1)
+        let annual = OverviewInsight.annualScale(try money(2_388))
+        let provider = RecordingRates(.failure(.unavailable))
+        let (vm, defaults, suite, _) = try viewModel(
+            items: [charge],
+            provider: provider,
+            plan: { _, _, _, _ in monthly },
+            insight: { _, _, _, _ in annual }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(digits(vm.screenState.monthlyPlan.primary) == "199")
+        #expect(vm.screenState.overviewInsight?.kind == .annualScale)
+        #expect(vm.screenState.upcoming.rows.count == 1)
+    }
+
+    @Test("Attention integrates beside a non-zero monthly plan")
+    func coherentAttention() async throws {
+        let monthly = try plan(amount: 767)
+        let attention = OverviewInsight.attention(.trialEnding(.init(
+            itemID: UUID(),
+            itemTitle: "Apple Music",
+            trialEndDate: try date(day: 16),
+            renewalTerms: nil
+        )))
+        let provider = RecordingRates(.failure(.unavailable))
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: provider,
+            plan: { _, _, _, _ in monthly },
+            insight: { _, _, _, _ in attention }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(digits(vm.monthlyPlan.primary) == "767")
+        #expect(vm.overviewInsight?.kind == .trialAttention)
+    }
+
+    @Test("Dense Week integrates beside a non-zero monthly plan")
+    func coherentDenseWeek() async throws {
+        let monthly = try plan(amount: 797)
+        let dense = OverviewInsight.denseWeek(.init(
+            firstChargeDate: try date(day: 15),
+            lastChargeDate: try date(day: 20),
+            itemIDs: [UUID(), UUID(), UUID()],
+            total: try money(797)
         ))
-        #expect(usdPoint.rawTotal == nil)
-        #expect(usdPoint.normalizedHeight == nil)
-
-        let chartPoints = BillingLandscapeChartView.numericPoints(from: vm.landscapePoints)
-        #expect(chartPoints.contains { $0.id == rubPoint.id })
-        #expect(!chartPoints.contains { $0.id == usdPoint.id })
-        #expect(!vm.insights.contains { $0.id == .peak })
-
-        vm.selectDate(usdDate)
-        let selection = try #require(vm.selection)
-        #expect(selection.financialState == .unavailable(
-            missingCurrencyCodes: ["USD"],
-            reason: .noConvertibleAmounts
-        ))
-        #expect(selection.totalFormatted == String(localized: "Курсы валют недоступны"))
-        #expect(vm.calloutNavigationItem?.id == usd.id)
-    }
-
-    @Test("A real zero daily total remains distinct from an unavailable conversion")
-    func realZeroAndUnavailableDailyStatesRemainDistinct() throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let calendar = Calendar.current
-        let zeroDate = calendar.date(byAdding: .day, value: 2, to: .now) ?? .now
-        let unavailableDate = calendar.date(byAdding: .day, value: 3, to: .now) ?? .now
-        let vm = viewModel(
-            items: [
-                item(title: "Free", amount: 0, currencyCode: "RUB", nextChargeDate: zeroDate),
-                item(title: "Foreign", amount: 3, currencyCode: "USD", nextChargeDate: unavailableDate)
-            ],
-            preferences: preferences,
-            provider: RecordingExchangeRateProvider(result: .failure(.unavailable))
+        let provider = RecordingRates(.failure(.unavailable))
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: provider,
+            plan: { _, _, _, _ in monthly },
+            insight: { _, _, _, _ in dense }
         )
-
-        vm.load()
-
-        let zeroPoint = try #require(vm.landscapePoints.first {
-            calendar.isDate($0.date, inSameDayAs: zeroDate)
-        })
-        let unavailablePoint = try #require(vm.landscapePoints.first {
-            calendar.isDate($0.date, inSameDayAs: unavailableDate)
-        })
-        #expect(zeroPoint.financialState == .complete(amount: 0))
-        #expect(zeroPoint.rawTotal == 0)
-        #expect(zeroPoint.normalizedHeight == 0)
-        #expect(unavailablePoint.rawTotal == nil)
-        #expect(unavailablePoint.normalizedHeight == nil)
-
-        let chartPoints = BillingLandscapeChartView.numericPoints(from: vm.landscapePoints)
-        #expect(chartPoints.contains { $0.id == zeroPoint.id })
-        #expect(!chartPoints.contains { $0.id == unavailablePoint.id })
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(digits(vm.monthlyPlan.primary) == "797")
+        #expect(vm.overviewInsight?.kind == .denseWeek)
     }
 
-    @Test("Partial daily state retains only the known subtotal and missing currency metadata")
-    func partialDailyStateRetainsKnownSubtotal() throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
-        let vm = viewModel(
-            items: [
-                item(title: "RUB", amount: 100, currencyCode: "RUB", nextChargeDate: chargeDate),
-                item(title: "USD", amount: 3, currencyCode: "USD", nextChargeDate: chargeDate)
-            ],
-            preferences: preferences,
-            provider: RecordingExchangeRateProvider(result: .failure(.unavailable))
+    @Test("A repository load failure uses the existing Home error state")
+    func repositoryFailure() async throws {
+        let monthly = try plan(amount: 100)
+        let provider = RecordingRates(.failure(.unavailable))
+        let (vm, defaults, suite, repository) = try viewModel(
+            provider: provider,
+            plan: { _, _, _, _ in monthly }
         )
+        defer { defaults.removePersistentDomain(forName: suite) }
+        repository.fetchError = RepositoryError.unavailable
 
-        vm.load()
+        await vm.load()
 
-        let point = try #require(vm.landscapePoints.first { $0.chargeCount == 2 })
-        #expect(point.financialState == .partial(amount: 100, missingCurrencyCodes: ["USD"]))
-        #expect(point.rawTotal == 100)
-        #expect(point.normalizedHeight == 1)
-
-        vm.selectDate(chargeDate)
-        let selection = try #require(vm.selection)
-        #expect(selection.financialState == .partial(amount: 100, missingCurrencyCodes: ["USD"]))
-    }
-
-    @Test("A fresh snapshot restores unavailable daily points without mutating originals")
-    func freshSnapshotRestoresCompleteDailyState() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
-        let usd = item(title: "USD", amount: 3, currencyCode: "USD", nextChargeDate: chargeDate)
-        let provider = RecordingExchangeRateProvider(result: .success(snapshot()))
-        let vm = viewModel(items: [usd], preferences: preferences, provider: provider)
-
-        vm.load()
-        vm.selectDate(chargeDate)
-        #expect(vm.selection?.financialState == .unavailable(
-            missingCurrencyCodes: ["USD"],
-            reason: .noConvertibleAmounts
-        ))
-
-        await vm.refreshCurrencyAggregation()
-
-        let point = try #require(vm.landscapePoints.first { $0.chargeCount == 1 })
-        #expect(point.financialState == .complete(amount: 270))
-        #expect(point.rawTotal == 270)
-        #expect(point.normalizedHeight == 1)
-        #expect(BillingLandscapeChartView.numericPoints(from: vm.landscapePoints).contains {
-            $0.id == point.id
-        })
-        #expect(vm.selection?.financialState == .complete(amount: 270))
-        #expect(usd.amount == 3)
-        #expect(usd.currencyCode == "USD")
-        #expect(await provider.requests() == 1)
-    }
-
-    @Test("Reporting-currency reload rebuilds typed daily points without another snapshot")
-    func reportingCurrencyReloadRebuildsTypedDailyPoints() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let calendar = Calendar.current
-        let rubDate = calendar.date(byAdding: .day, value: 2, to: .now) ?? .now
-        let usdDate = calendar.date(byAdding: .day, value: 3, to: .now) ?? .now
-        let rub = item(title: "RUB", amount: 90, currencyCode: "RUB", nextChargeDate: rubDate)
-        let usd = item(title: "USD", amount: 1, currencyCode: "USD", nextChargeDate: usdDate)
-        let provider = RecordingExchangeRateProvider(result: .success(snapshot()))
-        let vm = viewModel(items: [rub, usd], preferences: preferences, provider: provider)
-
-        vm.load()
-        await vm.refreshCurrencyAggregation()
-        #expect(vm.landscapePoints.first {
-            calendar.isDate($0.date, inSameDayAs: rubDate)
-        }?.currencyCode == "RUB")
-
-        savePreferences(preferences, currencyCode: "USD")
-        vm.load(forceReload: true)
-
-        let rubPoint = try #require(vm.landscapePoints.first {
-            calendar.isDate($0.date, inSameDayAs: rubDate)
-        })
-        let usdPoint = try #require(vm.landscapePoints.first {
-            calendar.isDate($0.date, inSameDayAs: usdDate)
-        })
-        #expect(rubPoint.currencyCode == "USD")
-        #expect(usdPoint.currencyCode == "USD")
-        #expect(rubPoint.financialState == .complete(amount: 1))
-        #expect(usdPoint.financialState == .complete(amount: 1))
-        #expect(rub.amount == 90)
-        #expect(rub.currencyCode == "RUB")
-        #expect(usd.amount == 1)
-        #expect(usd.currencyCode == "USD")
-        #expect(await provider.requests() == 1)
-    }
-
-    @Test("Obsolete FX completions cannot overwrite the current unavailable daily state")
-    func obsoleteCompleteCannotReplaceCurrentUnavailableDailyState() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
-        let provider = DeferredExchangeRateProvider()
-        let vm = viewModel(
-            items: [item(title: "USD", amount: 3, currencyCode: "USD", nextChargeDate: chargeDate)],
-            preferences: preferences,
-            provider: provider
-        )
-
-        vm.load()
-        let oldRefresh = Task { await vm.refreshCurrencyAggregation() }
-        await provider.waitForRequests(1)
-
-        vm.load(forceReload: true)
-        await provider.resumeRequest(at: 0, with: snapshot())
-        await oldRefresh.value
-
-        let point = try #require(vm.landscapePoints.first { $0.chargeCount == 1 })
-        #expect(point.financialState == .unavailable(
-            missingCurrencyCodes: ["USD"],
-            reason: .noConvertibleAmounts
-        ))
-        #expect(point.rawTotal == nil)
-    }
-
-    @Test("Obsolete FX failures cannot overwrite the current complete daily state")
-    func obsoleteFailureCannotReplaceCurrentCompleteDailyState() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .now
-        let provider = DeferredExchangeRateProvider()
-        let vm = viewModel(
-            items: [item(title: "USD", amount: 3, currencyCode: "USD", nextChargeDate: chargeDate)],
-            preferences: preferences,
-            provider: provider
-        )
-
-        vm.load()
-        let oldRefresh = Task { await vm.refreshCurrencyAggregation() }
-        await provider.waitForRequests(1)
-
-        vm.load(forceReload: true)
-        let currentRefresh = Task { await vm.refreshCurrencyAggregation() }
-        await provider.waitForRequests(2)
-
-        await provider.resumeRequest(at: 1, with: snapshot())
-        await currentRefresh.value
-        await provider.failRequest(at: 0)
-        await oldRefresh.value
-
-        let point = try #require(vm.landscapePoints.first { $0.chargeCount == 1 })
-        #expect(point.financialState == .complete(amount: 270))
-        #expect(point.rawTotal == 270)
-    }
-
-    @Test("Excluded foreign items neither request FX nor create missing-currency state")
-    func excludedForeignItemsDoNotAffectFXAggregation() async throws {
-        let (preferences, defaults, suiteName) = try preferences()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let chargeDate = Calendar.current.date(byAdding: .day, value: 4, to: .now) ?? .now
-        let provider = RecordingExchangeRateProvider(result: .failure(.unavailable))
-        let vm = viewModel(
-            items: [
-                item(
-                    title: "Paused USD",
-                    amount: 10,
-                    currencyCode: "USD",
-                    nextChargeDate: chargeDate,
-                    status: .paused
-                ),
-                item(
-                    title: "Cancelled EUR",
-                    amount: 20,
-                    currencyCode: "EUR",
-                    nextChargeDate: chargeDate,
-                    status: .cancelled
-                )
-            ],
-            preferences: preferences,
-            provider: provider
-        )
-
-        vm.load()
-        await vm.refreshCurrencyAggregation()
-
-        guard case let .complete(total, metadata) = vm.forecastAggregation else {
-            Issue.record("Expected excluded foreign items to leave a complete zero total")
-            return
-        }
-        #expect(total.amount == 0)
-        #expect(total.currencyCode == "RUB")
-        #expect(metadata == nil)
-        #expect(vm.forecastAggregation?.missingCurrencyCodes == [])
-        #expect(vm.exchangeRateNotice == .none)
-        let requestCount = await provider.requests()
-        #expect(requestCount == 0)
+        #expect(vm.hasError)
+        #expect(!vm.isLoaded)
     }
 }

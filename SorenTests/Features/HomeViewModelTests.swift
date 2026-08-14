@@ -1,498 +1,481 @@
-import Testing
 import Foundation
-import SwiftData
+import Testing
 @testable import Soren
 
-// MARK: - Home ViewModel Tests (Aggressive)
+@Suite("Overview money formatting")
+struct OverviewMoneyFormattingTests {
+    private let nonBreakingSpace = "\u{00A0}"
 
-/// Adversarial tests for HomeViewModel and its Use Cases.
-/// Goal: break the dashboard logic, not just confirm it works on golden-path data.
+    @Test("Russian UI uses Russian grouping even when the device region is US")
+    func russianGrouping() throws {
+        let money = try Money(amount: 9_564, currencyCode: "RUB")
+        let formatted = OverviewMoneyFormatter.string(
+            money,
+            locale: Locale(identifier: "ru_US")
+        )
 
-@Suite("HomeViewModel")
+        #expect(formatted == "9\(nonBreakingSpace)564\(nonBreakingSpace)₽")
+        #expect(!formatted.contains(","))
+    }
+
+    @Test("English UI retains its regional RUB currency conventions")
+    func englishRegionalConventions() throws {
+        let money = try Money(amount: 9_564, currencyCode: "RUB")
+
+        let unitedStates = OverviewMoneyFormatter.string(
+            money,
+            locale: Locale(identifier: "en_US")
+        )
+        let russia = OverviewMoneyFormatter.string(
+            money,
+            locale: Locale(identifier: "en_RU")
+        )
+
+        #expect(unitedStates == "RUB\(nonBreakingSpace)9,564")
+        #expect(russia == "9\(nonBreakingSpace)564\(nonBreakingSpace)RUB")
+    }
+
+    @Test("Annual Scale uses the shared Overview money policy")
+    func annualScale() throws {
+        let insight = OverviewInsight.annualScale(
+            try Money(amount: 9_564, currencyCode: "RUB")
+        )
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Moscow") ?? .gmt
+        let today = try #require(calendar.date(from: DateComponents(
+            year: 2026,
+            month: 8,
+            day: 13
+        )))
+
+        let presentation = OverviewInsightPresentation.make(
+            from: insight,
+            today: today,
+            calendar: calendar,
+            locale: Locale(identifier: "ru_US")
+        )
+
+        #expect(presentation.primary == "9\(nonBreakingSpace)564\(nonBreakingSpace)₽")
+    }
+}
+
+@Suite("HomeViewModel production Overview")
 @MainActor
 struct HomeViewModelTests {
+    private final class Repository: RecurringItemRepository {
+        var items: [RecurringItem]
 
-    // MARK: - Helpers
+        init(_ items: [RecurringItem] = []) { self.items = items }
 
-    @MainActor
-    private struct Fixture {
-        let persistence: InMemoryPersistenceFixture
-        let repository: SwiftDataRecurringItemRepository
-
-        init() throws {
-            let persistence = try InMemoryPersistenceFixture()
-            self.persistence = persistence
-            self.repository = persistence.recurringItems
+        func fetchAll() throws -> [RecurringItem] { items }
+        func fetchActive() throws -> [RecurringItem] { items.filter(\.status.countsInTotals) }
+        func fetchUpcoming(within days: Int, from date: Date) throws -> [RecurringItem] {
+            let cutoff = Calendar.current.date(byAdding: .day, value: days, to: date) ?? date
+            return items.filter { $0.nextChargeDate >= date && $0.nextChargeDate <= cutoff }
         }
-
-        func save(_ item: RecurringItem) throws {
-            try repository.save(item)
+        func fetchByCategory(_ category: ItemCategory) throws -> [RecurringItem] {
+            items.filter { $0.category == category }
         }
+        func fetch(id: UUID) throws -> RecurringItem? { items.first { $0.id == id } }
+        func save(_ item: RecurringItem) throws { items.append(item) }
+        func update(_ item: RecurringItem) throws {
+            guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
+            items[index] = item
+        }
+        func delete(id: UUID) throws { items.removeAll { $0.id == id } }
+        func saveAll(_ items: [RecurringItem]) throws { self.items.append(contentsOf: items) }
+        func deleteAll() throws { items.removeAll() }
     }
 
-    private func makeRepo() throws -> Fixture {
-        try Fixture()
+    private actor UnavailableRates: ExchangeRateProvider {
+        func latestSnapshot() async throws -> ExchangeRateSnapshot { throw RateError.unavailable }
     }
 
-    private func makeViewModel(repo: Fixture) -> HomeViewModel {
-        HomeViewModel(
-            getUpcomingCharges: GetUpcomingCharges(repository: repo.repository),
-            getActiveTrials: GetActiveTrials(repository: repo.repository),
-            preferences: UserPreferencesRepository(),
-            exchangeRateProvider: StaticExchangeRateProvider()
-        )
+    private enum RateError: Error { case unavailable }
+
+    private func calendar() -> Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = Locale(identifier: "ru_RU")
+        calendar.timeZone = TimeZone(identifier: "Europe/Moscow") ?? .gmt
+        return calendar
     }
 
-    private func makeItem(
-        title: String = "Test",
-        amount: Decimal = 299,
+    private func today() throws -> Date {
+        try #require(calendar().date(from: DateComponents(year: 2026, month: 8, day: 13, hour: 12)))
+    }
+
+    private func date(day: Int) throws -> Date {
+        try #require(calendar().date(from: DateComponents(year: 2026, month: 8, day: day, hour: 12)))
+    }
+
+    private func item(
+        title: String,
+        providerName: String = "",
+        providerID: String? = nil,
+        amount: Decimal = 199,
         currencyCode: String = "RUB",
-        billingCycle: BillingCycle = .monthly,
+        day: Int,
         status: ItemStatus = .active,
-        nextCharge: Date? = nil,
-        trialEndDate: Date? = nil,
-        category: ItemCategory = .video
-    ) -> RecurringItem {
+        archivedAt: Date? = nil
+    ) throws -> RecurringItem {
         RecurringItem(
             title: title,
-            category: category,
+            providerID: providerID,
+            providerName: providerName,
             amount: amount,
             currencyCode: currencyCode,
-            billingCycle: billingCycle,
-            nextChargeDate: nextCharge ?? Calendar.current.date(byAdding: .day, value: 3, to: .now)!,
-            trialEndDate: trialEndDate,
-            status: status
+            billingCycle: .monthly,
+            startDate: try date(day: 1),
+            nextChargeDate: try date(day: day),
+            status: status,
+            archivedAt: archivedAt
         )
     }
 
-    // MARK: - Empty State
-
-    @Test("Empty repository produces empty landscape")
-    func emptyRepo() throws {
-        let repo = try makeRepo()
-        let vm = makeViewModel(repo: repo)
-        vm.load()
-
-        #expect(vm.isLoaded)
-        #expect(!vm.hasError)
-        #expect(vm.landscapePoints.count == 30)
-        #expect(vm.landscapePoints.allSatisfy { $0.chargeCount == 0 })
-        #expect(vm.insights.count == 1)
-        #expect(vm.insights.first?.id == .quiet)
-        #expect(vm.insights.first?.amount == nil)
-        #expect(vm.upcomingCharges.isEmpty)
+    private func preferences() throws -> (UserPreferencesRepository, UserDefaults, String) {
+        let suite = "HomeViewModelTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        let repository = UserPreferencesRepository(defaults: defaults)
+        repository.save(UserPreferences(
+            defaultCurrencyCode: "RUB",
+            defaultChargeReminder: .threeDaysBefore,
+            chargeAlertDays: 3,
+            trialAlertDays: 3
+        ))
+        return (repository, defaults, suite)
     }
 
-    // MARK: - Landscape Charges
-
-    @Test("Active items appear in landscape at correct day offset")
-    func activeItemsPopulateLandscape() throws {
-        let repo = try makeRepo()
-        try repo.save(makeItem(title: "A", amount: 100, status: .active))
-        try repo.save(makeItem(title: "B", amount: 200, status: .active))
-
-        let vm = makeViewModel(repo: repo)
-        vm.load()
-
-        #expect(vm.isLoaded)
-        #expect(vm.landscapePoints[3].chargeCount == 2)
-        #expect(vm.landscapePoints[3].rawTotal == 300)
-    }
-
-    @Test("Truly archived items (archivedAt set) excluded from landscape")
-    func archivedItemsExcludedFromLandscape() throws {
-        let repo = try makeRepo()
-        let active = makeItem(title: "Active", amount: 100)
-        let archived = RecurringItem(
-            title: "Archived",
-            amount: 9999,
-            currencyCode: "RUB",
-            nextChargeDate: Calendar.current.date(byAdding: .day, value: 3, to: .now)!,
-            archivedAt: .now
+    private func viewModel(
+        items: [RecurringItem] = [],
+        plan: @escaping MonthlySubscriptionPlanCalculation,
+        insight: @escaping OverviewInsightCalculation = { _, _, _, _ in nil }
+    ) throws -> (HomeViewModel, UserDefaults, String) {
+        let (preferences, defaults, suite) = try preferences()
+        let repository = Repository(items)
+        let fixedToday = try today()
+        let calendar = calendar()
+        return (
+            HomeViewModel(
+                getUpcomingCharges: GetUpcomingCharges(repository: repository),
+                preferences: preferences,
+                exchangeRateProvider: UnavailableRates(),
+                calculateMonthlyPlan: plan,
+                calculateOverviewInsight: insight,
+                now: { fixedToday },
+                calendar: calendar
+            ),
+            defaults,
+            suite
         )
-
-        try repo.save(active)
-        try repo.save(archived)
-
-        let vm = makeViewModel(repo: repo)
-        vm.load()
-
-        #expect(vm.landscapePoints[3].chargeCount == 1)
-        #expect(vm.landscapePoints[3].rawTotal == 100)
     }
 
-    @Test("Annual item appears in landscape on its charge date")
-    func annualItemAppearsInLandscape() throws {
-        let repo = try makeRepo()
-        try repo.save(makeItem(title: "Annual", amount: 1200, billingCycle: .annual))
-
-        let vm = makeViewModel(repo: repo)
-        vm.load()
-
-        #expect(vm.isLoaded)
-        #expect(vm.landscapePoints[3].chargeCount == 1)
-        #expect(vm.landscapePoints[3].rawTotal == 1200)
+    private func zeroPlan(currency: String = "RUB") throws -> MonthlySubscriptionPlan {
+        let zero = try Money(amount: 0, currencyCode: currency)
+        return MonthlySubscriptionPlan(
+            plannedTotal: zero,
+            chargeCount: 0,
+            remainingTotal: zero,
+            remainingChargeCount: 0
+        )
     }
 
-    @Test("Zero-amount item still appears in landscape")
-    func zeroAmountItemInLandscape() throws {
-        let repo = try makeRepo()
-        try repo.save(makeItem(title: "Free tier", amount: 0))
+    @Test("Empty repository renders a truthful zero Hero and compact Upcoming empty state")
+    func emptyRepository() async throws {
+        let zero = try zeroPlan()
+        let (viewModel, defaults, suite) = try viewModel(plan: { _, _, _, _ in zero })
+        defer { defaults.removePersistentDomain(forName: suite) }
 
-        let vm = makeViewModel(repo: repo)
-        vm.load()
+        await viewModel.load()
 
-        #expect(vm.isLoaded)
-        #expect(vm.landscapePoints[3].chargeCount == 1)
-        #expect(vm.landscapePoints[3].rawTotal == 0)
+        #expect(viewModel.isLoaded)
+        #expect(!viewModel.hasError)
+        #expect(viewModel.monthlyPlan.primary.contains("0"))
+        #expect(viewModel.monthlyPlan.leadingSupport == String(localized: "Нет запланированных списаний"))
+        #expect(viewModel.upcoming.rows.isEmpty)
+        #expect(viewModel.upcoming.emptyMessage == String(localized: "Нет списаний в ближайшие 30 дней"))
     }
 
-    // MARK: - Upcoming Window
+    @Test("A valid monthly plan maps all four Domain values truthfully")
+    func validPlanMapping() async throws {
+        let plan = MonthlySubscriptionPlan(
+            plannedTotal: try Money(amount: 1_596, currencyCode: "RUB"),
+            chargeCount: 12,
+            remainingTotal: try Money(amount: 347, currencyCode: "RUB"),
+            remainingChargeCount: 3
+        )
+        let (viewModel, defaults, suite) = try viewModel(plan: { _, _, _, _ in plan })
+        defer { defaults.removePersistentDomain(forName: suite) }
 
-    @Test("Items within 30-day window appear; items at day+31 do not")
-    func upcomingWindowBoundary() throws {
-        let repo = try makeRepo()
+        await viewModel.load()
 
-        let tomorrow = makeItem(title: "Tomorrow",
-                                nextCharge: Calendar.current.date(byAdding: .day, value: 1, to: .now))
-        let day7 = makeItem(title: "Day7",
-                            nextCharge: Calendar.current.date(byAdding: .day, value: 7, to: .now))
-        let day31 = makeItem(title: "Day31",
-                             nextCharge: Calendar.current.date(byAdding: .day, value: 31, to: .now))
-
-        try repo.save(tomorrow)
-        try repo.save(day7)
-        try repo.save(day31)
-
-        let vm = makeViewModel(repo: repo)
-        vm.load()
-
-        let totalCharges = vm.landscapePoints.reduce(0) { $0 + $1.chargeCount }
-        #expect(totalCharges == 2)
-        #expect(vm.landscapePoints[1].chargeCount == 1)
-        #expect(vm.landscapePoints[7].chargeCount == 1)
+        #expect(viewModel.monthlyPlan.primary.filter(\.isNumber) == "1596")
+        #expect(viewModel.monthlyPlan.leadingSupport.contains("12"))
+        #expect(viewModel.monthlyPlan.trailingSupportLabel == String(localized: "Осталось"))
+        #expect(viewModel.monthlyPlan.trailingSupportValue?.filter(\.isNumber) == "347")
+        #expect(viewModel.monthlyPlan.accessibilityLabel.contains("3"))
     }
 
-    @Test("Past-due items don't crash ViewModel")
-    func pastDueHandling() throws {
-        let repo = try makeRepo()
+    @Test("Hero omits a redundant remaining value when the entire plan is ahead")
+    func completePlanRemaining() async throws {
+        let total = try Money(amount: 797, currencyCode: "RUB")
+        let plan = MonthlySubscriptionPlan(
+            plannedTotal: total,
+            chargeCount: 3,
+            remainingTotal: total,
+            remainingChargeCount: 3
+        )
+        let (viewModel, defaults, suite) = try viewModel(plan: { _, _, _, _ in plan })
+        defer { defaults.removePersistentDomain(forName: suite) }
 
-        let overdue = makeItem(title: "Overdue",
-                               nextCharge: Calendar.current.date(byAdding: .day, value: -2, to: .now))
-        try repo.save(overdue)
+        await viewModel.load()
 
-        let vm = makeViewModel(repo: repo)
-        vm.load()
-
-        // Past items may or may not appear depending on repository logic
-        // The key test: ViewModel doesn't crash on negative daysUntilNextCharge
-        #expect(vm.isLoaded)
-        #expect(!vm.hasError)
+        #expect(viewModel.monthlyPlan.leadingSupport.contains("3"))
+        #expect(viewModel.monthlyPlan.trailingSupportLabel == nil)
+        #expect(viewModel.monthlyPlan.trailingSupportValue == nil)
+        #expect(!viewModel.monthlyPlan.accessibilityLabel.contains(String(localized: "Осталось")))
     }
 
-    // MARK: - Upcoming Charges Section
+    @Test("Nil monthly plan never becomes fake zero money")
+    func unavailablePlan() async throws {
+        let (viewModel, defaults, suite) = try viewModel(plan: { _, _, _, _ in nil })
+        defer { defaults.removePersistentDomain(forName: suite) }
 
-    @Test("upcomingCharges returns at most 3 items, soonest first")
-    func upcomingChargesLimitedAndSorted() throws {
-        let repo = try makeRepo()
-        let cal = Calendar.current
+        await viewModel.load()
 
-        for offset in [10, 2, 7, 1, 20] {
-            try repo.save(makeItem(
-                title: "Day\(offset)",
-                nextCharge: cal.date(byAdding: .day, value: offset, to: .now)
-            ))
+        #expect(viewModel.monthlyPlan.primary == String(localized: "План недоступен"))
+        #expect(!viewModel.monthlyPlan.primary.contains("0"))
+        #expect(viewModel.monthlyPlan.primaryStyle == .statement)
+    }
+
+    @Test("The actual calendar month drives both header and Hero title")
+    func currentMonthLabels() async throws {
+        let zero = try zeroPlan()
+        let (viewModel, defaults, suite) = try viewModel(plan: { _, _, _, _ in zero })
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        await viewModel.load()
+
+        #expect(viewModel.monthLabel.contains("АВГУСТ"))
+        #expect(viewModel.monthLabel.contains("2026"))
+        #expect(viewModel.monthlyPlan.title.lowercased().contains("август"))
+    }
+
+    @Test("Upcoming rows are limited to three and sorted by effective date")
+    func upcomingLimitAndOrder() async throws {
+        let items = try [5, 2, 9, 1].map { day in
+            try item(title: "Day \(day)", day: 13 + day)
         }
-
-        let vm = makeViewModel(repo: repo)
-        vm.load()
-
-        #expect(vm.upcomingCharges.count == 3)
-        #expect(vm.upcomingCharges.map(\.title) == ["Day1", "Day2", "Day7"])
-        #expect(vm.screenState.upcomingCharges == vm.upcomingCharges)
-    }
-
-    @Test("upcomingCharges excludes cancelled, paused, and archived items even when due soonest")
-    func upcomingChargesExcludesNonCountingStatuses() throws {
-        let repo = try makeRepo()
-        let cal = Calendar.current
-
-        let cancelled = makeItem(title: "Cancelled", status: .cancelled,
-                                  nextCharge: cal.date(byAdding: .day, value: 1, to: .now))
-        let paused = makeItem(title: "Paused", status: .paused,
-                               nextCharge: cal.date(byAdding: .day, value: 2, to: .now))
-        let archived = RecurringItem(
-            title: "Archived",
-            amount: 199,
-            currencyCode: "RUB",
-            nextChargeDate: cal.date(byAdding: .day, value: 3, to: .now)!,
-            status: .archived
+        let zero = try zeroPlan()
+        let (viewModel, defaults, suite) = try viewModel(
+            items: items,
+            plan: { _, _, _, _ in zero }
         )
-        let active = makeItem(title: "Active", status: .active,
-                               nextCharge: cal.date(byAdding: .day, value: 5, to: .now))
+        defer { defaults.removePersistentDomain(forName: suite) }
 
-        try repo.save(cancelled)
-        try repo.save(paused)
-        try repo.save(archived)
-        try repo.save(active)
+        await viewModel.load()
 
-        let vm = makeViewModel(repo: repo)
-        vm.load()
-
-        // If filtering ran after the 3-item cap, the three excluded statuses
-        // (due on days 1-3) would fill every slot and "Active" (day 5) would
-        // never surface. Filtering must happen before the cap.
-        #expect(vm.upcomingCharges.count == 1)
-        #expect(vm.upcomingCharges.first?.title == "Active")
+        #expect(viewModel.upcoming.rows.map(\.providerName) == ["Day 1", "Day 2", "Day 5"])
     }
 
-    @Test("upcomingCharges includes a trial item that has an upcoming charge date")
-    func upcomingChargesIncludesTrialWithChargeDate() throws {
-        let repo = try makeRepo()
-        let cal = Calendar.current
-
-        let trial = makeItem(
-            title: "Trial Service", status: .trial,
-            nextCharge: cal.date(byAdding: .day, value: 3, to: .now),
-            trialEndDate: cal.date(byAdding: .day, value: 3, to: .now)
-        )
-        try repo.save(trial)
-
-        let vm = makeViewModel(repo: repo)
-        vm.load()
-
-        #expect(vm.upcomingCharges.contains { $0.title == "Trial Service" })
-    }
-
-    @Test("upcomingCharges is empty when every item is cancelled, paused, or archived")
-    func upcomingChargesEmptyWhenNothingCounts() throws {
-        let repo = try makeRepo()
-        let cal = Calendar.current
-
-        try repo.save(makeItem(title: "Cancelled", status: .cancelled,
-                                nextCharge: cal.date(byAdding: .day, value: 1, to: .now)))
-        try repo.save(makeItem(title: "Paused", status: .paused,
-                                nextCharge: cal.date(byAdding: .day, value: 2, to: .now)))
-
-        let vm = makeViewModel(repo: repo)
-        vm.load()
-
-        #expect(vm.upcomingCharges.isEmpty)
-        #expect(vm.isLoaded)
-        #expect(!vm.hasError)
-    }
-
-    // MARK: - Insights / Active Trials
-
-    @Test("Trial ending within 14 days appears in insights")
-    func trialInsightAppearsForEndingSoonTrials() throws {
-        let repo = try makeRepo()
-
-        let trial1 = makeItem(title: "T1", status: .trial,
-                              trialEndDate: Calendar.current.date(byAdding: .day, value: 5, to: .now))
-        let trial2 = makeItem(title: "T2", status: .trial,
-                              trialEndDate: Calendar.current.date(byAdding: .day, value: 2, to: .now))
-        let active = makeItem(title: "A", status: .active)
-
-        try repo.save(trial1)
-        try repo.save(trial2)
-        try repo.save(active)
-
-        let vm = makeViewModel(repo: repo)
-        vm.load()
-
-        let trialInsight = vm.insights.first(where: { $0.id == .trial })
-        #expect(trialInsight != nil)
-        // Earliest-ending trial (T2, day+2) should be the one shown
-        #expect(trialInsight?.value.contains("T2") == true)
-    }
-
-    @Test("Expired trial excluded — only active trial appears in insights")
-    func expiredTrialsExcluded() throws {
-        let repo = try makeRepo()
-
-        let activeTrial = makeItem(
-            title: "Active Trial", status: .trial,
-            trialEndDate: Calendar.current.date(byAdding: .day, value: 5, to: .now)
-        )
-        let expiredTrial = makeItem(
-            title: "Expired Trial", status: .trial,
-            trialEndDate: Calendar.current.date(byAdding: .day, value: -1, to: .now)
-        )
-        let regularActive = makeItem(title: "Regular", status: .active)
-
-        try repo.save(activeTrial)
-        try repo.save(expiredTrial)
-        try repo.save(regularActive)
-
-        let vm = makeViewModel(repo: repo)
-        vm.load()
-
-        let trialInsight = vm.insights.first(where: { $0.id == .trial })
-        #expect(trialInsight != nil)
-        #expect(trialInsight?.value.contains("Active Trial") == true)
-    }
-
-    @Test("Trial with nil trialEndDate does not produce trial insight")
-    func trialWithNilEndDate() throws {
-        let repo = try makeRepo()
-
-        let brokenTrial = makeItem(title: "Broken", status: .trial, trialEndDate: nil)
-        try repo.save(brokenTrial)
-
-        let vm = makeViewModel(repo: repo)
-        vm.load()
-
-        #expect(!vm.insights.contains(where: { $0.id == .trial }))
-    }
-
-    // MARK: - Load Idempotency
-
-    @Test("Multiple loads don't duplicate landscape data")
-    func multipleLoads() throws {
-        let repo = try makeRepo()
-        let item = makeItem(title: "Single", amount: 100)
-        try repo.save(item)
-
-        let vm = makeViewModel(repo: repo)
-        vm.load()
-        vm.load()
-        vm.load()
-
-        #expect(vm.landscapePoints.count == 30)
-        #expect(vm.landscapePoints[3].chargeCount == 1)
-    }
-
-    // MARK: - Mixed Currency Stress
-
-    @Test("Dashboard handles mixed currencies without crashing")
-    func mixedCurrencies() throws {
-        let repo = try makeRepo()
-
-        let rub = makeItem(title: "RUB item", amount: 299, currencyCode: "RUB")
-        let usd = makeItem(title: "USD item", amount: 9.99, currencyCode: "USD")
-        let eur = makeItem(title: "EUR item", amount: 14.99, currencyCode: "EUR")
-
-        try repo.save(rub)
-        try repo.save(usd)
-        try repo.save(eur)
-
-        let vm = makeViewModel(repo: repo)
-        vm.load()
-
-        #expect(vm.isLoaded)
-        #expect(!vm.hasError)
-        #expect(vm.landscapePoints.reduce(0) { $0 + $1.chargeCount } == 3)
-    }
-
-    // MARK: - Large Dataset
-
-    @Test("Handles 100 items without issue")
-    func largeDataset() throws {
-        let repo = try makeRepo()
-
-        for i in 0..<100 {
-            let item = makeItem(
-                title: "Item \(i)",
-                amount: Decimal(i + 1),
-                nextCharge: Calendar.current.date(byAdding: .day, value: i % 10, to: .now)
-            )
-            try repo.save(item)
-        }
-
-        let vm = makeViewModel(repo: repo)
-        vm.load()
-
-        #expect(vm.isLoaded)
-        #expect(vm.landscapePoints.count == 30)
-        #expect(vm.landscapePoints.reduce(0) { $0 + $1.chargeCount } == 100)
-    }
-
-    // MARK: - All Statuses Survive Load
-
-    @Test("Every ItemStatus survives through ViewModel load without crashing")
-    func allStatusesSurviveLoad() throws {
-        let repo = try makeRepo()
-
-        let statuses: [ItemStatus] = [
-            .active, .dueSoon, .dueToday, .overdue,
-            .trial, .failed, .cancelled, .paused, .archived
+    @Test("Paused cancelled and archived subscriptions never enter Upcoming")
+    func upcomingEligibility() async throws {
+        let items = [
+            try item(title: "Paused", day: 14, status: .paused),
+            try item(title: "Cancelled", day: 15, status: .cancelled),
+            try item(title: "Archived", day: 16, status: .archived),
+            try item(title: "Active", day: 17),
         ]
+        let zero = try zeroPlan()
+        let (viewModel, defaults, suite) = try viewModel(
+            items: items,
+            plan: { _, _, _, _ in zero }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
 
-        for (i, status) in statuses.enumerated() {
-            let item = makeItem(
-                title: "Status \(status.rawValue)",
-                amount: Decimal(10 * (i + 1)),
-                status: status,
-                trialEndDate: status == .trial
-                    ? Calendar.current.date(byAdding: .day, value: 5, to: .now)
-                    : nil
-            )
-            try repo.save(item)
-        }
+        await viewModel.load()
 
-        let vm = makeViewModel(repo: repo)
-        vm.load()
+        #expect(viewModel.upcoming.rows.map(\.providerName) == ["Active"])
+    }
 
-        #expect(vm.isLoaded)
-        #expect(!vm.hasError)
-        // archived + cancelled + paused are filtered from fetchActive
-        // but fetchUpcoming only filters archivedAt — chargeCount may be higher
-        #expect(vm.landscapePoints.count == 30)
+    @Test("Trial with a real upcoming charge remains visible")
+    func upcomingTrial() async throws {
+        let trial = try item(title: "Trial", day: 16, status: .trial)
+        let zero = try zeroPlan()
+        let (viewModel, defaults, suite) = try viewModel(
+            items: [trial],
+            plan: { _, _, _, _ in zero }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        await viewModel.load()
+
+        #expect(viewModel.upcoming.rows.first?.providerName == "Trial")
+    }
+
+    @Test("Provider identity and stored plan suffix remain separate")
+    func providerPlanSuffix() async throws {
+        let spotify = try item(
+            title: "Spotify Индивидуальный",
+            providerName: "Spotify",
+            providerID: "spotify",
+            day: 15
+        )
+        let zero = try zeroPlan()
+        let (viewModel, defaults, suite) = try viewModel(
+            items: [spotify],
+            plan: { _, _, _, _ in zero }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        await viewModel.load()
+
+        let row = try #require(viewModel.upcoming.rows.first)
+        #expect(row.providerName == "Spotify")
+        #expect(row.planOrCycle == "Индивидуальный")
+        #expect(row.artworkScale == 0.75)
+    }
+
+    @Test("Cycle is the truthful fallback when no stored plan suffix exists")
+    func providerCycleFallback() async throws {
+        let spotify = try item(
+            title: "Spotify",
+            providerName: "Spotify",
+            providerID: "spotify",
+            day: 15
+        )
+        let zero = try zeroPlan()
+        let (viewModel, defaults, suite) = try viewModel(
+            items: [spotify],
+            plan: { _, _, _, _ in zero }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        await viewModel.load()
+
+        #expect(viewModel.upcoming.rows.first?.planOrCycle == String(localized: "Ежемесячно"))
+    }
+
+    @Test("Same-currency Upcoming metadata includes complete count and total")
+    func completeUpcomingMetadata() async throws {
+        let items = [
+            try item(title: "A", amount: 199, day: 15),
+            try item(title: "B", amount: 299, day: 18),
+            try item(title: "C", amount: 299, day: 20),
+        ]
+        let zero = try zeroPlan()
+        let (viewModel, defaults, suite) = try viewModel(
+            items: items,
+            plan: { _, _, _, _ in zero }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        await viewModel.load()
+
+        let metadata = try #require(viewModel.upcoming.aggregateMetadata)
+        #expect(metadata.contains("3"))
+        #expect(metadata.filter(\.isNumber).contains("797"))
+    }
+
+    @Test("Empty Upcoming has no aggregate metadata")
+    func emptyUpcomingMetadata() async throws {
+        let zero = try zeroPlan()
+        let (viewModel, defaults, suite) = try viewModel(plan: { _, _, _, _ in zero })
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        await viewModel.load()
+
+        #expect(viewModel.upcoming.aggregateMetadata == nil)
+    }
+
+    @Test("One selected Domain insight maps into one presentation value")
+    func selectedInsight() async throws {
+        let zero = try zeroPlan()
+        let annual = OverviewInsight.annualScale(try Money(amount: 9_564, currencyCode: "RUB"))
+        let (viewModel, defaults, suite) = try viewModel(
+            plan: { _, _, _, _ in zero },
+            insight: { _, _, _, _ in annual }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        await viewModel.load()
+
+        #expect(viewModel.overviewInsight?.kind == .annualScale)
+        #expect(viewModel.screenState.overviewInsight == viewModel.overviewInsight)
+    }
+
+    @Test("Nil Domain insight collapses without placeholder state")
+    func nilInsight() async throws {
+        let zero = try zeroPlan()
+        let (viewModel, defaults, suite) = try viewModel(plan: { _, _, _, _ in zero })
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        await viewModel.load()
+
+        #expect(viewModel.overviewInsight == nil)
+    }
+
+    @Test("Non-forced repeated load is idempotent")
+    func repeatedLoad() async throws {
+        let zero = try zeroPlan()
+        let (viewModel, defaults, suite) = try viewModel(plan: { _, _, _, _ in zero })
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        await viewModel.load()
+        let first = viewModel.screenState
+        await viewModel.load()
+
+        #expect(viewModel.screenState == first)
+    }
+
+    @Test("Screen snapshot contains only the replacement Overview state")
+    func screenStateShape() async throws {
+        let zero = try zeroPlan()
+        let (viewModel, defaults, suite) = try viewModel(plan: { _, _, _, _ in zero })
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        await viewModel.load()
+
+        #expect(viewModel.screenState.monthlyPlan == viewModel.monthlyPlan)
+        #expect(viewModel.screenState.upcoming == viewModel.upcoming)
+        #expect(viewModel.screenState.isLoaded)
     }
 }
 
 @Suite("GetUpcomingCharges")
 @MainActor
 struct GetUpcomingChargesTests {
-
-    private func makeFixture() throws -> InMemoryPersistenceFixture {
-        try InMemoryPersistenceFixture()
-    }
-
     @Test("Custom day window works")
     func customDayWindow() throws {
-        let fixture = try makeFixture()
+        let repository = HomeViewModelTestsRepository()
+        let now = Date.now
+        repository.items = [
+            RecurringItem(
+                title: "Day3",
+                amount: 100,
+                nextChargeDate: Calendar.current.date(byAdding: .day, value: 3, to: now) ?? now
+            ),
+            RecurringItem(
+                title: "Day10",
+                amount: 100,
+                nextChargeDate: Calendar.current.date(byAdding: .day, value: 10, to: now) ?? now
+            ),
+        ]
 
-        let day3 = RecurringItem(
-            title: "Day3",
-            amount: 100,
-            nextChargeDate: Calendar.current.date(byAdding: .day, value: 3, to: .now)!
-        )
-        let day10 = RecurringItem(
-            title: "Day10",
-            amount: 100,
-            nextChargeDate: Calendar.current.date(byAdding: .day, value: 10, to: .now)!
-        )
-
-        try fixture.recurringItems.save(day3)
-        try fixture.recurringItems.save(day10)
-
-        let within5 = try GetUpcomingCharges(
-            repository: fixture.recurringItems
-        ).execute(days: 5)
-        #expect(within5.count == 1)
-        #expect(within5.first?.title == "Day3")
-
-        let within15 = try GetUpcomingCharges(
-            repository: fixture.recurringItems
-        ).execute(days: 15)
-        #expect(within15.count == 2)
+        let result = try GetUpcomingCharges(repository: repository).execute(days: 5, from: now)
+        #expect(result.map(\.title) == ["Day3"])
     }
 
-    @Test("Zero day window returns nothing")
+    @Test("Zero day window returns nothing beyond today")
     func zeroDayWindow() throws {
-        let fixture = try makeFixture()
-        let item = RecurringItem(
+        let repository = HomeViewModelTestsRepository()
+        let now = Date.now
+        repository.items = [RecurringItem(
             title: "Tomorrow",
             amount: 100,
-            nextChargeDate: Calendar.current.date(byAdding: .day, value: 1, to: .now)!
-        )
-        try fixture.recurringItems.save(item)
+            nextChargeDate: Calendar.current.date(byAdding: .day, value: 1, to: now) ?? now
+        )]
 
-        let result = try GetUpcomingCharges(
-            repository: fixture.recurringItems
-        ).execute(days: 0)
+        let result = try GetUpcomingCharges(repository: repository).execute(days: 0, from: now)
         #expect(result.isEmpty)
     }
 }
@@ -500,50 +483,48 @@ struct GetUpcomingChargesTests {
 @Suite("GetActiveTrials")
 @MainActor
 struct GetActiveTrialsTests {
-
-    private func makeFixture() throws -> InMemoryPersistenceFixture {
-        try InMemoryPersistenceFixture()
-    }
-
     @Test("Only trial status with future trialEndDate qualifies")
     func onlyActiveTrials() throws {
-        let fixture = try makeFixture()
+        let repository = HomeViewModelTestsRepository()
+        let now = Date.now
+        repository.items = [
+            RecurringItem(
+                title: "Trial",
+                amount: 100,
+                nextChargeDate: now,
+                trialEndDate: Calendar.current.date(byAdding: .day, value: 3, to: now),
+                status: .trial
+            ),
+            RecurringItem(
+                title: "Active",
+                amount: 100,
+                nextChargeDate: now,
+                trialEndDate: Calendar.current.date(byAdding: .day, value: 3, to: now),
+                status: .active
+            ),
+        ]
 
-        // Active trial — should appear
-        let good = RecurringItem(
-            title: "Good Trial",
-            amount: 0,
-            nextChargeDate: Calendar.current.date(byAdding: .day, value: 7, to: .now)!,
-            trialEndDate: Calendar.current.date(byAdding: .day, value: 7, to: .now),
-            status: .trial
-        )
-
-        // Expired trial — should not appear
-        let expired = RecurringItem(
-            title: "Expired",
-            amount: 0,
-            nextChargeDate: .now,
-            trialEndDate: Calendar.current.date(byAdding: .day, value: -1, to: .now),
-            status: .trial
-        )
-
-        // Active but not trial status — should not appear
-        let notTrial = RecurringItem(
-            title: "Not Trial",
-            amount: 100,
-            nextChargeDate: Calendar.current.date(byAdding: .day, value: 5, to: .now)!,
-            trialEndDate: Calendar.current.date(byAdding: .day, value: 5, to: .now),
-            status: .active
-        )
-
-        try fixture.recurringItems.save(good)
-        try fixture.recurringItems.save(expired)
-        try fixture.recurringItems.save(notTrial)
-
-        let result = try GetActiveTrials(
-            repository: fixture.recurringItems
-        ).execute()
-        #expect(result.count == 1)
-        #expect(result.first?.title == "Good Trial")
+        let result = try GetActiveTrials(repository: repository).execute()
+        #expect(result.map(\.title) == ["Trial"])
     }
+}
+
+@MainActor
+private final class HomeViewModelTestsRepository: RecurringItemRepository {
+    var items: [RecurringItem] = []
+    func fetchAll() throws -> [RecurringItem] { items }
+    func fetchActive() throws -> [RecurringItem] { items.filter(\.status.countsInTotals) }
+    func fetchUpcoming(within days: Int, from date: Date) throws -> [RecurringItem] {
+        let cutoff = Calendar.current.date(byAdding: .day, value: days, to: date) ?? date
+        return items.filter { $0.nextChargeDate >= date && $0.nextChargeDate <= cutoff }
+    }
+    func fetchByCategory(_ category: ItemCategory) throws -> [RecurringItem] {
+        items.filter { $0.category == category }
+    }
+    func fetch(id: UUID) throws -> RecurringItem? { items.first { $0.id == id } }
+    func save(_ item: RecurringItem) throws { items.append(item) }
+    func update(_ item: RecurringItem) throws {}
+    func delete(id: UUID) throws { items.removeAll { $0.id == id } }
+    func saveAll(_ items: [RecurringItem]) throws { self.items.append(contentsOf: items) }
+    func deleteAll() throws { items.removeAll() }
 }

@@ -1,27 +1,50 @@
 import Foundation
 
-// MARK: - Home Screen State
+// MARK: - Monthly Plan Hero
 
-/// Screen-level FX presentation state derived from rates that actually
-/// contributed to the current Home aggregates.
-enum HomeExchangeRateNotice: Equatable {
-    case none
-    case stale(age: TimeInterval)
+struct MonthlyPlanHeroPresentation: Equatable, Sendable {
+    enum PrimaryStyle: Equatable, Sendable {
+        case financialValue
+        case statement
+    }
+
+    let title: String
+    let primary: String
+    let primaryStyle: PrimaryStyle
+    let leadingSupport: String
+    let trailingSupportLabel: String?
+    let trailingSupportValue: String?
+    let accessibilityLabel: String
 }
 
-/// Snapshot of all data needed to render the Home screen.
-/// Produced by HomeViewModel as a computed property.
-/// Useful for unit testing (assert on whole state) and SwiftUI previews.
-struct HomeScreenState {
+// MARK: - Upcoming Charges
+
+struct UpcomingChargePresentation: Identifiable, Equatable, Sendable {
+    let item: RecurringItem
+    let providerName: String
+    let planOrCycle: String
+    let amount: String
+    let chargeDate: String
+    let artworkScale: Double
+    let accessibilityLabel: String
+
+    var id: UUID { item.id }
+}
+
+struct UpcomingChargesPresentation: Equatable, Sendable {
+    let rows: [UpcomingChargePresentation]
+    let aggregateMetadata: String?
+    let emptyMessage: String
+}
+
+// MARK: - Home Screen State
+
+/// Complete presentation snapshot for the production Soft Club Overview.
+struct HomeScreenState: Equatable, Sendable {
     let monthLabel: String
-    let forecastLabel: String
-    let forecastAggregation: RecurringSpendAggregationResult?
-    let exchangeRateNotice: HomeExchangeRateNotice
-    let landscapePoints: [BillingLandscapePoint]
-    let callout: NextPaymentCalloutState
-    let calloutNavigationItem: RecurringItem?
-    let insights: [InsightRowModel]
-    let upcomingCharges: [RecurringItem]
+    let monthlyPlan: MonthlyPlanHeroPresentation
+    let overviewInsight: OverviewInsightPresentation?
+    let upcoming: UpcomingChargesPresentation
     let isLoaded: Bool
     let hasError: Bool
 }

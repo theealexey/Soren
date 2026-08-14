@@ -1,7 +1,9 @@
 import SwiftUI
 import SwiftData
 
+#if !(DEBUG && SOFT_CLUB_DESIGN_LOCK_HOST)
 @main
+#endif
 struct SorenApp: App {
     @State private var appState = AppState()
     @Environment(\.scenePhase) private var scenePhase

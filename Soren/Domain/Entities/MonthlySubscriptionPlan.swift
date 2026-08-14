@@ -1,0 +1,13 @@
+import Foundation
+
+/// A complete reporting-currency projection of recurring charges scheduled
+/// inside the calendar month containing the supplied calculation date.
+///
+/// This is a schedule plan, not payment history or confirmation that a charge
+/// has been collected.
+struct MonthlySubscriptionPlan: Equatable, Sendable {
+    let plannedTotal: Money
+    let chargeCount: Int
+    let remainingTotal: Money
+    let remainingChargeCount: Int
+}

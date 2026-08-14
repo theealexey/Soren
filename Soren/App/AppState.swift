@@ -25,6 +25,25 @@ final class AppState {
            let mode = AppearanceMode(rawValue: raw) {
             appearanceMode = mode
         }
+
+        #if DEBUG
+        if let scenario = DebugHomeScenario.requested(in: ProcessInfo.processInfo.arguments),
+           let container = try? SorenModelContainer.inMemory() {
+            let appContainer = AppContainer(modelContext: container.mainContext)
+            do {
+                try appContainer.repositories.recurringItems.saveAll(scenario.items)
+                var preferences = appContainer.preferences.load()
+                preferences.defaultCurrencyCode = "RUB"
+                appContainer.preferences.save(preferences)
+                modelContainer = container
+                self.appContainer = appContainer
+                return
+            } catch {
+                // Fall through to the production store if DEBUG fixture setup fails.
+            }
+        }
+        #endif
+
         if let mc = try? SorenModelContainer.production() {
             modelContainer = mc
             appContainer = AppContainer(modelContext: mc.mainContext)

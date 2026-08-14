@@ -2,11 +2,12 @@ import SwiftUI
 
 // MARK: - Root View
 
-/// App shell: context header + full-screen tab content + floating pill (pure nav).
-/// Each screen owns its toolbar actions — no global floating "+" logic.
+/// App shell: tab content + context chrome for non-Overview destinations +
+/// the native Liquid Glass navigation shared by all tabs.
 struct RootView: View {
     @Environment(AppContainer.self) private var container
     @Environment(AppState.self) private var appState
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var selectedTab: AppTab = .overview
     @State private var visitedTabs: Set<AppTab> = [.overview]
     @State private var activeSheet: ActiveSheet?
@@ -30,7 +31,9 @@ struct RootView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            SorenContextBar(tab: selectedTab) { contextBarTrailing }
+            if selectedTab != .overview {
+                SorenContextBar(tab: selectedTab) { contextBarTrailing }
+            }
 
             ZStack {
                 ForEach(AppTab.allCases) { tab in
@@ -47,14 +50,21 @@ struct RootView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(ColorTokens.background)
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+            .clipped()
+
             SorenFloatingPill(selectedTab: tabBinding)
-                .padding(.horizontal, Spacing.xl)
-                .padding(.bottom, Spacing.xs)
+                .padding(.horizontal, 20)
+                .padding(.top, dynamicTypeSize.isAccessibilitySize ? 20 : 4)
+                .padding(.bottom, 7)
                 .frame(maxWidth: floatingPillMaxWidth)
                 .frame(maxWidth: .infinity, alignment: .center)
+        }
+        .background {
+            if selectedTab == .overview {
+                SoftClubColor.canvas.ignoresSafeArea()
+            } else {
+                ColorTokens.background.ignoresSafeArea()
+            }
         }
         .environment(\.addSubscriptionAction, AddSubscriptionAction { activeSheet = .addSubscription })
         .environment(\.navigateToItem, NavigateToItemAction { activeSheet = .itemDetails($0) })
@@ -90,8 +100,6 @@ struct RootView: View {
                     viewModel: container.makeAddSubscriptionViewModel()
                 )
             }
-        case .settings:
-            NavigationStack { SettingsView(viewModel: container.makeSettingsViewModel()) }
         }
     }
 
@@ -101,10 +109,7 @@ struct RootView: View {
     private var contextBarTrailing: some View {
         switch selectedTab {
         case .overview:
-            HStack(spacing: Spacing.xxs) {
-                addButton
-                settingsButton
-            }
+            EmptyView()
         case .subscriptions:
             addButton
         case .calendar, .insights:
@@ -125,15 +130,6 @@ struct RootView: View {
         .buttonStyle(.plain)
     }
 
-    private var settingsButton: some View {
-        Button { activeSheet = .settings } label: {
-            Image(systemName: "gearshape")
-                .font(.system(size: 16, weight: .regular))
-                .foregroundStyle(ColorTokens.textTertiary)
-                .frame(width: 36, height: 36)
-        }
-        .buttonStyle(.plain)
-    }
 }
 
 // Allocated once at file scope — static stored properties are not allowed in generic types.
@@ -147,13 +143,11 @@ private let _sorenMonthYearFormatter: DateFormatter = {
 private enum ActiveSheet: Identifiable {
     case itemDetails(RecurringItem)
     case addSubscription
-    case settings
 
     var id: String {
         switch self {
         case .itemDetails(let item): "item-\(item.id.uuidString)"
         case .addSubscription:       "add"
-        case .settings:              "settings"
         }
     }
 }
@@ -210,33 +204,45 @@ private struct SorenContextBar<Trailing: View>: View {
 
 // MARK: - Floating Pill (pure navigator)
 
-/// Capsule tab switcher — no business logic, no "+" button.
-/// 4 icons only: Overview · Subscriptions · Calendar · Insights.
+/// Four real destinations inside one native Liquid Glass navigation body.
 private struct SorenFloatingPill: View {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     @Binding var selectedTab: AppTab
 
     var body: some View {
-        HStack(spacing: 0) {
+        Group {
+            if reduceTransparency || colorSchemeContrast == .increased {
+                tabItems
+                    .padding(6)
+                    .background(SoftClubColor.glassControlSurface, in: Capsule())
+                    .overlay {
+                        Capsule()
+                            .strokeBorder(SoftClubColor.subtleBorder, lineWidth: 0.8)
+                    }
+            } else if #available(iOS 26, *) {
+                GlassEffectContainer(spacing: 6) {
+                    tabItems
+                        .padding(6)
+                        .glassEffect(.regular, in: .capsule)
+                }
+            } else {
+                tabItems
+                    .padding(6)
+                    .background(.thinMaterial, in: Capsule())
+            }
+        }
+        .frame(height: dynamicTypeSize.isAccessibilitySize ? 56 : 66)
+    }
+
+    private var tabItems: some View {
+        HStack(spacing: 2) {
             ForEach(AppTab.allCases) { tab in
                 tabButton(tab)
             }
         }
-        .padding(.horizontal, Spacing.xs)
-        .padding(.vertical, Spacing.xs)
-        .background {
-            Capsule()
-                .fill(ColorTokens.surfaceElevated)
-                .overlay {
-                    Capsule()
-                        .fill(.ultraThinMaterial.opacity(0.55))
-                }
-                .overlay {
-                    Capsule()
-                        .strokeBorder(ColorTokens.separator.opacity(0.5), lineWidth: 0.5)
-                }
-        }
-        .shadow(color: .black.opacity(0.10), radius: 20, x: 0, y: 6)
-        .shadow(color: .black.opacity(0.05), radius: 4,  x: 0, y: 2)
     }
 
     private func tabButton(_ tab: AppTab) -> some View {
@@ -246,23 +252,56 @@ private struct SorenFloatingPill: View {
             withAnimation(MotionTokens.snappy) { selectedTab = tab }
             HapticEngine.selection()
         } label: {
-            VStack(spacing: 3) {
+            VStack(spacing: dynamicTypeSize.isAccessibilitySize ? 0 : 3) {
                 Image(systemName: isActive ? tab.activeIcon : tab.icon)
                     .font(.system(size: 17, weight: isActive ? .semibold : .regular))
-                    .foregroundStyle(isActive ? ColorTokens.accent : ColorTokens.textTertiary)
-                    .frame(height: 20)
+                    .frame(height: 19)
 
-                Circle()
-                    .fill(isActive ? ColorTokens.accent : Color.clear)
-                    .frame(width: 3.5, height: 3.5)
+                if !dynamicTypeSize.isAccessibilitySize {
+                    Text(verbatim: tab.title)
+                        .font(.system(size: 9.5, weight: isActive ? .medium : .regular))
+                        .lineLimit(1)
+                }
             }
-            .frame(maxWidth: .infinity)
-            .contentShape(Rectangle())
+            .foregroundStyle(isActive ? SoftClubColor.textPrimary : SoftClubColor.textTertiary)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .contentShape(.capsule)
         }
         .buttonStyle(.plain)
-        .animation(.easeInOut(duration: 0.15), value: isActive)
+        .modifier(SelectedNavigationGlass(
+            isSelected: isActive,
+            forceOpaque: reduceTransparency || colorSchemeContrast == .increased
+        ))
         .accessibilityLabel(tab.title)
         .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : .isButton)
+    }
+}
+
+private struct SelectedNavigationGlass: ViewModifier {
+    let isSelected: Bool
+    let forceOpaque: Bool
+
+    func body(content: Content) -> some View {
+        if forceOpaque {
+            content
+                .background(
+                    isSelected ? SoftClubColor.elevatedSurface.opacity(0.72) : Color.clear,
+                    in: Capsule()
+                )
+        } else if #available(iOS 26, *) {
+            if isSelected {
+                content
+                    .glassEffect(.regular.interactive(), in: .capsule)
+            } else {
+                content
+            }
+        } else {
+            content
+                .background(
+                    isSelected ? SoftClubColor.elevatedSurface.opacity(0.62) : Color.clear,
+                    in: Capsule()
+                )
+        }
     }
 }
 
