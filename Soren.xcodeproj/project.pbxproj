@@ -156,6 +156,7 @@
 		A11365CE9B1226921CDEE2BE /* PaymentMethodMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A24F4A666D09CE7D6B730480 /* PaymentMethodMapper.swift */; };
 		A6E5CF39F847ECCF37EA9C4A /* SpacingTokenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5110E3C6D5E26466595C387D /* SpacingTokenTests.swift */; };
 		A753AC5DA6AA205FF5614C95 /* SoftClubFoundationShowcase.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA461251898E80427EC67EC2 /* SoftClubFoundationShowcase.swift */; };
+		3A2C00000000000000000002 /* SubscriptionsInformationArchitectureShowcase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A2C00000000000000000001 /* SubscriptionsInformationArchitectureShowcase.swift */; };
 		A8700790E0B2220E043C2E6B /* ListRowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E994CDE5B3934412FBC152E /* ListRowTests.swift */; };
 		A8C600833E65F85B744B75D3 /* regional-pricing-us-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = 9919E7D1AA6504324DFE6232 /* regional-pricing-us-v1.json */; };
 		AA352B3877CD5BBC689F8CFF /* ItemDetailsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6509B2ABE747FA5E800016D /* ItemDetailsViewModel.swift */; };
@@ -471,6 +472,7 @@
 		FA1829C587899C7C72F7ABF5 /* HomeScreenState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreenState.swift; sourceTree = "<group>"; };
 		FA3970FC76BF4241015E9CE3 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		FA461251898E80427EC67EC2 /* SoftClubFoundationShowcase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoftClubFoundationShowcase.swift; sourceTree = "<group>"; };
+		3A2C00000000000000000001 /* SubscriptionsInformationArchitectureShowcase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionsInformationArchitectureShowcase.swift; sourceTree = "<group>"; };
 		FB0CDC0B809B3C76636A90D2 /* ProviderTemplateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderTemplateTests.swift; sourceTree = "<group>"; };
 		FCEF5B74B2E1B0B2BC44B6B0 /* SorenApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SorenApp.swift; sourceTree = "<group>"; };
 		FD1994F3779CF81744936E03 /* PaymentRecordMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentRecordMapper.swift; sourceTree = "<group>"; };
@@ -1106,6 +1108,7 @@
 				6C5D8E927985B3D9BE99290A /* NotificationDiagnostics.swift */,
 				56890545E88B469DFD308368 /* NotificationDiagnosticsView.swift */,
 				FA461251898E80427EC67EC2 /* SoftClubFoundationShowcase.swift */,
+				3A2C00000000000000000001 /* SubscriptionsInformationArchitectureShowcase.swift */,
 			);
 			path = Dev;
 			sourceTree = "<group>";
@@ -1517,6 +1520,7 @@
 				0941461856266EC88A29F01E /* Shadows.swift in Sources */,
 				166B4B552E9C98137A7F506E /* SoftClubFoundation.swift in Sources */,
 				A753AC5DA6AA205FF5614C95 /* SoftClubFoundationShowcase.swift in Sources */,
+				3A2C00000000000000000002 /* SubscriptionsInformationArchitectureShowcase.swift in Sources */,
 				EE06586CF84598617481ACE1 /* SorenApp.swift in Sources */,
 				85AF4F5E3E1C6D703BABF080 /* SorenListRow.swift in Sources */,
 				2FF3082DDA2DD4B47E915831 /* SorenModelContainer.swift in Sources */,

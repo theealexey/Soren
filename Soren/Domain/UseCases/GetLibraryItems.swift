@@ -3,7 +3,7 @@ import Foundation
 // MARK: - Use Case: Get Library Items
 
 /// Fetches all recurring items for the Library screen.
-/// Returns unarchived items by default; archived items on request.
+/// Returns the complete collection; the caller applies current/archive scope.
 @MainActor
 struct GetLibraryItems {
 

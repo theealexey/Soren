@@ -36,12 +36,16 @@ struct UpdateRecurringItem {
 
     // MARK: - Write-time normalization
 
-    /// Clears `endDate` when `autoRenew == true`.
+    /// Clears `endDate` when `autoRenew == true` and keeps archive state coherent.
     /// Must run before validation so the invariant checks operate on final persisted state.
     private func normalize(_ item: RecurringItem) -> RecurringItem {
-        guard item.autoRenew else { return item }
         var result = item
-        result.endDate = nil
+        if result.autoRenew {
+            result.endDate = nil
+        }
+        result.archivedAt = result.status == .archived
+            ? result.archivedAt ?? .now
+            : nil
         return result
     }
 

@@ -99,6 +99,7 @@ enum DebugHomeScenario: String, Sendable {
     case denseWeek
     case emptyUpcoming
     case partialRemaining
+    case subscriptions
 
     static func requested(in arguments: [String]) -> Self? {
         if arguments.contains("--home-scenario-annual") { return .annualScale }
@@ -106,6 +107,7 @@ enum DebugHomeScenario: String, Sendable {
         if arguments.contains("--home-scenario-dense-week") { return .denseWeek }
         if arguments.contains("--home-scenario-empty") { return .emptyUpcoming }
         if arguments.contains("--home-scenario-partial-remaining") { return .partialRemaining }
+        if arguments.contains("--subscriptions-scenario") { return .subscriptions }
         return nil
     }
 
@@ -255,6 +257,117 @@ enum DebugHomeScenario: String, Sendable {
                     day: 28
                 ),
             ]
+
+        case .subscriptions:
+            return [
+                item(
+                    id: 41,
+                    title: "Spotify",
+                    providerID: "spotify",
+                    providerName: "Spotify",
+                    category: .music,
+                    amount: 199,
+                    month: 9,
+                    day: 11
+                ),
+                item(
+                    id: 42,
+                    title: "YouTube Premium",
+                    providerID: "youtube_premium",
+                    providerName: "YouTube Premium",
+                    category: .video,
+                    amount: 299,
+                    month: 9,
+                    day: 14
+                ),
+                item(
+                    id: 43,
+                    title: "iCloud+",
+                    providerID: "icloud",
+                    providerName: "iCloud+",
+                    category: .cloud,
+                    amount: 599,
+                    month: 9,
+                    day: 18
+                ),
+                item(
+                    id: 44,
+                    title: "Adobe Creative Cloud",
+                    providerID: "adobe_cc",
+                    providerName: "Adobe Creative Cloud",
+                    category: .productivity,
+                    amount: 4_599,
+                    month: 9,
+                    day: 19
+                ),
+                item(
+                    id: 45,
+                    title: "Яндекс Плюс",
+                    providerID: "yandex_plus",
+                    providerName: "Яндекс Плюс",
+                    category: .shopping,
+                    amount: 399,
+                    month: 9,
+                    day: 20,
+                    status: .paused
+                ),
+                item(
+                    id: 46,
+                    title: "GitHub Copilot",
+                    providerID: "github_copilot",
+                    providerName: "GitHub Copilot",
+                    category: .productivity,
+                    amount: 10,
+                    currencyCode: "USD",
+                    month: 9,
+                    day: 21
+                ),
+                item(
+                    id: 47,
+                    title: "1Password Families",
+                    providerID: "1password",
+                    providerName: "1Password",
+                    category: .productivity,
+                    amount: Decimal(string: "59.88") ?? .zero,
+                    currencyCode: "USD",
+                    billingCycle: .annual,
+                    month: 9,
+                    day: 24
+                ),
+                item(
+                    id: 48,
+                    title: "Microsoft 365 Family — расширенный семейный план",
+                    providerID: "microsoft_365",
+                    providerName: "Microsoft 365",
+                    category: .productivity,
+                    amount: 1_199,
+                    month: 9,
+                    day: 27
+                ),
+                item(
+                    id: 49,
+                    title: "Apple Music",
+                    providerID: "apple_music",
+                    providerName: "Apple Music",
+                    category: .music,
+                    amount: 169,
+                    month: 9,
+                    day: 29,
+                    status: .trial,
+                    trialEndDay: 29
+                ),
+                item(
+                    id: 50,
+                    title: "Netflix",
+                    providerID: "netflix",
+                    providerName: "Netflix",
+                    category: .video,
+                    amount: 999,
+                    month: 10,
+                    day: 3,
+                    status: .archived
+                ),
+            ]
         }
     }
 
@@ -265,12 +378,15 @@ enum DebugHomeScenario: String, Sendable {
         providerName: String,
         category: ItemCategory,
         amount: Decimal,
+        currencyCode: String = "RUB",
+        billingCycle: BillingCycle = .monthly,
+        month: Int = 8,
         day: Int,
         status: ItemStatus = .active,
         trialEndDay: Int? = nil
     ) -> RecurringItem {
-        let chargeDate = date(day: day)
-        let trialEndDate = trialEndDay.map { date(day: $0) }
+        let chargeDate = date(month: month, day: day)
+        let trialEndDate = trialEndDay.map { date(month: month, day: $0) }
         let startDate = calendar.date(byAdding: .month, value: -4, to: chargeDate) ?? chargeDate
 
         return RecurringItem(
@@ -280,20 +396,21 @@ enum DebugHomeScenario: String, Sendable {
             providerName: providerName,
             category: category,
             amount: amount,
-            currencyCode: "RUB",
-            billingCycle: .monthly,
+            currencyCode: currencyCode,
+            billingCycle: billingCycle,
             startDate: startDate,
             nextChargeDate: chargeDate,
             trialEndDate: trialEndDate,
             status: status,
-            tags: ["overview-runtime-scenario"]
+            tags: ["runtime-scenario"],
+            archivedAt: status == .archived ? referenceDate : nil
         )
     }
 
-    private func date(day: Int) -> Date {
+    private func date(month: Int = 8, day: Int) -> Date {
         calendar.date(from: DateComponents(
             year: 2026,
-            month: 8,
+            month: month,
             day: day,
             hour: 12
         )) ?? referenceDate

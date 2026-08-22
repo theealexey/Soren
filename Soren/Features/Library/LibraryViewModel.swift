@@ -25,6 +25,7 @@ final class LibraryViewModel {
     private(set) var allItems: [RecurringItem] = []
     private(set) var defaultCurrency: String = UserPreferences.default.defaultCurrencyCode
     private(set) var error: Error?
+    private(set) var failedAction: FailedAction?
     private(set) var isLoaded = false
     /// Re-runs the single snapshot-loading task only when the current filtered
     /// total starts requiring FX without a usable snapshot.
@@ -127,6 +128,7 @@ final class LibraryViewModel {
 
     func load() {
         error = nil
+        failedAction = nil
         aggregationRevision += 1
         exchangeRateSnapshot = nil
         do {
@@ -137,6 +139,7 @@ final class LibraryViewModel {
             recompute(scheduleSnapshotIfNeeded: false)
         } catch {
             self.error = error
+            failedAction = .load
         }
     }
 
@@ -171,20 +174,28 @@ final class LibraryViewModel {
         }
     }
 
-    /// Deletes `item` from persistent storage and removes it from the local list immediately
-    /// (optimistic update). The notification is cancelled by the use case as part of the
-    /// same async operation. On failure the error state is set and the list is reloaded.
-    func deleteItem(_ item: RecurringItem) {
-        Task {
-            do {
-                try await deleteRecurringItem.execute(id: item.id)
-                allItems.removeAll { $0.id == item.id }
-                recompute()
-            } catch {
-                self.error = error
-                load()   // restore list state on unexpected failure
-            }
+    /// Deletes `item`, then updates the in-memory collection after persistence succeeds.
+    /// A failed delete leaves the unchanged collection visible and records the failed action
+    /// so Presentation can distinguish it from a load failure.
+    @discardableResult
+    func deleteItem(_ item: RecurringItem) async -> Bool {
+        error = nil
+        failedAction = nil
+        do {
+            try await deleteRecurringItem.execute(id: item.id)
+            allItems.removeAll { $0.id == item.id }
+            recompute()
+            return true
+        } catch {
+            self.error = error
+            failedAction = .delete(itemID: item.id)
+            return false
         }
+    }
+
+    func dismissError() {
+        error = nil
+        failedAction = nil
     }
 
     // MARK: - Recompute (single pass — O(n log n) once per state change, not per render)
@@ -217,7 +228,7 @@ final class LibraryViewModel {
         // Existing Library semantics include only the statuses that historically
         // contributed to totals; aggregation itself is now the shared Domain policy.
         filteredMonthlyProjections = result
-            .filter(\.status.countsInTotals)
+            .filter { $0.status.countsInTotals && !$0.isExpired }
             .map { item in
                 RecurringSpendProjection(
                     date: item.nextChargeDate,
@@ -244,17 +255,17 @@ final class LibraryViewModel {
         // All other filter/search combinations produce a single unnamed section so the
         // flat-list layout is preserved.
         if activeFilter == .all, searchText.isEmpty {
-            let active   = result.filter { !$0.isExpired }
+            let current  = result.filter { !$0.isExpired }
             let past     = result.filter {  $0.isExpired }
             let archived = sortItems(allItems.filter { $0.status == .archived })
 
             let hasMixed = !past.isEmpty || !archived.isEmpty
             var built: [LibrarySection] = []
-            if !active.isEmpty {
+            if !current.isEmpty {
                 built.append(LibrarySection(
-                    id: "active",
-                    title: hasMixed ? String(localized: "Активные") : nil,
-                    items: active
+                    id: "current",
+                    title: hasMixed ? String(localized: "Текущие") : nil,
+                    items: current
                 ))
             }
             if !past.isEmpty {
@@ -373,6 +384,11 @@ private enum MonthlyAmountSortKey {
 // MARK: - Library Section
 
 extension LibraryViewModel {
+    enum FailedAction: Equatable {
+        case load
+        case delete(itemID: UUID)
+    }
+
     struct LibrarySection: Identifiable {
         let id: String
         let title: String?   // nil → no visible header
@@ -467,6 +483,16 @@ extension LibraryViewModel {
             }
         }
 
+        var shortTitle: String {
+            switch self {
+            case .nextCharge:    String(localized: "По дате")
+            case .name:          String(localized: "По названию")
+            case .amountAsc:     String(localized: "Цена ↑")
+            case .amountDesc:    String(localized: "Цена ↓")
+            case .recentlyAdded: String(localized: "Недавние")
+            }
+        }
+
         var icon: String {
             switch self {
             case .nextCharge:   "calendar.badge.clock"
@@ -480,7 +506,9 @@ extension LibraryViewModel {
         func apply(to items: [RecurringItem]) -> [RecurringItem] {
             switch self {
             case .nextCharge:
-                return items.sorted { $0.nextChargeDate < $1.nextChargeDate }
+                return items.sorted {
+                    $0.effectiveNextChargeDate() < $1.effectiveNextChargeDate()
+                }
             case .name:
                 return items.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
             case .amountAsc, .amountDesc:

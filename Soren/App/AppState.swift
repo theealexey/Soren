@@ -27,6 +27,12 @@ final class AppState {
         }
 
         #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--subscriptions-light") {
+            appearanceMode = .light
+        } else if ProcessInfo.processInfo.arguments.contains("--subscriptions-dark") {
+            appearanceMode = .dark
+        }
+
         if let scenario = DebugHomeScenario.requested(in: ProcessInfo.processInfo.arguments),
            let container = try? SorenModelContainer.inMemory() {
             let appContainer = AppContainer(modelContext: container.mainContext)

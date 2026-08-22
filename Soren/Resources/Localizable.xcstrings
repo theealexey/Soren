@@ -4032,6 +4032,16 @@
         }
       }
     },
+    "Не удалось удалить подписку" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to delete subscription"
+          }
+        }
+      }
+    },
     "Не удалось открыть базу данных. Возможно, файл был повреждён во время синхронизации iCloud." : {
       "localizations" : {
         "en" : {
@@ -4088,6 +4098,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recently Added"
+          }
+        }
+      }
+    },
+    "Недавние" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recent"
           }
         }
       }
@@ -4419,6 +4439,16 @@
         }
       }
     },
+    "Открыть управление подпиской" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open subscription management"
+          }
+        }
+      }
+    },
     "Отмена" : {
       "localizations" : {
         "en" : {
@@ -4598,6 +4628,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plus"
+          }
+        }
+      }
+    },
+    "По дате" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By Date"
           }
         }
       }
@@ -5565,6 +5605,16 @@
         }
       }
     },
+    "Сортировка" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sort"
+          }
+        }
+      }
+    },
     "Списание завтра" : {
       "localizations" : {
         "en" : {
@@ -5811,6 +5861,16 @@
         }
       }
     },
+    "Текущие" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current"
+          }
+        }
+      }
+    },
     "Требуется внимание" : {
       "localizations" : {
         "en" : {
@@ -5904,6 +5964,16 @@
         }
       }
     },
+    "Фильтр" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filter"
+          }
+        }
+      }
+    },
     "Фильмы и сериалы" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5932,6 +6002,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Storage Unavailable"
+          }
+        }
+      }
+    },
+    "Цена ↑" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price ↑"
+          }
+        }
+      }
+    },
+    "Цена ↓" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price ↓"
           }
         }
       }

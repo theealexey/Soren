@@ -8,9 +8,18 @@ struct RootView: View {
     @Environment(AppContainer.self) private var container
     @Environment(AppState.self) private var appState
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @State private var selectedTab: AppTab = .overview
-    @State private var visitedTabs: Set<AppTab> = [.overview]
+    @State private var selectedTab: AppTab = Self.initialTab
+    @State private var visitedTabs: Set<AppTab> = [Self.initialTab]
     @State private var activeSheet: ActiveSheet?
+
+    private static var initialTab: AppTab {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--subscriptions-scenario") {
+            return .subscriptions
+        }
+        #endif
+        return .overview
+    }
 
     /// Maximum width of the floating pill container (pill body + horizontal padding).
     /// Prevents the pill from spanning the full screen width on iPad and Mac.
@@ -31,7 +40,7 @@ struct RootView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if selectedTab != .overview {
+            if selectedTab != .overview && selectedTab != .subscriptions {
                 SorenContextBar(tab: selectedTab) { contextBarTrailing }
             }
 
@@ -60,7 +69,7 @@ struct RootView: View {
                 .frame(maxWidth: .infinity, alignment: .center)
         }
         .background {
-            if selectedTab == .overview {
+            if selectedTab == .overview || selectedTab == .subscriptions {
                 SoftClubColor.canvas.ignoresSafeArea()
             } else {
                 ColorTokens.background.ignoresSafeArea()
@@ -77,7 +86,13 @@ struct RootView: View {
     private func tabDestination(_ tab: AppTab) -> some View {
         switch tab {
         case .overview:      HomeView()
-        case .subscriptions: LibraryView()
+        case .subscriptions:
+            TabView {
+                NavigationStack {
+                    LibraryView()
+                        .toolbar(.hidden, for: .tabBar)
+                }
+            }
         case .calendar:      CalendarView()
         case .insights:      AnalyticsView()
         }
@@ -110,26 +125,10 @@ struct RootView: View {
         switch selectedTab {
         case .overview:
             EmptyView()
-        case .subscriptions:
-            addButton
-        case .calendar, .insights:
+        case .subscriptions, .calendar, .insights:
             EmptyView()
         }
     }
-
-    private var addButton: some View {
-        Button {
-            HapticEngine.selection()
-            activeSheet = .addSubscription
-        } label: {
-            Image(systemName: "plus")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(ColorTokens.accent)
-                .frame(width: 36, height: 36)
-        }
-        .buttonStyle(.plain)
-    }
-
 }
 
 // Allocated once at file scope — static stored properties are not allowed in generic types.

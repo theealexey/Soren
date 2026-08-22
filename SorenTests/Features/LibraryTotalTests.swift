@@ -9,9 +9,11 @@ struct LibraryTotalTests {
     @MainActor
     private final class InMemoryRecurringItemRepository: RecurringItemRepository {
         private var items: [RecurringItem]
+        private var remainingDeleteFailures: Int
 
-        init(items: [RecurringItem]) {
+        init(items: [RecurringItem], deleteFailures: Int = 0) {
             self.items = items
+            self.remainingDeleteFailures = deleteFailures
         }
 
         func fetchAll() throws -> [RecurringItem] { items }
@@ -26,9 +28,19 @@ struct LibraryTotalTests {
             guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
             items[index] = item
         }
-        func delete(id: UUID) throws { items.removeAll { $0.id == id } }
+        func delete(id: UUID) throws {
+            if remainingDeleteFailures > 0 {
+                remainingDeleteFailures -= 1
+                throw DeleteFailure.rejected
+            }
+            items.removeAll { $0.id == id }
+        }
         func saveAll(_ items: [RecurringItem]) throws { self.items.append(contentsOf: items) }
         func deleteAll() throws { items.removeAll() }
+    }
+
+    private enum DeleteFailure: Error {
+        case rejected
     }
 
     private enum RateProviderError: Error, Sendable {
@@ -149,22 +161,32 @@ struct LibraryTotalTests {
     }
 
     private func item(
+        id: UUID = UUID(),
         title: String,
         amount: Decimal,
         currencyCode: String,
         cycle: BillingCycle = .monthly,
         status: ItemStatus = .active,
+        startDate: Date = .now,
         nextChargeDate: Date = .now,
-        createdAt: Date = .now
+        autoRenew: Bool = true,
+        endDate: Date? = nil,
+        createdAt: Date = .now,
+        archivedAt: Date? = nil
     ) -> RecurringItem {
         RecurringItem(
+            id: id,
             title: title,
             amount: amount,
             currencyCode: currencyCode,
             billingCycle: cycle,
+            startDate: startDate,
             nextChargeDate: nextChargeDate,
+            autoRenew: autoRenew,
+            endDate: endDate,
             status: status,
-            createdAt: createdAt
+            createdAt: createdAt,
+            archivedAt: archivedAt
         )
     }
 
@@ -344,6 +366,114 @@ struct LibraryTotalTests {
         vm.load()
 
         #expect(vm.filteredMonthlyAggregation?.total?.amount == 500)
+    }
+
+    @Test("Expired finite items do not contribute to the current Library subtotal")
+    func expiredFiniteItemIsExcludedFromCurrentSubtotal() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let calendar = Calendar(identifier: .gregorian)
+        let endDate = try #require(calendar.date(byAdding: .day, value: -1, to: .now))
+        let startDate = try #require(calendar.date(byAdding: .month, value: -1, to: endDate))
+        let vm = viewModel(
+            items: [
+                item(title: "Current", amount: 100, currencyCode: "RUB"),
+                item(
+                    title: "Expired finite",
+                    amount: 900,
+                    currencyCode: "RUB",
+                    startDate: startDate,
+                    nextChargeDate: endDate,
+                    autoRenew: false,
+                    endDate: endDate
+                )
+            ],
+            preferences: fixture.repository,
+            provider: RecordingExchangeRateProvider(responses: [])
+        )
+
+        vm.load()
+
+        #expect(vm.filteredMonthlyAggregation?.total?.amount == 100)
+    }
+
+    @Test("Default sections distinguish current completed and archived records truthfully")
+    func defaultSectionsUseCurrentSemantics() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let calendar = Calendar(identifier: .gregorian)
+        let yesterday = try #require(calendar.date(byAdding: .day, value: -1, to: .now))
+        let monthAgo = try #require(calendar.date(byAdding: .month, value: -1, to: yesterday))
+        let currentItems = [
+            item(title: "Active", amount: 100, currencyCode: "RUB"),
+            item(title: "Paused", amount: 100, currencyCode: "RUB", status: .paused),
+            item(title: "Cancelled", amount: 100, currencyCode: "RUB", status: .cancelled),
+            item(title: "Trial", amount: 100, currencyCode: "RUB", status: .trial),
+            item(title: "Failed", amount: 100, currencyCode: "RUB", status: .failed)
+        ]
+        let completed = item(
+            title: "Completed",
+            amount: 100,
+            currencyCode: "RUB",
+            startDate: monthAgo,
+            nextChargeDate: yesterday,
+            autoRenew: false,
+            endDate: yesterday
+        )
+        let archived = item(
+            title: "Archived",
+            amount: 100,
+            currencyCode: "RUB",
+            status: .archived,
+            archivedAt: yesterday
+        )
+        let vm = viewModel(
+            items: currentItems + [completed, archived],
+            preferences: fixture.repository,
+            provider: RecordingExchangeRateProvider(responses: [])
+        )
+
+        vm.load()
+
+        #expect(vm.sections.map(\.id) == ["current", "past", "archived"])
+        #expect(vm.sections[0].title == String(localized: "Текущие"))
+        #expect(Set(vm.sections[0].items.map(\.title)) == Set(currentItems.map(\.title)))
+        #expect(vm.sections[1].items.map(\.title) == ["Completed"])
+        #expect(vm.sections[2].items.map(\.title) == ["Archived"])
+    }
+
+    @Test("Delete failure remains observable and a retry can succeed")
+    func deleteFailurePersistsUntilRetry() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let target = item(title: "Spotify", amount: 199, currencyCode: "RUB")
+        let repository = InMemoryRecurringItemRepository(items: [target], deleteFailures: 1)
+        let vm = LibraryViewModel(
+            getLibraryItems: GetLibraryItems(repository: repository),
+            deleteRecurringItem: DeleteRecurringItem(repository: repository),
+            preferences: fixture.repository,
+            exchangeRateProvider: RecordingExchangeRateProvider(responses: []),
+            searchDebounceDelay: .zero
+        )
+        vm.load()
+
+        #expect(await vm.deleteItem(target) == false)
+
+        #expect(vm.error != nil)
+        #expect(vm.failedAction == .delete(itemID: target.id))
+        #expect(vm.allItems.map(\.id) == [target.id])
+
+        vm.dismissError()
+
+        #expect(vm.error == nil)
+        #expect(vm.failedAction == nil)
+        #expect(vm.allItems.map(\.id) == [target.id])
+
+        #expect(await vm.deleteItem(target) == true)
+
+        #expect(vm.error == nil)
+        #expect(vm.failedAction == nil)
+        #expect(vm.allItems.isEmpty)
     }
 
     @Test("Search subtotal follows existing filtered-result semantics without another request")
@@ -577,6 +707,40 @@ struct LibraryTotalTests {
 
         vm.sortOrder = .recentlyAdded
         #expect(vm.filteredItems.map(\.title) == ["Zulu", "Bravo", "Alpha"])
+    }
+
+    @Test("Date sorting follows the effective next charge date shown to the user")
+    func dateSortingUsesEffectiveNextChargeDate() throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let calendar = Calendar(identifier: .gregorian)
+        let annualStoredDate = try #require(calendar.date(byAdding: .day, value: -20, to: .now))
+        let weeklyStoredDate = try #require(calendar.date(byAdding: .day, value: -10, to: .now))
+        let annual = item(
+            title: "Annual",
+            amount: 1_200,
+            currencyCode: "RUB",
+            cycle: .annual,
+            nextChargeDate: annualStoredDate
+        )
+        let weekly = item(
+            title: "Weekly",
+            amount: 100,
+            currencyCode: "RUB",
+            cycle: .weekly,
+            nextChargeDate: weeklyStoredDate
+        )
+        let vm = viewModel(
+            items: [annual, weekly],
+            preferences: fixture.repository,
+            provider: RecordingExchangeRateProvider(responses: [])
+        )
+
+        vm.load()
+
+        #expect(annual.nextChargeDate < weekly.nextChargeDate)
+        #expect(weekly.effectiveNextChargeDate() < annual.effectiveNextChargeDate())
+        #expect(vm.filteredItems.map(\.title) == ["Weekly", "Annual"])
     }
 
     @Test("Amount sorting normalizes every supported billing cycle before conversion")

@@ -1,26 +1,15 @@
 import SwiftUI
-#if canImport(UIKit)
-import UIKit
-#endif
 
 // MARK: - Library View
 
-/// Full subscription list with inline search, status filters, and sorting.
-/// "+" lives in the global context bar (RootView). Sort is inline in the summary bar.
+/// Production Subscriptions collection backed by LibraryViewModel.
 struct LibraryView: View {
     @Environment(AppContainer.self) private var container
     @Environment(\.addSubscriptionAction) private var addSubscription
     @Environment(\.navigateToItem) private var navigateToItem
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var viewModel: LibraryViewModel?
     @State private var pendingDeleteItem: RecurringItem?
-    @FocusState private var isSearchFocused: Bool
-
-    /// Maximum width of the populated library content column.
-    /// Keeps the search bar, filter chips, summary row, and item list
-    /// visually cohesive on iPad and Mac rather than stretching to full screen width.
-    /// On any iPhone (max 430 pt wide) this cap is never reached.
-    private let libraryContentMaxWidth: CGFloat = 640
-    private let floatingPillContentInset: CGFloat = Spacing.xxxl + Spacing.xl
 
     var body: some View {
         Group {
@@ -30,11 +19,25 @@ struct LibraryView: View {
                 LoadingStateView()
             }
         }
-        .background(ColorTokens.background)
+        .background(SoftClubColor.canvas.ignoresSafeArea())
+        .navigationTitle(String(localized: "Подписки"))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    addSubscription()
+                } label: {
+                    Image(systemName: "plus")
+                }
+                .accessibilityLabel(String(localized: "Добавить подписку"))
+            }
+        }
+        .tint(SoftClubColor.textPrimary)
         .task {
             guard viewModel == nil else { return }
             let vm = container.makeLibraryViewModel()
-            self.viewModel = vm
+            viewModel = vm
             vm.load()
         }
         .onChange(of: container.itemsVersion) { _, _ in
@@ -48,35 +51,53 @@ struct LibraryView: View {
             )
         ) {
             Button("Удалить", role: .destructive) {
-                if let item = pendingDeleteItem {
-                    viewModel?.deleteItem(item)
-                    container.itemsVersion += 1
+                if let item = pendingDeleteItem, let viewModel {
+                    Task {
+                        if await viewModel.deleteItem(item) {
+                            container.itemsVersion += 1
+                        }
+                    }
                 }
                 pendingDeleteItem = nil
             }
-            Button("Отмена", role: .cancel) { pendingDeleteItem = nil }
+            Button("Отмена", role: .cancel) {
+                pendingDeleteItem = nil
+            }
         } message: {
             if let item = pendingDeleteItem {
                 Text("«\(item.title)» будет удалена без возможности восстановления.")
             }
         }
+        .alert(
+            "Ошибка",
+            isPresented: deleteErrorBinding
+        ) {
+            if let viewModel, let item = failedDeleteItem(in: viewModel) {
+                Button("Повторить") {
+                    retryDelete(item, using: viewModel)
+                }
+            }
+            Button("ОК", role: .cancel) {
+                viewModel?.dismissError()
+            }
+        } message: {
+            Text("Не удалось удалить подписку")
+        }
     }
 
-    // MARK: - Content Router
+    // MARK: - Content
 
     @ViewBuilder
     private func libraryContent(_ vm: LibraryViewModel) -> some View {
         Group {
-            if vm.hasError {
+            if vm.failedAction == .load {
                 ErrorStateView(message: "Не удалось загрузить подписки") {
                     vm.load()
                 }
             } else if !vm.isLoaded {
                 LoadingStateView()
-            } else if vm.allItems.isEmpty {
-                emptyLibrary
             } else {
-                populatedLibrary(vm)
+                loadedLibrary(vm)
             }
         }
         .task(id: vm.aggregationRevision) {
@@ -85,240 +106,287 @@ struct LibraryView: View {
         }
     }
 
-    // MARK: - Populated Library
+    private func loadedLibrary(_ vm: LibraryViewModel) -> some View {
+        @Bindable var vm = vm
+
+        return Group {
+            if vm.allItems.isEmpty {
+                emptyLibrary
+            } else {
+                populatedLibrary(vm)
+            }
+        }
+        .searchable(
+            text: $vm.searchText,
+            placement: .navigationBarDrawer(displayMode: .automatic),
+            prompt: Text("Поиск подписок")
+        )
+    }
 
     private func populatedLibrary(_ vm: LibraryViewModel) -> some View {
         List {
+            collectionHeader(vm)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(
+                    top: 0,
+                    leading: 20,
+                    bottom: 0,
+                    trailing: 20
+                ))
+
             if vm.filteredItems.isEmpty {
                 noResults(vm)
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: Spacing.xs, leading: 0, bottom: 0, trailing: 0))
+                    .listRowInsets(EdgeInsets(
+                        top: 0,
+                        leading: 20,
+                        bottom: 0,
+                        trailing: 20
+                    ))
             } else {
-                ForEach(vm.sections) { section in
-                    Section {
-                        ForEach(section.items) { item in
-                            Button {
-                                dismissSearchFocus()
-                                navigateToItem(item)
-                            } label: {
-                                SorenListRow(
-                                    title: item.title,
-                                    subtitle: RecurringItemFormatter.subtitle(for: item),
-                                    amount: item.amount,
-                                    currency: item.currencyCode,
-                                    cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
-                                    providerTemplate: item.providerTemplate,
-                                    category: item.category,
-                                    badge: RecurringItemFormatter.badge(for: item)
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .listRowBackground(ColorTokens.surface)
-                            .listRowInsets(EdgeInsets(
-                                top: Spacing.xs,
-                                leading: Spacing.lg,
-                                bottom: Spacing.xs,
-                                trailing: Spacing.lg
-                            ))
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button(role: .destructive) {
-                                    pendingDeleteItem = item
-                                } label: {
-                                    Label("Удалить", systemImage: "trash.fill")
-                                }
-                            }
-                        }
-                    } header: {
-                        if let title = section.title {
-                            SectionHeader(title)
-                                .textCase(nil)
-                                .listRowInsets(EdgeInsets(
-                                    top: Spacing.sm,
-                                    leading: Spacing.lg,
-                                    bottom: Spacing.xxxs,
-                                    trailing: Spacing.lg
-                                ))
-                        }
-                    }
-                }
+                subscriptionSections(vm)
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.plain)
         .listSectionSpacing(.compact)
         .contentMargins(.top, 0, for: .scrollContent)
         .scrollDismissesKeyboard(.immediately)
         .scrollContentBackground(.hidden)
-        .background(ColorTokens.background)
-        .simultaneousGesture(
-            TapGesture().onEnded {
-                dismissSearchFocus()
-            }
-        )
-        .onScrollPhaseChange { _, newPhase in
-            if newPhase.isScrolling {
-                dismissSearchFocus()
-            }
-        }
+        .background(SoftClubColor.canvas)
         .refreshable {
             vm.load()
         }
-        // Entire header block lives outside the List: search + chips + summary share
-        // one VStack so vertical rhythm is governed by a single layout system.
-        // The List contains only subscription card sections (plus the empty-state row).
-        .safeAreaInset(edge: .top, spacing: 0) {
-            // VStack spacing controls chips→summary (kept at sm = 12pt, small-to-medium).
-            // searchBar adds an extra .padding(.bottom, xxs) on top of the VStack gap
-            // to get the larger search→chips separation (12 + 4 = 16pt) without splitting
-            // the children into multiple containers.
-            VStack(spacing: Spacing.sm) {
-                searchBar(vm)
-                    .padding(.bottom, Spacing.xs)
-                filterChips(vm)
-                if !vm.filteredItems.isEmpty {
-                    summaryBar(vm)
-                }
-            }
-            .padding(.top, Spacing.lg + Spacing.xxs)
-            .background(ColorTokens.background)
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            Color.clear
-                .frame(height: floatingPillContentInset)
-        }
     }
 
-    // MARK: - Search Bar
-
-    private func searchBar(_ vm: LibraryViewModel) -> some View {
-        @Bindable var vm = vm
-        return HStack(spacing: Spacing.sm) {
-            Image(systemName: "magnifyingglass")
-                .font(Typography.body)
-                .foregroundStyle(ColorTokens.textTertiary)
-
-            TextField(
-                String(localized: "Поиск подписок"),
-                text: $vm.searchText
-            )
-            .textFieldStyle(.plain)
-            .font(Typography.body)
-            .foregroundStyle(ColorTokens.textPrimary)
-            .autocorrectionDisabled()
-            .focused($isSearchFocused)
-            .submitLabel(.done)
-            .onSubmit {
-                dismissSearchFocus()
-            }
-
-            if !vm.searchText.isEmpty {
-                Button {
-                    vm.searchText = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(ColorTokens.textTertiary)
-                }
-                .buttonStyle(.plain)
-            }
+    private func collectionHeader(_ vm: LibraryViewModel) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            collectionControls(vm)
+            summary(vm)
         }
-        .padding(.horizontal, Spacing.md)
-        .padding(.vertical, Spacing.xs)
-        .background(ColorTokens.surfaceElevated, in: RoundedRectangle(cornerRadius: CornerRadius.large))
-        .overlay {
-            RoundedRectangle(cornerRadius: CornerRadius.large)
-                .strokeBorder(ColorTokens.separator.opacity(0.4), lineWidth: 0.5)
+        .padding(.top, 8)
+        .padding(.bottom, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .overlay(alignment: .bottom) {
+            SoftClubColor.subtleSeparator
+                .opacity(0.55)
+                .frame(height: 0.5)
         }
-        .padding(.horizontal, Spacing.lg)
-    }
-
-    // MARK: - Filter Chips
-
-    private func filterChips(_ vm: LibraryViewModel) -> some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: Spacing.xxs) {
-                ForEach(LibraryViewModel.StatusFilter.allCases) { filter in
-                    let count = vm.filterCounts[filter] ?? 0
-                    let isSelected = vm.activeFilter == filter
-
-                    Button {
-                        dismissSearchFocus()
-                        withAnimation(MotionTokens.snappy) { vm.activeFilter = filter }
-                        HapticEngine.selection()
-                    } label: {
-                        HStack(spacing: Spacing.xxs) {
-                            // Icon only shown when this chip is active — keeps unselected chips
-                            // light text-only pills; the icon makes the selected state pop.
-                            if let icon = filter.icon, isSelected {
-                                Image(systemName: icon)
-                                    .font(Typography.overline)
-                            }
-
-                            Text(filter.title)
-                                .font(Typography.footnote)
-
-                            if count > 0 && filter != .all {
-                                Text(verbatim: "\(count)")
-                                    .font(Typography.footnote)
-                                    .fontWeight(.medium)
-                                    .foregroundStyle(isSelected ? .white.opacity(0.8) : ColorTokens.textTertiary)
-                            }
-                        }
-                        .padding(.horizontal, Spacing.xs)
-                        .padding(.vertical, Spacing.xxs)
-                        .foregroundStyle(isSelected ? .white : ColorTokens.textSecondary)
-                        .background(
-                            isSelected
-                                ? AnyShapeStyle(ColorTokens.accent)
-                                : AnyShapeStyle(Color.clear),
-                            in: Capsule()
-                        )
-                        .overlay(
-                            Capsule()
-                                .strokeBorder(
-                                    isSelected ? .clear : ColorTokens.separator.opacity(0.5),
-                                    lineWidth: 0.5
-                                )
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, Spacing.lg)
-        }
-    }
-
-    // MARK: - Summary Bar
-
-    private func summaryBar(_ vm: LibraryViewModel) -> some View {
-        HStack {
-            Text(verbatim: String(localized: "\(vm.filteredItems.count) подписок"))
-                .font(Typography.caption)
-                .foregroundStyle(ColorTokens.textSecondary)
-
-            Spacer()
-
-            monthlyTotal(vm)
-
-            sortMenu(vm)
-        }
-        .padding(.horizontal, Spacing.lg)
     }
 
     @ViewBuilder
-    private func monthlyTotal(_ vm: LibraryViewModel) -> some View {
+    private func subscriptionSections(_ vm: LibraryViewModel) -> some View {
+        ForEach(vm.sections) { section in
+            if let title = section.title {
+                sectionLabel(title)
+            }
+
+            ForEach(Array(section.items.enumerated()), id: \.element.id) { index, item in
+                subscriptionButton(
+                    item,
+                    showsSeparator: index < section.items.count - 1
+                )
+            }
+        }
+    }
+
+    private func sectionLabel(_ title: String) -> some View {
+        Text(verbatim: title)
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(SoftClubColor.textSecondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityAddTraits(.isHeader)
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(
+                top: 8,
+                leading: 20,
+                bottom: 4,
+                trailing: 20
+            ))
+    }
+
+    private func subscriptionButton(
+        _ item: RecurringItem,
+        showsSeparator: Bool
+    ) -> some View {
+        Button {
+            navigateToItem(item)
+        } label: {
+            LibrarySubscriptionRow(item: item)
+        }
+        .buttonStyle(.plain)
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+        .listRowInsets(EdgeInsets(
+            top: 0,
+            leading: 20,
+            bottom: 0,
+            trailing: 20
+        ))
+        .overlay(alignment: .bottom) {
+            if showsSeparator {
+                SoftClubColor.subtleSeparator
+                    .opacity(0.55)
+                    .frame(height: 0.5)
+                    .padding(.leading, SorenListRow.dividerInset)
+            }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button(role: .destructive) {
+                pendingDeleteItem = item
+            } label: {
+                Label("Удалить", systemImage: "trash.fill")
+            }
+        }
+    }
+
+    // MARK: - Collection Controls
+
+    @ViewBuilder
+    private func collectionControls(_ vm: LibraryViewModel) -> some View {
+        if #available(iOS 26, *) {
+            GlassEffectContainer(spacing: 4) {
+                collectionControlLayout(vm)
+            }
+        } else {
+            collectionControlLayout(vm)
+        }
+    }
+
+    @ViewBuilder
+    private func collectionControlLayout(_ vm: LibraryViewModel) -> some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 8) {
+                filterMenu(vm)
+                sortMenu(vm)
+            }
+        } else {
+            HStack(spacing: 8) {
+                filterMenu(vm)
+                sortMenu(vm)
+                Spacer(minLength: 0)
+            }
+        }
+    }
+
+    private func filterMenu(_ vm: LibraryViewModel) -> some View {
+        Menu {
+            ForEach(LibraryViewModel.StatusFilter.allCases) { filter in
+                Button {
+                    withAnimation(MotionTokens.snappy) {
+                        vm.activeFilter = filter
+                    }
+                    HapticEngine.selection()
+                } label: {
+                    HStack {
+                        Text(filter.title)
+                        if filter == vm.activeFilter {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+                .accessibilityAddTraits(filter == vm.activeFilter ? .isSelected : [])
+            }
+        } label: {
+            Label {
+                Text(verbatim: vm.activeFilter.title)
+            } icon: {
+                Image(systemName: "line.3.horizontal.decrease")
+            }
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(SoftClubColor.textSecondary)
+            .padding(.horizontal, 12)
+            .frame(minHeight: 36)
+            .contentShape(.capsule)
+        }
+        .buttonStyle(.plain)
+        .softClubInteractiveGlass(in: Capsule())
+        .accessibilityLabel(String(localized: "Фильтр"))
+        .accessibilityValue(vm.activeFilter.title)
+    }
+
+    private func sortMenu(_ vm: LibraryViewModel) -> some View {
+        Menu {
+            ForEach(LibraryViewModel.SortOrder.allCases) { order in
+                Button {
+                    withAnimation(MotionTokens.smooth) {
+                        vm.sortOrder = order
+                    }
+                    HapticEngine.selection()
+                } label: {
+                    HStack {
+                        Text(order.title)
+                        if order == vm.sortOrder {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+                .accessibilityAddTraits(order == vm.sortOrder ? .isSelected : [])
+            }
+        } label: {
+            Label {
+                Text(verbatim: vm.sortOrder.shortTitle)
+            } icon: {
+                Image(systemName: "arrow.up.arrow.down")
+            }
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(SoftClubColor.textSecondary)
+            .padding(.horizontal, 12)
+            .frame(minHeight: 36)
+            .contentShape(.capsule)
+        }
+        .buttonStyle(.plain)
+        .softClubInteractiveGlass(in: Capsule())
+        .accessibilityLabel(String(localized: "Сортировка"))
+        .accessibilityValue(vm.sortOrder.title)
+    }
+
+    // MARK: - Summary
+
+    private func summary(_ vm: LibraryViewModel) -> some View {
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 4) {
+                    summaryCount(vm)
+                    summaryAmount(vm, alignment: .leading)
+                }
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    summaryCount(vm)
+                    Spacer(minLength: 12)
+                    summaryAmount(vm, alignment: .trailing)
+                }
+            }
+        }
+        .font(.footnote.weight(.medium))
+        .foregroundStyle(SoftClubColor.textSecondary)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func summaryCount(_ vm: LibraryViewModel) -> some View {
+        Text(verbatim: String(localized: "\(vm.filteredItems.count) подписок"))
+    }
+
+    @ViewBuilder
+    private func summaryAmount(
+        _ vm: LibraryViewModel,
+        alignment: HorizontalAlignment
+    ) -> some View {
         if let aggregation = vm.filteredMonthlyAggregation {
-            VStack(alignment: .trailing, spacing: Spacing.xxxs) {
+            VStack(alignment: alignment, spacing: 3) {
                 if let total = aggregation.total, total.amount > .zero {
-                    AmountLabel(
-                        total.amount,
-                        currency: total.currencyCode,
-                        size: .small,
-                        cycle: .monthly
-                    )
-                } else if aggregation.total == nil {
-                    Text(String(localized: "Курсы валют недоступны"))
-                        .font(Typography.footnote)
-                        .foregroundStyle(ColorTokens.textTertiary)
+                    HStack(alignment: .firstTextBaseline, spacing: 3) {
+                        Text(verbatim: OverviewMoneyFormatter.string(
+                            amount: total.amount,
+                            currencyCode: total.currencyCode
+                        ))
+                        .monospacedDigit()
+
+                        Text(verbatim: "/")
+                        Text(String(localized: "мес"))
+                    }
                 }
 
                 switch aggregation {
@@ -327,15 +395,14 @@ struct LibraryView: View {
 
                 case let .partial(_, missingCodes, metadata):
                     Text(String(localized: "Нет курсов для \(missingCodes.joined(separator: ", "))"))
-                        .font(Typography.footnote)
-                        .foregroundStyle(ColorTokens.warning)
+                        .foregroundStyle(SoftClubColor.warning)
                     staleRateLabel(metadata)
 
                 case let .unavailable(_, missingCodes, _, metadata):
-                    if !missingCodes.isEmpty {
+                    if missingCodes.isEmpty {
+                        Text(String(localized: "Курсы валют недоступны"))
+                    } else {
                         Text(String(localized: "Нет курсов для \(missingCodes.joined(separator: ", "))"))
-                            .font(Typography.footnote)
-                            .foregroundStyle(ColorTokens.textTertiary)
                     }
                     staleRateLabel(metadata)
                 }
@@ -347,91 +414,236 @@ struct LibraryView: View {
     private func staleRateLabel(_ metadata: SpendAggregationRateMetadata?) -> some View {
         if let metadata, case .stale = metadata.freshness {
             Text(String(localized: "По сохранённому курсу"))
-                .font(Typography.footnote)
-                .foregroundStyle(ColorTokens.warning)
+                .foregroundStyle(SoftClubColor.warning)
         }
     }
 
-    // MARK: - Sort Menu
-
-    private func sortMenu(_ vm: LibraryViewModel) -> some View {
-        Menu {
-            ForEach(LibraryViewModel.SortOrder.allCases) { order in
-                Button {
-                    withAnimation(MotionTokens.smooth) { vm.sortOrder = order }
-                } label: {
-                    Label(order.title, systemImage: order.icon)
-                }
-                .disabled(vm.sortOrder == order)
-            }
-        } label: {
-            Image(systemName: "arrow.up.arrow.down")
-                .font(Typography.bodyMedium)
-                .foregroundStyle(ColorTokens.accent)
-                .frame(width: 36, height: 36)
-        }
-    }
-
-    // MARK: - No Results
+    // MARK: - States
 
     private func noResults(_ vm: LibraryViewModel) -> some View {
-        VStack(spacing: Spacing.md) {
-            Image(systemName: "magnifyingglass")
-                .font(Typography.emptyStateAmount)
-                .foregroundStyle(ColorTokens.textTertiary)
-
+        Group {
             if !vm.searchText.isEmpty {
                 Text("Ничего не найдено по запросу «\(vm.searchText)»")
-                    .font(Typography.body)
-                    .foregroundStyle(ColorTokens.textSecondary)
-                    .multilineTextAlignment(.center)
             } else {
                 Text("Нет подписок в категории «\(vm.activeFilter.title)»")
-                    .font(Typography.body)
-                    .foregroundStyle(ColorTokens.textSecondary)
-                    .multilineTextAlignment(.center)
             }
         }
-        .padding(Spacing.xxl)
-        .frame(maxWidth: .infinity)
+        .font(.body)
+        .foregroundStyle(SoftClubColor.textSecondary)
+        .frame(maxWidth: .infinity, minHeight: 120)
+        .multilineTextAlignment(.center)
     }
 
-    // MARK: - Empty Library
-
     private var emptyLibrary: some View {
-        EmptyStateView(
-            icon: "list.bullet.rectangle",
-            title: "Нет подписок",
-            subtitle: "Добавьте подписки и сервисы, чтобы отслеживать расходы и не пропускать списания.",
-            actionTitle: "Добавить"
-        ) {
-            addSubscription()
+        VStack(spacing: 12) {
+            Text("Нет подписок")
+                .font(.headline)
+                .foregroundStyle(SoftClubColor.textPrimary)
+
+            Text("Добавьте подписки и сервисы, чтобы отслеживать расходы и не пропускать списания.")
+                .font(.body)
+                .foregroundStyle(SoftClubColor.textSecondary)
+                .multilineTextAlignment(.center)
+
+            Button("Добавить") {
+                addSubscription()
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding(32)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - Delete Error
+
+    private var deleteErrorBinding: Binding<Bool> {
+        Binding(
+            get: {
+                guard let failedAction = viewModel?.failedAction else { return false }
+                if case .delete = failedAction { return true }
+                return false
+            },
+            set: { isPresented in
+                if !isPresented {
+                    viewModel?.dismissError()
+                }
+            }
+        )
+    }
+
+    private func failedDeleteItem(in vm: LibraryViewModel) -> RecurringItem? {
+        guard case let .delete(itemID) = vm.failedAction else { return nil }
+        return vm.allItems.first { $0.id == itemID }
+    }
+
+    private func retryDelete(_ item: RecurringItem, using vm: LibraryViewModel) {
+        vm.dismissError()
+        Task {
+            if await vm.deleteItem(item) {
+                container.itemsVersion += 1
+            }
+        }
+    }
+}
+
+// MARK: - Subscription Row
+
+private struct LibrarySubscriptionRow: View {
+    let item: RecurringItem
+
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    var body: some View {
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                accessibilityLayout
+            } else {
+                compactLayout
+            }
+        }
+        .foregroundStyle(SoftClubColor.textPrimary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 9)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityHint(String(localized: "Открыть управление подпиской"))
+    }
+
+    private var compactLayout: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                providerArtwork
+                compactIdentity
+                Spacer(minLength: 12)
+                amount
+            }
+
+            HStack(alignment: .top, spacing: 12) {
+                providerArtwork
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(verbatim: item.title)
+                        .font(.body.weight(.medium))
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        secondaryIdentity
+                        Spacer(minLength: 8)
+                        amount
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
     }
 
-    // MARK: - Helpers
+    private var accessibilityLayout: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                providerArtwork
+                Text(verbatim: item.title)
+                    .font(.body.weight(.medium))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
-    private func dismissSearchFocus() {
-        isSearchFocused = false
-#if canImport(UIKit)
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap { $0.windows }
-            .first { $0.isKeyWindow }?
-            .endEditing(true)
-#endif
+            secondaryIdentity
+            amount
+        }
+    }
+
+    @ViewBuilder
+    private var providerArtwork: some View {
+        if let provider = item.providerTemplate {
+            ProviderIcon(provider: provider, size: .medium)
+        } else {
+            ProviderIcon(category: item.category, size: .medium)
+        }
+    }
+
+    private var compactIdentity: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(verbatim: item.title)
+                .font(.body.weight(.medium))
+                .fixedSize(horizontal: true, vertical: false)
+
+            secondaryIdentity
+        }
+    }
+
+    private var secondaryIdentity: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(
+                item.effectiveNextChargeDate(),
+                format: .dateTime.day().month(.wide)
+            )
+            .font(.footnote)
+            .foregroundStyle(SoftClubColor.textSecondary)
+
+            if let statusMetadata {
+                Label {
+                    Text(statusMetadata.title)
+                } icon: {
+                    Image(systemName: statusMetadata.systemImage)
+                }
+                .font(.caption)
+                .foregroundStyle(SoftClubColor.textSecondary.opacity(0.9))
+            }
+        }
+    }
+
+    private var amount: some View {
+        VStack(
+            alignment: dynamicTypeSize.isAccessibilitySize ? .leading : .trailing,
+            spacing: 3
+        ) {
+            Text(verbatim: OverviewMoneyFormatter.string(
+                amount: item.amount,
+                currencyCode: item.currencyCode
+            ))
+            .font(.body)
+            .monospacedDigit()
+
+            Text(RecurringItemFormatter.cycleLabel(for: item.billingCycle).label)
+                .font(.footnote)
+                .foregroundStyle(SoftClubColor.textSecondary.opacity(0.82))
+                .accessibilityLabel(
+                    RecurringItemFormatter.cycleLabel(for: item.billingCycle).accessibilityText
+                )
+        }
+    }
+
+    private var statusMetadata: (title: String, systemImage: String)? {
+        switch item.status {
+        case .trial:
+            (String(localized: "Пробный период"), "hourglass")
+        case .paused:
+            (String(localized: "На паузе"), "pause.circle")
+        case .cancelled:
+            (String(localized: "Отменена"), "xmark.circle")
+        case .archived:
+            (String(localized: "В архиве"), "archivebox")
+        case .overdue:
+            (item.status.displayName, "exclamationmark.circle")
+        case .failed:
+            (item.status.displayName, "creditcard.trianglebadge.exclamationmark")
+        case .active, .dueSoon, .dueToday:
+            nil
+        }
     }
 }
 
 // MARK: - Preview
 
 #Preview {
-    LibraryView()
-        .environment(
-            AppContainer(
-                repositories: RepositoryContainer(
-                    context: try! SorenModelContainer.inMemory().mainContext
+    NavigationStack {
+        LibraryView()
+            .environment(
+                AppContainer(
+                    repositories: RepositoryContainer(
+                        context: try! SorenModelContainer.inMemory().mainContext
+                    )
                 )
             )
-        )
+    }
 }

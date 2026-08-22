@@ -228,6 +228,36 @@ struct LifecycleInvariantTests {
         #expect(saved?.endDate == end)
     }
 
+    @Test("Update clears archivedAt when an archived item returns to a current status")
+    func updateClearsArchivedAtForCurrentStatus() async throws {
+        let fixture = try makeFixture()
+        var item = makeItem(autoRenew: true, nextChargeDate: .now)
+        item.status = .archived
+        item.archivedAt = .distantPast
+        try fixture.persistence.recurringItems.save(item)
+
+        item.status = .paused
+        let result = try await fixture.update.execute(item)
+
+        #expect(result.item.status == .paused)
+        #expect(result.item.archivedAt == nil)
+        #expect(try fixture.persistence.recurringItems.fetch(id: item.id)?.archivedAt == nil)
+    }
+
+    @Test("Update supplies archivedAt when an item becomes archived")
+    func updateSuppliesArchivedAtForArchivedStatus() async throws {
+        let fixture = try makeFixture()
+        var item = makeItem(autoRenew: true, nextChargeDate: .now)
+        try fixture.persistence.recurringItems.save(item)
+
+        item.status = .archived
+        let result = try await fixture.update.execute(item)
+
+        #expect(result.item.status == .archived)
+        #expect(result.item.archivedAt != nil)
+        #expect(try fixture.persistence.recurringItems.fetch(id: item.id)?.archivedAt != nil)
+    }
+
     // MARK: - 6. Migration defaults (mapper with nil autoRenew)
 
     @Test("Mapper: SDRecurringItem with nil autoRenew maps to domain autoRenew=true")

@@ -852,12 +852,20 @@ private struct DesignLockHostContent: View {
     }
 
     var body: some View {
-        Group {
-            if arguments.contains("--design-lock-accessibility") {
-                prototype
-                    .dynamicTypeSize(.accessibility3)
-            } else {
-                prototype
+        if let subscriptionsVariant = SubscriptionsIAPrototypeVariant.requested(in: arguments) {
+            SubscriptionsIAPrototypeHost(
+                variant: subscriptionsVariant,
+                colorScheme: SubscriptionsIAPrototypeVariant.colorScheme(in: arguments),
+                dynamicTypeSize: SubscriptionsIAPrototypeVariant.dynamicTypeSize(in: arguments)
+            )
+        } else {
+            Group {
+                if arguments.contains("--design-lock-accessibility") {
+                    prototype
+                        .dynamicTypeSize(.accessibility3)
+                } else {
+                    prototype
+                }
             }
         }
     }
