@@ -180,6 +180,12 @@
 		C2C000000000000000000002 /* MonthlySubscriptionPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2C000000000000000000001 /* MonthlySubscriptionPlan.swift */; };
 		C2C000000000000000000004 /* CurrentMonthSubscriptionPlanUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2C000000000000000000003 /* CurrentMonthSubscriptionPlanUseCase.swift */; };
 		C2C000000000000000000006 /* CurrentMonthSubscriptionPlanUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2C000000000000000000005 /* CurrentMonthSubscriptionPlanUseCaseTests.swift */; };
+		C4B2A1000000000000000002 /* CivilDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4B2A1000000000000000001 /* CivilDate.swift */; };
+		C4B2A1000000000000000004 /* CivilDateStorageCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4B2A1000000000000000003 /* CivilDateStorageCodec.swift */; };
+		C4B2A1000000000000000006 /* CivilDateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4B2A1000000000000000005 /* CivilDateTests.swift */; };
+		C4B2A1000000000000000008 /* CivilDateStorageCodecTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4B2A1000000000000000007 /* CivilDateStorageCodecTests.swift */; };
+		C4B2A100000000000000000A /* SwiftDataLegacyStoreCompatibilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4B2A1000000000000000009 /* SwiftDataLegacyStoreCompatibilityTests.swift */; };
+		C4B2A100000000000000000C /* CivilDateLegacyV1.fixture in Resources */ = {isa = PBXBuildFile; fileRef = C4B2A100000000000000000B /* CivilDateLegacyV1.fixture */; };
 		4B1000000000000000000002 /* RecurringScheduleProjector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1000000000000000000001 /* RecurringScheduleProjector.swift */; };
 		4B1000000000000000000004 /* RecurringScheduleProjectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1000000000000000000003 /* RecurringScheduleProjectorTests.swift */; };
 		C23C4C4054AF9B1ABCC80ED7 /* FoodDeliveryCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 801DEE1F1ADBABC0F1ADEACC /* FoodDeliveryCatalogTests.swift */; };
@@ -431,6 +437,12 @@
 		C2C000000000000000000001 /* MonthlySubscriptionPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthlySubscriptionPlan.swift; sourceTree = "<group>"; };
 		C2C000000000000000000003 /* CurrentMonthSubscriptionPlanUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentMonthSubscriptionPlanUseCase.swift; sourceTree = "<group>"; };
 		C2C000000000000000000005 /* CurrentMonthSubscriptionPlanUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentMonthSubscriptionPlanUseCaseTests.swift; sourceTree = "<group>"; };
+		C4B2A1000000000000000001 /* CivilDate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CivilDate.swift; sourceTree = "<group>"; };
+		C4B2A1000000000000000003 /* CivilDateStorageCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CivilDateStorageCodec.swift; sourceTree = "<group>"; };
+		C4B2A1000000000000000005 /* CivilDateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CivilDateTests.swift; sourceTree = "<group>"; };
+		C4B2A1000000000000000007 /* CivilDateStorageCodecTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CivilDateStorageCodecTests.swift; sourceTree = "<group>"; };
+		C4B2A1000000000000000009 /* SwiftDataLegacyStoreCompatibilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDataLegacyStoreCompatibilityTests.swift; sourceTree = "<group>"; };
+		C4B2A100000000000000000B /* CivilDateLegacyV1.fixture */ = {isa = PBXFileReference; lastKnownFileType = folder; path = CivilDateLegacyV1.fixture; sourceTree = "<group>"; };
 		4B1000000000000000000001 /* RecurringScheduleProjector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringScheduleProjector.swift; sourceTree = "<group>"; };
 		4B1000000000000000000003 /* RecurringScheduleProjectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringScheduleProjectorTests.swift; sourceTree = "<group>"; };
 		CA945694AA563A401CBA4141 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
@@ -603,6 +615,7 @@
 			children = (
 				2C3C97EDDCEF751039D58620 /* AggregateRecurringSpendUseCaseTests.swift */,
 				741C5159A29C5FE9FA23F568 /* BillingCycleTests.swift */,
+				C4B2A1000000000000000005 /* CivilDateTests.swift */,
 				C2C000000000000000000005 /* CurrentMonthSubscriptionPlanUseCaseTests.swift */,
 				4B1000000000000000000003 /* RecurringScheduleProjectorTests.swift */,
 				EFA7B870CBEEC728F72D1D5E /* DeleteRecurringItemTests.swift */,
@@ -752,6 +765,7 @@
 		5AA50F0CEB5A3B17C374F21F /* Persistence */ = {
 			isa = PBXGroup;
 			children = (
+				C4B2A1000000000000000003 /* CivilDateStorageCodec.swift */,
 				CD92113C1D03A64942CA712B /* SDPaymentMethod.swift */,
 				059917135C045069A2443DCE /* SDPaymentRecord.swift */,
 				2203EAEFB37E4D686C921789 /* SDRecurringItem.swift */,
@@ -793,6 +807,7 @@
 			children = (
 				336084808B57CA32842434F2 /* Bundle.swift */,
 				AA58165A73540DB807040C34 /* ChargeReminderOption.swift */,
+				C4B2A1000000000000000001 /* CivilDate.swift */,
 				7A47FC404B1EE34E23818B7E /* ExchangeRateSnapshot.swift */,
 				69A8F148539D2AC2A85B78FD /* Money.swift */,
 				C2C000000000000000000001 /* MonthlySubscriptionPlan.swift */,
@@ -931,6 +946,7 @@
 				DFA99D78BE8BBAA797C990BE /* Dev */,
 				291DDE33C9885407D5BBDECC /* Domain */,
 				93697D594B1D11992438E477 /* Features */,
+				C4B2A100000000000000000D /* Fixtures */,
 				C6237A5CF21F39D3AD7CF791 /* SorenTests.swift */,
 			);
 			path = SorenTests;
@@ -971,6 +987,8 @@
 			children = (
 				06BA485D3333CD7B7F8EF598 /* BillingCycleEncoderTests.swift */,
 				281582CB1E771444F451289B /* BundledRegionalPricingLoaderTests.swift */,
+				C4B2A1000000000000000007 /* CivilDateStorageCodecTests.swift */,
+				C4B2A1000000000000000009 /* SwiftDataLegacyStoreCompatibilityTests.swift */,
 				8579C0FCEC4862D8C6D9976C /* DatingCatalogTests.swift */,
 				E0EDB960B1DC5C94E25CA286 /* ExchangeRateCacheTests.swift */,
 				801DEE1F1ADBABC0F1ADEACC /* FoodDeliveryCatalogTests.swift */,
@@ -982,6 +1000,22 @@
 				00642B8A92839F9F4F88D149 /* YandexProviderIdentityTests.swift */,
 			);
 			path = Data;
+			sourceTree = "<group>";
+		};
+		C4B2A100000000000000000D /* Fixtures */ = {
+			isa = PBXGroup;
+			children = (
+				C4B2A100000000000000000E /* Persistence */,
+			);
+			path = Fixtures;
+			sourceTree = "<group>";
+		};
+		C4B2A100000000000000000E /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				C4B2A100000000000000000B /* CivilDateLegacyV1.fixture */,
+			);
+			path = Persistence;
 			sourceTree = "<group>";
 		};
 		B2C4BE798A1559DEACB0A273 /* Enums */ = {
@@ -1263,6 +1297,7 @@
 			buildConfigurationList = B0A18F1FE57FC73ED37EE8C0 /* Build configuration list for PBXNativeTarget "SorenTests" */;
 			buildPhases = (
 				7D28D8847D129C5C26E6BD15 /* Sources */,
+				C4B2A100000000000000000F /* Resources */,
 			);
 			buildRules = (
 			);
@@ -1377,6 +1412,14 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		C4B2A100000000000000000F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C4B2A100000000000000000C /* CivilDateLegacyV1.fixture in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		66F68FB77218D344F4F22F2E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1399,6 +1442,8 @@
 			files = (
 				1D8BAEA0072A517150500030 /* AddSubscriptionViewModel.swift in Sources */,
 				8F03B3D90C9045E5CD0F9D8C /* AggregateRecurringSpendUseCase.swift in Sources */,
+				C4B2A1000000000000000002 /* CivilDate.swift in Sources */,
+				C4B2A1000000000000000004 /* CivilDateStorageCodec.swift in Sources */,
 				C2C000000000000000000004 /* CurrentMonthSubscriptionPlanUseCase.swift in Sources */,
 				4B1000000000000000000002 /* RecurringScheduleProjector.swift in Sources */,
 				C2C000000000000000000002 /* MonthlySubscriptionPlan.swift in Sources */,
@@ -1570,6 +1615,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C4B2A1000000000000000008 /* CivilDateStorageCodecTests.swift in Sources */,
+				C4B2A100000000000000000A /* SwiftDataLegacyStoreCompatibilityTests.swift in Sources */,
+				C4B2A1000000000000000006 /* CivilDateTests.swift in Sources */,
 				C2C000000000000000000006 /* CurrentMonthSubscriptionPlanUseCaseTests.swift in Sources */,
 				4B1000000000000000000004 /* RecurringScheduleProjectorTests.swift in Sources */,
 				C3502270C48B6F7C7C802509 /* AddSubscriptionTierTests.swift in Sources */,

@@ -83,6 +83,10 @@ targets:
       - path: SorenTests
         excludes:
           - "**/.DS_Store"
+          - Fixtures
+      - path: SorenTests/Fixtures/Persistence/CivilDateLegacyV1.fixture
+        type: folder
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.alexey.soren.tests

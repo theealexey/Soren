@@ -1,0 +1,67 @@
+{
+  "fixture": "CivilDateLegacyV1",
+  "purpose": "Immutable pre-CivilDate SwiftData store for future schema compatibility tests",
+  "generatingHead": "bca27e3168d0c2d1679bc4304d38912698715bbc",
+  "schemaVersion": "SorenSchemaV1 1.0.0",
+  "containerContract": "SorenModelContainer.schema with ModelContainer(for:configurations:) and no migration plan",
+  "legacyInterpretation": "Creation timezone and intended civil days are fixture provenance only; the production V1 rows do not store that information",
+  "environment": {
+    "xcode": "26.3 (17C529)",
+    "swift": "6.2.4",
+    "simulator": "iPhone 17 Pro",
+    "runtime": "iOS 26.3",
+    "architecture": "x86_64"
+  },
+  "store": {
+    "file": "default.store",
+    "sha256": "5452bcc67ba007ffe9c71ea75c79ccde9d64346f4541e50fc25edf15f762d25b",
+    "walCheckpoint": "0|0|0",
+    "integrityCheck": "ok",
+    "recordCount": 2
+  },
+  "records": [
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "title": "Legacy Trial",
+      "status": "trial",
+      "creationTimeZone": "Europe/Stockholm",
+      "civilIntent": {
+        "startDate": "2026-07-15",
+        "nextChargeDate": "2026-08-15",
+        "trialEndDate": "2026-08-15",
+        "endDate": null
+      },
+      "storedInstantsUTC": {
+        "startDate": "2026-07-14T22:00:00Z",
+        "nextChargeDate": "2026-08-14T22:00:00Z",
+        "trialEndDate": "2026-08-14T22:00:00Z",
+        "endDate": null
+      }
+    },
+    {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "title": "Legacy Finite Archive",
+      "status": "archived",
+      "creationTimeZone": "America/New_York",
+      "civilIntent": {
+        "startDate": "2023-01-01",
+        "nextChargeDate": "2026-01-01",
+        "trialEndDate": null,
+        "endDate": "2026-01-01"
+      },
+      "storedInstantsUTC": {
+        "startDate": "2023-01-01T05:00:00Z",
+        "nextChargeDate": "2026-01-01T05:00:00Z",
+        "trialEndDate": null,
+        "endDate": "2026-01-01T05:00:00Z"
+      }
+    }
+  ],
+  "schemaSourceSHA256": {
+    "SDRecurringItem.swift": "2e93f8a6d7f97f59fd22bd32a1133617d007fa0db1cc95d39e97bd8e3736eb19",
+    "SDPaymentRecord.swift": "baadcda75574bc04950f52ba31f122d226ec3e7d5d9d42089845d724bdf18af3",
+    "SDPaymentMethod.swift": "a58e17cf742e6decf849f431820b271788a8dbee7bf327c0f219bffb9fd8c9a0",
+    "SDReminderRule.swift": "51731c198b95253fd43256ab6eafee80f1080c92ae3c76982cd1c3708f0ce6f0",
+    "SorenSchemaVersions.swift": "059462038f2b0628288394346a6b1e6187d9157b77ec0b9cd8fcf0387b2e5b9e"
+  }
+}
