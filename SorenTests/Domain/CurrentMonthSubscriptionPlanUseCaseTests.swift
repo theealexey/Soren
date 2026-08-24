@@ -199,6 +199,26 @@ struct CurrentMonthSubscriptionPlanUseCaseTests {
         #expect(plan.plannedTotal.amount == 50)
     }
 
+    @Test("Monthly projection recovers the original day after February clamp")
+    func monthlyAnchorRecovery() async throws {
+        let localToday = date(2026, 3, 29)
+        let plan = try #require(await execute(
+            items: [item(
+                id: 1,
+                amount: 100,
+                nextChargeDate: date(2026, 1, 31),
+                billingCycle: .monthly,
+                startDate: date(2026, 1, 1)
+            )],
+            today: localToday
+        ))
+
+        #expect(plan.chargeCount == 1)
+        #expect(plan.plannedTotal.amount == 100)
+        #expect(plan.remainingChargeCount == 1)
+        #expect(plan.remainingTotal.amount == 100)
+    }
+
     // MARK: - Lifecycle and Start Date
 
     @Test("Only lifecycle states that count in totals are eligible")
@@ -265,6 +285,19 @@ struct CurrentMonthSubscriptionPlanUseCaseTests {
                 nextChargeDate: date(2026, 8, 20),
                 autoRenew: false,
                 endDate: date(2026, 8, 19)
+            )
+        ])
+
+        #expect(plan == nil)
+    }
+
+    @Test("Finite subscription without an end date makes the plan unavailable")
+    func finiteWithoutEndDateUnavailable() async throws {
+        let plan = try await execute(items: [
+            item(
+                id: 1,
+                nextChargeDate: date(2026, 8, 20),
+                autoRenew: false
             )
         ])
 

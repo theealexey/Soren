@@ -30,36 +30,39 @@ where Repository: RecurringItemRepository, Repository: Sendable {
     ) async throws -> MonthlySubscriptionPlan? {
         let fetchedItems = try await repository.fetchAll()
         let bounds = try DateBounds(today: today, calendar: calendar)
-        let eligibleItems = eligibleItems(
-            from: deduplicatedItems(fetchedItems),
-            today: bounds.startOfToday,
-            calendar: calendar
-        )
+        let items = deduplicatedItems(fetchedItems)
+        let projector = RecurringScheduleProjector()
 
         var plannedProjections: [RecurringSpendProjection] = []
 
-        for item in eligibleItems {
-            guard let terms = provenChargeTerms(for: item, calendar: calendar) else {
-                // An otherwise eligible item with unproven terms makes a complete
-                // month plan impossible. Never publish a plausible partial total.
-                return nil
-            }
-
-            guard let occurrenceDates = try occurrenceDates(
-                for: terms,
-                in: bounds.monthRange,
-                calendar: calendar
-            ) else {
-                return nil
-            }
-
-            plannedProjections.append(contentsOf: occurrenceDates.map { date in
-                RecurringSpendProjection(
-                    date: date,
-                    amount: terms.money.amount,
-                    currencyCode: terms.money.currencyCode
+        for item in items {
+            let projection: RecurringScheduleProjection
+            do {
+                projection = try projector.project(
+                    item,
+                    in: bounds.monthRange,
+                    asOf: bounds.startOfToday,
+                    calendar: calendar
                 )
-            })
+            } catch RecurringScheduleProjectionError.invalidCalendarArithmetic {
+                throw CurrentMonthSubscriptionPlanUseCaseError.invalidCalendarArithmetic
+            }
+            guard projection.monetaryCompleteness == .complete else {
+                return nil
+            }
+
+            for event in projection.events {
+                guard case let .scheduledCharge(_, date, money) = event else {
+                    continue
+                }
+                plannedProjections.append(
+                    RecurringSpendProjection(
+                        date: date,
+                        amount: money.amount,
+                        currencyCode: money.currencyCode
+                    )
+                )
+            }
         }
 
         plannedProjections.sort(by: stableProjectionOrder)
@@ -130,17 +133,9 @@ private extension CurrentMonthSubscriptionPlanUseCase {
     }
 }
 
-// MARK: - Eligibility and Charge Terms
+// MARK: - Item Identity
 
 private extension CurrentMonthSubscriptionPlanUseCase {
-    struct ChargeTerms {
-        let money: Money
-        let billingCycle: BillingCycle
-        let scheduleAnchor: Date
-        let effectiveStartDate: Date
-        let effectiveEndDate: Date?
-    }
-
     func deduplicatedItems(_ items: [RecurringItem]) -> [RecurringItem] {
         let ordered = items.sorted(by: stableItemOrder)
         var seenIDs = Set<UUID>()
@@ -156,171 +151,6 @@ private extension CurrentMonthSubscriptionPlanUseCase {
         if lhs.title != rhs.title { return lhs.title < rhs.title }
         if lhs.currencyCode != rhs.currencyCode { return lhs.currencyCode < rhs.currencyCode }
         return lhs.amount < rhs.amount
-    }
-
-    func eligibleItems(
-        from items: [RecurringItem],
-        today: Date,
-        calendar: Calendar
-    ) -> [RecurringItem] {
-        items.filter { item in
-            guard item.status.countsInTotals, item.archivedAt == nil else { return false }
-            guard !item.autoRenew else { return true }
-            guard let endDate = item.endDate else { return false }
-            return calendar.startOfDay(for: endDate) >= today
-        }
-    }
-
-    func provenChargeTerms(
-        for item: RecurringItem,
-        calendar: Calendar
-    ) -> ChargeTerms? {
-        guard item.amount > 0,
-              isValid(item.billingCycle),
-              let money = try? Money(amount: item.amount, currencyCode: item.currencyCode)
-        else {
-            return nil
-        }
-
-        let startDate = calendar.startOfDay(for: item.startDate)
-        let scheduleAnchor = calendar.startOfDay(for: item.nextChargeDate)
-        let endDate = item.autoRenew
-            ? nil
-            : item.endDate.map { calendar.startOfDay(for: $0) }
-
-        if let endDate {
-            guard startDate <= endDate, scheduleAnchor <= endDate else {
-                return nil
-            }
-        }
-
-        if item.status == .trial {
-            guard item.autoRenew,
-                  let trialEndDate = item.trialEndDate,
-                  item.nextChargeDate >= trialEndDate,
-                  calendar.isDate(item.nextChargeDate, inSameDayAs: trialEndDate)
-            else {
-                return nil
-            }
-
-            return ChargeTerms(
-                money: money,
-                billingCycle: item.billingCycle,
-                scheduleAnchor: scheduleAnchor,
-                effectiveStartDate: max(startDate, calendar.startOfDay(for: trialEndDate)),
-                effectiveEndDate: nil
-            )
-        }
-
-        return ChargeTerms(
-            money: money,
-            billingCycle: item.billingCycle,
-            scheduleAnchor: scheduleAnchor,
-            effectiveStartDate: startDate,
-            effectiveEndDate: endDate
-        )
-    }
-
-    func isValid(_ billingCycle: BillingCycle) -> Bool {
-        if case let .custom(days) = billingCycle {
-            return days > 0
-        }
-        return true
-    }
-}
-
-// MARK: - Calendar-Month Occurrence Projection
-
-private extension CurrentMonthSubscriptionPlanUseCase {
-    static var maximumProjectionSteps: Int { 100_000 }
-
-    func occurrenceDates(
-        for terms: ChargeTerms,
-        in monthRange: Range<Date>,
-        calendar: Calendar
-    ) throws -> [Date]? {
-        // `nextChargeDate` is the authoritative schedule datum. Forward stepping
-        // reuses `BillingCycle.nextDate`; inverse calendar stepping recovers only
-        // the earlier scheduled portion of this same current-month plan.
-        var dates = Set<Date>()
-        let anchor = terms.scheduleAnchor
-
-        if anchor >= monthRange.lowerBound {
-            var candidate = anchor
-            var steps = 0
-
-            while candidate >= monthRange.lowerBound {
-                guard steps < Self.maximumProjectionSteps else { return nil }
-                if monthRange.contains(candidate), isWithinLifecycle(candidate, terms: terms) {
-                    dates.insert(candidate)
-                }
-
-                guard let previous = previousDate(
-                    before: candidate,
-                    billingCycle: terms.billingCycle,
-                    calendar: calendar
-                ), previous < candidate else {
-                    throw CurrentMonthSubscriptionPlanUseCaseError.invalidCalendarArithmetic
-                }
-                candidate = previous
-                steps += 1
-            }
-        }
-
-        var candidate = anchor
-        var steps = 0
-
-        if candidate >= monthRange.lowerBound {
-            candidate = terms.billingCycle.nextDate(after: candidate, calendar: calendar)
-            guard candidate > anchor else {
-                throw CurrentMonthSubscriptionPlanUseCaseError.invalidCalendarArithmetic
-            }
-            steps += 1
-        }
-
-        while candidate < monthRange.upperBound {
-            guard steps < Self.maximumProjectionSteps else { return nil }
-            if monthRange.contains(candidate), isWithinLifecycle(candidate, terms: terms) {
-                dates.insert(candidate)
-            }
-
-            let next = terms.billingCycle.nextDate(after: candidate, calendar: calendar)
-            guard next > candidate else {
-                throw CurrentMonthSubscriptionPlanUseCaseError.invalidCalendarArithmetic
-            }
-            candidate = next
-            steps += 1
-        }
-
-        return dates.sorted()
-    }
-
-    func previousDate(
-        before date: Date,
-        billingCycle: BillingCycle,
-        calendar: Calendar
-    ) -> Date? {
-        switch billingCycle {
-        case .weekly:
-            return calendar.date(byAdding: .day, value: -7, to: date)
-        case .monthly:
-            return calendar.date(byAdding: .month, value: -1, to: date)
-        case .quarterly:
-            return calendar.date(byAdding: .month, value: -3, to: date)
-        case .semiannual:
-            return calendar.date(byAdding: .month, value: -6, to: date)
-        case .annual:
-            return calendar.date(byAdding: .year, value: -1, to: date)
-        case let .custom(days):
-            guard days > 0 else { return nil }
-            return calendar.date(byAdding: .day, value: -days, to: date)
-        }
-    }
-
-    func isWithinLifecycle(_ date: Date, terms: ChargeTerms) -> Bool {
-        guard date >= terms.effectiveStartDate else { return false }
-        guard let endDate = terms.effectiveEndDate else { return true }
-        return date <= endDate
     }
 }
 

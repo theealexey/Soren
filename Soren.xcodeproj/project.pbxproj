@@ -180,6 +180,8 @@
 		C2C000000000000000000002 /* MonthlySubscriptionPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2C000000000000000000001 /* MonthlySubscriptionPlan.swift */; };
 		C2C000000000000000000004 /* CurrentMonthSubscriptionPlanUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2C000000000000000000003 /* CurrentMonthSubscriptionPlanUseCase.swift */; };
 		C2C000000000000000000006 /* CurrentMonthSubscriptionPlanUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2C000000000000000000005 /* CurrentMonthSubscriptionPlanUseCaseTests.swift */; };
+		4B1000000000000000000002 /* RecurringScheduleProjector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1000000000000000000001 /* RecurringScheduleProjector.swift */; };
+		4B1000000000000000000004 /* RecurringScheduleProjectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1000000000000000000003 /* RecurringScheduleProjectorTests.swift */; };
 		C23C4C4054AF9B1ABCC80ED7 /* FoodDeliveryCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 801DEE1F1ADBABC0F1ADEACC /* FoodDeliveryCatalogTests.swift */; };
 		C3502270C48B6F7C7C802509 /* AddSubscriptionTierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C260B954C3104C784E92C46 /* AddSubscriptionTierTests.swift */; };
 		C446BA4D8718E2915E28D7CE /* NotificationSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E39F73908BA8F60FD861BBD2 /* NotificationSchedulerTests.swift */; };
@@ -429,6 +431,8 @@
 		C2C000000000000000000001 /* MonthlySubscriptionPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthlySubscriptionPlan.swift; sourceTree = "<group>"; };
 		C2C000000000000000000003 /* CurrentMonthSubscriptionPlanUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentMonthSubscriptionPlanUseCase.swift; sourceTree = "<group>"; };
 		C2C000000000000000000005 /* CurrentMonthSubscriptionPlanUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentMonthSubscriptionPlanUseCaseTests.swift; sourceTree = "<group>"; };
+		4B1000000000000000000001 /* RecurringScheduleProjector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringScheduleProjector.swift; sourceTree = "<group>"; };
+		4B1000000000000000000003 /* RecurringScheduleProjectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringScheduleProjectorTests.swift; sourceTree = "<group>"; };
 		CA945694AA563A401CBA4141 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		CB20EA2841D6985A5FDC19A7 /* SubscriptionFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionFormView.swift; sourceTree = "<group>"; };
 		CCF6E3294064040757EF1F48 /* OpenExchangeRateProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenExchangeRateProvider.swift; sourceTree = "<group>"; };
@@ -600,6 +604,7 @@
 				2C3C97EDDCEF751039D58620 /* AggregateRecurringSpendUseCaseTests.swift */,
 				741C5159A29C5FE9FA23F568 /* BillingCycleTests.swift */,
 				C2C000000000000000000005 /* CurrentMonthSubscriptionPlanUseCaseTests.swift */,
+				4B1000000000000000000003 /* RecurringScheduleProjectorTests.swift */,
 				EFA7B870CBEEC728F72D1D5E /* DeleteRecurringItemTests.swift */,
 				264F2714A6B7E0174F18E1FF /* ExchangeRatesTests.swift */,
 				CF8C244B377699468B225A22 /* LifecycleInvariantTests.swift */,
@@ -937,6 +942,7 @@
 				F03EA530EBA04F1B485ABD41 /* AggregateRecurringSpendUseCase.swift */,
 				90337875EFD6C4485C9DD0ED /* ConvertMoneyUseCase.swift */,
 				C2C000000000000000000003 /* CurrentMonthSubscriptionPlanUseCase.swift */,
+				4B1000000000000000000001 /* RecurringScheduleProjector.swift */,
 				4A97F884F05552C0F6B3D2C0 /* DeleteRecurringItem.swift */,
 				335CFDDA67A8B09141C4A214 /* GetActiveItems.swift */,
 				ABC90BA9C0E1E720BACD159A /* GetActiveTrials.swift */,
@@ -1394,6 +1400,7 @@
 				1D8BAEA0072A517150500030 /* AddSubscriptionViewModel.swift in Sources */,
 				8F03B3D90C9045E5CD0F9D8C /* AggregateRecurringSpendUseCase.swift in Sources */,
 				C2C000000000000000000004 /* CurrentMonthSubscriptionPlanUseCase.swift in Sources */,
+				4B1000000000000000000002 /* RecurringScheduleProjector.swift in Sources */,
 				C2C000000000000000000002 /* MonthlySubscriptionPlan.swift in Sources */,
 				5A93ED96B71D41668FA55408 /* OverviewInsight.swift in Sources */,
 				BBE81B70DA954300A1732B0E /* OverviewInsightUseCase.swift in Sources */,
@@ -1564,6 +1571,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C2C000000000000000000006 /* CurrentMonthSubscriptionPlanUseCaseTests.swift in Sources */,
+				4B1000000000000000000004 /* RecurringScheduleProjectorTests.swift in Sources */,
 				C3502270C48B6F7C7C802509 /* AddSubscriptionTierTests.swift in Sources */,
 				5A43E0468E2A492CD8C689C8 /* AggregateRecurringSpendUseCaseTests.swift in Sources */,
 				E9CBF6DF558DD865FFA2D11C /* AmountLabelTests.swift in Sources */,
