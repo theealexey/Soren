@@ -1850,6 +1850,38 @@
         }
       }
     },
+    "overview.monthlyPlan.empty" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No charges are scheduled this month."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В этом месяце списаний не запланировано"
+          }
+        }
+      }
+    },
+    "overview.monthlyPlan.scheduled" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scheduled"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запланировано"
+          }
+        }
+      }
+    },
     "Personal (год)" : {
       "extractionState" : "stale",
       "localizations" : {

@@ -51,7 +51,6 @@ extension AppContainer {
         return HomeViewModel(
             getUpcomingCharges: GetUpcomingCharges(repository: repositories.recurringItems),
             preferences: preferences,
-            aggregateRecurringSpend: AggregateRecurringSpendUseCase(),
             exchangeRateProvider: exchangeRateProvider,
             calculateMonthlyPlan: planCalculation,
             calculateOverviewInsight: insightCalculation,

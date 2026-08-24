@@ -179,7 +179,7 @@ struct HomeViewModelTests {
         )
     }
 
-    @Test("Empty repository renders a truthful zero Hero and compact Upcoming empty state")
+    @Test("Empty repository renders the approved monthly statement and no Upcoming rows")
     func emptyRepository() async throws {
         let zero = try zeroPlan()
         let (viewModel, defaults, suite) = try viewModel(plan: { _, _, _, _ in zero })
@@ -189,10 +189,12 @@ struct HomeViewModelTests {
 
         #expect(viewModel.isLoaded)
         #expect(!viewModel.hasError)
-        #expect(viewModel.monthlyPlan.primary.contains("0"))
-        #expect(viewModel.monthlyPlan.leadingSupport == String(localized: "Нет запланированных списаний"))
+        #expect(viewModel.monthlyPlan.primary == String(localized: "overview.monthlyPlan.empty"))
+        #expect(viewModel.monthlyPlan.primary != String(localized: "Нет запланированных списаний"))
+        #expect(viewModel.monthlyPlan.primaryStyle == .statement)
+        #expect(viewModel.monthlyPlan.leadingSupport.isEmpty)
+        #expect(!viewModel.monthlyPlan.primary.contains("0"))
         #expect(viewModel.upcoming.rows.isEmpty)
-        #expect(viewModel.upcoming.emptyMessage == String(localized: "Нет списаний в ближайшие 30 дней"))
     }
 
     @Test("A valid monthly plan maps all four Domain values truthfully")
@@ -247,7 +249,7 @@ struct HomeViewModelTests {
         #expect(viewModel.monthlyPlan.primaryStyle == .statement)
     }
 
-    @Test("The actual calendar month drives both header and Hero title")
+    @Test("The actual calendar month drives the header while the Hero uses its contextual label")
     func currentMonthLabels() async throws {
         let zero = try zeroPlan()
         let (viewModel, defaults, suite) = try viewModel(plan: { _, _, _, _ in zero })
@@ -255,9 +257,8 @@ struct HomeViewModelTests {
 
         await viewModel.load()
 
-        #expect(viewModel.monthLabel.contains("АВГУСТ"))
-        #expect(viewModel.monthLabel.contains("2026"))
-        #expect(viewModel.monthlyPlan.title.lowercased().contains("август"))
+        #expect(viewModel.monthLabel == "Август 2026")
+        #expect(viewModel.monthlyPlan.title == String(localized: "overview.monthlyPlan.scheduled"))
     }
 
     @Test("Upcoming rows are limited to three and sorted by effective date")
@@ -312,8 +313,8 @@ struct HomeViewModelTests {
         #expect(viewModel.upcoming.rows.first?.providerName == "Trial")
     }
 
-    @Test("Provider identity and stored plan suffix remain separate")
-    func providerPlanSuffix() async throws {
+    @Test("Upcoming row exposes provider identity and one combined accessibility label")
+    func upcomingProviderIdentity() async throws {
         let spotify = try item(
             title: "Spotify Индивидуальный",
             providerName: "Spotify",
@@ -331,60 +332,7 @@ struct HomeViewModelTests {
 
         let row = try #require(viewModel.upcoming.rows.first)
         #expect(row.providerName == "Spotify")
-        #expect(row.planOrCycle == "Индивидуальный")
-        #expect(row.artworkScale == 0.75)
-    }
-
-    @Test("Cycle is the truthful fallback when no stored plan suffix exists")
-    func providerCycleFallback() async throws {
-        let spotify = try item(
-            title: "Spotify",
-            providerName: "Spotify",
-            providerID: "spotify",
-            day: 15
-        )
-        let zero = try zeroPlan()
-        let (viewModel, defaults, suite) = try viewModel(
-            items: [spotify],
-            plan: { _, _, _, _ in zero }
-        )
-        defer { defaults.removePersistentDomain(forName: suite) }
-
-        await viewModel.load()
-
-        #expect(viewModel.upcoming.rows.first?.planOrCycle == String(localized: "Ежемесячно"))
-    }
-
-    @Test("Same-currency Upcoming metadata includes complete count and total")
-    func completeUpcomingMetadata() async throws {
-        let items = [
-            try item(title: "A", amount: 199, day: 15),
-            try item(title: "B", amount: 299, day: 18),
-            try item(title: "C", amount: 299, day: 20),
-        ]
-        let zero = try zeroPlan()
-        let (viewModel, defaults, suite) = try viewModel(
-            items: items,
-            plan: { _, _, _, _ in zero }
-        )
-        defer { defaults.removePersistentDomain(forName: suite) }
-
-        await viewModel.load()
-
-        let metadata = try #require(viewModel.upcoming.aggregateMetadata)
-        #expect(metadata.contains("3"))
-        #expect(metadata.filter(\.isNumber).contains("797"))
-    }
-
-    @Test("Empty Upcoming has no aggregate metadata")
-    func emptyUpcomingMetadata() async throws {
-        let zero = try zeroPlan()
-        let (viewModel, defaults, suite) = try viewModel(plan: { _, _, _, _ in zero })
-        defer { defaults.removePersistentDomain(forName: suite) }
-
-        await viewModel.load()
-
-        #expect(viewModel.upcoming.aggregateMetadata == nil)
+        #expect(row.accessibilityLabel == [row.providerName, row.chargeDate, row.amount].joined(separator: ", "))
     }
 
     @Test("One selected Domain insight maps into one presentation value")

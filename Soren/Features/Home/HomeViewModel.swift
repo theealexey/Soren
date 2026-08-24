@@ -31,7 +31,6 @@ final class HomeViewModel {
 
     private let getUpcomingCharges: GetUpcomingCharges
     private let preferences: UserPreferencesRepository
-    private let aggregateRecurringSpend: AggregateRecurringSpendUseCase
     private let loadExchangeRateSnapshot: @Sendable () async throws -> ExchangeRateSnapshot
     private let calculateMonthlyPlan: MonthlySubscriptionPlanCalculation
     private let calculateOverviewInsight: OverviewInsightCalculation
@@ -45,7 +44,6 @@ final class HomeViewModel {
     init<Provider: ExchangeRateProvider>(
         getUpcomingCharges: GetUpcomingCharges,
         preferences: UserPreferencesRepository,
-        aggregateRecurringSpend: AggregateRecurringSpendUseCase = AggregateRecurringSpendUseCase(),
         exchangeRateProvider: Provider,
         calculateMonthlyPlan: @escaping MonthlySubscriptionPlanCalculation = { _, _, _, _ in nil },
         calculateOverviewInsight: @escaping OverviewInsightCalculation = { _, _, _, _ in nil },
@@ -54,7 +52,6 @@ final class HomeViewModel {
     ) {
         self.getUpcomingCharges = getUpcomingCharges
         self.preferences = preferences
-        self.aggregateRecurringSpend = aggregateRecurringSpend
         self.loadExchangeRateSnapshot = {
             try await exchangeRateProvider.latestSnapshot()
         }
@@ -96,17 +93,10 @@ final class HomeViewModel {
             publish(
                 result: localResult,
                 upcomingItems: visibleUpcoming,
-                today: today,
-                reportingCurrencyCode: reportingCurrencyCode,
-                snapshot: exchangeRateSnapshot
+                today: today
             )
 
-            if shouldRefreshExchangeRates(
-                result: localResult,
-                upcomingItems: visibleUpcoming,
-                today: startOfToday,
-                reportingCurrencyCode: reportingCurrencyCode
-            ) {
+            if shouldRefreshExchangeRates(result: localResult) {
                 await refreshWithExchangeRates(
                     revision: revision,
                     today: today,
@@ -193,9 +183,7 @@ final class HomeViewModel {
             publish(
                 result: refreshedResult,
                 upcomingItems: upcomingItems,
-                today: today,
-                reportingCurrencyCode: reportingCurrencyCode,
-                snapshot: snapshot
+                today: today
             )
         } catch is CancellationError {
             return
@@ -207,26 +195,19 @@ final class HomeViewModel {
     private func publish(
         result: DomainState,
         upcomingItems: [RecurringItem],
-        today: Date,
-        reportingCurrencyCode: String,
-        snapshot: ExchangeRateSnapshot?
+        today: Date
     ) {
         screenState = HomeScreenState(
             monthLabel: Self.monthLabel(for: today, calendar: calendar),
             monthlyPlan: Self.monthlyPlanPresentation(
-                result.monthlyPlan,
-                today: today,
-                calendar: calendar,
-                reportingCurrencyCode: reportingCurrencyCode
+                result.monthlyPlan
             ),
             overviewInsight: result.insight.map {
                 OverviewInsightPresentation.make(from: $0, today: today, calendar: calendar)
             },
             upcoming: upcomingPresentation(
                 items: upcomingItems,
-                today: today,
-                reportingCurrencyCode: reportingCurrencyCode,
-                snapshot: snapshot
+                today: today
             ),
             isLoaded: true,
             hasError: false
@@ -235,12 +216,7 @@ final class HomeViewModel {
 
     // MARK: - FX Decision
 
-    private func shouldRefreshExchangeRates(
-        result: DomainState,
-        upcomingItems: [RecurringItem],
-        today: Date,
-        reportingCurrencyCode: String
-    ) -> Bool {
+    private func shouldRefreshExchangeRates(result: DomainState) -> Bool {
         if result.monthlyPlan == nil { return true }
 
         switch result.insight {
@@ -252,14 +228,7 @@ final class HomeViewModel {
             break
         }
 
-        guard let end = calendar.date(byAdding: .day, value: 30, to: today) else {
-            return false
-        }
-        return aggregateRecurringSpend.requiresExchangeRates(
-            projections: projections(from: upcomingItems, relativeTo: today),
-            reportingCurrencyCode: reportingCurrencyCode,
-            range: today..<end
-        )
+        return false
     }
 
     // MARK: - Monthly Plan Presentation
@@ -267,31 +236,18 @@ final class HomeViewModel {
     private static func loadingState(today: Date, calendar: Calendar) -> HomeScreenState {
         HomeScreenState(
             monthLabel: monthLabel(for: today, calendar: calendar),
-            monthlyPlan: monthlyPlanPresentation(
-                nil,
-                today: today,
-                calendar: calendar,
-                reportingCurrencyCode: UserPreferences.default.defaultCurrencyCode
-            ),
+            monthlyPlan: monthlyPlanPresentation(nil),
             overviewInsight: nil,
-            upcoming: UpcomingChargesPresentation(
-                rows: [],
-                aggregateMetadata: nil,
-                emptyMessage: String(localized: "Нет списаний в ближайшие 30 дней")
-            ),
+            upcoming: UpcomingChargesPresentation(rows: []),
             isLoaded: false,
             hasError: false
         )
     }
 
     private static func monthlyPlanPresentation(
-        _ plan: MonthlySubscriptionPlan?,
-        today: Date,
-        calendar: Calendar,
-        reportingCurrencyCode: String
+        _ plan: MonthlySubscriptionPlan?
     ) -> MonthlyPlanHeroPresentation {
-        let month = monthName(for: today, calendar: calendar)
-        let title = String(localized: "План на \(month)")
+        let title = String(localized: "overview.monthlyPlan.scheduled")
 
         guard let plan else {
             let unavailable = String(localized: "План недоступен")
@@ -307,20 +263,20 @@ final class HomeViewModel {
             )
         }
 
-        let amount = OverviewMoneyFormatter.string(plan.plannedTotal)
         if plan.chargeCount == 0 {
-            let empty = String(localized: "Нет запланированных списаний")
+            let empty = String(localized: "overview.monthlyPlan.empty")
             return MonthlyPlanHeroPresentation(
                 title: title,
-                primary: amount,
-                primaryStyle: .financialValue,
-                leadingSupport: empty,
+                primary: empty,
+                primaryStyle: .statement,
+                leadingSupport: "",
                 trailingSupportLabel: nil,
                 trailingSupportValue: nil,
-                accessibilityLabel: [title, amount, empty].joined(separator: ". ")
+                accessibilityLabel: [title, empty].joined(separator: ". ")
             )
         }
 
+        let amount = OverviewMoneyFormatter.string(plan.plannedTotal)
         let count = String(localized: "\(plan.chargeCount) списаний")
         let isEntirePlanRemaining = plan.remainingTotal == plan.plannedTotal
             && plan.remainingChargeCount == plan.chargeCount
@@ -361,9 +317,7 @@ final class HomeViewModel {
 
     private func upcomingPresentation(
         items: [RecurringItem],
-        today: Date,
-        reportingCurrencyCode: String,
-        snapshot: ExchangeRateSnapshot?
+        today: Date
     ) -> UpcomingChargesPresentation {
         let startOfToday = calendar.startOfDay(for: today)
         let rows = items.map { item in
@@ -372,7 +326,6 @@ final class HomeViewModel {
                 relativeTo: startOfToday,
                 calendar: calendar
             )
-            let planOrCycle = Self.planOrCycleLabel(for: item, providerName: providerName)
             let amount = OverviewMoneyFormatter.string(
                 amount: item.amount,
                 currencyCode: item.currencyCode
@@ -382,74 +335,20 @@ final class HomeViewModel {
             return UpcomingChargePresentation(
                 item: item,
                 providerName: providerName,
-                planOrCycle: planOrCycle,
                 amount: amount,
                 chargeDate: date,
-                artworkScale: Self.artworkScale(for: item.providerID),
-                accessibilityLabel: [providerName, planOrCycle, amount, date].joined(separator: ", ")
+                accessibilityLabel: [providerName, date, amount].joined(separator: ", ")
             )
         }
 
-        let aggregate = upcomingAggregate(
-            items: items,
-            today: startOfToday,
-            reportingCurrencyCode: reportingCurrencyCode,
-            snapshot: snapshot
-        )
-        let count = String(localized: "\(rows.count) списаний")
-        let metadata: String?
-        if rows.isEmpty {
-            metadata = nil
-        } else {
-            metadata = aggregate.map {
-                "\(count) · \(OverviewMoneyFormatter.string($0))"
-            } ?? count
-        }
-
-        return UpcomingChargesPresentation(
-            rows: rows,
-            aggregateMetadata: metadata,
-            emptyMessage: String(localized: "Нет списаний в ближайшие 30 дней")
-        )
-    }
-
-    private func upcomingAggregate(
-        items: [RecurringItem],
-        today: Date,
-        reportingCurrencyCode: String,
-        snapshot: ExchangeRateSnapshot?
-    ) -> Money? {
-        guard let end = calendar.date(byAdding: .day, value: 30, to: today) else { return nil }
-        let result = aggregateRecurringSpend.execute(
-            projections: projections(from: items, relativeTo: today),
-            reportingCurrencyCode: reportingCurrencyCode,
-            snapshot: snapshot,
-            range: today..<end
-        )
-        guard case let .complete(total, _) = result else { return nil }
-        return total
-    }
-
-    private func projections(
-        from items: [RecurringItem],
-        relativeTo today: Date
-    ) -> [RecurringSpendProjection] {
-        items.map { item in
-            RecurringSpendProjection(
-                date: calendar.startOfDay(
-                    for: item.effectiveNextChargeDate(relativeTo: today, calendar: calendar)
-                ),
-                amount: item.amount,
-                currencyCode: item.currencyCode
-            )
-        }
+        return UpcomingChargesPresentation(rows: rows)
     }
 
     // MARK: - Formatting
 
     private static func monthLabel(for date: Date, calendar: Calendar) -> String {
         let month = monthName(for: date, calendar: calendar)
-            .uppercased(with: PresentationLocale.current)
+            .capitalized(with: PresentationLocale.current)
         let year = calendar.component(.year, from: date)
         return "\(month) \(year)"
     }
@@ -470,45 +369,6 @@ final class HomeViewModel {
         )
         formatter.timeZone = calendar.timeZone
         return formatter.string(from: date)
-    }
-
-    private static func planOrCycleLabel(
-        for item: RecurringItem,
-        providerName: String
-    ) -> String {
-        let trimmedTitle = item.title.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmedTitle.range(
-            of: providerName,
-            options: [.anchored, .caseInsensitive]
-        ) != nil {
-            let suffix = trimmedTitle.dropFirst(providerName.count)
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            if !suffix.isEmpty { return suffix }
-        }
-
-        switch item.billingCycle {
-        case .weekly:
-            return String(localized: "Еженедельно")
-        case .monthly:
-            return String(localized: "Ежемесячно")
-        case .quarterly:
-            return String(localized: "Раз в 3 месяца")
-        case .semiannual:
-            return String(localized: "Раз в полгода")
-        case .annual:
-            return String(localized: "Ежегодно")
-        case let .custom(days):
-            return String(localized: "Каждые \(days) дн.")
-        }
-    }
-
-    private static func artworkScale(for providerID: String?) -> Double {
-        switch providerID {
-        case "spotify": 0.75
-        case "youtube_premium": 0.975
-        case "icloud": 1.10
-        default: 1
-        }
     }
 
     private static func isEligibleUpcoming(

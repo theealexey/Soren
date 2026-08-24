@@ -22,10 +22,8 @@ struct MonthlyPlanHeroPresentation: Equatable, Sendable {
 struct UpcomingChargePresentation: Identifiable, Equatable, Sendable {
     let item: RecurringItem
     let providerName: String
-    let planOrCycle: String
     let amount: String
     let chargeDate: String
-    let artworkScale: Double
     let accessibilityLabel: String
 
     var id: UUID { item.id }
@@ -33,8 +31,6 @@ struct UpcomingChargePresentation: Identifiable, Equatable, Sendable {
 
 struct UpcomingChargesPresentation: Equatable, Sendable {
     let rows: [UpcomingChargePresentation]
-    let aggregateMetadata: String?
-    let emptyMessage: String
 }
 
 // MARK: - Home Screen State

@@ -12,17 +12,9 @@ struct OverviewInsightPresentation: Equatable, Sendable {
         case sameDayAttention
     }
 
-    enum PrimaryStyle: Equatable, Sendable {
-        case financialValue
-        case statement
-    }
-
     let kind: Kind
-    let eyebrow: String
     let primary: String
     let supporting: String
-    let primaryStyle: PrimaryStyle
-    let accessibilityLabel: String
 }
 
 /// The single money-formatting policy for production Overview presentation.
@@ -77,10 +69,8 @@ extension OverviewInsightPresentation {
         case let .annualScale(total):
             return presentation(
                 kind: .annualScale,
-                eyebrow: String(localized: "ГОДОВОЙ МАСШТАБ"),
                 primary: OverviewMoneyFormatter.string(total, locale: locale),
-                supporting: String(localized: "при текущем наборе подписок"),
-                primaryStyle: .financialValue
+                supporting: String(localized: "при текущем наборе подписок")
             )
 
         case let .denseWeek(denseWeek):
@@ -96,10 +86,8 @@ extension OverviewInsightPresentation {
 
             return presentation(
                 kind: .denseWeek,
-                eyebrow: String(localized: "ПЛОТНАЯ НЕДЕЛЯ"),
                 primary: String(localized: "\(denseWeek.chargeCount) списаний за 7 дней"),
-                supporting: supporting,
-                primaryStyle: .statement
+                supporting: supporting
             )
 
         case let .attention(.trialEnding(trial)):
@@ -116,10 +104,8 @@ extension OverviewInsightPresentation {
 
             return presentation(
                 kind: .trialAttention,
-                eyebrow: String(localized: "НА КОНТРОЛЕ"),
                 primary: primary,
-                supporting: supporting,
-                primaryStyle: .statement
+                supporting: supporting
             )
 
         case let .attention(.sameDayRenewals(sameDay)):
@@ -134,10 +120,8 @@ extension OverviewInsightPresentation {
 
             return presentation(
                 kind: .sameDayAttention,
-                eyebrow: String(localized: "НА КОНТРОЛЕ"),
                 primary: String(localized: "\(sameDay.chargeCount) списаний в один день"),
-                supporting: supporting,
-                primaryStyle: .statement
+                supporting: supporting
             )
         }
     }
@@ -146,18 +130,13 @@ extension OverviewInsightPresentation {
 private extension OverviewInsightPresentation {
     static func presentation(
         kind: Kind,
-        eyebrow: String,
         primary: String,
-        supporting: String,
-        primaryStyle: PrimaryStyle
+        supporting: String
     ) -> Self {
         Self(
             kind: kind,
-            eyebrow: eyebrow,
             primary: primary,
-            supporting: supporting,
-            primaryStyle: primaryStyle,
-            accessibilityLabel: [eyebrow, primary, supporting].joined(separator: ". ")
+            supporting: supporting
         )
     }
 

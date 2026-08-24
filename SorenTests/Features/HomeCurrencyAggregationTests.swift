@@ -103,8 +103,6 @@ struct HomeCurrencyAggregationTests {
 
     private func item(
         title: String,
-        providerID: String? = nil,
-        providerName: String = "",
         amount: Decimal = 100,
         currencyCode: String = "RUB",
         day: Int,
@@ -116,8 +114,8 @@ struct HomeCurrencyAggregationTests {
     ) throws -> RecurringItem {
         RecurringItem(
             title: title,
-            providerID: providerID,
-            providerName: providerName,
+            providerID: nil,
+            providerName: "",
             amount: amount,
             currencyCode: currencyCode,
             billingCycle: .monthly,
@@ -389,26 +387,6 @@ struct HomeCurrencyAggregationTests {
         #expect(digits(vm.monthlyPlan.primary) == "180")
     }
 
-    @Test("Complete mixed-currency FX updates Upcoming aggregate metadata")
-    func mixedFXUpcoming() async throws {
-        let provider = RecordingRates(.success(snapshot()))
-        let items = [
-            try item(title: "USD", amount: 2, currencyCode: "USD", day: 15),
-            try item(title: "RUB", amount: 100, day: 18),
-        ]
-        let completePlan = try plan(amount: 280, count: 2)
-        let (vm, defaults, suite, _) = try viewModel(
-            items: items,
-            provider: provider,
-            plan: { _, _, _, snapshot in
-                snapshot == nil ? nil : completePlan
-            }
-        )
-        defer { defaults.removePersistentDomain(forName: suite) }
-        await vm.load()
-        #expect(digits(vm.upcoming.aggregateMetadata ?? "") == "2280")
-    }
-
     @Test("Missing FX leaves the Hero unavailable rather than partial")
     func missingFXHero() async throws {
         let provider = RecordingRates(.failure(.unavailable))
@@ -421,24 +399,6 @@ struct HomeCurrencyAggregationTests {
         defer { defaults.removePersistentDomain(forName: suite) }
         await vm.load()
         #expect(vm.monthlyPlan.primary == String(localized: "План недоступен"))
-    }
-
-    @Test("Missing FX keeps truthful Upcoming count without a partial amount")
-    func missingFXUpcomingCountOnly() async throws {
-        let provider = RecordingRates(.failure(.unavailable))
-        let items = [
-            try item(title: "USD", amount: 2, currencyCode: "USD", day: 15),
-            try item(title: "RUB", amount: 100, day: 18),
-        ]
-        let (vm, defaults, suite, _) = try viewModel(
-            items: items,
-            provider: provider,
-            plan: { _, _, _, _ in nil }
-        )
-        defer { defaults.removePersistentDomain(forName: suite) }
-        await vm.load()
-        #expect(digits(vm.upcoming.aggregateMetadata ?? "") == "2")
-        #expect(vm.upcoming.aggregateMetadata?.contains("100") == false)
     }
 
     @Test("Missing FX is never converted to zero")
@@ -653,7 +613,7 @@ struct HomeCurrencyAggregationTests {
         #expect(vm.upcoming.rows.isEmpty)
     }
 
-    @Test("A zero Domain plan is rendered as zero, not unavailable")
+    @Test("A zero Domain plan is rendered as the approved empty statement")
     func zeroPlan() async throws {
         let monthly = try plan(amount: 0, count: 0, remainingCount: 0)
         let provider = RecordingRates(.failure(.unavailable))
@@ -663,8 +623,9 @@ struct HomeCurrencyAggregationTests {
         )
         defer { defaults.removePersistentDomain(forName: suite) }
         await vm.load()
-        #expect(vm.monthlyPlan.primaryStyle == .financialValue)
-        #expect(vm.monthlyPlan.primary.contains("0"))
+        #expect(vm.monthlyPlan.primaryStyle == .statement)
+        #expect(vm.monthlyPlan.primary == String(localized: "overview.monthlyPlan.empty"))
+        #expect(!vm.monthlyPlan.primary.contains("0"))
     }
 
     @Test("Decimal financial values preserve cents in presentation")
@@ -732,45 +693,6 @@ struct HomeCurrencyAggregationTests {
         defer { defaults.removePersistentDomain(forName: suite) }
         await vm.load()
         #expect(vm.upcoming.rows.first?.chargeDate.contains("18") == true)
-    }
-
-    @Test("iCloud artwork keeps its accepted optical enlargement")
-    func iCloudArtworkScale() async throws {
-        let charge = try item(title: "iCloud+", providerID: "icloud", day: 18)
-        let monthly = try plan(amount: 100)
-        let provider = RecordingRates(.failure(.unavailable))
-        let (vm, defaults, suite, _) = try viewModel(
-            items: [charge], provider: provider, plan: { _, _, _, _ in monthly }
-        )
-        defer { defaults.removePersistentDomain(forName: suite) }
-        await vm.load()
-        #expect(vm.upcoming.rows.first?.artworkScale == 1.10)
-    }
-
-    @Test("YouTube artwork keeps its accepted optical scale")
-    func youtubeArtworkScale() async throws {
-        let charge = try item(title: "YouTube Premium", providerID: "youtube_premium", day: 18)
-        let monthly = try plan(amount: 100)
-        let provider = RecordingRates(.failure(.unavailable))
-        let (vm, defaults, suite, _) = try viewModel(
-            items: [charge], provider: provider, plan: { _, _, _, _ in monthly }
-        )
-        defer { defaults.removePersistentDomain(forName: suite) }
-        await vm.load()
-        #expect(vm.upcoming.rows.first?.artworkScale == 0.975)
-    }
-
-    @Test("Unknown providers retain neutral artwork scale")
-    func genericArtworkScale() async throws {
-        let charge = try item(title: "Manual", day: 18)
-        let monthly = try plan(amount: 100)
-        let provider = RecordingRates(.failure(.unavailable))
-        let (vm, defaults, suite, _) = try viewModel(
-            items: [charge], provider: provider, plan: { _, _, _, _ in monthly }
-        )
-        defer { defaults.removePersistentDomain(forName: suite) }
-        await vm.load()
-        #expect(vm.upcoming.rows.first?.artworkScale == 1)
     }
 
     @Test("Published Home state is coherent across Hero Insight and Upcoming")
