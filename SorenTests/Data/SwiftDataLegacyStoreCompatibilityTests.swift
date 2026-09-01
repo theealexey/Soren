@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import SwiftData
 import Testing
@@ -6,57 +7,78 @@ import Testing
 @Suite("SwiftData legacy-store compatibility")
 @MainActor
 struct SwiftDataLegacyStoreCompatibilityTests {
-    @Test("Disk store survives full container release and reopen")
+    @Test("Fresh current-schema store defaults metadata to nil and reopens")
     func diskStoreReopensAfterOwnersAreReleased() throws {
         try withTemporaryDirectory { directory in
             let storeURL = directory.appendingPathComponent("default.store")
-            let ownership = StoreOwnership()
+            let writeOwnership = StoreOwnership()
 
-            try writeCurrentSchemaStore(at: storeURL, tracking: ownership)
+            try writeCurrentSchemaStore(at: storeURL, tracking: writeOwnership)
 
-            #expect(ownership.container == nil)
-            #expect(ownership.context == nil)
+            #expect(writeOwnership.container == nil)
+            #expect(writeOwnership.context == nil)
 
-            try verifyCurrentSchemaStore(at: storeURL)
+            let readOwnership = StoreOwnership()
+            try verifyCurrentSchemaStore(at: storeURL, tracking: readOwnership)
+
+            #expect(readOwnership.container == nil)
+            #expect(readOwnership.context == nil)
         }
     }
 
-    @Test("Immutable V1 fixture opens successfully from a copy")
+    @Test("Immutable V1 fixture opens and reopens under the evolved schema")
     func bundledV1FixtureOpensFromCopy() throws {
-        let sourceFixture = try #require(
-            Bundle(for: LegacyFixtureBundleMarker.self).url(
-                forResource: "CivilDateLegacyV1",
-                withExtension: "fixture"
-            )
-        )
-        let sourceStore = sourceFixture.appendingPathComponent("default.store")
-        let sourceManifest = sourceFixture.appendingPathComponent("manifest.json")
-        let sourceFilesBefore = try FileManager.default.contentsOfDirectory(
-            atPath: sourceFixture.path
-        ).sorted()
-        let sourceStoreBefore = try Data(contentsOf: sourceStore)
-        let sourceManifestBefore = try Data(contentsOf: sourceManifest)
-
-        #expect(sourceFilesBefore == ["default.store", "manifest.json"])
-
-        try withTemporaryDirectory { directory in
-            let copiedFixture = directory.appendingPathComponent(
-                "CivilDateLegacyV1.fixture",
-                isDirectory: true
-            )
-            try FileManager.default.copyItem(at: sourceFixture, to: copiedFixture)
+        try withCopiedLegacyFixture { storeURL in
+            let firstOwnership = StoreOwnership()
             try verifyCurrentSchemaStore(
-                at: copiedFixture.appendingPathComponent("default.store")
+                at: storeURL,
+                tracking: firstOwnership
             )
-        }
 
-        #expect(try Data(contentsOf: sourceStore) == sourceStoreBefore)
-        #expect(try Data(contentsOf: sourceManifest) == sourceManifestBefore)
-        #expect(
-            try FileManager.default.contentsOfDirectory(
-                atPath: sourceFixture.path
-            ).sorted() == sourceFilesBefore
-        )
+            #expect(firstOwnership.container == nil)
+            #expect(firstOwnership.context == nil)
+
+            let secondOwnership = StoreOwnership()
+            try verifyCurrentSchemaStore(
+                at: storeURL,
+                tracking: secondOwnership
+            )
+
+            #expect(secondOwnership.container == nil)
+            #expect(secondOwnership.context == nil)
+        }
+    }
+
+    @Test("Metadata persists on a copied V1 store without changing legacy fields")
+    func metadataPersistsOnCopiedV1Fixture() throws {
+        try withCopiedLegacyFixture { storeURL in
+            let targetID = try #require(LegacyV1Fixture.records.first?.id)
+            let expectedMetadata = BillingDateMetadata(
+                encodingVersion: 1,
+                interpretationTimeZoneIdentifier: "Europe/Stockholm"
+            )
+            let writeOwnership = StoreOwnership()
+
+            try writeMetadata(
+                expectedMetadata,
+                toItemWithID: targetID,
+                at: storeURL,
+                tracking: writeOwnership
+            )
+
+            #expect(writeOwnership.container == nil)
+            #expect(writeOwnership.context == nil)
+
+            let readOwnership = StoreOwnership()
+            try verifyCurrentSchemaStore(
+                at: storeURL,
+                expectedMetadataByID: [targetID: expectedMetadata],
+                tracking: readOwnership
+            )
+
+            #expect(readOwnership.container == nil)
+            #expect(readOwnership.context == nil)
+        }
     }
 
     private func writeCurrentSchemaStore(
@@ -74,14 +96,55 @@ struct SwiftDataLegacyStoreCompatibilityTests {
         try context.save()
     }
 
-    private func verifyCurrentSchemaStore(at storeURL: URL) throws {
+    private func writeMetadata(
+        _ metadata: BillingDateMetadata,
+        toItemWithID itemID: UUID,
+        at storeURL: URL,
+        tracking ownership: StoreOwnership
+    ) throws {
         let container = try makeContainer(at: storeURL)
         let context = container.mainContext
+        ownership.container = container
+        ownership.context = context
+        let models = try fetchVerifiedLegacyModels(from: context)
+
+        for model in models {
+            #expect(BillingDateMetadata(model) == .legacy)
+        }
+
+        let target = try #require(models.first { $0.id == itemID })
+        target.billingDateEncodingVersion = metadata.encodingVersion
+        target.legacyBillingDateInterpretationTimeZoneIdentifier =
+            metadata.interpretationTimeZoneIdentifier
+        try context.save()
+    }
+
+    private func verifyCurrentSchemaStore(
+        at storeURL: URL,
+        expectedMetadataByID: [UUID: BillingDateMetadata] = [:],
+        tracking ownership: StoreOwnership
+    ) throws {
+        let container = try makeContainer(at: storeURL)
+        let context = container.mainContext
+        ownership.container = container
+        ownership.context = context
+        let models = try fetchVerifiedLegacyModels(from: context)
+
+        for model in models {
+            let expectedMetadata = expectedMetadataByID[model.id] ?? .legacy
+            #expect(BillingDateMetadata(model) == expectedMetadata)
+        }
+    }
+
+    private func fetchVerifiedLegacyModels(
+        from context: ModelContext
+    ) throws -> [SDRecurringItem] {
         let models = try context.fetch(FetchDescriptor<SDRecurringItem>())
         let records = models.map(LegacyRecurringItemRecord.init)
             .sorted { $0.id.uuidString < $1.id.uuidString }
 
         #expect(records == LegacyV1Fixture.records)
+        return models
     }
 
     private func makeContainer(at storeURL: URL) throws -> ModelContainer {
@@ -115,6 +178,69 @@ struct SwiftDataLegacyStoreCompatibilityTests {
         }
         return try body(directory)
     }
+
+    private func withCopiedLegacyFixture(
+        _ body: (URL) throws -> Void
+    ) throws {
+        let sourceFixture = try #require(
+            Bundle(for: LegacyFixtureBundleMarker.self).url(
+                forResource: "CivilDateLegacyV1",
+                withExtension: "fixture"
+            )
+        )
+        let sourceBefore = try fixtureSnapshot(at: sourceFixture)
+        verifyAuthoritativeFixture(sourceBefore)
+
+        defer {
+            do {
+                let sourceAfter = try fixtureSnapshot(at: sourceFixture)
+                verifyAuthoritativeFixture(sourceAfter)
+                #expect(sourceAfter == sourceBefore)
+            } catch {
+                Issue.record("Could not verify immutable V1 fixture: \(error)")
+            }
+        }
+
+        try withTemporaryDirectory { directory in
+            let copiedFixture = directory.appendingPathComponent(
+                "CivilDateLegacyV1.fixture",
+                isDirectory: true
+            )
+            try FileManager.default.copyItem(at: sourceFixture, to: copiedFixture)
+            try body(copiedFixture.appendingPathComponent("default.store"))
+        }
+    }
+
+    private func fixtureSnapshot(at fixtureURL: URL) throws -> FixtureSnapshot {
+        FixtureSnapshot(
+            fileNames: try FileManager.default.contentsOfDirectory(
+                atPath: fixtureURL.path
+            ).sorted(),
+            store: try Data(
+                contentsOf: fixtureURL.appendingPathComponent("default.store")
+            ),
+            manifest: try Data(
+                contentsOf: fixtureURL.appendingPathComponent("manifest.json")
+            )
+        )
+    }
+
+    private func verifyAuthoritativeFixture(_ fixture: FixtureSnapshot) {
+        #expect(fixture.fileNames == ["default.store", "manifest.json"])
+        #expect(
+            sha256(fixture.store) == LegacyV1Fixture.authoritativeStoreSHA256
+        )
+        #expect(
+            sha256(fixture.manifest)
+                == LegacyV1Fixture.authoritativeManifestSHA256
+        )
+    }
+
+    private func sha256(_ data: Data) -> String {
+        SHA256.hash(data: data)
+            .map { String(format: "%02x", $0) }
+            .joined()
+    }
 }
 
 @MainActor
@@ -125,7 +251,45 @@ private final class StoreOwnership {
 
 private final class LegacyFixtureBundleMarker: NSObject { }
 
+private struct BillingDateMetadata: Equatable {
+    let encodingVersion: Int?
+    let interpretationTimeZoneIdentifier: String?
+
+    init(
+        encodingVersion: Int?,
+        interpretationTimeZoneIdentifier: String?
+    ) {
+        self.encodingVersion = encodingVersion
+        self.interpretationTimeZoneIdentifier =
+            interpretationTimeZoneIdentifier
+    }
+
+    init(_ model: SDRecurringItem) {
+        self.init(
+            encodingVersion: model.billingDateEncodingVersion,
+            interpretationTimeZoneIdentifier:
+                model.legacyBillingDateInterpretationTimeZoneIdentifier
+        )
+    }
+
+    static let legacy = BillingDateMetadata(
+        encodingVersion: nil,
+        interpretationTimeZoneIdentifier: nil
+    )
+}
+
+private struct FixtureSnapshot: Equatable {
+    let fileNames: [String]
+    let store: Data
+    let manifest: Data
+}
+
 private enum LegacyV1Fixture {
+    static let authoritativeStoreSHA256 =
+        "5452bcc67ba007ffe9c71ea75c79ccde9d64346f4541e50fc25edf15f762d25b"
+    static let authoritativeManifestSHA256 =
+        "5aed974e3df837426d5d5d4d26d81504d7952aa7f47878b4a4f68f9ccd83fa2e"
+
     static let records: [LegacyRecurringItemRecord] = [
         LegacyRecurringItemRecord(
             id: UUID(uuid: (

@@ -38,6 +38,12 @@ final class SDRecurringItem {
     var nextChargeDate: Date
     var trialEndDate: Date?
 
+    /// `nil` means the row has no proven canonical civil-date provenance.
+    var billingDateEncodingVersion: Int? = nil
+
+    /// Reserved for a future bootstrap decision about ambiguous legacy dates.
+    var legacyBillingDateInterpretationTimeZoneIdentifier: String? = nil
+
     // MARK: - Lifecycle
 
     /// Stored as `Bool?` so that adding this column is a lightweight migration:
