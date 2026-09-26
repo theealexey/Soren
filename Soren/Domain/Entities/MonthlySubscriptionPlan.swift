@@ -11,3 +11,20 @@ struct MonthlySubscriptionPlan: Equatable, Sendable {
     let remainingTotal: Money
     let remainingChargeCount: Int
 }
+
+struct ScheduledChargeOccurrence: Equatable, Hashable, Sendable {
+    let itemID: UUID
+    let date: Date
+}
+
+struct SubscriptionStatusCounts: Equatable, Sendable {
+    let active: Int
+    let trial: Int
+    let paused: Int
+}
+
+struct CurrentMonthSubscriptionPlanSnapshot: Equatable, Sendable {
+    let plan: MonthlySubscriptionPlan
+    let scheduledCharges: [ScheduledChargeOccurrence]
+    let statusCounts: SubscriptionStatusCounts
+}

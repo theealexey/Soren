@@ -28,12 +28,27 @@ where Repository: RecurringItemRepository, Repository: Sendable {
         reportingCurrencyCode: String,
         exchangeRateSnapshot: ExchangeRateSnapshot?
     ) async throws -> MonthlySubscriptionPlan? {
+        try await executeSnapshot(
+            today: today,
+            calendar: calendar,
+            reportingCurrencyCode: reportingCurrencyCode,
+            exchangeRateSnapshot: exchangeRateSnapshot
+        )?.plan
+    }
+
+    func executeSnapshot(
+        today: Date,
+        calendar: Calendar,
+        reportingCurrencyCode: String,
+        exchangeRateSnapshot: ExchangeRateSnapshot?
+    ) async throws -> CurrentMonthSubscriptionPlanSnapshot? {
         let fetchedItems = try await repository.fetchAll()
         let bounds = try DateBounds(today: today, calendar: calendar)
         let items = deduplicatedItems(fetchedItems)
         let projector = RecurringScheduleProjector()
 
         var plannedProjections: [RecurringSpendProjection] = []
+        var scheduledCharges: [ScheduledChargeOccurrence] = []
 
         for item in items {
             let projection: RecurringScheduleProjection
@@ -52,7 +67,7 @@ where Repository: RecurringItemRepository, Repository: Sendable {
             }
 
             for event in projection.events {
-                guard case let .scheduledCharge(_, date, money) = event else {
+                guard case let .scheduledCharge(itemID, date, money) = event else {
                     continue
                 }
                 plannedProjections.append(
@@ -62,10 +77,14 @@ where Repository: RecurringItemRepository, Repository: Sendable {
                         currencyCode: money.currencyCode
                     )
                 )
+                scheduledCharges.append(
+                    ScheduledChargeOccurrence(itemID: itemID, date: date)
+                )
             }
         }
 
         plannedProjections.sort(by: stableProjectionOrder)
+        scheduledCharges.sort(by: stableOccurrenceOrder)
         let remainingProjections = plannedProjections.filter {
             $0.date >= bounds.startOfToday
         }
@@ -85,11 +104,19 @@ where Repository: RecurringItemRepository, Repository: Sendable {
             return nil
         }
 
-        return MonthlySubscriptionPlan(
-            plannedTotal: plannedTotal,
-            chargeCount: plannedProjections.count,
-            remainingTotal: remainingTotal,
-            remainingChargeCount: remainingProjections.count
+        return CurrentMonthSubscriptionPlanSnapshot(
+            plan: MonthlySubscriptionPlan(
+                plannedTotal: plannedTotal,
+                chargeCount: plannedProjections.count,
+                remainingTotal: remainingTotal,
+                remainingChargeCount: remainingProjections.count
+            ),
+            scheduledCharges: scheduledCharges,
+            statusCounts: statusCounts(
+                for: items,
+                today: bounds.startOfToday,
+                calendar: calendar
+            )
         )
     }
 }
@@ -151,6 +178,49 @@ private extension CurrentMonthSubscriptionPlanUseCase {
         if lhs.title != rhs.title { return lhs.title < rhs.title }
         if lhs.currencyCode != rhs.currencyCode { return lhs.currencyCode < rhs.currencyCode }
         return lhs.amount < rhs.amount
+    }
+
+    func stableOccurrenceOrder(
+        _ lhs: ScheduledChargeOccurrence,
+        _ rhs: ScheduledChargeOccurrence
+    ) -> Bool {
+        if lhs.date != rhs.date { return lhs.date < rhs.date }
+        return lhs.itemID.uuidString < rhs.itemID.uuidString
+    }
+}
+
+// MARK: - Current Status Counts
+
+private extension CurrentMonthSubscriptionPlanUseCase {
+    func statusCounts(
+        for items: [RecurringItem],
+        today: Date,
+        calendar: Calendar
+    ) -> SubscriptionStatusCounts {
+        var active = 0
+        var trial = 0
+        var paused = 0
+
+        for item in items {
+            guard item.archivedAt == nil else { continue }
+            if let endDate = item.endDate,
+               calendar.compare(endDate, to: today, toGranularity: .day) == .orderedAscending {
+                continue
+            }
+
+            switch item.status {
+            case .active, .dueSoon, .dueToday, .overdue, .failed:
+                active += 1
+            case .trial:
+                trial += 1
+            case .paused:
+                paused += 1
+            case .cancelled, .archived:
+                break
+            }
+        }
+
+        return SubscriptionStatusCounts(active: active, trial: trial, paused: paused)
     }
 }
 
