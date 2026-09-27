@@ -2,6 +2,10 @@ import Foundation
 import Testing
 @testable import Soren
 
+private typealias HomePlanStub = @Sendable (
+    Date, Calendar, String, ExchangeRateSnapshot?
+) async throws -> MonthlySubscriptionPlan?
+
 @Suite("Overview money formatting")
 struct OverviewMoneyFormattingTests {
     private let nonBreakingSpace = "\u{00A0}"
@@ -116,6 +120,7 @@ struct HomeViewModelTests {
         currencyCode: String = "RUB",
         day: Int,
         status: ItemStatus = .active,
+        trialEndDate: Date? = nil,
         archivedAt: Date? = nil
     ) throws -> RecurringItem {
         RecurringItem(
@@ -127,6 +132,7 @@ struct HomeViewModelTests {
             billingCycle: .monthly,
             startDate: try date(day: 1),
             nextChargeDate: try date(day: day),
+            trialEndDate: trialEndDate,
             status: status,
             archivedAt: archivedAt
         )
@@ -147,7 +153,8 @@ struct HomeViewModelTests {
 
     private func viewModel(
         items: [RecurringItem] = [],
-        plan: @escaping MonthlySubscriptionPlanCalculation,
+        plan: @escaping HomePlanStub,
+        snapshotCalculation: CurrentMonthSnapshotCalculation? = nil,
         insight: @escaping OverviewInsightCalculation = { _, _, _, _ in nil }
     ) throws -> (HomeViewModel, UserDefaults, String) {
         let (preferences, defaults, suite) = try preferences()
@@ -159,7 +166,13 @@ struct HomeViewModelTests {
                 getUpcomingCharges: GetUpcomingCharges(repository: repository),
                 preferences: preferences,
                 exchangeRateProvider: UnavailableRates(),
-                calculateMonthlyPlan: plan,
+                calculateCurrentMonth: snapshotCalculation ?? { today, calendar, code, rates in
+                    CurrentMonthSubscriptionPlanSnapshot(
+                        plan: try await plan(today, calendar, code, rates),
+                        scheduledCharges: [],
+                        statusCounts: SubscriptionStatusCounts(active: 0, trial: 0, paused: 0)
+                    )
+                },
                 calculateOverviewInsight: insight,
                 now: { fixedToday },
                 calendar: calendar
@@ -215,6 +228,62 @@ struct HomeViewModelTests {
         #expect(viewModel.monthlyPlan.trailingSupportLabel == String(localized: "Осталось"))
         #expect(viewModel.monthlyPlan.trailingSupportValue?.filter(\.isNumber) == "347")
         #expect(viewModel.monthlyPlan.accessibilityLabel.contains("3"))
+    }
+
+    @Test("Unavailable money keeps snapshot schedule and lifecycle counts")
+    func partialSnapshotMapping() async throws {
+        let occurrenceDate = try date(day: 20)
+        let occurrence = ScheduledChargeOccurrence(itemID: UUID(), date: occurrenceDate)
+        let snapshot = CurrentMonthSubscriptionPlanSnapshot(
+            plan: nil,
+            scheduledCharges: [occurrence],
+            statusCounts: SubscriptionStatusCounts(active: 4, trial: 2, paused: 1)
+        )
+        let (viewModel, defaults, suite) = try viewModel(
+            plan: { _, _, _, _ in nil },
+            snapshotCalculation: { _, _, _, _ in snapshot }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        await viewModel.load()
+
+        #expect(viewModel.monthlyPlan.primary == String(localized: "План недоступен"))
+        #expect(viewModel.monthSchedule?.year == 2026)
+        #expect(viewModel.monthSchedule?.month == 8)
+        #expect(viewModel.monthSchedule?.daysInMonth == 31)
+        #expect(viewModel.monthSchedule?.todayDay == 13)
+        #expect(viewModel.monthSchedule?.occurrences == [
+            MonthSchedulePresentation.Occurrence(itemID: occurrence.itemID, day: 20)
+        ])
+        #expect(viewModel.statusCounts == snapshot.statusCounts)
+    }
+
+    @Test("Repeated canonical charges keep distinct rows and item navigation identity")
+    func repeatedUpcomingRows() async throws {
+        let recurring = RecurringItem(
+            title: "Weekly",
+            amount: 100,
+            billingCycle: .weekly,
+            startDate: try date(day: 1),
+            nextChargeDate: try date(day: 1)
+        )
+        let zero = try zeroPlan()
+        let (viewModel, defaults, suite) = try viewModel(
+            items: [recurring],
+            plan: { _, _, _, _ in zero }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        await viewModel.load()
+
+        #expect(viewModel.upcoming.rows.count == 3)
+        #expect(viewModel.upcoming.rows.map(\.item.id) == Array(repeating: recurring.id, count: 3))
+        #expect(Set(viewModel.upcoming.rows.map(\.id)).count == 3)
+        #expect(viewModel.upcoming.rows.map(\.scheduledDate) == [
+            calendar().startOfDay(for: try date(day: 15)),
+            calendar().startOfDay(for: try date(day: 22)),
+            calendar().startOfDay(for: try date(day: 29)),
+        ])
     }
 
     @Test("Hero omits a redundant remaining value when the entire plan is ahead")
@@ -295,12 +364,18 @@ struct HomeViewModelTests {
 
         await viewModel.load()
 
-        #expect(viewModel.upcoming.rows.map(\.providerName) == ["Active"])
+        let rows = viewModel.upcoming.rows
+        #expect(rows.count == 3)
+        #expect(rows.allSatisfy { $0.item.id == items[3].id })
+        #expect(rows.map(\.providerName) == ["Active", "Active", "Active"])
+        #expect(Set(rows.map(\.scheduledDate)).count == rows.count)
     }
 
     @Test("Trial with a real upcoming charge remains visible")
     func upcomingTrial() async throws {
-        let trial = try item(title: "Trial", day: 16, status: .trial)
+        let trial = try item(
+            title: "Trial", day: 16, status: .trial, trialEndDate: date(day: 16)
+        )
         let zero = try zeroPlan()
         let (viewModel, defaults, suite) = try viewModel(
             items: [trial],
@@ -392,38 +467,49 @@ struct HomeViewModelTests {
 @Suite("GetUpcomingCharges")
 @MainActor
 struct GetUpcomingChargesTests {
-    @Test("Custom day window works")
-    func customDayWindow() throws {
+    @Test("Canonical one-year schedule returns the nearest occurrences")
+    func nearestCanonicalOccurrences() throws {
         let repository = HomeViewModelTestsRepository()
-        let now = Date.now
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Moscow") ?? .gmt
+        let now = try #require(calendar.date(from: DateComponents(year: 2026, month: 8, day: 13)))
         repository.items = [
             RecurringItem(
                 title: "Day3",
                 amount: 100,
-                nextChargeDate: Calendar.current.date(byAdding: .day, value: 3, to: now) ?? now
+                billingCycle: .annual,
+                startDate: now,
+                nextChargeDate: try #require(calendar.date(byAdding: .day, value: 3, to: now))
             ),
             RecurringItem(
                 title: "Day10",
                 amount: 100,
-                nextChargeDate: Calendar.current.date(byAdding: .day, value: 10, to: now) ?? now
+                billingCycle: .annual,
+                startDate: now,
+                nextChargeDate: try #require(calendar.date(byAdding: .day, value: 10, to: now))
             ),
         ]
 
-        let result = try GetUpcomingCharges(repository: repository).execute(days: 5, from: now)
-        #expect(result.map(\.title) == ["Day3"])
+        let result = try GetUpcomingCharges(repository: repository)
+            .execute(from: now, calendar: calendar)
+        #expect(result.map(\.item.title) == ["Day3", "Day10"])
     }
 
-    @Test("Zero day window returns nothing beyond today")
-    func zeroDayWindow() throws {
+    @Test("No real scheduled charges returns no Upcoming rows")
+    func noCharges() throws {
         let repository = HomeViewModelTestsRepository()
-        let now = Date.now
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Moscow") ?? .gmt
+        let now = try #require(calendar.date(from: DateComponents(year: 2026, month: 8, day: 13)))
         repository.items = [RecurringItem(
             title: "Tomorrow",
             amount: 100,
-            nextChargeDate: Calendar.current.date(byAdding: .day, value: 1, to: now) ?? now
+            nextChargeDate: try #require(calendar.date(byAdding: .day, value: 1, to: now)),
+            status: .paused
         )]
 
-        let result = try GetUpcomingCharges(repository: repository).execute(days: 0, from: now)
+        let result = try GetUpcomingCharges(repository: repository)
+            .execute(from: now, calendar: calendar)
         #expect(result.isEmpty)
     }
 }

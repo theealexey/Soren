@@ -24,7 +24,8 @@ struct SubscriptionStatusCounts: Equatable, Sendable {
 }
 
 struct CurrentMonthSubscriptionPlanSnapshot: Equatable, Sendable {
-    let plan: MonthlySubscriptionPlan
+    /// Nil when complete monetary aggregation is unavailable; dates and counts remain truthful.
+    let plan: MonthlySubscriptionPlan?
     let scheduledCharges: [ScheduledChargeOccurrence]
     let statusCounts: SubscriptionStatusCounts
 }

@@ -2,6 +2,10 @@ import Foundation
 import Testing
 @testable import Soren
 
+private typealias CurrencyPlanStub = @Sendable (
+    Date, Calendar, String, ExchangeRateSnapshot?
+) async throws -> MonthlySubscriptionPlan?
+
 @Suite("Home Overview integration and currency coherence")
 @MainActor
 struct HomeCurrencyAggregationTests {
@@ -177,7 +181,7 @@ struct HomeCurrencyAggregationTests {
         items: [RecurringItem] = [],
         provider: Provider,
         reportingCurrency: String = "RUB",
-        plan: @escaping MonthlySubscriptionPlanCalculation,
+        plan: @escaping CurrencyPlanStub,
         insight: @escaping OverviewInsightCalculation = { _, _, _, _ in nil }
     ) throws -> (HomeViewModel, UserDefaults, String, Repository) {
         let repository = Repository(items: items)
@@ -188,7 +192,13 @@ struct HomeCurrencyAggregationTests {
                 getUpcomingCharges: GetUpcomingCharges(repository: repository),
                 preferences: preferences,
                 exchangeRateProvider: provider,
-                calculateMonthlyPlan: plan,
+                calculateCurrentMonth: { today, calendar, code, rates in
+                    CurrentMonthSubscriptionPlanSnapshot(
+                        plan: try await plan(today, calendar, code, rates),
+                        scheduledCharges: [],
+                        statusCounts: SubscriptionStatusCounts(active: 0, trial: 0, paused: 0)
+                    )
+                },
                 calculateOverviewInsight: insight,
                 now: { fixedToday },
                 calendar: calendar()
@@ -711,7 +721,14 @@ struct HomeCurrencyAggregationTests {
         await vm.load()
         #expect(digits(vm.screenState.monthlyPlan.primary) == "199")
         #expect(vm.screenState.overviewInsight?.kind == .annualScale)
-        #expect(vm.screenState.upcoming.rows.count == 1)
+        let upcomingRows = vm.screenState.upcoming.rows
+        #expect(upcomingRows.count == 3)
+        #expect(upcomingRows.allSatisfy { $0.item.title == "Spotify" })
+        #expect(upcomingRows.map(\.scheduledDate) == [
+            calendar().startOfDay(for: try date(day: 15, month: 8)),
+            calendar().startOfDay(for: try date(day: 15, month: 9)),
+            calendar().startOfDay(for: try date(day: 15, month: 10)),
+        ])
     }
 
     @Test("Attention integrates beside a non-zero monthly plan")

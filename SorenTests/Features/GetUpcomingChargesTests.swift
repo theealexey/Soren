@@ -1,249 +1,234 @@
-import Testing
 import Foundation
+import Testing
 @testable import Soren
 
-// MARK: - GetUpcomingCharges Tests
-
-/// Adversarial tests for GetUpcomingCharges.execute().
-///
-/// Coverage targets:
-///   • Pass-1 (in-window stored dates)
-///   • Pass-2 (rolled effective dates)
-///   • Non-rolling status guards (.paused / .cancelled / .archived)
-///   • Non-autoRenew guard (finite subscriptions never roll)
-///   • Sort correctness — results ordered by effective date, not stored date
-///   • Boundary — item whose effective date rolls past the cutoff is excluded
-///   • Rolling-eligible but attention-requiring statuses (.overdue, .failed) are included
-///   • Empty repository produces an empty result
-
-@Suite("GetUpcomingCharges — rolling & sort")
+@Suite("GetUpcomingCharges canonical schedule")
 @MainActor
 struct GetUpcomingChargesUseCaseTests {
-
-    // MARK: - Fixtures
-
-    private let cal = Calendar.current
-
-    /// Stable "today" anchor — start of the current day so all comparisons
-    /// are against midnight boundaries regardless of test execution time.
-    private var today: Date { cal.startOfDay(for: .now) }
-
-    @MainActor
-    private struct Fixture {
-        let persistence: InMemoryPersistenceFixture
-        let useCase: GetUpcomingCharges
-
-        init() throws {
-            let persistence = try InMemoryPersistenceFixture()
-            self.persistence = persistence
-            self.useCase = GetUpcomingCharges(repository: persistence.recurringItems)
-        }
+    private var calendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Moscow") ?? .gmt
+        return calendar
     }
 
-    private func makeFixture() throws -> Fixture {
-        try Fixture()
+    private func date(_ year: Int, _ month: Int, _ day: Int, calendar: Calendar? = nil) throws -> Date {
+        try #require((calendar ?? self.calendar).date(from: DateComponents(
+            year: year, month: month, day: day
+        )))
     }
 
-    private func makeItem(
-        title:        String      = "Test",
-        nextCharge:   Date,
-        billingCycle: BillingCycle = .monthly,
-        status:       ItemStatus   = .active,
-        autoRenew:    Bool         = true,
-        archivedAt:   Date?        = nil
+    private func item(
+        id: UUID = UUID(),
+        next: Date,
+        start: Date,
+        cycle: BillingCycle = .monthly,
+        status: ItemStatus = .active,
+        autoRenew: Bool = true,
+        end: Date? = nil,
+        trialEnd: Date? = nil,
+        archivedAt: Date? = nil
     ) -> RecurringItem {
         RecurringItem(
-            title:         title,
-            amount:        9.99,
-            billingCycle:  billingCycle,
-            nextChargeDate: nextCharge,
-            autoRenew:     autoRenew,
-            status:        status,
-            archivedAt:    archivedAt
+            id: id,
+            title: "Subscription",
+            amount: 100,
+            billingCycle: cycle,
+            startDate: start,
+            nextChargeDate: next,
+            trialEndDate: trialEnd,
+            autoRenew: autoRenew,
+            endDate: end,
+            status: status,
+            archivedAt: archivedAt
         )
     }
 
-    // MARK: - Pass 1: stored date in window
-
-    @Test("Item with stored date inside window is included")
-    func storedInWindowIncluded() throws {
-        let fixture = try makeFixture()
-        let item = makeItem(nextCharge: cal.date(byAdding: .day, value: 3, to: today)!)
-        try fixture.persistence.recurringItems.save(item)
-
-        let ids = try fixture.useCase.execute(days: 7, from: today).map(\.id)
-        #expect(ids.contains(item.id))
+    private func fixture() throws -> InMemoryPersistenceFixture {
+        try InMemoryPersistenceFixture()
     }
 
-    @Test("Item with stored date exactly at the cutoff boundary is included")
-    func storedAtCutoffIncluded() throws {
-        let fixture = try makeFixture()
-        let item = makeItem(nextCharge: cal.date(byAdding: .day, value: 7, to: today)!)
-        try fixture.persistence.recurringItems.save(item)
+    @Test("Nearest three are sorted by date then UUID and later rows are omitted")
+    func nearestThree() throws {
+        let fixture = try fixture()
+        let today = try date(2026, 8, 13)
+        let earlierID = try #require(UUID(uuidString: "00000000-0000-0000-0000-000000000001"))
+        let laterID = try #require(UUID(uuidString: "00000000-0000-0000-0000-000000000002"))
+        let items = [
+            item(id: laterID, next: try date(2026, 8, 20), start: today, cycle: .annual),
+            item(next: try date(2026, 9, 1), start: today, cycle: .annual),
+            item(id: earlierID, next: try date(2026, 8, 20), start: today, cycle: .annual),
+            item(next: try date(2026, 8, 15), start: today, cycle: .annual),
+        ]
+        try fixture.recurringItems.saveAll(items)
 
-        let ids = try fixture.useCase.execute(days: 7, from: today).map(\.id)
-        #expect(ids.contains(item.id))
+        let result = try GetUpcomingCharges(repository: fixture.recurringItems)
+            .execute(from: today, calendar: calendar)
+        #expect(result.count == 3)
+        #expect(result.map(\.date) == [
+            try date(2026, 8, 15), try date(2026, 8, 20), try date(2026, 8, 20)
+        ])
+        #expect(result[1].item.id == earlierID)
+        #expect(result[2].item.id == laterID)
     }
 
-    // MARK: - Pass 2: rolled effective dates
+    @Test("Weekly schedule retains multiple occurrences of the same item")
+    func weeklyMultiplicity() throws {
+        let fixture = try fixture()
+        let today = try date(2026, 8, 13)
+        let weekly = item(next: try date(2026, 8, 1), start: try date(2026, 1, 1), cycle: .weekly)
+        try fixture.recurringItems.save(weekly)
 
-    @Test("Active autoRenew item with stale date that rolls into window is included")
-    func staleActiveRolledIn() throws {
-        let fixture = try makeFixture()
-        // Stored 3 days ago, 7-day cycle → effective = today + 4 days (within 7-day window).
-        let stale = cal.date(byAdding: .day, value: -3, to: today)!
-        let item  = makeItem(nextCharge: stale, billingCycle: .weekly, status: .active)
-        try fixture.persistence.recurringItems.save(item)
-
-        let ids = try fixture.useCase.execute(days: 7, from: today).map(\.id)
-        #expect(ids.contains(item.id))
+        let result = try GetUpcomingCharges(repository: fixture.recurringItems)
+            .execute(from: today, calendar: calendar)
+        #expect(result.map(\.item.id) == [weekly.id, weekly.id, weekly.id])
+        #expect(result.map(\.date) == [
+            try date(2026, 8, 15), try date(2026, 8, 22), try date(2026, 8, 29)
+        ])
     }
 
-    @Test("Overdue item (rolling-eligible) with stale date that rolls into window is included")
-    func overdueRolledIn() throws {
-        let fixture = try makeFixture()
-        // .overdue is rolling-eligible — it must NOT be caught by the status guard.
-        let stale = cal.date(byAdding: .day, value: -3, to: today)!
-        let item  = makeItem(nextCharge: stale, billingCycle: .weekly, status: .overdue)
-        try fixture.persistence.recurringItems.save(item)
-
-        let ids = try fixture.useCase.execute(days: 7, from: today).map(\.id)
-        #expect(ids.contains(item.id))
+    @Test("End-of-month recurrence uses the unchanged canonical anchor")
+    func monthEndAnchor() throws {
+        let fixture = try fixture()
+        let today = try date(2026, 8, 1)
+        try fixture.recurringItems.save(item(
+            next: try date(2026, 7, 31), start: try date(2026, 1, 1)
+        ))
+        let result = try GetUpcomingCharges(repository: fixture.recurringItems)
+            .execute(from: today, calendar: calendar)
+        #expect(result.map(\.date) == [
+            try date(2026, 8, 31), try date(2026, 9, 30), try date(2026, 10, 31)
+        ])
     }
 
-    @Test("Failed item (rolling-eligible) with stale date that rolls into window is included")
-    func failedRolledIn() throws {
-        let fixture = try makeFixture()
-        let stale = cal.date(byAdding: .day, value: -3, to: today)!
-        let item  = makeItem(nextCharge: stale, billingCycle: .weekly, status: .failed)
-        try fixture.persistence.recurringItems.save(item)
-
-        let ids = try fixture.useCase.execute(days: 7, from: today).map(\.id)
-        #expect(ids.contains(item.id))
+    @Test("Trial boundary alone is not a monetary Upcoming charge")
+    func trialBoundaryAlone() throws {
+        let fixture = try fixture()
+        let today = try date(2026, 8, 13)
+        try fixture.recurringItems.save(item(
+            next: try date(2026, 8, 25), start: today,
+            status: .trial, trialEnd: try date(2026, 8, 20)
+        ))
+        let result = try GetUpcomingCharges(repository: fixture.recurringItems)
+            .execute(from: today, calendar: calendar)
+        #expect(result.isEmpty)
     }
 
-    @Test("Stale item whose effective date rolls past the cutoff is excluded")
-    func stalePastCutoffExcluded() throws {
-        let fixture = try makeFixture()
-        // Stored 10 days ago, 9-day custom cycle:
-        //   iter 1: -10 + 9 = -1 day (still < today)
-        //   iter 2: -1 + 9  = +8 days → effective = today + 8 > cutoff (7 days)
-        let stale = cal.date(byAdding: .day, value: -10, to: today)!
-        let item  = makeItem(nextCharge: stale, billingCycle: .custom(days: 9), status: .active)
-        try fixture.persistence.recurringItems.save(item)
-
-        let ids = try fixture.useCase.execute(days: 7, from: today).map(\.id)
-        #expect(!ids.contains(item.id))
+    @Test("Proven trial renewal is a monetary Upcoming occurrence")
+    func provenTrialRenewal() throws {
+        let fixture = try fixture()
+        let today = try date(2026, 8, 13)
+        let renewal = try date(2026, 8, 20)
+        try fixture.recurringItems.save(item(
+            next: renewal, start: today, status: .trial, trialEnd: renewal
+        ))
+        let result = try GetUpcomingCharges(repository: fixture.recurringItems)
+            .execute(from: today, calendar: calendar)
+        #expect(result.first?.date == renewal)
     }
 
-    // MARK: - Non-rolling status guards
-
-    @Test("Paused item with stale date is excluded from rolled pass")
-    func pausedExcluded() throws {
-        let fixture = try makeFixture()
-        let stale = cal.date(byAdding: .day, value: -3, to: today)!
-        let item  = makeItem(nextCharge: stale, billingCycle: .weekly, status: .paused)
-        try fixture.persistence.recurringItems.save(item)
-
-        let ids = try fixture.useCase.execute(days: 7, from: today).map(\.id)
-        #expect(!ids.contains(item.id))
+    @Test("Finite end date is inclusive and excludes following occurrences")
+    func finiteEndDate() throws {
+        let fixture = try fixture()
+        let today = try date(2026, 8, 13)
+        try fixture.recurringItems.save(item(
+            next: try date(2026, 8, 14), start: today,
+            cycle: .weekly, autoRenew: false, end: try date(2026, 8, 21)
+        ))
+        let result = try GetUpcomingCharges(repository: fixture.recurringItems)
+            .execute(from: today, calendar: calendar)
+        #expect(result.map(\.date) == [try date(2026, 8, 14), try date(2026, 8, 21)])
     }
 
-    @Test("Cancelled item with stale date is excluded from rolled pass")
-    func cancelledExcluded() throws {
-        let fixture = try makeFixture()
-        let stale = cal.date(byAdding: .day, value: -3, to: today)!
-        let item  = makeItem(nextCharge: stale, billingCycle: .weekly, status: .cancelled)
-        try fixture.persistence.recurringItems.save(item)
-
-        let ids = try fixture.useCase.execute(days: 7, from: today).map(\.id)
-        #expect(!ids.contains(item.id))
+    @Test("Paused cancelled and archived items are excluded by projector")
+    func inactiveItems() throws {
+        let fixture = try fixture()
+        let today = try date(2026, 8, 13)
+        let next = try date(2026, 8, 14)
+        try fixture.recurringItems.saveAll([
+            item(next: next, start: today, status: .paused),
+            item(next: next, start: today, status: .cancelled),
+            item(next: next, start: today, archivedAt: today),
+        ])
+        let result = try GetUpcomingCharges(repository: fixture.recurringItems)
+            .execute(from: today, calendar: calendar)
+        #expect(result.isEmpty)
     }
 
-    @Test("Archived item does not appear in either pass")
-    func archivedExcluded() throws {
-        let fixture = try makeFixture()
-        let stale = cal.date(byAdding: .day, value: -3, to: today)!
-        // archivedAt set so fetchUpcoming's `archivedAt == nil` predicate excludes it from pass 1;
-        // status guard excludes it from pass 2.
-        let item  = makeItem(
-            nextCharge: stale,
-            billingCycle: .weekly,
-            status: .archived,
-            archivedAt: today
-        )
-        try fixture.persistence.recurringItems.save(item)
-
-        let ids = try fixture.useCase.execute(days: 7, from: today).map(\.id)
-        #expect(!ids.contains(item.id))
+    @Test("Overdue and failed lifecycle statuses retain valid schedule occurrences")
+    func eligibleAttentionStatuses() throws {
+        let fixture = try fixture()
+        let today = try date(2026, 8, 13)
+        let next = try date(2026, 8, 14)
+        try fixture.recurringItems.saveAll([
+            item(next: next, start: today, status: .overdue),
+            item(next: next, start: today, status: .failed),
+        ])
+        let result = try GetUpcomingCharges(repository: fixture.recurringItems)
+            .execute(from: today, calendar: calendar)
+        #expect(result.count == 3)
+        #expect(result.allSatisfy { $0.item.status == .overdue || $0.item.status == .failed })
     }
 
-    // MARK: - autoRenew guard
-
-    @Test("Non-autoRenew item with stale date is not rolled into the window")
-    func nonAutoRenewNotRolled() throws {
-        let fixture = try makeFixture()
-        let stale = cal.date(byAdding: .day, value: -3, to: today)!
-        let item  = makeItem(
-            nextCharge: stale,
-            billingCycle: .weekly,
-            status: .active,
-            autoRenew: false
-        )
-        try fixture.persistence.recurringItems.save(item)
-
-        let ids = try fixture.useCase.execute(days: 7, from: today).map(\.id)
-        #expect(!ids.contains(item.id))
+    @Test("One-year horizon includes anniversary day but not later annual renewal")
+    func oneYearHorizon() throws {
+        let fixture = try fixture()
+        let today = try date(2026, 8, 13)
+        try fixture.recurringItems.saveAll([
+            item(next: try date(2027, 8, 13), start: try date(2027, 8, 13), cycle: .annual),
+            item(next: try date(2027, 8, 14), start: try date(2027, 8, 14), cycle: .annual),
+        ])
+        let result = try GetUpcomingCharges(repository: fixture.recurringItems)
+            .execute(from: today, calendar: calendar)
+        #expect(result.map(\.date) == [try date(2027, 8, 13)])
     }
 
-    // MARK: - Sort correctness
-
-    @Test("Results are sorted by effective date, not stored date")
-    func sortedByEffectiveDate() throws {
-        let fixture = try makeFixture()
-
-        // A: stored date 5 days from now → effective = +5 days.
-        let a = makeItem(title: "A", nextCharge: cal.date(byAdding: .day, value: 5, to: today)!)
-        // B: stored 3 days ago, weekly (7-day) cycle → effective = today + 4 days.
-        //    effectiveDate(+4) < A(+5) so B should sort before A.
-        let bStale = cal.date(byAdding: .day, value: -3, to: today)!
-        let b = makeItem(title: "B", nextCharge: bStale, billingCycle: .weekly)
-        // C: stored date 6 days from now → effective = +6 days.
-        let c = makeItem(title: "C", nextCharge: cal.date(byAdding: .day, value: 6, to: today)!)
-
-        try fixture.persistence.recurringItems.save(a)
-        try fixture.persistence.recurringItems.save(b)
-        try fixture.persistence.recurringItems.save(c)
-
-        let titles = try fixture.useCase.execute(days: 7, from: today).map(\.title)
-
-        // B (eff +4) < A (eff +5) < C (eff +6)
-        let bIdx = try #require(titles.firstIndex(of: "B"))
-        let aIdx = try #require(titles.firstIndex(of: "A"))
-        let cIdx = try #require(titles.firstIndex(of: "C"))
-        #expect(bIdx < aIdx)
-        #expect(aIdx < cIdx)
+    @Test("Supplied Gregorian calendar and timezone determine civil schedule days")
+    func suppliedCalendar() throws {
+        let fixture = try fixture()
+        var tokyo = Calendar(identifier: .gregorian)
+        tokyo.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .gmt
+        let today = try date(2026, 9, 1, calendar: tokyo)
+        try fixture.recurringItems.save(item(next: today, start: today, cycle: .annual))
+        let result = try GetUpcomingCharges(repository: fixture.recurringItems)
+            .execute(from: today, calendar: tokyo)
+        #expect(result.map(\.date) == [
+            today,
+            try date(2027, 9, 1, calendar: tokyo),
+        ])
     }
 
-    // MARK: - No duplication
-
-    @Test("Item with stored date in window appears exactly once (not duplicated by pass 2)")
-    func noduplication() throws {
-        let fixture = try makeFixture()
-        let item = makeItem(nextCharge: cal.date(byAdding: .day, value: 2, to: today)!)
-        try fixture.persistence.recurringItems.save(item)
-
-        let results = try fixture.useCase.execute(days: 7, from: today)
-        let matchCount = results.filter { $0.id == item.id }.count
-        #expect(matchCount == 1)
+    @Test("Empty repository produces fewer than three without placeholders")
+    func empty() throws {
+        let fixture = try fixture()
+        let result = try GetUpcomingCharges(repository: fixture.recurringItems)
+            .execute(from: date(2026, 8, 13), calendar: calendar)
+        #expect(result.isEmpty)
     }
 
-    // MARK: - Empty repository
-
-    @Test("Empty repository returns empty result")
-    func emptyRepo() throws {
-        let fixture = try makeFixture()
-        let results = try fixture.useCase.execute(days: 7, from: today)
-        #expect(results.isEmpty)
+    @Test("Repository failure is propagated instead of becoming empty Upcoming")
+    func repositoryFailure() throws {
+        let today = try date(2026, 8, 13)
+        #expect(throws: FetchFailure.unavailable) {
+            try GetUpcomingCharges(repository: FailingRepository())
+                .execute(from: today, calendar: calendar)
+        }
     }
+}
+
+private enum FetchFailure: Error, Equatable {
+    case unavailable
+}
+
+@MainActor
+private final class FailingRepository: RecurringItemRepository {
+    func fetchAll() throws -> [RecurringItem] { throw FetchFailure.unavailable }
+    func fetchActive() throws -> [RecurringItem] { [] }
+    func fetchUpcoming(within days: Int, from date: Date) throws -> [RecurringItem] { [] }
+    func fetchByCategory(_ category: ItemCategory) throws -> [RecurringItem] { [] }
+    func fetch(id: UUID) throws -> RecurringItem? { nil }
+    func save(_ item: RecurringItem) throws {}
+    func update(_ item: RecurringItem) throws {}
+    func delete(id: UUID) throws {}
+    func saveAll(_ items: [RecurringItem]) throws {}
+    func deleteAll() throws {}
 }

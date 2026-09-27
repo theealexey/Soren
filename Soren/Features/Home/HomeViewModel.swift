@@ -1,11 +1,11 @@
 import Foundation
 
-typealias MonthlySubscriptionPlanCalculation = @Sendable (
+typealias CurrentMonthSnapshotCalculation = @Sendable (
     _ today: Date,
     _ calendar: Calendar,
     _ reportingCurrencyCode: String,
     _ exchangeRateSnapshot: ExchangeRateSnapshot?
-) async throws -> MonthlySubscriptionPlan?
+) async throws -> CurrentMonthSubscriptionPlanSnapshot
 
 typealias OverviewInsightCalculation = @Sendable (
     _ today: Date,
@@ -17,13 +17,15 @@ typealias OverviewInsightCalculation = @Sendable (
 // MARK: - Home View Model
 
 /// Produces one coherent production Overview snapshot from the current-month
-/// plan, selected insight, and nearest recurring charges.
+/// plan, selected insight, and nearest canonical scheduled charges.
 @MainActor @Observable
 final class HomeViewModel {
     private(set) var screenState: HomeScreenState
 
     var monthLabel: String { screenState.monthLabel }
     var monthlyPlan: MonthlyPlanHeroPresentation { screenState.monthlyPlan }
+    var monthSchedule: MonthSchedulePresentation? { screenState.monthSchedule }
+    var statusCounts: SubscriptionStatusCounts? { screenState.statusCounts }
     var overviewInsight: OverviewInsightPresentation? { screenState.overviewInsight }
     var upcoming: UpcomingChargesPresentation { screenState.upcoming }
     var isLoaded: Bool { screenState.isLoaded }
@@ -32,7 +34,7 @@ final class HomeViewModel {
     private let getUpcomingCharges: GetUpcomingCharges
     private let preferences: UserPreferencesRepository
     private let loadExchangeRateSnapshot: @Sendable () async throws -> ExchangeRateSnapshot
-    private let calculateMonthlyPlan: MonthlySubscriptionPlanCalculation
+    private let calculateCurrentMonth: CurrentMonthSnapshotCalculation
     private let calculateOverviewInsight: OverviewInsightCalculation
     private let now: @Sendable () -> Date
     private let calendar: Calendar
@@ -45,17 +47,17 @@ final class HomeViewModel {
         getUpcomingCharges: GetUpcomingCharges,
         preferences: UserPreferencesRepository,
         exchangeRateProvider: Provider,
-        calculateMonthlyPlan: @escaping MonthlySubscriptionPlanCalculation = { _, _, _, _ in nil },
+        calculateCurrentMonth: @escaping CurrentMonthSnapshotCalculation,
         calculateOverviewInsight: @escaping OverviewInsightCalculation = { _, _, _, _ in nil },
         now: @escaping @Sendable () -> Date = { .now },
-        calendar: Calendar = .current
+        calendar: Calendar
     ) {
         self.getUpcomingCharges = getUpcomingCharges
         self.preferences = preferences
         self.loadExchangeRateSnapshot = {
             try await exchangeRateProvider.latestSnapshot()
         }
-        self.calculateMonthlyPlan = calculateMonthlyPlan
+        self.calculateCurrentMonth = calculateCurrentMonth
         self.calculateOverviewInsight = calculateOverviewInsight
         self.now = now
         self.calendar = calendar
@@ -78,10 +80,10 @@ final class HomeViewModel {
         let reportingCurrencyCode = preferences.load().defaultCurrencyCode
 
         do {
-            let upcomingItems = try getUpcomingCharges
-                .execute(days: 30, from: startOfToday)
-                .filter { Self.isEligibleUpcoming($0, today: startOfToday, calendar: calendar) }
-            let visibleUpcoming = Array(upcomingItems.prefix(3))
+            let visibleUpcoming = try getUpcomingCharges.execute(
+                from: startOfToday,
+                calendar: calendar
+            )
 
             let localResult = await calculateDomainState(
                 today: today,
@@ -92,7 +94,7 @@ final class HomeViewModel {
             guard !Task.isCancelled, revision == loadRevision else { return }
             publish(
                 result: localResult,
-                upcomingItems: visibleUpcoming,
+                upcomingOccurrences: visibleUpcoming,
                 today: today
             )
 
@@ -101,7 +103,7 @@ final class HomeViewModel {
                     revision: revision,
                     today: today,
                     reportingCurrencyCode: reportingCurrencyCode,
-                    upcomingItems: visibleUpcoming
+                    upcomingOccurrences: visibleUpcoming
                 )
             }
 
@@ -116,6 +118,8 @@ final class HomeViewModel {
             screenState = HomeScreenState(
                 monthLabel: screenState.monthLabel,
                 monthlyPlan: screenState.monthlyPlan,
+                monthSchedule: screenState.monthSchedule,
+                statusCounts: screenState.statusCounts,
                 overviewInsight: screenState.overviewInsight,
                 upcoming: screenState.upcoming,
                 isLoaded: screenState.isLoaded,
@@ -129,8 +133,8 @@ final class HomeViewModel {
         reportingCurrencyCode: String,
         snapshot: ExchangeRateSnapshot?
     ) async -> DomainState {
-        async let monthlyPlanResult = optionalResult {
-            try await self.calculateMonthlyPlan(
+        async let currentMonthResult = optionalResult {
+            try await self.calculateCurrentMonth(
                 today,
                 self.calendar,
                 reportingCurrencyCode,
@@ -147,7 +151,7 @@ final class HomeViewModel {
         }
 
         return await DomainState(
-            monthlyPlan: monthlyPlanResult,
+            currentMonth: currentMonthResult,
             insight: insightResult
         )
     }
@@ -166,7 +170,7 @@ final class HomeViewModel {
         revision: Int,
         today: Date,
         reportingCurrencyCode: String,
-        upcomingItems: [RecurringItem]
+        upcomingOccurrences: [UpcomingScheduledCharge]
     ) async {
         do {
             let snapshot = try await loadExchangeRateSnapshot()
@@ -182,7 +186,7 @@ final class HomeViewModel {
             exchangeRateSnapshot = snapshot
             publish(
                 result: refreshedResult,
-                upcomingItems: upcomingItems,
+                upcomingOccurrences: upcomingOccurrences,
                 today: today
             )
         } catch is CancellationError {
@@ -194,20 +198,23 @@ final class HomeViewModel {
 
     private func publish(
         result: DomainState,
-        upcomingItems: [RecurringItem],
+        upcomingOccurrences: [UpcomingScheduledCharge],
         today: Date
     ) {
         screenState = HomeScreenState(
             monthLabel: Self.monthLabel(for: today, calendar: calendar),
             monthlyPlan: Self.monthlyPlanPresentation(
-                result.monthlyPlan
+                result.currentMonth?.plan
             ),
+            monthSchedule: result.currentMonth.flatMap {
+                Self.monthSchedulePresentation($0, today: today, calendar: calendar)
+            },
+            statusCounts: result.currentMonth?.statusCounts,
             overviewInsight: result.insight.map {
                 OverviewInsightPresentation.make(from: $0, today: today, calendar: calendar)
             },
             upcoming: upcomingPresentation(
-                items: upcomingItems,
-                today: today
+                occurrences: upcomingOccurrences
             ),
             isLoaded: true,
             hasError: false
@@ -217,7 +224,7 @@ final class HomeViewModel {
     // MARK: - FX Decision
 
     private func shouldRefreshExchangeRates(result: DomainState) -> Bool {
-        if result.monthlyPlan == nil { return true }
+        if result.currentMonth?.plan == nil { return true }
 
         switch result.insight {
         case let .denseWeek(denseWeek) where denseWeek.total == nil:
@@ -237,6 +244,8 @@ final class HomeViewModel {
         HomeScreenState(
             monthLabel: monthLabel(for: today, calendar: calendar),
             monthlyPlan: monthlyPlanPresentation(nil),
+            monthSchedule: nil,
+            statusCounts: nil,
             overviewInsight: nil,
             upcoming: UpcomingChargesPresentation(rows: []),
             isLoaded: false,
@@ -316,24 +325,17 @@ final class HomeViewModel {
     // MARK: - Upcoming Presentation
 
     private func upcomingPresentation(
-        items: [RecurringItem],
-        today: Date
+        occurrences: [UpcomingScheduledCharge]
     ) -> UpcomingChargesPresentation {
-        let startOfToday = calendar.startOfDay(for: today)
-        let rows = items.map { item in
+        let rows = occurrences.map { occurrence in
+            let item = occurrence.item
             let providerName = item.providerName.isEmpty ? item.title : item.providerName
-            let chargeDate = item.effectiveNextChargeDate(
-                relativeTo: startOfToday,
-                calendar: calendar
-            )
-            let amount = OverviewMoneyFormatter.string(
-                amount: item.amount,
-                currencyCode: item.currencyCode
-            )
-            let date = Self.formattedDate(chargeDate, calendar: calendar)
+            let amount = OverviewMoneyFormatter.string(occurrence.money)
+            let date = Self.formattedDate(occurrence.date, calendar: calendar)
 
             return UpcomingChargePresentation(
                 item: item,
+                scheduledDate: occurrence.date,
                 providerName: providerName,
                 amount: amount,
                 chargeDate: date,
@@ -371,21 +373,30 @@ final class HomeViewModel {
         return formatter.string(from: date)
     }
 
-    private static func isEligibleUpcoming(
-        _ item: RecurringItem,
+    private static func monthSchedulePresentation(
+        _ snapshot: CurrentMonthSubscriptionPlanSnapshot,
         today: Date,
         calendar: Calendar
-    ) -> Bool {
-        guard item.status.countsInTotals, item.archivedAt == nil else { return false }
-        guard !item.autoRenew else { return true }
-        guard let endDate = item.endDate else { return false }
-        return calendar.startOfDay(for: endDate) >= today
+    ) -> MonthSchedulePresentation? {
+        guard let days = calendar.range(of: .day, in: .month, for: today) else { return nil }
+        return MonthSchedulePresentation(
+            year: calendar.component(.year, from: today),
+            month: calendar.component(.month, from: today),
+            daysInMonth: days.count,
+            todayDay: calendar.component(.day, from: today),
+            occurrences: snapshot.scheduledCharges.map {
+                MonthSchedulePresentation.Occurrence(
+                    itemID: $0.itemID,
+                    day: calendar.component(.day, from: $0.date)
+                )
+            }
+        )
     }
 }
 
 private extension HomeViewModel {
     struct DomainState: Sendable {
-        let monthlyPlan: MonthlySubscriptionPlan?
+        let currentMonth: CurrentMonthSubscriptionPlanSnapshot?
         let insight: OverviewInsight?
     }
 }

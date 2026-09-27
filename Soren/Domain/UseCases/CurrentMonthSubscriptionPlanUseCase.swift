@@ -4,8 +4,8 @@ enum CurrentMonthSubscriptionPlanUseCaseError: Error, Equatable, Sendable {
     case invalidCalendarArithmetic
 }
 
-/// Projects every proven recurring charge occurrence in the current calendar
-/// month and aggregates it into one complete reporting-currency plan.
+/// Projects proven recurring charge occurrences in the current calendar month.
+/// The reporting-currency plan is present only when monetary truth is complete.
 ///
 /// Repository access crosses its existing `@MainActor` boundary once. Date
 /// projection and monetary aggregation remain actor-neutral Domain work.
@@ -33,7 +33,7 @@ where Repository: RecurringItemRepository, Repository: Sendable {
             calendar: calendar,
             reportingCurrencyCode: reportingCurrencyCode,
             exchangeRateSnapshot: exchangeRateSnapshot
-        )?.plan
+        ).plan
     }
 
     func executeSnapshot(
@@ -41,7 +41,7 @@ where Repository: RecurringItemRepository, Repository: Sendable {
         calendar: Calendar,
         reportingCurrencyCode: String,
         exchangeRateSnapshot: ExchangeRateSnapshot?
-    ) async throws -> CurrentMonthSubscriptionPlanSnapshot? {
+    ) async throws -> CurrentMonthSubscriptionPlanSnapshot {
         let fetchedItems = try await repository.fetchAll()
         let bounds = try DateBounds(today: today, calendar: calendar)
         let items = deduplicatedItems(fetchedItems)
@@ -49,6 +49,7 @@ where Repository: RecurringItemRepository, Repository: Sendable {
 
         var plannedProjections: [RecurringSpendProjection] = []
         var scheduledCharges: [ScheduledChargeOccurrence] = []
+        var isMonetarilyComplete = true
 
         for item in items {
             let projection: RecurringScheduleProjection
@@ -62,8 +63,8 @@ where Repository: RecurringItemRepository, Repository: Sendable {
             } catch RecurringScheduleProjectionError.invalidCalendarArithmetic {
                 throw CurrentMonthSubscriptionPlanUseCaseError.invalidCalendarArithmetic
             }
-            guard projection.monetaryCompleteness == .complete else {
-                return nil
+            if projection.monetaryCompleteness != .complete {
+                isMonetarilyComplete = false
             }
 
             for event in projection.events {
@@ -89,28 +90,33 @@ where Repository: RecurringItemRepository, Repository: Sendable {
             $0.date >= bounds.startOfToday
         }
 
-        guard let plannedTotal = completeTotal(
+        let plannedTotal = isMonetarilyComplete ? completeTotal(
             for: plannedProjections,
             reportingCurrencyCode: reportingCurrencyCode,
             exchangeRateSnapshot: exchangeRateSnapshot,
             range: bounds.monthRange
-        ),
-        let remainingTotal = completeTotal(
+        ) : nil
+        let remainingTotal = isMonetarilyComplete ? completeTotal(
             for: remainingProjections,
             reportingCurrencyCode: reportingCurrencyCode,
             exchangeRateSnapshot: exchangeRateSnapshot,
             range: bounds.remainingRange
-        ) else {
-            return nil
-        }
+        ) : nil
 
-        return CurrentMonthSubscriptionPlanSnapshot(
-            plan: MonthlySubscriptionPlan(
+        let plan: MonthlySubscriptionPlan?
+        if let plannedTotal, let remainingTotal {
+            plan = MonthlySubscriptionPlan(
                 plannedTotal: plannedTotal,
                 chargeCount: plannedProjections.count,
                 remainingTotal: remainingTotal,
                 remainingChargeCount: remainingProjections.count
-            ),
+            )
+        } else {
+            plan = nil
+        }
+
+        return CurrentMonthSubscriptionPlanSnapshot(
+            plan: plan,
             scheduledCharges: scheduledCharges,
             statusCounts: statusCounts(
                 for: items,

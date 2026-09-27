@@ -509,12 +509,12 @@ struct CurrentMonthSubscriptionPlanUseCaseTests {
         ]
         let snapshotRepository = await CurrentMonthPlanRepositoryStub(items: items)
         let snapshotUseCase = CurrentMonthSubscriptionPlanUseCase(repository: snapshotRepository)
-        let snapshot = try #require(await snapshotUseCase.executeSnapshot(
+        let snapshot = try await snapshotUseCase.executeSnapshot(
             today: today,
             calendar: calendar,
             reportingCurrencyCode: "RUB",
             exchangeRateSnapshot: nil
-        ))
+        )
 
         let planRepository = await CurrentMonthPlanRepositoryStub(items: items)
         let planUseCase = CurrentMonthSubscriptionPlanUseCase(repository: planRepository)
@@ -526,7 +526,7 @@ struct CurrentMonthSubscriptionPlanUseCaseTests {
         ))
 
         #expect(snapshot.plan == plan)
-        #expect(snapshot.scheduledCharges.count == snapshot.plan.chargeCount)
+        #expect(snapshot.scheduledCharges.count == snapshot.plan?.chargeCount)
         #expect(await snapshotRepository.fetchAllCallCount == 1)
         #expect(await planRepository.fetchAllCallCount == 1)
     }
@@ -548,7 +548,7 @@ struct CurrentMonthSubscriptionPlanUseCaseTests {
 
         #expect(snapshot.scheduledCharges.map(\.date) == expectedDates)
         #expect(snapshot.scheduledCharges.map(\.itemID) == Array(repeating: id(1), count: 5))
-        #expect(snapshot.scheduledCharges.count == snapshot.plan.chargeCount)
+        #expect(snapshot.scheduledCharges.count == snapshot.plan?.chargeCount)
     }
 
     @Test("Occurrences are ordered by date then UUID without merging a shared day")
@@ -582,7 +582,7 @@ struct CurrentMonthSubscriptionPlanUseCaseTests {
         #expect(snapshot.scheduledCharges == [
             ScheduledChargeOccurrence(itemID: id(1), date: date(2026, 8, 20, hour: 0))
         ])
-        #expect(snapshot.plan.chargeCount == 1)
+        #expect(snapshot.plan?.chargeCount == 1)
     }
 
     @Test(
@@ -666,8 +666,8 @@ struct CurrentMonthSubscriptionPlanUseCaseTests {
     func emptySnapshot() async throws {
         let snapshot = try #require(await executeSnapshot(items: []))
 
-        #expect(snapshot.plan.plannedTotal == (try Money(amount: 0, currencyCode: "RUB")))
-        #expect(snapshot.plan.chargeCount == 0)
+        #expect(snapshot.plan?.plannedTotal == (try Money(amount: 0, currencyCode: "RUB")))
+        #expect(snapshot.plan?.chargeCount == 0)
         #expect(snapshot.scheduledCharges.isEmpty)
         #expect(snapshot.statusCounts == SubscriptionStatusCounts(active: 0, trial: 0, paused: 0))
     }
@@ -700,6 +700,50 @@ struct CurrentMonthSubscriptionPlanUseCaseTests {
         ))
 
         #expect(snapshot.statusCounts == SubscriptionStatusCounts(active: 0, trial: 0, paused: 1))
+    }
+
+    @Test("Incomplete FX preserves canonical dates and lifecycle counts")
+    func incompleteFXSnapshot() async throws {
+        let items = [
+            item(id: 1, amount: 10, currencyCode: "USD", nextChargeDate: date(2026, 8, 20)),
+            item(id: 2, amount: 500, currencyCode: "RUB", nextChargeDate: date(2026, 8, 21)),
+            item(id: 3, status: .paused),
+        ]
+        let repository = await CurrentMonthPlanRepositoryStub(items: items)
+        let useCase = CurrentMonthSubscriptionPlanUseCase(repository: repository)
+        let result = try await useCase.executeSnapshot(
+            today: today,
+            calendar: calendar,
+            reportingCurrencyCode: "RUB",
+            exchangeRateSnapshot: nil
+        )
+
+        #expect(result.plan == nil)
+        #expect(result.scheduledCharges == [
+            ScheduledChargeOccurrence(itemID: id(1), date: date(2026, 8, 20, hour: 0)),
+            ScheduledChargeOccurrence(itemID: id(2), date: date(2026, 8, 21, hour: 0)),
+        ])
+        #expect(result.statusCounts == SubscriptionStatusCounts(active: 2, trial: 0, paused: 1))
+        #expect(await repository.fetchAllCallCount == 1)
+        #expect(try await useCase.execute(
+            today: today,
+            calendar: calendar,
+            reportingCurrencyCode: "RUB",
+            exchangeRateSnapshot: nil
+        ) == nil)
+    }
+
+    @Test("Unavailable item money does not erase another canonical occurrence")
+    func unavailableItemPreservesKnownSchedule() async throws {
+        let snapshot = try #require(await executeSnapshot(items: [
+            item(id: 1, amount: 0),
+            item(id: 2, amount: 100, nextChargeDate: date(2026, 8, 25)),
+        ]))
+        #expect(snapshot.plan == nil)
+        #expect(snapshot.scheduledCharges == [
+            ScheduledChargeOccurrence(itemID: id(2), date: date(2026, 8, 25, hour: 0))
+        ])
+        #expect(snapshot.statusCounts == SubscriptionStatusCounts(active: 2, trial: 0, paused: 0))
     }
 
     @Test("Repository failures propagate from the snapshot API")

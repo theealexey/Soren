@@ -10,12 +10,12 @@ extension AppContainer {
         let planUseCase = CurrentMonthSubscriptionPlanUseCase(repository: repositoryBridge)
         let insightUseCase = OverviewInsightUseCase(repository: repositoryBridge)
 
-        let planCalculation: MonthlySubscriptionPlanCalculation = {
+        let planCalculation: CurrentMonthSnapshotCalculation = {
             today,
             calendar,
             reportingCurrencyCode,
             exchangeRateSnapshot in
-            try await planUseCase.execute(
+            try await planUseCase.executeSnapshot(
                 today: today,
                 calendar: calendar,
                 reportingCurrencyCode: reportingCurrencyCode,
@@ -42,17 +42,20 @@ extension AppContainer {
         let now: @Sendable () -> Date = {
             runtimeScenario?.referenceDate ?? .now
         }
-        let calendar = runtimeScenario?.calendar ?? .current
+        var productionCalendar = Calendar(identifier: .gregorian)
+        productionCalendar.timeZone = .autoupdatingCurrent
+        let calendar = runtimeScenario?.calendar ?? productionCalendar
         #else
         let now: @Sendable () -> Date = { .now }
-        let calendar = Calendar.current
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .autoupdatingCurrent
         #endif
 
         return HomeViewModel(
             getUpcomingCharges: GetUpcomingCharges(repository: repositories.recurringItems),
             preferences: preferences,
             exchangeRateProvider: exchangeRateProvider,
-            calculateMonthlyPlan: planCalculation,
+            calculateCurrentMonth: planCalculation,
             calculateOverviewInsight: insightCalculation,
             now: now,
             calendar: calendar
