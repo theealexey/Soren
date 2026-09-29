@@ -396,24 +396,26 @@ extension ProviderIcon {
     enum Size: Hashable {
         case small   // 28pt — compact lists
         case medium  // 40pt — standard list rows
+        case overview // 44pt — Overview upcoming rows only
         case large   // 56pt — detail screen hero, catalog cards
 
         var frame: CGFloat {
-            switch self { case .small: 28; case .medium: 40; case .large: 56 }
+            switch self { case .small: 28; case .medium: 40; case .overview: 44; case .large: 56 }
         }
 
         var iconSize: CGFloat {
-            switch self { case .small: 12; case .medium: 16; case .large: 22 }
+            switch self { case .small: 12; case .medium: 16; case .overview: 18; case .large: 22 }
         }
 
         var letterSize: CGFloat {
-            switch self { case .small: 13; case .medium: 17; case .large: 24 }
+            switch self { case .small: 13; case .medium: 17; case .overview: 19; case .large: 24 }
         }
 
         var radius: CGFloat {
             switch self {
             case .small:  CornerRadius.small
             case .medium: CornerRadius.medium
+            case .overview: 12
             case .large:  CornerRadius.medium
             }
         }

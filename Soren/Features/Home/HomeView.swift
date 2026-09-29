@@ -51,71 +51,48 @@ struct HomeView: View {
 
     private func overview(_ viewModel: HomeViewModel) -> some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                OverviewHeader(
-                    monthLabel: viewModel.monthLabel,
-                    addAction: addSubscription
-                )
-                .padding(.bottom, 16)
-
-                MonthlyPlanHeroView(presentation: viewModel.monthlyPlan)
-
-                if let insight = visibleAttention(from: viewModel.overviewInsight) {
-                    OverviewInsightStageView(presentation: insight)
-                        .padding(.top, 24)
+            if #available(iOS 26, *) {
+                GlassEffectContainer(spacing: 0) {
+                    overviewZones(viewModel)
                 }
-
-                if !viewModel.upcoming.rows.isEmpty {
-                    UpcomingChargesSectionView(
-                        presentation: viewModel.upcoming,
-                        onSelectItem: { navigateToItem($0) }
-                    )
-                    .padding(
-                        .top,
-                        visibleAttention(from: viewModel.overviewInsight) == nil ? 30 : 26
-                    )
-                }
+            } else {
+                overviewZones(viewModel)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
-            .padding(.bottom, 24)
         }
         .defaultScrollAnchor(.top)
         .scrollIndicators(.hidden)
-        .scrollClipDisabled(false)
-        .clipped()
     }
 
-    private func visibleAttention(
-        from presentation: OverviewInsightPresentation?
-    ) -> OverviewInsightPresentation? {
-        guard let presentation else { return nil }
-        switch presentation.kind {
-        case .trialAttention, .sameDayAttention:
-            return presentation
-        case .annualScale, .denseWeek:
-            return nil
+    private func overviewZones(_ viewModel: HomeViewModel) -> some View {
+        LazyVStack(alignment: .leading, spacing: 0) {
+            OverviewHeader(monthLabel: viewModel.monthLabel, addAction: addSubscription)
+                .padding(.bottom, 16)
+
+            MonthlyPlanHeroView(
+                presentation: viewModel.monthlyPlan,
+                monthSchedule: viewModel.monthSchedule
+            )
+
+            UpcomingChargesSectionView(
+                presentation: viewModel.upcoming,
+                onSelectItem: { navigateToItem($0) }
+            )
+            .padding(.top, 24)
+
+            OverviewStatusTiles(counts: viewModel.statusCounts)
+                .padding(.top, 16)
         }
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, 24)
     }
 }
 
 // MARK: - Canvas and Header
 
 private struct SoftClubOverviewCanvas: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     var body: some View {
         SoftClubColor.canvas
-            .overlay {
-                LinearGradient(
-                    colors: [
-                        Color.clear,
-                        SoftClubColor.secondaryCanvas.opacity(colorScheme == .dark ? 0.30 : 0.27),
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            }
     }
 }
 
@@ -126,13 +103,16 @@ private struct OverviewHeader: View {
     var body: some View {
         HStack(alignment: .center, spacing: 16) {
             Text(verbatim: monthLabel)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(SoftClubColor.textSecondary)
+                .font(.system(size: 28, weight: .semibold))
+                .foregroundStyle(SoftClubColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
 
             Spacer(minLength: 12)
 
             AddSubscriptionGlassControl(action: addAction)
         }
+        .frame(minHeight: 48)
     }
 }
 
@@ -145,9 +125,9 @@ private struct AddSubscriptionGlassControl: View {
             action()
         } label: {
             Image(systemName: "plus")
-                .font(.system(size: 20, weight: .medium))
+                .font(.system(size: 22, weight: .medium))
                 .foregroundStyle(SoftClubColor.textPrimary)
-                .frame(width: 46, height: 46)
+                .frame(width: 48, height: 48)
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -159,59 +139,56 @@ private struct AddSubscriptionGlassControl: View {
 // MARK: - Monthly Plan Hero
 
 private struct MonthlyPlanHeroView: View {
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @ScaledMetric(relativeTo: .largeTitle) private var plannedAmountSize: CGFloat = 42
+    @ScaledMetric(relativeTo: .largeTitle) private var plannedAmountSize: CGFloat = 46
+    @ScaledMetric(relativeTo: .subheadline) private var labelSize: CGFloat = 15
+    @ScaledMetric(relativeTo: .body) private var countSize: CGFloat = 16
 
     let presentation: MonthlyPlanHeroPresentation
+    let monthSchedule: MonthSchedulePresentation?
 
     var body: some View {
-        Group {
+        VStack(alignment: .leading, spacing: 0) {
             switch presentation.primaryStyle {
             case .financialValue:
                 financialContent
-                    .padding(.horizontal, 22)
-                    .padding(.vertical, 20)
             case .statement:
                 statementContent
-                    .padding(22)
+            }
+
+            Spacer(minLength: 20)
+
+            if let monthSchedule {
+                MonthScheduleRailView(presentation: monthSchedule)
             }
         }
+        .frame(minHeight: 170, alignment: .topLeading)
+        .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .modifier(OverviewAcrylicSurface(role: .hero))
-        .accessibilityElement(children: .combine)
+        .modifier(OverviewGlassSurface(cornerRadius: 28, opaqueColor: SoftClubColor.elevatedSurface))
     }
 
     private var financialContent: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(verbatim: presentation.title)
-                .font(.caption.weight(.medium))
+                .font(.system(size: labelSize, weight: .semibold))
                 .foregroundStyle(SoftClubColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text(verbatim: presentation.primary)
-                .font(plannedAmountFont)
+                .font(.system(size: plannedAmountSize, weight: .regular))
                 .monospacedDigit()
                 .foregroundStyle(SoftClubColor.textPrimary)
-                .padding(.top, 10)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 8)
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text(verbatim: presentation.leadingSupport)
-                    .font(.footnote.weight(.medium))
-                    .monospacedDigit()
-                    .foregroundStyle(SoftClubColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                if let label = presentation.trailingSupportLabel,
-                   let value = presentation.trailingSupportValue {
-                    Text(verbatim: "\(label) \(value)")
-                        .font(.footnote.weight(.medium))
-                        .monospacedDigit()
-                        .foregroundStyle(SoftClubColor.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .padding(.top, 16)
+            Text(verbatim: presentation.leadingSupport)
+                .font(.system(size: countSize))
+                .monospacedDigit()
+                .foregroundStyle(SoftClubColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 8)
         }
+        .accessibilityElement(children: .combine)
     }
 
     private var statementContent: some View {
@@ -229,192 +206,114 @@ private struct MonthlyPlanHeroView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var plannedAmountFont: Font {
-        dynamicTypeSize.isAccessibilitySize
-            ? .largeTitle.weight(.regular)
-            : .system(size: plannedAmountSize, weight: .regular)
+        .accessibilityElement(children: .combine)
     }
 }
 
-// MARK: - Acrylic Surfaces
+// MARK: - Passive Overview Surfaces
 
-enum OverviewAcrylicSurfaceRole {
-    case hero
-    case upcoming
-
-    var cornerRadius: CGFloat {
-        switch self {
-        case .hero: 22
-        case .upcoming: 20
-        }
-    }
-}
-
-struct OverviewAcrylicSurface: ViewModifier {
+struct OverviewGlassSurface: ViewModifier {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
 
-    let role: OverviewAcrylicSurfaceRole
+    let cornerRadius: CGFloat
+    let opaqueColor: Color
 
+    @ViewBuilder
     func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: role.cornerRadius, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
 
-        content
-            .background {
-                ZStack {
-                    if reduceTransparency {
-                        shape.fill(opaqueFill)
-                    } else {
-                        shape
-                            .fill(.ultraThinMaterial)
-                            .opacity(materialOpacity)
-                        shape.fill(materialFill)
+        if reduceTransparency || colorSchemeContrast == .increased {
+            content
+                .background(opaqueColor, in: shape)
+                .overlay { shape.strokeBorder(SoftClubColor.subtleBorder, lineWidth: 1) }
+        } else if #available(iOS 26, *) {
+            content
+                .glassEffect(
+                    colorScheme == .light
+                        ? .regular.tint(SoftClubColor.secondaryCanvas)
+                        : .regular,
+                    in: .rect(cornerRadius: cornerRadius)
+                )
+                .overlay { shape.strokeBorder(SoftClubColor.subtleBorder, lineWidth: 0.5) }
+        } else {
+            content
+                .background(.thinMaterial, in: shape)
+                .overlay { shape.strokeBorder(SoftClubColor.subtleBorder, lineWidth: 0.5) }
+        }
+    }
+}
 
-                        if role == .hero {
-                            shape.fill(monthlyTemperature)
-                            shape
-                                .fill(reflectedLight)
-                                .blur(radius: colorScheme == .dark ? 11 : 8)
-                                .clipShape(shape)
-                        }
-                    }
+// MARK: - Subscription State
 
-                    shape.strokeBorder(polishedEdge, lineWidth: edgeWidth)
-                }
+private struct OverviewStatusTiles: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    let counts: SubscriptionStatusCounts?
+
+    var body: some View {
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(spacing: 12) { tiles }
+            } else {
+                HStack(spacing: 12) { tiles }
             }
-            .shadow(color: shadowColor, radius: shadowRadius, y: shadowOffset)
+        }
+        .frame(maxWidth: .infinity)
     }
 
-    private var materialFill: Color {
-        switch (role, colorScheme) {
-        case (.hero, .light): SoftClubColor.elevatedSurface.opacity(0.68)
-        case (.hero, .dark): SoftClubColor.elevatedSurface.opacity(0.86)
-        case (.upcoming, .light): SoftClubColor.secondaryCanvas.opacity(0.48)
-        case (.upcoming, .dark): SoftClubColor.surface.opacity(0.56)
-        @unknown default: SoftClubColor.surface.opacity(0.82)
-        }
-    }
-
-    private var materialOpacity: Double {
-        switch (role, colorScheme) {
-        case (.hero, _): 1
-        case (.upcoming, .light): 0.68
-        case (.upcoming, .dark): 0.58
-        @unknown default: 1
-        }
-    }
-
-    private var opaqueFill: Color {
-        switch role {
-        case .hero: SoftClubColor.elevatedSurface
-        case .upcoming: SoftClubColor.surface
-        }
-    }
-
-    private var monthlyTemperature: LinearGradient {
-        if colorScheme == .dark {
-            return LinearGradient(
-                colors: [
-                    SoftClubColor.secondaryCanvas.opacity(0.20),
-                    SoftClubColor.secondaryCanvas.opacity(0.20),
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        }
-
-        return LinearGradient(
-            stops: [
-                .init(color: .white.opacity(0.22), location: 0),
-                .init(color: SoftClubColor.glassControlSurface.opacity(0.12), location: 0.28),
-                .init(color: SoftClubColor.secondaryCanvas.opacity(0.26), location: 0.64),
-                .init(color: SoftClubColor.mutedSecondary.opacity(0.10), location: 1),
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
+    @ViewBuilder
+    private var tiles: some View {
+        OverviewStatusTile(label: String(localized: "Активные"), count: counts?.active)
+        OverviewStatusTile(label: String(localized: "Пробные"), count: counts?.trial)
+        OverviewStatusTile(
+            label: String(localized: "На паузе"),
+            count: counts?.paused,
+            hasRedEdge: true
         )
     }
+}
 
-    private var reflectedLight: LinearGradient {
-        LinearGradient(
-            stops: [
-                .init(
-                    color: colorScheme == .dark
-                        ? .clear
-                        : SoftClubColor.mutedSecondary.opacity(0.08),
-                    location: 0
-                ),
-                .init(color: .white.opacity(colorScheme == .dark ? 0.04 : 0.14), location: 0.22),
-                .init(
-                    color: SoftClubColor.glassControlSurface.opacity(colorScheme == .dark ? 0.18 : 0.30),
-                    location: 0.54
-                ),
-                .init(color: .white.opacity(colorScheme == .dark ? 0.06 : 0.14), location: 0.80),
-                .init(color: .clear, location: 1),
-            ],
-            startPoint: .bottomLeading,
-            endPoint: .topTrailing
+private struct OverviewStatusTile: View {
+    @ScaledMetric(relativeTo: .subheadline) private var labelSize: CGFloat = 14
+    @ScaledMetric(relativeTo: .title) private var countSize: CGFloat = 30
+
+    let label: String
+    let count: Int?
+    var hasRedEdge = false
+
+    var body: some View {
+        ZStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(verbatim: label)
+                    .font(.system(size: labelSize))
+                    .foregroundStyle(SoftClubColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, minHeight: 34, alignment: .topLeading)
+
+                Text(verbatim: count.map { $0.formatted() } ?? "—")
+                    .font(.system(size: countSize, weight: .regular))
+                    .monospacedDigit()
+                    .foregroundStyle(SoftClubColor.textPrimary)
+            }
+
+            if hasRedEdge {
+                RoundedRectangle(cornerRadius: 1)
+                    .fill(SoftClubColor.signatureRed)
+                    .frame(width: 2, height: 44)
+                    .offset(x: -8)
+                    .accessibilityHidden(true)
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
+        .padding(16)
+        .modifier(OverviewGlassSurface(cornerRadius: 20, opaqueColor: SoftClubColor.surface))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            count.map { "\(label), \($0.formatted())" }
+                ?? "\(label), \(String(localized: "Нет данных"))"
         )
-    }
-
-    private var polishedEdge: LinearGradient {
-        LinearGradient(
-            stops: [
-                .init(color: .white.opacity(colorScheme == .dark ? 0.22 : 0.76), location: 0),
-                .init(color: .white.opacity(colorScheme == .dark ? 0.07 : 0.24), location: 0.27),
-                .init(color: .clear, location: 0.58),
-                .init(
-                    color: SoftClubColor.mutedSecondary.opacity(colorScheme == .dark ? 0.13 : 0.22),
-                    location: 1
-                ),
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-
-    private var edgeWidth: CGFloat {
-        guard colorSchemeContrast != .increased else { return 1 }
-
-        switch (role, colorScheme) {
-        case (.hero, .light): return 0.78
-        case (.hero, .dark): return 0.65
-        case (.upcoming, .light): return 0.48
-        case (.upcoming, .dark): return 0.38
-        @unknown default: return 0.65
-        }
-    }
-
-    private var shadowColor: Color {
-        switch (role, colorScheme) {
-        case (.hero, .light): .black.opacity(0.032)
-        case (.hero, .dark): .black.opacity(0.24)
-        case (.upcoming, .light): .black.opacity(0.03)
-        case (.upcoming, .dark): .black.opacity(0.10)
-        @unknown default: .clear
-        }
-    }
-
-    private var shadowRadius: CGFloat {
-        switch (role, colorScheme) {
-        case (.hero, .light): 11
-        case (.hero, .dark): 16
-        case (.upcoming, .light): 7
-        case (.upcoming, .dark): 8
-        @unknown default: 8
-        }
-    }
-
-    private var shadowOffset: CGFloat {
-        switch (role, colorScheme) {
-        case (.hero, .light): 4
-        case (.hero, .dark): 8
-        case (.upcoming, _): 3
-        @unknown default: 3
-        }
     }
 }
 

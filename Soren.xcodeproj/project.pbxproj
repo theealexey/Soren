@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A103A103A103A103A103A101 /* MonthScheduleRailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A103A103A103A103A103A102 /* MonthScheduleRailView.swift */; };
+		A103A103A103A103A103A103 /* MonthScheduleRailLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A103A103A103A103A103A104 /* MonthScheduleRailLayoutTests.swift */; };
 		0050A4D1600A744F59A20613 /* ItemStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = E95E33778D21F29F937EC9AC /* ItemStatus.swift */; };
 		0304D391A4D32450161A19AD /* AppThemeModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4945A41473DF1A051717D89B /* AppThemeModifier.swift */; };
 		03FEF1178F04115DBF67328E /* NotificationReliabilityTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D69F1AF1DE5E4A45AF2AB5F /* NotificationReliabilityTestSupport.swift */; };
@@ -258,6 +260,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A103A103A103A103A103A102 /* MonthScheduleRailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthScheduleRailView.swift; sourceTree = "<group>"; };
+		A103A103A103A103A103A104 /* MonthScheduleRailLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthScheduleRailLayoutTests.swift; sourceTree = "<group>"; };
 		00327FFEEF7A9E012FB10737 /* InMemoryProviderCatalogRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InMemoryProviderCatalogRepository.swift; sourceTree = "<group>"; };
 		00642B8A92839F9F4F88D149 /* YandexProviderIdentityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YandexProviderIdentityTests.swift; sourceTree = "<group>"; };
 		00805B3E1165471E3DBCAA9B /* AppContainer+LibraryFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppContainer+LibraryFactory.swift"; sourceTree = "<group>"; };
@@ -720,6 +724,7 @@
 		480403287A59878737DC097A /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				A103A103A103A103A103A102 /* MonthScheduleRailView.swift */,
 				D2B100000000000000000003 /* OverviewInsightStageView.swift */,
 				537D798922991ABAADD19C84 /* UpcomingChargesSectionView.swift */,
 			);
@@ -896,6 +901,7 @@
 				042695C7057463B3D9AB304B /* HomeViewModelTests.swift */,
 				205BD1F1537AB8F4846E0B74 /* ItemDetailsEditFormTests.swift */,
 				73E70FF01D62E8695DF85DEF /* LibrarySearchDebounceTests.swift */,
+				A103A103A103A103A103A104 /* MonthScheduleRailLayoutTests.swift */,
 				AF7BD15F0BA562AB78DC878E /* LibraryTotalTests.swift */,
 				8CEEF7B37513315DE9DE3C6C /* NextChargeDateSuggestionTests.swift */,
 				71B630834E09F48BCE08F7A5 /* NotificationDiagnosticsTests.swift */,
@@ -1593,6 +1599,7 @@
 				80A081FE42E035CA4D9737DF /* TrialReminderOption.swift in Sources */,
 				E01CF41ECC10C2676A49E5E3 /* Typography.swift in Sources */,
 				46F810DD72F4B9AA37C11574 /* UpcomingChargesSectionView.swift in Sources */,
+				A103A103A103A103A103A101 /* MonthScheduleRailView.swift in Sources */,
 				7DD6FE8A922F18C39103772D /* UpdateRecurringItem.swift in Sources */,
 				7FF0A808F18C22F63634C8FE /* UsageStatus+Display.swift in Sources */,
 				3E2C15DCA2F42CC6D125237B /* UsageStatus.swift in Sources */,
@@ -1638,6 +1645,7 @@
 				7DFA4AE84163C49E5C7DBD16 /* GetUpcomingChargesTests.swift in Sources */,
 				5B2C886477C72CC6E265077D /* HomeCurrencyAggregationTests.swift in Sources */,
 				54FCBC3693348EB5F7A80EE1 /* HomeViewModelTests.swift in Sources */,
+				A103A103A103A103A103A103 /* MonthScheduleRailLayoutTests.swift in Sources */,
 				FA9135CE43C789E1B16B94B3 /* InsightCardTests.swift in Sources */,
 				5A9C241C98928DCC661CE501 /* ItemDetailsEditFormTests.swift in Sources */,
 				D620D89ECDCC308483F2B2E9 /* LibrarySearchDebounceTests.swift in Sources */,

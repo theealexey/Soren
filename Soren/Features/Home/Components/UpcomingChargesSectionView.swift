@@ -5,9 +5,9 @@ struct UpcomingChargesSectionView: View {
     let onSelectItem: (RecurringItem) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
             Text(String(localized: "Ближайшие списания"))
-                .font(.subheadline.weight(.semibold))
+                .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(SoftClubColor.textPrimary)
                 .accessibilityAddTraits(.isHeader)
 
@@ -17,31 +17,42 @@ struct UpcomingChargesSectionView: View {
 
     private var rows: some View {
         VStack(spacing: 0) {
-            ForEach(Array(presentation.rows.enumerated()), id: \.element.id) { index, row in
-                Button {
-                    onSelectItem(row.item)
-                } label: {
-                    UpcomingChargeRow(presentation: row)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
+            if presentation.rows.isEmpty {
+                Text(String(localized: "Нет ближайших списаний"))
+                    .font(.subheadline)
+                    .foregroundStyle(SoftClubColor.textSecondary)
+                    .frame(maxWidth: .infinity, minHeight: 68, alignment: .leading)
+                    .padding(.horizontal, 16)
+            } else {
+                ForEach(Array(presentation.rows.enumerated()), id: \.element.id) { index, row in
+                    Button {
+                        onSelectItem(row.item)
+                    } label: {
+                        UpcomingChargeRow(presentation: row)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
 
-                if index < presentation.rows.count - 1 {
-                    Rectangle()
-                        .fill(SoftClubColor.subtleSeparator.opacity(0.68))
-                        .frame(height: 0.5)
-                        .padding(.leading, 68)
-                        .padding(.trailing, 16)
+                    if index < presentation.rows.count - 1 {
+                        Rectangle()
+                            .fill(SoftClubColor.subtleSeparator)
+                            .frame(height: 0.5)
+                            .padding(.leading, 74)
+                            .padding(.trailing, 16)
+                    }
                 }
             }
         }
-        .modifier(OverviewAcrylicSurface(role: .upcoming))
+        .modifier(OverviewGlassSurface(cornerRadius: 24, opaqueColor: SoftClubColor.surface))
     }
 }
 
 private struct UpcomingChargeRow: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.colorScheme) private var colorScheme
+    @ScaledMetric(relativeTo: .body) private var titleSize: CGFloat = 17
+    @ScaledMetric(relativeTo: .subheadline) private var dateSize: CGFloat = 15
+    @ScaledMetric(relativeTo: .body) private var amountSize: CGFloat = 17
 
     let presentation: UpcomingChargePresentation
 
@@ -55,27 +66,24 @@ private struct UpcomingChargeRow: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 14)
+        .padding(.horizontal, 16)
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(presentation.accessibilityLabel)
     }
 
     private var normalLayout: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .center, spacing: 14) {
             artwork
-                .padding(.top, 1)
             providerIdentity
-
             amount
-                .padding(.top, 1)
         }
     }
 
     private var accessibilityLayout: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .top, spacing: 14) {
                 artwork
-                    .padding(.top, 1)
                 providerIdentity
             }
 
@@ -86,26 +94,26 @@ private struct UpcomingChargeRow: View {
     @ViewBuilder
     private var artwork: some View {
         if let provider = presentation.item.providerTemplate {
-            ProviderIcon(provider: provider, size: .medium)
+            ProviderIcon(provider: provider, size: .overview)
                 .environment(
                     \.colorScheme,
                     presentation.item.providerID == "github_copilot" ? .light : colorScheme
                 )
         } else {
-            ProviderIcon(category: presentation.item.category, size: .medium)
+            ProviderIcon(category: presentation.item.category, size: .overview)
         }
     }
 
     private var providerIdentity: some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(verbatim: presentation.providerName)
-                .font(.body.weight(.medium))
+                .font(.system(size: titleSize, weight: .medium))
                 .foregroundStyle(SoftClubColor.textPrimary)
                 .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text(verbatim: presentation.chargeDate)
-                .font(.footnote)
+                .font(.system(size: dateSize))
                 .foregroundStyle(SoftClubColor.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -113,7 +121,7 @@ private struct UpcomingChargeRow: View {
 
     private var amount: some View {
         Text(verbatim: presentation.amount)
-            .font(.body.weight(.medium))
+            .font(.system(size: amountSize, weight: .medium))
             .monospacedDigit()
             .foregroundStyle(SoftClubColor.textPrimary)
             .fixedSize(horizontal: true, vertical: false)
