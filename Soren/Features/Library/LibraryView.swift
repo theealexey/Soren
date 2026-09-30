@@ -8,6 +8,9 @@ struct LibraryView: View {
     @Environment(\.addSubscriptionAction) private var addSubscription
     @Environment(\.navigateToItem) private var navigateToItem
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
+    @ScaledMetric(relativeTo: .title2) private var titleSize: CGFloat = 28
     @State private var viewModel: LibraryViewModel?
     @State private var pendingDeleteItem: RecurringItem?
 
@@ -20,19 +23,9 @@ struct LibraryView: View {
             }
         }
         .background(SoftClubColor.canvas.ignoresSafeArea())
-        .navigationTitle(String(localized: "Подписки"))
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.hidden, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    addSubscription()
-                } label: {
-                    Image(systemName: "plus")
-                }
-                .accessibilityLabel(String(localized: "Добавить подписку"))
-            }
-        }
+        .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
+        .toolbar { libraryToolbar }
         .tint(SoftClubColor.textPrimary)
         .task {
             guard viewModel == nil else { return }
@@ -85,6 +78,46 @@ struct LibraryView: View {
         }
     }
 
+    // MARK: - Root Header
+
+    @ToolbarContentBuilder
+    private var libraryToolbar: some ToolbarContent {
+        if #available(iOS 26, *) {
+            ToolbarItem(placement: .topBarLeading) { rootTitle }
+                .sharedBackgroundVisibility(.hidden)
+            ToolbarItem(placement: .topBarTrailing) { addButton }
+                .sharedBackgroundVisibility(.hidden)
+        } else {
+            ToolbarItem(placement: .topBarLeading) { rootTitle }
+            ToolbarItem(placement: .topBarTrailing) { addButton }
+        }
+    }
+
+    private var rootTitle: some View {
+        Text("Подписки")
+            .font(.system(size: titleSize, weight: .semibold))
+            .foregroundStyle(SoftClubColor.textPrimary)
+            .fixedSize(horizontal: true, vertical: false)
+            .frame(minHeight: 48, alignment: .leading)
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    private var addButton: some View {
+        Button {
+            HapticEngine.selection()
+            addSubscription()
+        } label: {
+            Label("Добавить подписку", systemImage: "plus")
+                .labelStyle(.iconOnly)
+                .font(.system(size: 22, weight: .medium))
+                .foregroundStyle(SoftClubColor.textPrimary)
+                .frame(width: 48, height: 48)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .softClubInteractiveGlass(in: Circle())
+    }
+
     // MARK: - Content
 
     @ViewBuilder
@@ -106,10 +139,11 @@ struct LibraryView: View {
         }
     }
 
+    @ViewBuilder
     private func loadedLibrary(_ vm: LibraryViewModel) -> some View {
         @Bindable var vm = vm
 
-        return Group {
+        let content = Group {
             if vm.allItems.isEmpty {
                 emptyLibrary
             } else {
@@ -118,9 +152,15 @@ struct LibraryView: View {
         }
         .searchable(
             text: $vm.searchText,
-            placement: .navigationBarDrawer(displayMode: .automatic),
+            placement: .navigationBarDrawer(displayMode: .always),
             prompt: Text("Поиск подписок")
         )
+
+        if #available(iOS 26, *) {
+            content.searchToolbarBehavior(.minimize)
+        } else {
+            content
+        }
     }
 
     private func populatedLibrary(_ vm: LibraryViewModel) -> some View {
@@ -152,6 +192,7 @@ struct LibraryView: View {
         .listStyle(.plain)
         .listSectionSpacing(.compact)
         .contentMargins(.top, 0, for: .scrollContent)
+        .contentMargins(.bottom, 24, for: .scrollContent)
         .scrollDismissesKeyboard(.immediately)
         .scrollContentBackground(.hidden)
         .background(SoftClubColor.canvas)
@@ -165,13 +206,12 @@ struct LibraryView: View {
             collectionControls(vm)
             summary(vm)
         }
-        .padding(.top, 8)
-        .padding(.bottom, 12)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
         .overlay(alignment: .bottom) {
             SoftClubColor.subtleSeparator
-                .opacity(0.55)
-                .frame(height: 0.5)
+                .frame(height: colorSchemeContrast == .increased ? 1 : 0.5)
         }
     }
 
@@ -200,9 +240,9 @@ struct LibraryView: View {
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
             .listRowInsets(EdgeInsets(
-                top: 8,
+                top: 12,
                 leading: 20,
-                bottom: 4,
+                bottom: 6,
                 trailing: 20
             ))
     }
@@ -228,9 +268,8 @@ struct LibraryView: View {
         .overlay(alignment: .bottom) {
             if showsSeparator {
                 SoftClubColor.subtleSeparator
-                    .opacity(0.55)
-                    .frame(height: 0.5)
-                    .padding(.leading, SorenListRow.dividerInset)
+                    .frame(height: colorSchemeContrast == .increased ? 1 : 0.5)
+                    .padding(.leading, LibrarySubscriptionRow.textInset)
             }
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -247,7 +286,7 @@ struct LibraryView: View {
     @ViewBuilder
     private func collectionControls(_ vm: LibraryViewModel) -> some View {
         if #available(iOS 26, *) {
-            GlassEffectContainer(spacing: 4) {
+            GlassEffectContainer(spacing: 8) {
                 collectionControlLayout(vm)
             }
         } else {
@@ -275,7 +314,7 @@ struct LibraryView: View {
         Menu {
             ForEach(LibraryViewModel.StatusFilter.allCases) { filter in
                 Button {
-                    withAnimation(MotionTokens.snappy) {
+                    withAnimation(reduceMotion ? nil : MotionTokens.snappy) {
                         vm.activeFilter = filter
                     }
                     HapticEngine.selection()
@@ -298,11 +337,13 @@ struct LibraryView: View {
             .font(.subheadline.weight(.medium))
             .foregroundStyle(SoftClubColor.textSecondary)
             .padding(.horizontal, 12)
-            .frame(minHeight: 36)
-            .contentShape(.capsule)
+            .padding(.vertical, 4)
+            .frame(minHeight: 44)
+            .fixedSize(horizontal: false, vertical: true)
+            .contentShape(.rect(cornerRadius: 14))
         }
         .buttonStyle(.plain)
-        .softClubInteractiveGlass(in: Capsule())
+        .softClubInteractiveGlass(in: RoundedRectangle(cornerRadius: 14))
         .accessibilityLabel(String(localized: "Фильтр"))
         .accessibilityValue(vm.activeFilter.title)
     }
@@ -311,7 +352,7 @@ struct LibraryView: View {
         Menu {
             ForEach(LibraryViewModel.SortOrder.allCases) { order in
                 Button {
-                    withAnimation(MotionTokens.smooth) {
+                    withAnimation(reduceMotion ? nil : MotionTokens.smooth) {
                         vm.sortOrder = order
                     }
                     HapticEngine.selection()
@@ -334,11 +375,13 @@ struct LibraryView: View {
             .font(.subheadline.weight(.medium))
             .foregroundStyle(SoftClubColor.textSecondary)
             .padding(.horizontal, 12)
-            .frame(minHeight: 36)
-            .contentShape(.capsule)
+            .padding(.vertical, 4)
+            .frame(minHeight: 44)
+            .fixedSize(horizontal: false, vertical: true)
+            .contentShape(.rect(cornerRadius: 14))
         }
         .buttonStyle(.plain)
-        .softClubInteractiveGlass(in: Capsule())
+        .softClubInteractiveGlass(in: RoundedRectangle(cornerRadius: 14))
         .accessibilityLabel(String(localized: "Сортировка"))
         .accessibilityValue(vm.sortOrder.title)
     }
@@ -360,8 +403,9 @@ struct LibraryView: View {
                 }
             }
         }
-        .font(.footnote.weight(.medium))
+        .font(.subheadline)
         .foregroundStyle(SoftClubColor.textSecondary)
+        .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .combine)
     }
 
@@ -489,6 +533,9 @@ struct LibraryView: View {
 // MARK: - Subscription Row
 
 private struct LibrarySubscriptionRow: View {
+    static let artworkSpacing: CGFloat = 14
+    static let textInset = ProviderIcon.Size.medium.frame + artworkSpacing
+
     let item: RecurringItem
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -503,7 +550,7 @@ private struct LibrarySubscriptionRow: View {
         }
         .foregroundStyle(SoftClubColor.textPrimary)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 9)
+        .padding(.vertical, 12)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityHint(String(localized: "Открыть управление подпиской"))
@@ -511,27 +558,25 @@ private struct LibrarySubscriptionRow: View {
 
     private var compactLayout: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 12) {
+            HStack(spacing: Self.artworkSpacing) {
                 providerArtwork
+                    .accessibilityHidden(true)
                 compactIdentity
                 Spacer(minLength: 12)
                 amount
             }
 
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .top, spacing: Self.artworkSpacing) {
                 providerArtwork
+                    .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(verbatim: item.title)
                         .font(.body.weight(.medium))
-                        .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        secondaryIdentity
-                        Spacer(minLength: 8)
-                        amount
-                    }
+                    secondaryIdentity
+                    amount
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -540,8 +585,9 @@ private struct LibrarySubscriptionRow: View {
 
     private var accessibilityLayout: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .top, spacing: Self.artworkSpacing) {
                 providerArtwork
+                    .accessibilityHidden(true)
                 Text(verbatim: item.title)
                     .font(.body.weight(.medium))
                     .fixedSize(horizontal: false, vertical: true)
@@ -577,7 +623,7 @@ private struct LibrarySubscriptionRow: View {
                 item.effectiveNextChargeDate(),
                 format: .dateTime.day().month(.wide)
             )
-            .font(.footnote)
+            .font(.subheadline)
             .foregroundStyle(SoftClubColor.textSecondary)
 
             if let statusMetadata {
@@ -587,7 +633,7 @@ private struct LibrarySubscriptionRow: View {
                     Image(systemName: statusMetadata.systemImage)
                 }
                 .font(.caption)
-                .foregroundStyle(SoftClubColor.textSecondary.opacity(0.9))
+                .foregroundStyle(SoftClubColor.textSecondary)
             }
         }
     }
@@ -606,7 +652,7 @@ private struct LibrarySubscriptionRow: View {
 
             Text(RecurringItemFormatter.cycleLabel(for: item.billingCycle).label)
                 .font(.footnote)
-                .foregroundStyle(SoftClubColor.textSecondary.opacity(0.82))
+                .foregroundStyle(SoftClubColor.textSecondary)
                 .accessibilityLabel(
                     RecurringItemFormatter.cycleLabel(for: item.billingCycle).accessibilityText
                 )
