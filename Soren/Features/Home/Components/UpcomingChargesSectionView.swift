@@ -5,7 +5,7 @@ struct UpcomingChargesSectionView: View {
     let onSelectItem: (RecurringItem) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             Text(String(localized: "Ближайшие списания"))
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(SoftClubColor.textPrimary)

@@ -66,7 +66,7 @@ struct HomeView: View {
     private func overviewZones(_ viewModel: HomeViewModel) -> some View {
         LazyVStack(alignment: .leading, spacing: 0) {
             OverviewHeader(monthLabel: viewModel.monthLabel, addAction: addSubscription)
-                .padding(.bottom, 16)
+                .padding(.bottom, 20)
 
             MonthlyPlanHeroView(
                 presentation: viewModel.monthlyPlan,
@@ -77,10 +77,10 @@ struct HomeView: View {
                 presentation: viewModel.upcoming,
                 onSelectItem: { navigateToItem($0) }
             )
-            .padding(.top, 24)
+            .padding(.top, 28)
 
             OverviewStatusTiles(counts: viewModel.statusCounts)
-                .padding(.top, 16)
+                .padding(.top, 20)
         }
         .padding(.horizontal, 20)
         .padding(.top, 12)
@@ -155,14 +155,15 @@ private struct MonthlyPlanHeroView: View {
                 statementContent
             }
 
-            Spacer(minLength: 20)
+            Spacer(minLength: 0)
 
             if let monthSchedule {
                 MonthScheduleRailView(presentation: monthSchedule)
             }
         }
         .frame(minHeight: 170, alignment: .topLeading)
-        .padding(20)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 15)
         .frame(maxWidth: .infinity, alignment: .leading)
         .modifier(OverviewGlassSurface(cornerRadius: 28, opaqueColor: SoftClubColor.elevatedSurface))
     }
