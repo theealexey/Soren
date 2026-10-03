@@ -278,6 +278,7 @@ struct LibraryView: View {
             } label: {
                 Label("Удалить", systemImage: "trash.fill")
             }
+            .tint(nil)
         }
     }
 
