@@ -22,9 +22,11 @@ final class AddSubscriptionLifetimeTests: XCTestCase {
         amount.tap()
         amount.typeText("123")
 
-        let nextCharge = app.buttons.matching(
+        let nextChargeControls = app.buttons.matching(
             NSPredicate(format: "label BEGINSWITH %@", "Следующее списание, ")
-        ).firstMatch
+        )
+        XCTAssertEqual(nextChargeControls.count, 1)
+        let nextCharge = nextChargeControls.element
         XCTAssertTrue(nextCharge.waitForExistence(timeout: 5))
 
         // Derive a different, known civil day in the displayed month, rather
@@ -48,9 +50,14 @@ final class AddSubscriptionLifetimeTests: XCTestCase {
         nextCharge.tap()
         let done = app.buttons["Готово"]
         XCTAssertTrue(done.waitForExistence(timeout: 5))
-        let day = app.buttons.matching(
+        // Only the active native picker can supply a selectable day. Persisted
+        // subscription rows behind the sheets may contain the same date text.
+        XCTAssertEqual(app.datePickers.count, 1)
+        let dayControls = app.datePickers.element.buttons.matching(
             NSPredicate(format: "label MATCHES %@", ".*, \(chosenDay) .*" )
-        ).firstMatch
+        )
+        XCTAssertEqual(dayControls.count, 1)
+        let day = dayControls.element
         XCTAssertTrue(day.waitForExistence(timeout: 5))
         day.tap() // The normal picker flow dismisses after selection.
         XCTAssertTrue(done.waitForNonExistence(timeout: 5))
