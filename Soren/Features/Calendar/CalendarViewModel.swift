@@ -16,8 +16,7 @@ struct CalendarDay: Identifiable, Hashable {
 /// Drives the Calendar tab.
 ///
 /// Builds a Mon-first 7-column grid for the displayed month,
-/// groups active subscriptions by nextChargeDate, and exposes
-/// the charge list for the selected day.
+/// groups canonical schedule events by civil day.
 @MainActor @Observable
 final class CalendarViewModel {
 
@@ -25,7 +24,9 @@ final class CalendarViewModel {
 
     private(set) var displayedMonth: Date           // first moment of the visible month
     private(set) var selectedDate: Date             // start of the tapped day
+    private(set) var occurrencesByDay: [CivilDate: [CalendarScheduleOccurrence]] = [:]
     private(set) var chargesByDate: [Date: [RecurringItem]] = [:]
+    private(set) var occurrencesByDate: [Date: [CalendarScheduleOccurrence]] = [:]
     private(set) var daysInGrid: [CalendarDay] = []
     private(set) var monthlyAggregation: RecurringSpendAggregationResult?
     private(set) var selectedDayAggregation: RecurringSpendAggregationResult?
@@ -36,7 +37,18 @@ final class CalendarViewModel {
     private(set) var error: Error?
 
     var selectedDayCharges: [RecurringItem] {
-        chargesByDate[selectedDate] ?? []
+        selectedDayOccurrences.filter { $0.money != nil }.map(\.item)
+    }
+
+    var selectedDayOccurrences: [CalendarScheduleOccurrence] {
+        guard let day = try? BillingCivilDay.civilDate(containing: selectedDate, in: calendar.timeZone) else { return [] }
+        return occurrencesByDay[day] ?? []
+    }
+
+    var canNavigatePreviousMonth: Bool {
+        guard let today = try? BillingCivilDay.civilDate(containing: now(), in: calendar.timeZone),
+              let displayed = try? BillingCivilDay.civilDate(containing: displayedMonth, in: calendar.timeZone) else { return false }
+        return displayed.year > today.year || (displayed.year == today.year && displayed.month > today.month)
     }
 
     var hasMonthlyCharges: Bool {
@@ -44,7 +56,9 @@ final class CalendarViewModel {
     }
 
     var monthTitle: String {
-        Self.monthFormatter.string(from: displayedMonth).capitalized
+        let formatter = PresentationLocale.dateFormatter(template: "LLLL yyyy", calendar: calendar)
+        formatter.timeZone = calendar.timeZone
+        return formatter.string(from: displayedMonth).capitalized
     }
 
     // MARK: - Private
@@ -60,14 +74,10 @@ final class CalendarViewModel {
         return c
     }()
 
-    private static let monthFormatter: DateFormatter = {
-        PresentationLocale.dateFormatter(
-            template: "LLLL yyyy",
-            calendar: CalendarViewModel.cal
-        )
-    }()
-
-    private let fetchActiveItems: @MainActor () throws -> [RecurringItem]
+    private let getSchedule: GetCalendarSchedule
+    private let now: () -> Date
+    private let calendar: Calendar
+    private var scheduleMonetaryCompleteness = RecurringScheduleProjection.MonetaryCompleteness.complete
     private let preferences: UserPreferencesRepository
     private let aggregateRecurringSpend: AggregateRecurringSpendUseCase
     private let loadExchangeRateSnapshot: @Sendable () async throws -> ExchangeRateSnapshot
@@ -83,20 +93,26 @@ final class CalendarViewModel {
         repository: Repository,
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
         aggregateRecurringSpend: AggregateRecurringSpendUseCase = AggregateRecurringSpendUseCase(),
-        exchangeRateProvider: Provider
+        exchangeRateProvider: Provider,
+        now: @escaping () -> Date = { .now },
+        calendar: Calendar = CalendarViewModel.cal
     ) {
-        self.fetchActiveItems = {
-            try repository.fetchActive()
-        }
+        self.getSchedule = GetCalendarSchedule(repository: repository)
+        self.now = now
+        var presentationCalendar = Calendar(identifier: .gregorian)
+        presentationCalendar.timeZone = calendar.timeZone
+        presentationCalendar.locale = PresentationLocale.current
+        presentationCalendar.firstWeekday = 2
+        self.calendar = presentationCalendar
         self.preferences = preferences
         self.aggregateRecurringSpend = aggregateRecurringSpend
         self.loadExchangeRateSnapshot = {
             try await exchangeRateProvider.latestSnapshot()
         }
-        let today = Self.cal.startOfDay(for: .now)
+        let today = presentationCalendar.startOfDay(for: now())
         self.selectedDate = today
-        self.displayedMonth = Self.cal.date(
-            from: Self.cal.dateComponents([.year, .month], from: today)
+        self.displayedMonth = presentationCalendar.date(
+            from: presentationCalendar.dateComponents([.year, .month], from: today)
         ) ?? today
     }
 
@@ -104,7 +120,7 @@ final class CalendarViewModel {
 
     func selectDate(_ date: Date) {
         let previouslyRequiredRates = currentCalculationRequiresExchangeRates()
-        selectedDate = Self.cal.startOfDay(for: date)
+        selectedDate = calendar.startOfDay(for: date)
         rebuildAggregations(snapshot: exchangeRateSnapshot)
 
         if exchangeRateSnapshot == nil,
@@ -115,7 +131,8 @@ final class CalendarViewModel {
     }
 
     func previousMonth() {
-        guard let prev = Self.cal.date(byAdding: .month, value: -1, to: displayedMonth) else { return }
+        guard canNavigatePreviousMonth,
+              let prev = calendar.date(byAdding: .month, value: -1, to: displayedMonth) else { return }
         displayedMonth = prev
         // Reset selection to the first day of the new month so the detail section
         // always references a visible day.
@@ -124,7 +141,7 @@ final class CalendarViewModel {
     }
 
     func nextMonth() {
-        guard let next = Self.cal.date(byAdding: .month, value: 1, to: displayedMonth) else { return }
+        guard let next = calendar.date(byAdding: .month, value: 1, to: displayedMonth) else { return }
         displayedMonth = next
         selectedDate = next
         reloadMonth()
@@ -175,39 +192,31 @@ final class CalendarViewModel {
         exchangeRateSnapshot = nil
         error = nil
         do {
-            let items = try fetchActiveItems()
+            let today = try BillingCivilDay.civilDate(containing: now(), in: calendar.timeZone)
+            var month = try BillingCivilDay.civilDate(containing: displayedMonth, in: calendar.timeZone)
+            if month.year < today.year || (month.year == today.year && month.month < today.month) {
+                let first = try CivilDate(year: today.year, month: today.month, day: 1)
+                displayedMonth = try Self.gridDay(for: BillingCivilDay.canonicalDate(for: first), calendar: calendar)
+                selectedDate = displayedMonth
+                month = first
+            }
+            let schedule = try getSchedule.execute(month: month, today: today)
+            let grouped = Dictionary(grouping: schedule.occurrences, by: \.day)
+            var carriers: [Date: [RecurringItem]] = [:]
+            var occurrenceCarriers: [Date: [CalendarScheduleOccurrence]] = [:]
+            for (day, events) in grouped {
+                let date = try Self.gridDay(for: BillingCivilDay.canonicalDate(for: day), calendar: calendar)
+                carriers[date] = events.filter { $0.money != nil }.map(\.item)
+                occurrenceCarriers[date] = events
+            }
             let grid = buildGrid()
-            let gridStart = grid.first?.date ?? displayedMonth
-            let gridEnd = grid.last?.date ?? displayedMonth
-
-            // Group charges that fall within the grid's visible date range
-            var byDate: [Date: [RecurringItem]] = [:]
-            for item in items {
-                let day = try Self.gridDay(for: item.nextChargeDate, calendar: Self.cal)
-                if day >= gridStart && day <= gridEnd {
-                    byDate[day, default: []].append(item)
-                }
-            }
-
             daysInGrid = grid
-            chargesByDate = byDate
-
-            guard let nextMonthStart = Self.cal.date(
-                byAdding: .month,
-                value: 1,
-                to: displayedMonth
-            ) else {
-                assertionFailure("CalendarViewModel: failed to compute month boundaries for \(displayedMonth)")
-                return
-            }
-
-            let monthRange = displayedMonth..<nextMonthStart
-            displayedMonthRange = monthRange
-            monthlyProjections = try items.compactMap { item in
-                let day = try Self.gridDay(for: item.nextChargeDate, calendar: Self.cal)
-                guard monthRange.contains(day) else { return nil }
-                return projection(for: item, on: day)
-            }
+            occurrencesByDay = grouped
+            chargesByDate = carriers
+            occurrencesByDate = occurrenceCarriers
+            displayedMonthRange = schedule.range
+            scheduleMonetaryCompleteness = schedule.monetaryCompleteness
+            monthlyProjections = try projections(for: schedule.occurrences)
             rebuildAggregations(snapshot: exchangeRateSnapshot)
 
         } catch {
@@ -222,27 +231,27 @@ final class CalendarViewModel {
             return
         }
 
-        monthlyAggregation = aggregateRecurringSpend.execute(
+        monthlyAggregation = scheduleMonetaryCompleteness == .complete ? aggregateRecurringSpend.execute(
             projections: monthlyProjections,
             reportingCurrencyCode: reportingCurrencyCode,
             snapshot: snapshot,
             range: monthRange
-        )
+        ) : nil
 
-        guard let selectedDayEnd = Self.cal.date(
+        guard let selectedDay = try? BillingCivilDay.civilDate(containing: selectedDate, in: calendar.timeZone),
+              let selectedStart = try? BillingCivilDay.canonicalDate(for: selectedDay),
+              let selectedDayEnd = BillingCivilDay.calendar.date(
             byAdding: .day,
             value: 1,
-            to: selectedDate
+            to: selectedStart
         ) else {
             selectedDayAggregation = nil
             return
         }
 
-        let selectedRange = selectedDate..<selectedDayEnd
+        let selectedRange = selectedStart..<selectedDayEnd
         selectedDayAggregation = aggregateRecurringSpend.execute(
-            projections: selectedDayCharges.map {
-                projection(for: $0, on: selectedDate)
-            },
+            projections: monthlyProjections,
             reportingCurrencyCode: reportingCurrencyCode,
             snapshot: snapshot,
             range: selectedRange
@@ -261,29 +270,15 @@ final class CalendarViewModel {
             monthNeedsRates = false
         }
 
-        guard let selectedDayEnd = Self.cal.date(
-            byAdding: .day,
-            value: 1,
-            to: selectedDate
-        ) else { return monthNeedsRates }
-
-        let selectedRange = selectedDate..<selectedDayEnd
-        let selectedNeedsRates = aggregateRecurringSpend.requiresExchangeRates(
-            projections: selectedDayCharges.map {
-                projection(for: $0, on: selectedDate)
-            },
-            reportingCurrencyCode: reportingCurrencyCode,
-            range: selectedRange
-        )
-        return monthNeedsRates || selectedNeedsRates
+        return monthNeedsRates
     }
 
-    private func projection(for item: RecurringItem, on date: Date) -> RecurringSpendProjection {
-        RecurringSpendProjection(
-            date: date,
-            amount: item.amount,
-            currencyCode: item.currencyCode
-        )
+    private func projections(for occurrences: [CalendarScheduleOccurrence]) throws -> [RecurringSpendProjection] {
+        try occurrences.compactMap { occurrence in
+            guard let money = occurrence.money else { return nil }
+            return RecurringSpendProjection(date: try BillingCivilDay.canonicalDate(for: occurrence.day),
+                                            amount: money.amount, currencyCode: money.currencyCode)
+        }
     }
 
     static func gridDay(for canonicalDate: Date, calendar: Calendar) throws -> Date {
@@ -295,8 +290,8 @@ final class CalendarViewModel {
     // MARK: - Grid Construction
 
     private func buildGrid() -> [CalendarDay] {
-        let cal = Self.cal
-        let today = cal.startOfDay(for: .now)
+        let cal = calendar
+        let today = cal.startOfDay(for: now())
 
         guard
             let monthStart = cal.date(from: cal.dateComponents([.year, .month], from: displayedMonth)),

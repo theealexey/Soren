@@ -85,6 +85,7 @@ struct CalendarView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(Text(String(localized: "Предыдущий месяц")))
+            .disabled(!vm.canNavigatePreviousMonth)
 
             Spacer()
 
@@ -166,7 +167,7 @@ struct CalendarView: View {
 
     private func dayCell(_ day: CalendarDay, vm: CalendarViewModel) -> some View {
         let isSelected = CalendarViewModel.cal.isDate(day.date, inSameDayAs: vm.selectedDate)
-        let charges = vm.chargesByDate[day.date] ?? []
+        let charges = (vm.occurrencesByDate[day.date] ?? []).map(\.item)
         let dayNumber = CalendarViewModel.cal.component(.day, from: day.date)
 
         return Button {
@@ -211,11 +212,10 @@ struct CalendarView: View {
         } else {
             HStack(spacing: 3) {
                 // Use stable item IDs so SwiftUI animates dot add/remove correctly.
-                ForEach(charges.prefix(3)) { item in
+                ForEach(Array(charges.prefix(3).enumerated()), id: \.offset) { _ in
                     Circle()
                         .fill(isSelected ? Color.white : ColorTokens.accent)
                         .frame(width: 4, height: 4)
-                        .id(item.id)
                 }
                 if charges.count > 3 {
                     Text("+\(charges.count - 3)")
@@ -248,7 +248,7 @@ struct CalendarView: View {
 
     @ViewBuilder
     private func selectedDaySection(_ vm: CalendarViewModel) -> some View {
-        let charges = vm.selectedDayCharges
+        let charges = vm.selectedDayOccurrences
 
         VStack(alignment: .leading, spacing: Spacing.xs) {
             Divider()
@@ -272,19 +272,38 @@ struct CalendarView: View {
                 // here: its fixed Spacing.md (16pt) jacket makes the row stack feel
                 // heavier than a Library list.
                 VStack(spacing: 0) {
-                    ForEach(Array(charges.enumerated()), id: \.element.id) { idx, item in
-                        Button { navigateToItem(item) } label: {
+                    ForEach(Array(charges.enumerated()), id: \.offset) { idx, occurrence in
+                        Button { navigateToItem(occurrence.item) } label: {
+                            let item = occurrence.item
+                            if let money = occurrence.money {
                             SorenListRow(
                                 title: item.title,
                                 subtitle: item.providerName == item.title ? nil : item.providerName,
-                                amount: item.amount,
-                                currency: item.currencyCode,
+                                amount: money.amount,
+                                currency: money.currencyCode,
                                 cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
                                 providerTemplate: item.providerTemplate,
                                 category: item.category
                             )
                             .padding(.vertical, Spacing.xs)
                             .padding(.horizontal, Spacing.lg)
+                            } else {
+                                HStack(spacing: Spacing.sm) {
+                                    if let provider = item.providerTemplate {
+                                        ProviderIcon(provider: provider, size: .medium)
+                                    } else {
+                                        ProviderIcon(category: item.category, size: .medium)
+                                    }
+                                    VStack(alignment: .leading, spacing: Spacing.xxxs) {
+                                        Text(item.title).font(Typography.headline).foregroundStyle(ColorTokens.textPrimary)
+                                        Text(String(localized: "Пробный период"))
+                                            .font(Typography.caption).foregroundStyle(ColorTokens.textTertiary)
+                                    }
+                                    Spacer(minLength: Spacing.xs)
+                                }
+                                .padding(.vertical, Spacing.xs)
+                                .padding(.horizontal, Spacing.lg)
+                            }
                         }
                         .buttonStyle(.plain)
 

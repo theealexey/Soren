@@ -69,6 +69,8 @@
 		3A84C7CF0E76A7DE7C8B4500 /* SectionHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 323D31D8EF35B87ADA825188 /* SectionHeader.swift */; };
 		3E2C15DCA2F42CC6D125237B /* UsageStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08466B38DFF515E50A44F77D /* UsageStatus.swift */; };
 		3E6405A4F0A59A5EF54A5056 /* GetUpcomingCharges.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AE23A399CED2B38971BCB57 /* GetUpcomingCharges.swift */; };
+		C105A1000000000000000001 /* GetCalendarSchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C105A1000000000000000002 /* GetCalendarSchedule.swift */; };
+		C105A1000000000000000003 /* CalendarScheduleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C105A1000000000000000004 /* CalendarScheduleTests.swift */; };
 		40B9AED4D39EF8E91FE3ADAE /* PaymentMethodRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = E649AB3F110DA227AEAD1E55 /* PaymentMethodRepository.swift */; };
 		40D4336F2D0E3F84A6F0FCDB /* NotificationDiagnosticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56890545E88B469DFD308368 /* NotificationDiagnosticsView.swift */; };
 		40D591A8E4F0F1F842AA791E /* UserPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3040DE9BC5A648451E24ACD3 /* UserPreferencesTests.swift */; };
@@ -373,6 +375,8 @@
 		69A8F148539D2AC2A85B78FD /* Money.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Money.swift; sourceTree = "<group>"; };
 		6ADA45D4D60B8F3261C7B496 /* SupportedCurrency+Display.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SupportedCurrency+Display.swift"; sourceTree = "<group>"; };
 		6AE23A399CED2B38971BCB57 /* GetUpcomingCharges.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetUpcomingCharges.swift; sourceTree = "<group>"; };
+		C105A1000000000000000002 /* GetCalendarSchedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetCalendarSchedule.swift; sourceTree = "<group>"; };
+		C105A1000000000000000004 /* CalendarScheduleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarScheduleTests.swift; sourceTree = "<group>"; };
 		6B4ED267EDB217E4783C0540 /* ValidationErrorFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationErrorFormatterTests.swift; sourceTree = "<group>"; };
 		6BC0056301AA302B544B628D /* AppContainer+CalendarFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppContainer+CalendarFactory.swift"; sourceTree = "<group>"; };
 		6C5D8E927985B3D9BE99290A /* NotificationDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationDiagnostics.swift; sourceTree = "<group>"; };
@@ -928,6 +932,7 @@
 				A103A103A103A103A103A104 /* MonthScheduleRailLayoutTests.swift */,
 				AF7BD15F0BA562AB78DC878E /* LibraryTotalTests.swift */,
 				8CEEF7B37513315DE9DE3C6C /* NextChargeDateSuggestionTests.swift */,
+				C105A1000000000000000004 /* CalendarScheduleTests.swift */,
 				71B630834E09F48BCE08F7A5 /* NotificationDiagnosticsTests.swift */,
 				E357561751930021CAD058B8 /* NotificationPermissionCoordinatorTests.swift */,
 				57386AB781234F7E0834187C /* NotificationReconciliationObservationTests.swift */,
@@ -996,6 +1001,7 @@
 				7DCD529175663CFB16A4EB3F /* GetDashboardSummary.swift */,
 				4DDCE10FBEA592108BF24705 /* GetLibraryItems.swift */,
 				6AE23A399CED2B38971BCB57 /* GetUpcomingCharges.swift */,
+				C105A1000000000000000002 /* GetCalendarSchedule.swift */,
 				AF405D32A4B2469385D24DBD /* OverviewInsightUseCase.swift */,
 				12205303AA4AF4D9AF33450A /* ResolveRegionalPlanPriceUseCase.swift */,
 				6937BB77EA2ED3E831320FCE /* SaveRecurringItem.swift */,
@@ -1531,6 +1537,7 @@
 				385AC9ECBAF58206DD986D58 /* GetDashboardSummary.swift in Sources */,
 				2FF6249CCB6AFA96A0C691BE /* GetLibraryItems.swift in Sources */,
 				3E6405A4F0A59A5EF54A5056 /* GetUpcomingCharges.swift in Sources */,
+				C105A1000000000000000001 /* GetCalendarSchedule.swift in Sources */,
 				DB49E0177D4FD6870A3615B2 /* HapticEngine.swift in Sources */,
 				B0B92A81FC0E0D9E361E30DA /* HomeScreenState.swift in Sources */,
 				C7A695C4B22130DC3F0EF8EE /* HomeView.swift in Sources */,
@@ -1691,6 +1698,7 @@
 				C1D8301735484C098BA1DDA2 /* OverviewInsightUseCaseTests.swift in Sources */,
 				446776A4B4A8B61EACD9791E /* MotionTokenTests.swift in Sources */,
 				F3A0EDAD0443BF22B192AA40 /* NextChargeDateSuggestionTests.swift in Sources */,
+				C105A1000000000000000003 /* CalendarScheduleTests.swift in Sources */,
 				856B2BC3A457843655F9519E /* NotificationDiagnosticsTests.swift in Sources */,
 				79828644A4B6FF4047173228 /* NotificationPermissionCoordinatorTests.swift in Sources */,
 				D992669DC73444A3136FF3A5 /* NotificationReconciliationObservationTests.swift in Sources */,

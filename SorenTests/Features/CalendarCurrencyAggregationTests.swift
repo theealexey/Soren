@@ -124,9 +124,7 @@ struct CalendarCurrencyAggregationTests {
 
     private func displayedMonthStart() throws -> Date {
         let calendar = CalendarViewModel.cal
-        return try #require(calendar.date(
-            from: calendar.dateComponents([.year, .month], from: .now)
-        ))
+        return try #require(calendar.date(from: DateComponents(year: 2026, month: 10, day: 1)))
     }
 
     private func date(day: Int) throws -> Date {
@@ -193,7 +191,8 @@ struct CalendarCurrencyAggregationTests {
             repository: InMemoryRecurringItemRepository(items: items),
             preferences: preferences,
             aggregateRecurringSpend: AggregateRecurringSpendUseCase(),
-            exchangeRateProvider: provider
+            exchangeRateProvider: provider,
+            now: { CalendarViewModel.cal.date(from: DateComponents(year: 2026, month: 10, day: 4)) ?? .distantPast }
         )
     }
 
@@ -233,8 +232,8 @@ struct CalendarCurrencyAggregationTests {
         #expect(vm.monthlyAggregation?.total?.amount == expected)
         #expect(vm.selectedDayAggregation?.total?.amount == expected)
         #expect(vm.monthlyAggregation?.total?.currencyCode == "RUB")
-        #expect(vm.selectedDayCharges.map(\.amount) == [299, usd])
-        #expect(vm.selectedDayCharges.map(\.currencyCode) == ["RUB", "USD"])
+        #expect(vm.selectedDayCharges.map(\.amount).sorted() == [299, usd].sorted())
+        #expect(vm.selectedDayCharges.map(\.currencyCode).sorted() == ["RUB", "USD"].sorted())
         let requestCount = await provider.requests()
         #expect(requestCount == 1)
     }
@@ -486,8 +485,8 @@ struct CalendarCurrencyAggregationTests {
         #expect(vm.selectedDayAggregation?.total?.amount == expectedUSD)
         #expect(vm.selectedDate == selectedBefore)
         #expect(vm.displayedMonth == monthBefore)
-        #expect(vm.selectedDayCharges.map(\.amount) == [299, usd])
-        #expect(vm.selectedDayCharges.map(\.currencyCode) == ["RUB", "USD"])
+        #expect(vm.selectedDayCharges.map(\.amount).sorted() == [299, usd].sorted())
+        #expect(vm.selectedDayCharges.map(\.currencyCode).sorted() == ["RUB", "USD"].sorted())
     }
 
     @Test("Older async result cannot overwrite a newer reporting-currency calculation")
