@@ -56,7 +56,7 @@ struct DemoDataSeeder {
     /// - Note: No-ops if demo data is already present (idempotent).
     func seed(relativeTo date: Date = .now, calendar: Calendar = .current) throws {
         guard !isDemoDataPresent else { return }
-        let items = DemoSeedItems.items(relativeTo: date, calendar: calendar)
+        let items = try DemoSeedItems.items(relativeTo: date, calendar: calendar)
         for item in items {
             try repository.save(item)
         }

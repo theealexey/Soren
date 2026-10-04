@@ -25,7 +25,7 @@ struct ItemDetailsView: View {
                     noteCard
                 }
 
-                if viewModel.item.isActiveTrial {
+                if viewModel.isActiveTrial {
                     trialWarning
                 }
 
@@ -75,7 +75,7 @@ struct ItemDetailsView: View {
     }
 
     private var renewalInfo: (icon: String, value: String) {
-        switch viewModel.item.renewalDisplay {
+        switch viewModel.renewalDisplay {
         case .renewing:
             return ("arrow.clockwise", String(localized: "Автоматически"))
         case .endingSoon(let days):
@@ -291,13 +291,13 @@ struct ItemDetailsView: View {
         InsightCard(
             icon: "clock.badge.exclamationmark",
             title: String(localized: "Пробный период"),
-            subtitle: RecurringItemFormatter.trialSubtitle(for: viewModel.item),
+            subtitle: RecurringItemFormatter.trialSubtitle(for: viewModel.item, today: viewModel.today),
             severity: trialSeverity
         )
     }
 
     private var trialSeverity: InsightCard.Severity {
-        guard let days = viewModel.item.daysUntilTrialEnd else { return .info }
+        guard let days = viewModel.daysUntilTrialEnd else { return .info }
         if days <= 1 { return .critical }
         if days <= 3 { return .warning }
         return .info

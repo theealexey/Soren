@@ -8,12 +8,17 @@ import Foundation
 struct GetAlerts {
 
     private let repository: any RecurringItemRepository
+    private let now: () -> Date
+    private let timeZone: () -> TimeZone
 
-    init(repository: any RecurringItemRepository) {
+    init(repository: any RecurringItemRepository, now: @escaping () -> Date = { .now }, timeZone: @escaping () -> TimeZone = { .current }) {
         self.repository = repository
+        self.now = now
+        self.timeZone = timeZone
     }
 
     func execute(chargeAlertDays: Int = 7, trialAlertDays: Int = 7) throws -> AlertsResult {
+        let today = try BillingCivilDay.civilDate(containing: now(), in: timeZone())
         let excludedStatuses: Set<ItemStatus> = [.cancelled, .paused, .archived]
 
         // fetchActive() uses a SwiftData predicate — avoids loading archived/cancelled rows.
@@ -32,11 +37,11 @@ struct GetAlerts {
                 continue
             }
 
-            if let trialDays = item.daysUntilTrialEnd, item.isActiveTrial, trialDays <= trialAlertDays {
+            if let trialDays = try item.daysUntilTrialEnd(from: today), trialDays <= trialAlertDays {
                 trialEnding.append(item)
             }
 
-            let daysUntil = item.daysUntilNextCharge
+            let daysUntil = try item.daysUntilNextCharge(from: today)
 
             if daysUntil < 0 {
                 overdue.append(item)
@@ -53,7 +58,7 @@ struct GetAlerts {
         dueToday.sort { $0.title < $1.title }
         dueSoon.sort { $0.nextChargeDate < $1.nextChargeDate }
         trialEnding.sort {
-            ($0.daysUntilTrialEnd ?? 0) < ($1.daysUntilTrialEnd ?? 0)
+            ($0.trialEndDate ?? .distantFuture) < ($1.trialEndDate ?? .distantFuture)
         }
 
         return AlertsResult(

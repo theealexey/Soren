@@ -210,7 +210,8 @@ struct CurrencyEstimateFormTests {
             providerName: "Test Subscription",
             amount: amount,
             currencyCode: currencyCode,
-            nextChargeDate: Calendar.current.date(byAdding: .month, value: 1, to: .now) ?? .now
+            startDate: BillingCivilDay.calendar.startOfDay(for: .now),
+            nextChargeDate: BillingCivilDay.calendar.date(byAdding: .month, value: 1, to: BillingCivilDay.calendar.startOfDay(for: .now)) ?? BillingCivilDay.calendar.startOfDay(for: .now)
         )
     }
 

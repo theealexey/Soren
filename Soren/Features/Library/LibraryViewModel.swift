@@ -50,6 +50,9 @@ final class LibraryViewModel {
     private let aggregateRecurringSpend: AggregateRecurringSpendUseCase
     private let convertMoney: ConvertMoneyUseCase
     private let searchDebounceDelay: Duration
+    private let now: () -> Date
+    private let timeZone: () -> TimeZone
+    private(set) var today: CivilDate?
 
     /// One snapshot is shared by every total in the current Library calculation.
     /// A failed fetch deliberately leaves this nil: the Domain use case then emits
@@ -92,7 +95,9 @@ final class LibraryViewModel {
         exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider(),
         aggregateRecurringSpend: AggregateRecurringSpendUseCase = AggregateRecurringSpendUseCase(),
         convertMoney: ConvertMoneyUseCase = ConvertMoneyUseCase(),
-        searchDebounceDelay: Duration = .milliseconds(150)
+        searchDebounceDelay: Duration = .milliseconds(150),
+        now: @escaping () -> Date = { .now },
+        timeZone: @escaping () -> TimeZone = { .current }
     ) {
         self.getLibraryItems = getLibraryItems
         self.deleteRecurringItem = deleteRecurringItem
@@ -101,6 +106,8 @@ final class LibraryViewModel {
         self.aggregateRecurringSpend = aggregateRecurringSpend
         self.convertMoney = convertMoney
         self.searchDebounceDelay = searchDebounceDelay
+        self.now = now
+        self.timeZone = timeZone
     }
 
     init(
@@ -110,7 +117,9 @@ final class LibraryViewModel {
         exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider(),
         aggregateRecurringSpend: AggregateRecurringSpendUseCase = AggregateRecurringSpendUseCase(),
         convertMoney: ConvertMoneyUseCase = ConvertMoneyUseCase(),
-        searchDebounceDelay: Duration = .milliseconds(150)
+        searchDebounceDelay: Duration = .milliseconds(150),
+        now: @escaping () -> Date = { .now },
+        timeZone: @escaping () -> TimeZone = { .current }
     ) {
         self.getLibraryItems = GetLibraryItems(repository: repositories.recurringItems)
         self.deleteRecurringItem = DeleteRecurringItem(
@@ -122,6 +131,8 @@ final class LibraryViewModel {
         self.aggregateRecurringSpend = aggregateRecurringSpend
         self.convertMoney = convertMoney
         self.searchDebounceDelay = searchDebounceDelay
+        self.now = now
+        self.timeZone = timeZone
     }
 
     // MARK: - Actions
@@ -201,6 +212,17 @@ final class LibraryViewModel {
     // MARK: - Recompute (single pass — O(n log n) once per state change, not per render)
 
     private func recompute(scheduleSnapshotIfNeeded: Bool = true) {
+        do {
+            let today = try BillingCivilDay.civilDate(containing: now(), in: timeZone())
+            self.today = today
+            try recompute(on: today, scheduleSnapshotIfNeeded: scheduleSnapshotIfNeeded)
+        } catch {
+            self.error = error
+            failedAction = .load
+        }
+    }
+
+    private func recompute(on today: CivilDate, scheduleSnapshotIfNeeded: Bool) throws {
         let previouslyRequiredRates = currentCalculationRequiresExchangeRates()
 
         // 1. Filter counts: one pass per status filter over allItems.
@@ -221,14 +243,14 @@ final class LibraryViewModel {
                 || item.note.lowercased().contains(query)
             }
         }
-        result = sortItems(result)
+        result = try sortItems(result, today: today)
         filteredItems = result
 
         // 3. Monthly total and active categories derived from the filtered result.
         // Existing Library semantics include only the statuses that historically
         // contributed to totals; aggregation itself is now the shared Domain policy.
-        filteredMonthlyProjections = result
-            .filter { $0.status.countsInTotals && !$0.isExpired }
+        filteredMonthlyProjections = try result
+            .filter { try $0.status.countsInTotals && !$0.isExpired(on: today) }
             .map { item in
                 RecurringSpendProjection(
                     date: item.nextChargeDate,
@@ -255,9 +277,9 @@ final class LibraryViewModel {
         // All other filter/search combinations produce a single unnamed section so the
         // flat-list layout is preserved.
         if activeFilter == .all, searchText.isEmpty {
-            let current  = result.filter { !$0.isExpired }
-            let past     = result.filter {  $0.isExpired }
-            let archived = sortItems(allItems.filter { $0.status == .archived })
+            let current  = try result.filter { try !$0.isExpired(on: today) }
+            let past     = try result.filter { try $0.isExpired(on: today) }
+            let archived = try sortItems(allItems.filter { $0.status == .archived }, today: today)
 
             let hasMixed = !past.isEmpty || !archived.isEmpty
             var built: [LibrarySection] = []
@@ -302,9 +324,9 @@ final class LibraryViewModel {
     /// Produces monthly values in the current reporting currency before sorting.
     /// Unknown conversions deliberately remain unavailable instead of falling back
     /// to a raw amount from another currency.
-    private func sortItems(_ items: [RecurringItem]) -> [RecurringItem] {
+    private func sortItems(_ items: [RecurringItem], today: CivilDate) throws -> [RecurringItem] {
         guard sortOrder.isAmountBased else {
-            return sortOrder.apply(to: items)
+            return try sortOrder.apply(to: items, today: today)
         }
 
         var sortKeys: [UUID: MonthlyAmountSortKey] = [:]
@@ -503,11 +525,11 @@ extension LibraryViewModel {
             }
         }
 
-        func apply(to items: [RecurringItem]) -> [RecurringItem] {
+        func apply(to items: [RecurringItem], today: CivilDate) throws -> [RecurringItem] {
             switch self {
             case .nextCharge:
-                return items.sorted {
-                    $0.effectiveNextChargeDate() < $1.effectiveNextChargeDate()
+                return try items.sorted {
+                    try $0.effectiveNextChargeDate(relativeTo: today) < $1.effectiveNextChargeDate(relativeTo: today)
                 }
             case .name:
                 return items.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }

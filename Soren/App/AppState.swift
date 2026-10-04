@@ -9,8 +9,17 @@ import SwiftData
 @Observable
 @MainActor
 final class AppState {
-    var modelContainer: ModelContainer?
-    var appContainer: AppContainer?
+    enum PreparationState { case preparing, ready, civilDateBlocked, storeUnavailable }
+    private(set) var preparationState: PreparationState = .preparing
+    private(set) var modelContainer: ModelContainer?
+    private(set) var appContainer: AppContainer?
+    private(set) var preparationError: Error?
+    private let openStore: () throws -> ModelContainer
+    private let bootstrap: (ModelContainer, TimeZone) throws -> Void
+    private let validate: (RepositoryContainer) throws -> Void
+    private let makeAppContainer: (ModelContainer, RepositoryContainer) -> AppContainer
+    private let migrationTimeZone: TimeZone
+    private var sceneIsActive = false
 
     /// Single source of truth for the app's color scheme preference.
     /// Changes are persisted to UserDefaults immediately (no debounce needed).
@@ -20,7 +29,22 @@ final class AppState {
         }
     }
 
-    init() {
+    init(
+        openStore: @escaping () throws -> ModelContainer = { try SorenModelContainer.production() },
+        interpretationTimeZone: TimeZone = .current,
+        bootstrap: @escaping (ModelContainer, TimeZone) throws -> Void = {
+            try LegacyBillingDateProvenanceBootstrap().execute(container: $0, interpretationTimeZone: $1)
+        },
+        validate: @escaping (RepositoryContainer) throws -> Void = { _ = try $0.recurringItems.fetchAll() },
+        makeAppContainer: @escaping (ModelContainer, RepositoryContainer) -> AppContainer = {
+            AppContainer(modelContext: $0.mainContext, repositories: $1)
+        }
+    ) {
+        self.openStore = openStore
+        self.bootstrap = bootstrap
+        self.validate = validate
+        self.makeAppContainer = makeAppContainer
+        self.migrationTimeZone = interpretationTimeZone
         if let raw = UserDefaults.standard.string(forKey: "soren.appearanceMode"),
            let mode = AppearanceMode(rawValue: raw) {
             appearanceMode = mode
@@ -33,38 +57,71 @@ final class AppState {
             appearanceMode = .dark
         }
 
-        if let scenario = DebugHomeScenario.requested(in: ProcessInfo.processInfo.arguments),
-           let container = try? SorenModelContainer.inMemory() {
-            let appContainer = AppContainer(modelContext: container.mainContext)
+        if let scenario = DebugHomeScenario.requested(in: ProcessInfo.processInfo.arguments) {
             do {
+                let container = try SorenModelContainer.inMemory()
+                modelContainer = container
+                let appContainer = AppContainer(modelContext: container.mainContext)
                 try appContainer.repositories.recurringItems.saveAll(scenario.items)
                 var preferences = appContainer.preferences.load()
                 preferences.defaultCurrencyCode = "RUB"
                 appContainer.preferences.save(preferences)
-                modelContainer = container
+                let repositories = appContainer.repositories
+                try validate(repositories)
                 self.appContainer = appContainer
+                preparationState = .ready
                 return
             } catch {
-                // Fall through to the production store if DEBUG fixture setup fails.
+                preparationError = error
+                preparationState = modelContainer == nil ? .storeUnavailable : .civilDateBlocked
             }
+            return
         }
         #endif
 
-        if let mc = try? SorenModelContainer.production() {
-            modelContainer = mc
-            appContainer = AppContainer(modelContext: mc.mainContext)
+        prepare()
+    }
+
+    /// Retry retains both the opened store and the once-captured interpretation policy.
+    func prepare() {
+        preparationState = .preparing
+        preparationError = nil
+        appContainer = nil
+        if modelContainer == nil {
+            do { modelContainer = try openStore() }
+            catch {
+                preparationError = error
+                preparationState = .storeUnavailable
+                return
+            }
         }
-        // If modelContainer is nil here, RootView is replaced by StoreRecoveryView.
-        // The user must explicitly consent before any data is deleted.
+        guard let container = modelContainer else { return }
+        do {
+            try bootstrap(container, migrationTimeZone)
+            let repositories = RepositoryContainer(context: container.mainContext)
+            try validate(repositories)
+            let readyContainer = makeAppContainer(container, repositories)
+            appContainer = readyContainer
+            preparationState = .ready
+            if sceneIsActive { readyContainer.notificationRefreshCoordinator.didBecomeActive() }
+        } catch {
+            preparationError = error
+            preparationState = .civilDateBlocked
+        }
+    }
+
+    func sceneActivityChanged(isActive: Bool) {
+        sceneIsActive = isActive
+        if isActive, preparationState == .ready {
+            appContainer?.notificationRefreshCoordinator.didBecomeActive()
+        }
     }
 
     /// Called only after the user confirms data reset in StoreRecoveryView.
     func recoverWithReset() {
+        guard preparationState == .storeUnavailable else { return }
         SorenModelContainer.deleteProductionStore()
-        let mc = (try? SorenModelContainer.production())
-            ?? (try? SorenModelContainer.inMemory())
-        guard let mc else { return }
-        modelContainer = mc
-        appContainer = AppContainer(modelContext: mc.mainContext)
+        modelContainer = nil
+        prepare()
     }
 }

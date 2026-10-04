@@ -54,7 +54,8 @@ struct LibrarySearchDebounceCorrectnessTests {
         var i = RecurringItem(
             title:          title,
             amount:         9.99,
-            nextChargeDate: Calendar.current.date(byAdding: .day, value: 7, to: .now)!
+            startDate: BillingCivilDay.calendar.startOfDay(for: .now),
+            nextChargeDate: BillingCivilDay.calendar.startOfDay(for: Calendar.current.date(byAdding: .day, value: 7, to: .now)!)
         )
         i.status = status
         return i
@@ -183,8 +184,8 @@ struct LibrarySearchDebounceCorrectnessTests {
     @Test("sortOrder change triggers immediate recompute")
     func sortChangeIsImmediate() async throws {
         let (vm, repository) = makeVM()
-        let soon = Calendar.current.date(byAdding: .day, value: 3, to: .now)!
-        let late = Calendar.current.date(byAdding: .day, value: 30, to: .now)!
+        let soon = BillingCivilDay.calendar.startOfDay(for: Calendar.current.date(byAdding: .day, value: 3, to: .now)!)
+        let late = BillingCivilDay.calendar.startOfDay(for: Calendar.current.date(byAdding: .day, value: 30, to: .now)!)
         let a = RecurringItem(title: "Alpha", amount: 1, nextChargeDate: late)
         let b = RecurringItem(title: "Beta",  amount: 2, nextChargeDate: soon)
         try repository.save(a)
@@ -225,7 +226,8 @@ struct LibrarySearchDebounceTimingTests {
         RecurringItem(
             title:          title,
             amount:         9.99,
-            nextChargeDate: Calendar.current.date(byAdding: .day, value: 7, to: .now)!
+            startDate: BillingCivilDay.calendar.startOfDay(for: .now),
+            nextChargeDate: BillingCivilDay.calendar.startOfDay(for: Calendar.current.date(byAdding: .day, value: 7, to: .now)!)
         )
     }
 

@@ -58,7 +58,8 @@ extension AppContainer {
             calculateCurrentMonth: planCalculation,
             calculateOverviewInsight: insightCalculation,
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            timeZone: { [timeZone = calendar.timeZone] in timeZone }
         )
     }
 }
@@ -389,7 +390,7 @@ enum DebugHomeScenario: String, Sendable {
     ) -> RecurringItem {
         let chargeDate = date(month: month, day: day)
         let trialEndDate = trialEndDay.map { date(month: month, day: $0) }
-        let startDate = calendar.date(byAdding: .month, value: -4, to: chargeDate) ?? chargeDate
+        let startDate = BillingCivilDay.calendar.date(byAdding: .month, value: -4, to: chargeDate) ?? chargeDate
 
         return RecurringItem(
             id: Self.id(id),
@@ -410,11 +411,10 @@ enum DebugHomeScenario: String, Sendable {
     }
 
     private func date(month: Int = 8, day: Int) -> Date {
-        calendar.date(from: DateComponents(
+        BillingCivilDay.calendar.date(from: DateComponents(
             year: 2026,
             month: month,
-            day: day,
-            hour: 12
+            day: day
         )) ?? referenceDate
     }
 

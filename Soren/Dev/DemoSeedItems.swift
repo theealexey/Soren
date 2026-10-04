@@ -21,9 +21,11 @@ enum DemoSeedItems {
     static func items(
         relativeTo referenceDate: Date,
         calendar: Calendar = .current
-    ) -> [RecurringItem] {
+    ) throws -> [RecurringItem] {
 
-        let today = calendar.startOfDay(for: referenceDate)
+        let day = try BillingCivilDay.civilDate(containing: referenceDate, in: calendar.timeZone)
+        let today = try BillingCivilDay.canonicalDate(for: day)
+        let calendar = BillingCivilDay.calendar
 
         /// Offset `today` by `n` days (negative for past, positive for future).
         func days(_ n: Int) -> Date {

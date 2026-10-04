@@ -8,12 +8,17 @@ import Foundation
 struct GetActiveTrials {
 
     private let repository: any RecurringItemRepository
+    private let now: () -> Date
+    private let timeZone: () -> TimeZone
 
-    init(repository: any RecurringItemRepository) {
+    init(repository: any RecurringItemRepository, now: @escaping () -> Date = { .now }, timeZone: @escaping () -> TimeZone = { .current }) {
         self.repository = repository
+        self.now = now
+        self.timeZone = timeZone
     }
 
     func execute() throws -> [RecurringItem] {
-        try repository.fetchActive().filter { $0.isActiveTrial }
+        let today = try BillingCivilDay.civilDate(containing: now(), in: timeZone())
+        return try repository.fetchActive().filter { try $0.isActiveTrial(on: today) }
     }
 }

@@ -26,7 +26,7 @@ struct OverviewInsightUseCaseTests {
             return
         }
         #expect(details.itemID == id(1))
-        #expect(details.trialEndDate == trialEnd)
+        #expect(details.trialEndDate == canonicalFixtureDay(trialEnd, calendar: calendar))
     }
 
     @Test("Trial ending in exactly three calendar days qualifies")
@@ -40,7 +40,7 @@ struct OverviewInsightUseCaseTests {
             Issue.record("Expected trial-ending attention")
             return
         }
-        #expect(details.trialEndDate == trialEnd)
+        #expect(details.trialEndDate == canonicalFixtureDay(trialEnd, calendar: calendar))
     }
 
     @Test("Trial ending on day four does not qualify")
@@ -55,7 +55,7 @@ struct OverviewInsightUseCaseTests {
     @Test("Already expired trial does not qualify")
     func expiredTrialDoesNotQualify() async throws {
         let insight = try await execute(items: [
-            item(id: 1, status: .trial, trialEndDate: day(0, hour: 8))
+            item(id: 1, status: .trial, trialEndDate: day(-1))
         ])
 
         #expect(insight == nil)
@@ -766,7 +766,7 @@ struct OverviewInsightUseCaseTests {
             Issue.record("Expected trial attention in the supplied timezone")
             return
         }
-        #expect(details.trialEndDate == trialEnd)
+        #expect(details.trialEndDate == canonicalFixtureDay(trialEnd, calendar: tokyo))
     }
 
     @Test("Seven-day windows use calendar days across DST")
@@ -811,11 +811,15 @@ private extension OverviewInsightUseCaseTests {
         let repository = await OverviewInsightRepositoryStub(items: items)
         let useCase = OverviewInsightUseCase(repository: repository)
         return try await useCase.execute(
-            today: today ?? self.today,
-            calendar: calendar ?? self.calendar,
+            today: canonicalFixtureDay(today ?? self.today, calendar: calendar ?? self.calendar),
+            calendar: BillingCivilDay.calendar,
             reportingCurrencyCode: reportingCurrencyCode,
             exchangeRateSnapshot: exchangeRateSnapshot
         )
+    }
+
+    func canonicalFixtureDay(_ instant: Date, calendar: Calendar) -> Date {
+        BillingCivilDay.calendar.date(from: calendar.dateComponents([.year, .month, .day], from: instant)) ?? .distantPast
     }
 
     func item(
@@ -843,11 +847,11 @@ private extension OverviewInsightUseCaseTests {
             amount: amount,
             currencyCode: currencyCode,
             billingCycle: billingCycle,
-            startDate: relativeDay(-100, today: selectedToday, calendar: selectedCalendar),
-            nextChargeDate: chargeDate,
-            trialEndDate: trialEndDate,
+            startDate: canonicalFixtureDay(relativeDay(-100, today: selectedToday, calendar: selectedCalendar), calendar: selectedCalendar),
+            nextChargeDate: canonicalFixtureDay(chargeDate, calendar: selectedCalendar),
+            trialEndDate: trialEndDate.map { canonicalFixtureDay($0, calendar: selectedCalendar) },
             autoRenew: autoRenew,
-            endDate: endDate,
+            endDate: endDate.map { canonicalFixtureDay($0, calendar: selectedCalendar) },
             status: status,
             createdAt: relativeDay(-100, today: selectedToday, calendar: selectedCalendar),
             updatedAt: relativeDay(-1, today: selectedToday, calendar: selectedCalendar),

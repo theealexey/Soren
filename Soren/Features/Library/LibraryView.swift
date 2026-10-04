@@ -254,7 +254,7 @@ struct LibraryView: View {
         Button {
             navigateToItem(item)
         } label: {
-            LibrarySubscriptionRow(item: item)
+            LibrarySubscriptionRow(item: item, today: viewModel?.today)
         }
         .buttonStyle(.plain)
         .listRowBackground(Color.clear)
@@ -538,6 +538,7 @@ private struct LibrarySubscriptionRow: View {
     static let textInset = ProviderIcon.Size.medium.frame + artworkSpacing
 
     let item: RecurringItem
+    let today: CivilDate?
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -620,10 +621,7 @@ private struct LibrarySubscriptionRow: View {
 
     private var secondaryIdentity: some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(
-                item.effectiveNextChargeDate(),
-                format: .dateTime.day().month(.wide)
-            )
+            Text(verbatim: chargeDateLabel)
             .font(.subheadline)
             .foregroundStyle(SoftClubColor.textSecondary)
 
@@ -637,6 +635,12 @@ private struct LibrarySubscriptionRow: View {
                 .foregroundStyle(SoftClubColor.textSecondary)
             }
         }
+    }
+
+    private var chargeDateLabel: String {
+        guard let today,
+              let date = try? item.effectiveNextChargeDate(relativeTo: today) else { return "" }
+        return (try? BillingDatePresentation.string(from: date)) ?? ""
     }
 
     private var amount: some View {

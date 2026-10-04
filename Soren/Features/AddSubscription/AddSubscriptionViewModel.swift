@@ -101,7 +101,7 @@ final class AddSubscriptionViewModel {
                 markPricingInputAsUserModifiedIfNeeded()
             }
             if !isNextChargeDateManuallySet {
-                nextChargeDate = Self.suggestNextChargeDate(from: startDate, cycle: billingCycle)
+                recomputeNextChargeDay()
             }
             recomputeEndDateIfNeeded()
         }
@@ -112,13 +112,13 @@ final class AddSubscriptionViewModel {
     private(set) var pricingState: AddSubscriptionPricingState = .noTierSelected
     private(set) var isPricingInputUserModified = false
 
-    var startDate = Date.now {
+    var startDate: CivilDate? {
         didSet {
             guard !isNextChargeDateManuallySet else { return }
-            nextChargeDate = Self.suggestNextChargeDate(from: startDate, cycle: billingCycle)
+            recomputeNextChargeDay()
         }
     }
-    var nextChargeDate = Date.now {
+    var nextChargeDate: CivilDate? {
         didSet { recomputeEndDateIfNeeded() }
     }
     private(set) var isNextChargeDateManuallySet = false
@@ -133,7 +133,8 @@ final class AddSubscriptionViewModel {
 
     /// Proposed end date for finite subscriptions. Ignored when autoRenew is true.
     /// Auto-filled to nextChargeDate + 1 cycle when autoRenew is first set to false.
-    var endDate: Date = .now
+    var endDate: CivilDate?
+    private(set) var dateInputError: Error?
 
     /// True once the user explicitly picks an end date from the sheet.
     /// Prevents billingCycle / nextChargeDate changes from silently overwriting it.
@@ -172,6 +173,7 @@ final class AddSubscriptionViewModel {
     private let preferences: UserPreferencesRepository
     private let regionalPricingSnapshotResult: Result<RegionalPricingSnapshot, BundledRegionalPricingLoaderError>
     private let currentDate: () -> Date
+    private let timeZone: () -> TimeZone
     private var estimateTask: Task<Void, Never>?
     private var currentEstimateRequest: CurrencyEstimateRequest?
     private var isApplyingPricingInput = false
@@ -184,7 +186,8 @@ final class AddSubscriptionViewModel {
         currencyEstimateService: CurrencyEstimateService = .preview,
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
         regionalPricingSnapshotResult: Result<RegionalPricingSnapshot, BundledRegionalPricingLoaderError> = .failure(.resourceNotFound("RegionalPricing")),
-        currentDate: @escaping () -> Date = { .now }
+        currentDate: @escaping () -> Date = { .now },
+        timeZone: @escaping () -> TimeZone = { .current }
     ) {
         self.catalog = catalog
         self.saveRecurringItem = saveRecurringItem
@@ -192,20 +195,26 @@ final class AddSubscriptionViewModel {
         self.preferences = preferences
         self.regionalPricingSnapshotResult = regionalPricingSnapshotResult
         self.currentDate = currentDate
+        self.timeZone = timeZone
         let prefs = preferences.load()
         self.currencyCode   = prefs.defaultCurrencyCode
         self.reportingCurrencyCode = prefs.defaultCurrencyCode
         self.pricingMarket = prefs.pricingMarket
         self.chargeReminder = prefs.defaultChargeReminder
         // didSet observers don't fire during init — seed the suggestion explicitly.
-        self.nextChargeDate = Self.suggestNextChargeDate(from: .now, cycle: .monthly)
+        do {
+            let today = try BillingCivilDay.civilDate(containing: currentDate(), in: timeZone())
+            self.startDate = today
+            self.nextChargeDate = try Self.suggestNextChargeDay(from: today, cycle: .monthly, today: today)
+            self.endDate = self.nextChargeDate
+        } catch { dateInputError = error }
     }
 
     // MARK: - End Date
 
     /// Called by the end-date binding in the form view to record a user-chosen date.
     /// Once called, auto-fill stops updating endDate for changes to cycle or charge date.
-    func setEndDateManually(_ date: Date) {
+    func setEndDateManually(_ date: CivilDate?) {
         endDate = date
         isEndDateManuallySet = true
     }
@@ -214,7 +223,33 @@ final class AddSubscriptionViewModel {
     /// Only runs when autoRenew is off and the user has not manually chosen a date.
     private func recomputeEndDateIfNeeded() {
         guard !autoRenew, !isEndDateManuallySet else { return }
-        endDate = billingCycle.nextDate(after: nextChargeDate)
+        guard let nextChargeDate else { return }
+        do { endDate = try Self.nextDay(after: nextChargeDate, cycle: billingCycle) }
+        catch { dateInputError = error }
+    }
+
+    private func recomputeNextChargeDay() {
+        guard let startDate else { return }
+        do {
+            let today = try BillingCivilDay.civilDate(containing: currentDate(), in: timeZone())
+            nextChargeDate = try Self.suggestNextChargeDay(from: startDate, cycle: billingCycle, today: today)
+        } catch { dateInputError = error }
+    }
+
+    static func nextDay(after day: CivilDate, cycle: BillingCycle) throws -> CivilDate {
+        let date = try BillingCivilDay.canonicalDate(for: day)
+        return try BillingCivilDay.civilDate(fromCanonicalDate: cycle.nextDate(after: date, calendar: BillingCivilDay.calendar))
+    }
+
+    static func suggestNextChargeDay(from start: CivilDate, cycle: BillingCycle, today: CivilDate) throws -> CivilDate {
+        guard start <= today else { return start }
+        var candidate = start
+        repeat {
+            let next = try nextDay(after: candidate, cycle: cycle)
+            guard next > candidate else { throw BillingCivilDayError.arithmeticFailed }
+            candidate = next
+        } while candidate < today
+        return candidate
     }
 
     // MARK: - Load Providers
@@ -285,10 +320,11 @@ final class AddSubscriptionViewModel {
         category = .other
         itemType = .subscription
         isNextChargeDateManuallySet = false
-        startDate = .now
+        do { startDate = try BillingCivilDay.civilDate(containing: currentDate(), in: timeZone()) }
+        catch { dateInputError = error; startDate = nil }
         isEndDateManuallySet = false
         autoRenew = true
-        endDate = .now
+        endDate = startDate
         note = ""
         usageStatus = .unknown
         chargeReminder = preferences.load().defaultChargeReminder
@@ -296,54 +332,14 @@ final class AddSubscriptionViewModel {
 
     // MARK: - Next Charge Date
 
-    func setNextChargeDateManually(_ date: Date) {
+    func setNextChargeDateManually(_ date: CivilDate?) {
         nextChargeDate = date
         isNextChargeDateManuallySet = true
     }
 
     func resetNextChargeToAutomatic() {
         isNextChargeDateManuallySet = false
-        nextChargeDate = Self.suggestNextChargeDate(from: startDate, cycle: billingCycle)
-    }
-
-    /// Suggests the next charge date for the Add and Edit forms.
-    ///
-    /// Contract:
-    /// - If `startDate`'s calendar day is after today's calendar day, the first charge
-    ///   hasn't happened yet — return `startDate` unchanged.
-    /// - Otherwise, advance by `cycle` at least once (so startDate itself is never
-    ///   returned as the "next" charge) and keep advancing while the candidate's
-    ///   calendar day is still before today's calendar day. Today counts as a
-    ///   valid next-charge day.
-    ///
-    /// Examples (cycle = monthly, today = Apr 24):
-    ///   startDate Apr 24 → May 24   (started today; next bill is one cycle later)
-    ///   startDate Mar 24 → Apr 24   (one cycle in the past; next bill is today)
-    ///   startDate Feb 24 → Apr 24   (two cycles in the past; skip Mar, land on Apr)
-    ///
-    /// Day-granular comparison is load-bearing. `DatePicker` writes dates at 00:00
-    /// while `today = .now` captures the current wall-clock moment. A raw `<`
-    /// comparison on the full Date treats `Apr 24 00:00 < Apr 24 15:00` as true
-    /// and advances one cycle too many — reproducing the on-device bug where
-    /// changing startDate to Mar 24 still yielded May 24 instead of Apr 24.
-    /// Normalizing both sides through `calendar.startOfDay(for:)` pins the
-    /// comparison to calendar days regardless of the current hour.
-    ///
-    /// Pure / referentially transparent — never mutates ViewModel state.
-    nonisolated static func suggestNextChargeDate(
-        from startDate: Date,
-        cycle: BillingCycle,
-        today: Date = .now,
-        calendar: Calendar = .current
-    ) -> Date {
-        let startDay = calendar.startOfDay(for: startDate)
-        let todayDay = calendar.startOfDay(for: today)
-        guard startDay <= todayDay else { return startDate }
-        var candidate = startDate
-        repeat {
-            candidate = cycle.nextDate(after: candidate, calendar: calendar)
-        } while calendar.startOfDay(for: candidate) < todayDay
-        return candidate
+        recomputeNextChargeDay()
     }
 
     // MARK: - Derived Currency Estimate
@@ -578,6 +574,7 @@ final class AddSubscriptionViewModel {
     // MARK: - Validation
 
     var canSave: Bool {
+        guard dateInputError == nil, let nextChargeDate, startDate != nil else { return false }
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, trimmed.count <= 255 else { return false }
         guard let amount = Decimal(string: amountText.replacingOccurrences(of: ",", with: ".")),
@@ -585,6 +582,7 @@ final class AddSubscriptionViewModel {
         // Mirror R2: end date must not precede the next charge date.
         // The use-case will also enforce this, but disabling Save early gives immediate feedback.
         if !autoRenew {
+            guard let endDate else { return false }
             guard endDate >= nextChargeDate else { return false }
         }
         return true
@@ -594,6 +592,9 @@ final class AddSubscriptionViewModel {
 
     func save() async throws {
         saveError = nil
+
+        if let dateInputError { throw dateInputError }
+        guard let startDate, let nextChargeDate else { throw BillingCivilDayError.arithmeticFailed }
 
         guard let amount = Decimal(string: amountText.replacingOccurrences(of: ",", with: ".")) else {
             throw SaveRecurringItem.ValidationError.invalidAmount
@@ -608,10 +609,10 @@ final class AddSubscriptionViewModel {
             amount: amount,
             currencyCode: currencyCode,
             billingCycle: billingCycle,
-            startDate: startDate,
-            nextChargeDate: nextChargeDate,
+            startDate: try BillingCivilDay.canonicalDate(for: startDate),
+            nextChargeDate: try BillingCivilDay.canonicalDate(for: nextChargeDate),
             autoRenew: autoRenew,
-            endDate: autoRenew ? nil : endDate,
+            endDate: try autoRenew ? nil : endDate.map { try BillingCivilDay.canonicalDate(for: $0) },
             chargeReminder: chargeReminder,
             trialReminder: trialReminder,
             status: .active,

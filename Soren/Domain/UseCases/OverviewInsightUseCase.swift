@@ -46,7 +46,7 @@ where Repository: RecurringItemRepository, Repository: Sendable {
             return .attention(.trialEnding(trialAttention))
         }
 
-        let upcomingEvents = nearestChargeEvents(
+        let upcomingEvents = try nearestChargeEvents(
             for: eligibleItems,
             from: bounds.startOfToday,
             before: bounds.thirtyDayEnd,
@@ -211,12 +211,10 @@ private extension OverviewInsightUseCase {
         from startDate: Date,
         before endDate: Date,
         calendar: Calendar
-    ) -> [OverviewInsightChargeEvent] {
-        items.compactMap { item -> OverviewInsightChargeEvent? in
-            let effectiveDate = item.effectiveNextChargeDate(
-                relativeTo: startDate,
-                calendar: calendar
-            )
+    ) throws -> [OverviewInsightChargeEvent] {
+        let today = try BillingCivilDay.civilDate(fromCanonicalDate: startDate)
+        return try items.compactMap { item -> OverviewInsightChargeEvent? in
+            let effectiveDate = try item.effectiveNextChargeDate(relativeTo: today)
             let chargeDay = calendar.startOfDay(for: effectiveDate)
             guard chargeDay >= startDate, chargeDay < endDate else { return nil }
 

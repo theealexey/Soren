@@ -38,6 +38,7 @@ final class HomeViewModel {
     private let calculateOverviewInsight: OverviewInsightCalculation
     private let now: @Sendable () -> Date
     private let calendar: Calendar
+    private let timeZone: @Sendable () -> TimeZone
 
     private var exchangeRateSnapshot: ExchangeRateSnapshot?
     private var loadRevision = 0
@@ -50,7 +51,8 @@ final class HomeViewModel {
         calculateCurrentMonth: @escaping CurrentMonthSnapshotCalculation,
         calculateOverviewInsight: @escaping OverviewInsightCalculation = { _, _, _, _ in nil },
         now: @escaping @Sendable () -> Date = { .now },
-        calendar: Calendar
+        calendar: Calendar,
+        timeZone: (@Sendable () -> TimeZone)? = nil
     ) {
         self.getUpcomingCharges = getUpcomingCharges
         self.preferences = preferences
@@ -60,10 +62,12 @@ final class HomeViewModel {
         self.calculateCurrentMonth = calculateCurrentMonth
         self.calculateOverviewInsight = calculateOverviewInsight
         self.now = now
-        self.calendar = calendar
+        self.calendar = BillingCivilDay.calendar
+        self.timeZone = timeZone ?? { calendar.timeZone }
 
-        let initialDate = now()
-        self.screenState = Self.loadingState(today: initialDate, calendar: calendar)
+        let initialDay = try? BillingCivilDay.civilDate(containing: now(), in: self.timeZone())
+        let initialDate = initialDay.flatMap { try? BillingCivilDay.canonicalDate(for: $0) } ?? now()
+        self.screenState = Self.loadingState(today: initialDate, calendar: self.calendar)
     }
 
     // MARK: - Load
@@ -75,11 +79,12 @@ final class HomeViewModel {
         let revision = loadRevision
         isLoading = true
 
-        let today = now()
-        let startOfToday = calendar.startOfDay(for: today)
         let reportingCurrencyCode = preferences.load().defaultCurrencyCode
 
         do {
+            let day = try BillingCivilDay.civilDate(containing: now(), in: timeZone())
+            let today = try BillingCivilDay.canonicalDate(for: day)
+            let startOfToday = today
             let visibleUpcoming = try getUpcomingCharges.execute(
                 from: startOfToday,
                 calendar: calendar

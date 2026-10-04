@@ -11,10 +11,23 @@ struct GetUpcomingChargesUseCaseTests {
         return calendar
     }
 
-    private func date(_ year: Int, _ month: Int, _ day: Int, calendar: Calendar? = nil) throws -> Date {
-        try #require((calendar ?? self.calendar).date(from: DateComponents(
-            year: year, month: month, day: day
-        )))
+    /// Persisted billing fixtures use the Domain representation, not the supplied
+    /// projector calendar's local-midnight carrier.
+    private func date(_ year: Int, _ month: Int, _ day: Int) throws -> Date {
+        try BillingCivilDay.canonicalDate(for: CivilDate(year: year, month: month, day: day))
+    }
+
+    /// The projector's explicit Calendar determines occurrence carriers. Compare
+    /// their civil days with canonical billing expectations without changing that
+    /// Calendar dependency or asserting a local instant as storage representation.
+    private func occurrenceDays(
+        _ occurrences: [UpcomingScheduledCharge],
+        calendar: Calendar? = nil
+    ) throws -> [Date] {
+        let timeZone = (calendar ?? self.calendar).timeZone
+        return try occurrences.map {
+            try BillingCivilDay.canonicalDate(for: BillingCivilDay.civilDate(containing: $0.date, in: timeZone))
+        }
     }
 
     private func item(
@@ -64,7 +77,7 @@ struct GetUpcomingChargesUseCaseTests {
         let result = try GetUpcomingCharges(repository: fixture.recurringItems)
             .execute(from: today, calendar: calendar)
         #expect(result.count == 3)
-        #expect(result.map(\.date) == [
+        #expect(try occurrenceDays(result) == [
             try date(2026, 8, 15), try date(2026, 8, 20), try date(2026, 8, 20)
         ])
         #expect(result[1].item.id == earlierID)
@@ -81,7 +94,7 @@ struct GetUpcomingChargesUseCaseTests {
         let result = try GetUpcomingCharges(repository: fixture.recurringItems)
             .execute(from: today, calendar: calendar)
         #expect(result.map(\.item.id) == [weekly.id, weekly.id, weekly.id])
-        #expect(result.map(\.date) == [
+        #expect(try occurrenceDays(result) == [
             try date(2026, 8, 15), try date(2026, 8, 22), try date(2026, 8, 29)
         ])
     }
@@ -95,7 +108,7 @@ struct GetUpcomingChargesUseCaseTests {
         ))
         let result = try GetUpcomingCharges(repository: fixture.recurringItems)
             .execute(from: today, calendar: calendar)
-        #expect(result.map(\.date) == [
+        #expect(try occurrenceDays(result) == [
             try date(2026, 8, 31), try date(2026, 9, 30), try date(2026, 10, 31)
         ])
     }
@@ -123,7 +136,7 @@ struct GetUpcomingChargesUseCaseTests {
         ))
         let result = try GetUpcomingCharges(repository: fixture.recurringItems)
             .execute(from: today, calendar: calendar)
-        #expect(result.first?.date == renewal)
+        #expect(try occurrenceDays(result).first == renewal)
     }
 
     @Test("Finite end date is inclusive and excludes following occurrences")
@@ -136,7 +149,7 @@ struct GetUpcomingChargesUseCaseTests {
         ))
         let result = try GetUpcomingCharges(repository: fixture.recurringItems)
             .execute(from: today, calendar: calendar)
-        #expect(result.map(\.date) == [try date(2026, 8, 14), try date(2026, 8, 21)])
+        #expect(try occurrenceDays(result) == [try date(2026, 8, 14), try date(2026, 8, 21)])
     }
 
     @Test("Paused cancelled and archived items are excluded by projector")
@@ -179,7 +192,7 @@ struct GetUpcomingChargesUseCaseTests {
         ])
         let result = try GetUpcomingCharges(repository: fixture.recurringItems)
             .execute(from: today, calendar: calendar)
-        #expect(result.map(\.date) == [try date(2027, 8, 13)])
+        #expect(try occurrenceDays(result) == [try date(2027, 8, 13)])
     }
 
     @Test("Supplied Gregorian calendar and timezone determine civil schedule days")
@@ -187,13 +200,13 @@ struct GetUpcomingChargesUseCaseTests {
         let fixture = try fixture()
         var tokyo = Calendar(identifier: .gregorian)
         tokyo.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? .gmt
-        let today = try date(2026, 9, 1, calendar: tokyo)
+        let today = try date(2026, 9, 1)
         try fixture.recurringItems.save(item(next: today, start: today, cycle: .annual))
         let result = try GetUpcomingCharges(repository: fixture.recurringItems)
             .execute(from: today, calendar: tokyo)
-        #expect(result.map(\.date) == [
+        #expect(try occurrenceDays(result, calendar: tokyo) == [
             today,
-            try date(2027, 9, 1, calendar: tokyo),
+            try date(2027, 9, 1),
         ])
     }
 

@@ -226,26 +226,6 @@ extension RecurringItem {
         monthlyEquivalent * 12
     }
 
-    /// True if next charge is within the given number of days.
-    func isDue(within days: Int, from date: Date = .now) -> Bool {
-        let threshold = Calendar.current.date(byAdding: .day, value: days, to: date) ?? date
-        return nextChargeDate <= threshold && nextChargeDate >= date
-    }
-
-    /// True if this is an active trial.
-    var isActiveTrial: Bool {
-        guard let trialEnd = trialEndDate else { return false }
-        return status == .trial && trialEnd > .now
-    }
-
-    /// Days until the trial expires. nil if not a trial.
-    var daysUntilTrialEnd: Int? {
-        guard let trialEnd = trialEndDate, isActiveTrial else { return nil }
-        return Calendar.current.dateComponents([.day], from: .now, to: trialEnd).day
-    }
-
-    // MARK: - Renewal Display
-
     /// Display-layer classification of how this item's lifecycle will end.
     /// Derived solely from `autoRenew`, `endDate`, and the current date.
     /// Never mutates persisted state.
@@ -255,66 +235,4 @@ extension RecurringItem {
         case expired                   // finite subscription whose endDate has passed
     }
 
-    var renewalDisplay: RenewalDisplay {
-        guard !autoRenew, let end = endDate else { return .renewing }
-        let cal  = Calendar.current
-        let days = cal.dateComponents(
-            [.day],
-            from: cal.startOfDay(for: .now),
-            to:   cal.startOfDay(for: end)
-        ).day ?? 0
-        if days < 0   { return .expired }
-        if days <= 30 { return .endingSoon(daysLeft: days) }
-        return .renewing
-    }
-
-    /// True when the item is a finite subscription whose end date has passed.
-    var isExpired: Bool {
-        if case .expired = renewalDisplay { return true }
-        return false
-    }
-
-    /// Days until next charge. Negative if overdue.
-    var daysUntilNextCharge: Int {
-        Calendar.current.dateComponents([.day], from: .now, to: nextChargeDate).day ?? 0
-    }
-
-    /// Display-layer effective next charge date.
-    ///
-    /// For active recurring subscriptions whose stored `nextChargeDate` has passed,
-    /// advances by `billingCycle` until the result is >= the start of `today`.
-    /// Does NOT mutate persisted state — call sites use this only for user-facing text.
-    ///
-    /// Non-rolling statuses (paused / cancelled / archived) and finite subscriptions
-    /// (`autoRenew == false`) return the stored date unchanged so their display
-    /// strings reflect the actual record rather than a computed future occurrence.
-    func effectiveNextChargeDate(
-        relativeTo today: Date = .now,
-        calendar: Calendar = .current
-    ) -> Date {
-        let startOfToday = calendar.startOfDay(for: today)
-
-        // Non-rolling statuses — return stored date as-is.
-        switch status {
-        case .paused, .cancelled, .archived:
-            return nextChargeDate
-        default:
-            break
-        }
-
-        // Already today or in the future — no rollover needed.
-        guard nextChargeDate < startOfToday else { return nextChargeDate }
-
-        // Finite subscriptions do not roll past their end date.
-        guard autoRenew else { return nextChargeDate }
-
-        // Advance one cycle at a time until we reach today or later.
-        var candidate = nextChargeDate
-        var iterations = 0
-        while candidate < startOfToday, iterations < 1_000 {
-            candidate = billingCycle.nextDate(after: candidate, calendar: calendar)
-            iterations += 1
-        }
-        return candidate
-    }
 }

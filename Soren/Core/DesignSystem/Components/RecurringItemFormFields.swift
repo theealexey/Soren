@@ -15,10 +15,10 @@ struct RecurringItemFormFields: View {
     @Binding var billingCycle: BillingCycle
     @Binding var category: ItemCategory
     @Binding var itemType: ItemType
-    @Binding var startDate: Date
-    @Binding var nextChargeDate: Date
+    @Binding var startDate: CivilDate?
+    @Binding var nextChargeDate: CivilDate?
     @Binding var autoRenew: Bool
-    @Binding var endDate: Date
+    @Binding var endDate: CivilDate?
     @Binding var note: String
     @Binding var usageStatus: UsageStatus
     @Binding var chargeReminder: ChargeReminderOption
@@ -151,7 +151,8 @@ struct RecurringItemFormFields: View {
 /// in a sheet. Dismisses automatically when a different date is selected.
 private struct DatePickerRow: View {
     let label: String
-    @Binding var selection: Date
+    @Binding var selection: CivilDate?
+    @Environment(\.timeZone) private var timeZone
     @State private var isPresented = false
 
     var body: some View {
@@ -162,15 +163,7 @@ private struct DatePickerRow: View {
                 Text(label)
                     .foregroundStyle(ColorTokens.textPrimary)
                 Spacer()
-                Text(
-                    selection.formatted(
-                        .dateTime
-                            .day()
-                            .month(.abbreviated)
-                            .year()
-                            .locale(PresentationLocale.current)
-                    )
-                )
+                Text(formattedDay)
                     .foregroundStyle(.tint)
             }
         }
@@ -178,10 +171,12 @@ private struct DatePickerRow: View {
             NavigationStack {
                 DatePicker(
                     label,
-                    selection: $selection,
+                    selection: pickerBinding,
                     displayedComponents: .date
                 )
                 .datePickerStyle(.graphical)
+                .environment(\.calendar, pickerCalendar)
+                .environment(\.timeZone, timeZone)
                 .padding(.horizontal, Spacing.md)
                 .onChange(of: selection) { _, _ in
                     isPresented = false
@@ -203,6 +198,29 @@ private struct DatePickerRow: View {
             }
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
+        }
+    }
+
+    private var pickerCalendar: Calendar {
+        var calendar = BillingCivilDay.calendar
+        calendar.timeZone = timeZone
+        calendar.locale = PresentationLocale.current
+        return calendar
+    }
+
+    private var formattedDay: String {
+        guard let selection,
+              let date = try? BillingCivilDay.canonicalDate(for: selection) else { return "" }
+        return (try? BillingDatePresentation.string(from: date, template: "dMMMyyyy")) ?? ""
+    }
+
+    private var pickerBinding: Binding<Date> {
+        Binding {
+            guard let selection, let carrier = try? BillingDatePresentation.pickerCarrier(for: selection, in: timeZone)
+            else { return .now } // UI-only placeholder for invalid/empty form state; never saved.
+            return carrier
+        } set: { carrier in
+            selection = try? BillingDatePresentation.day(fromPickerCarrier: carrier, in: timeZone)
         }
     }
 }

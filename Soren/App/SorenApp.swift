@@ -18,16 +18,22 @@ struct SorenApp: App {
                         .environment(appState)
                         .modelContainer(container)
                         .modifier(AppThemeModifier(mode: appState.appearanceMode))
-                } else {
+                } else if appState.preparationState == .civilDateBlocked {
+                    VStack(spacing: Spacing.lg) {
+                        Text("Не удалось загрузить данные")
+                        Button(String(localized: "Повторить")) { appState.prepare() }
+                            .buttonStyle(.borderedProminent)
+                    }
+                } else if appState.preparationState == .storeUnavailable {
                     StoreRecoveryView { appState.recoverWithReset() }
+                } else {
+                    ProgressView()
                 }
             }
             .preferredColorScheme(appState.appearanceMode.colorScheme)
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active {
-                appState.appContainer?.notificationRefreshCoordinator.didBecomeActive()
-            }
+            appState.sceneActivityChanged(isActive: phase == .active)
         }
     }
 }

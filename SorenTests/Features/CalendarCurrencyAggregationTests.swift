@@ -157,6 +157,10 @@ struct CalendarCurrencyAggregationTests {
         )
     }
 
+    private func canonicalFixtureDay(_ carrier: Date) -> Date {
+        BillingCivilDay.calendar.date(from: CalendarViewModel.cal.dateComponents([.year, .month, .day], from: carrier)) ?? .distantPast
+    }
+
     private func item(
         title: String,
         amount: Decimal,
@@ -171,9 +175,10 @@ struct CalendarCurrencyAggregationTests {
             title: title,
             amount: amount,
             currencyCode: currencyCode,
-            nextChargeDate: chargeDate,
+            startDate: canonicalFixtureDay(chargeDate),
+            nextChargeDate: canonicalFixtureDay(chargeDate),
             autoRenew: autoRenew,
-            endDate: endDate,
+            endDate: endDate.map(canonicalFixtureDay),
             status: status,
             archivedAt: archivedAt
         )

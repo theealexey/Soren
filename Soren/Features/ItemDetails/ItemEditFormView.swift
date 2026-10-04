@@ -61,7 +61,7 @@ struct ItemEditFormView: View {
 
     /// Routes the next-charge-date setter through setEditNextChargeDateManually so
     /// subsequent startDate / billingCycle changes will not overwrite the user's pick.
-    private var editNextChargeDateBinding: Binding<Date> {
+    private var editNextChargeDateBinding: Binding<CivilDate?> {
         Binding(
             get: { viewModel.editNextChargeDate },
             set: { viewModel.setEditNextChargeDateManually($0) }
@@ -70,7 +70,7 @@ struct ItemEditFormView: View {
 
     // MARK: - End Date Binding
 
-    private var editEndDateBinding: Binding<Date> {
+    private var editEndDateBinding: Binding<CivilDate?> {
         Binding(
             get: { viewModel.editEndDate },
             set: { viewModel.setEditEndDateManually($0) }

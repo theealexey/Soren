@@ -68,7 +68,7 @@ struct SubscriptionFormView: View {
 
     /// Routes the next-charge-date setter through setNextChargeDateManually so the ViewModel
     /// records a manual override and stops auto-suggesting on subsequent startDate / billingCycle changes.
-    private var nextChargeDateBinding: Binding<Date> {
+    private var nextChargeDateBinding: Binding<CivilDate?> {
         Binding(
             get: { viewModel.nextChargeDate },
             set: { viewModel.setNextChargeDateManually($0) }
@@ -79,7 +79,7 @@ struct SubscriptionFormView: View {
 
     /// Routes the end-date setter through setEndDateManually so the ViewModel records
     /// that the user has explicitly chosen a date and stops auto-filling on cycle changes.
-    private var endDateBinding: Binding<Date> {
+    private var endDateBinding: Binding<CivilDate?> {
         Binding(
             get: { viewModel.endDate },
             set: { viewModel.setEndDateManually($0) }

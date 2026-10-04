@@ -13,10 +13,10 @@ enum InsightsBuilder {
         let severity: InsightCard.Severity
     }
 
-    static func build(from upcomingCharges: [RecurringItem]) -> [InsightData] {
+    static func build(from upcomingCharges: [RecurringItem], today: CivilDate) throws -> [InsightData] {
         var result: [InsightData] = []
 
-        let overdueCount = upcomingCharges.filter { $0.daysUntilNextCharge < 0 }.count
+        let overdueCount = try upcomingCharges.filter { try $0.daysUntilNextCharge(from: today) < 0 }.count
         if overdueCount > 0 {
             result.append(InsightData(
                 icon: "exclamationmark.triangle.fill",

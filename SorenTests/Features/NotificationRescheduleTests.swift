@@ -267,6 +267,7 @@ struct NotificationRefreshCoordinatorTests {
             title: "Spotify",
             amount: 599,
             currencyCode: "RUB",
+            startDate: Date(timeIntervalSince1970: 1_786_579_200),
             nextChargeDate: Date(timeIntervalSince1970: 1_786_579_200)
         )
         item.status = status

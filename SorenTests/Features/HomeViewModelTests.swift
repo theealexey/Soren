@@ -280,9 +280,9 @@ struct HomeViewModelTests {
         #expect(viewModel.upcoming.rows.map(\.item.id) == Array(repeating: recurring.id, count: 3))
         #expect(Set(viewModel.upcoming.rows.map(\.id)).count == 3)
         #expect(viewModel.upcoming.rows.map(\.scheduledDate) == [
-            calendar().startOfDay(for: try date(day: 15)),
-            calendar().startOfDay(for: try date(day: 22)),
-            calendar().startOfDay(for: try date(day: 29)),
+            try BillingCivilDay.canonicalDate(for: CivilDate(year: 2026, month: 8, day: 15)),
+            try BillingCivilDay.canonicalDate(for: CivilDate(year: 2026, month: 8, day: 22)),
+            try BillingCivilDay.canonicalDate(for: CivilDate(year: 2026, month: 8, day: 29)),
         ])
     }
 
@@ -520,25 +520,25 @@ struct GetActiveTrialsTests {
     @Test("Only trial status with future trialEndDate qualifies")
     func onlyActiveTrials() throws {
         let repository = HomeViewModelTestsRepository()
-        let now = Date.now
+        let now = try canonicalTestDay(1)
         repository.items = [
             RecurringItem(
                 title: "Trial",
                 amount: 100,
                 nextChargeDate: now,
-                trialEndDate: Calendar.current.date(byAdding: .day, value: 3, to: now),
+                trialEndDate: BillingCivilDay.calendar.date(byAdding: .day, value: 3, to: now),
                 status: .trial
             ),
             RecurringItem(
                 title: "Active",
                 amount: 100,
                 nextChargeDate: now,
-                trialEndDate: Calendar.current.date(byAdding: .day, value: 3, to: now),
+                trialEndDate: BillingCivilDay.calendar.date(byAdding: .day, value: 3, to: now),
                 status: .active
             ),
         ]
 
-        let result = try GetActiveTrials(repository: repository).execute()
+        let result = try GetActiveTrials(repository: repository, now: { now }, timeZone: { .gmt }).execute()
         #expect(result.map(\.title) == ["Trial"])
     }
 }

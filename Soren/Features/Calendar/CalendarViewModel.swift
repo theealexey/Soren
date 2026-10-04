@@ -183,7 +183,7 @@ final class CalendarViewModel {
             // Group charges that fall within the grid's visible date range
             var byDate: [Date: [RecurringItem]] = [:]
             for item in items {
-                let day = Self.cal.startOfDay(for: item.nextChargeDate)
+                let day = try Self.gridDay(for: item.nextChargeDate, calendar: Self.cal)
                 if day >= gridStart && day <= gridEnd {
                     byDate[day, default: []].append(item)
                 }
@@ -203,8 +203,8 @@ final class CalendarViewModel {
 
             let monthRange = displayedMonth..<nextMonthStart
             displayedMonthRange = monthRange
-            monthlyProjections = items.compactMap { item in
-                let day = Self.cal.startOfDay(for: item.nextChargeDate)
+            monthlyProjections = try items.compactMap { item in
+                let day = try Self.gridDay(for: item.nextChargeDate, calendar: Self.cal)
                 guard monthRange.contains(day) else { return nil }
                 return projection(for: item, on: day)
             }
@@ -284,6 +284,12 @@ final class CalendarViewModel {
             amount: item.amount,
             currencyCode: item.currencyCode
         )
+    }
+
+    static func gridDay(for canonicalDate: Date, calendar: Calendar) throws -> Date {
+        let day = try BillingCivilDay.civilDate(fromCanonicalDate: canonicalDate)
+        let carrier = try BillingDatePresentation.pickerCarrier(for: day, in: calendar.timeZone)
+        return calendar.startOfDay(for: carrier)
     }
 
     // MARK: - Grid Construction

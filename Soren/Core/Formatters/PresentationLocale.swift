@@ -44,3 +44,36 @@ enum PresentationLocale {
         return formatter
     }
 }
+
+/// UI carrier dates and billing civil days are deliberately separate boundaries.
+enum BillingDatePresentation {
+    static func today(now: Date = .now, in timeZone: TimeZone = .current) throws -> CivilDate {
+        try BillingCivilDay.civilDate(containing: now, in: timeZone)
+    }
+    static func pickerCarrier(for day: CivilDate, in timeZone: TimeZone) throws -> Date {
+        var calendar = BillingCivilDay.calendar
+        calendar.timeZone = timeZone
+        guard let date = calendar.date(from: DateComponents(
+            year: day.year, month: day.month, day: day.day, hour: 12
+        )), try BillingCivilDay.civilDate(containing: date, in: timeZone) == day else {
+            throw BillingCivilDayError.unrepresentableCivilDate(day)
+        }
+        return date
+    }
+
+    static func day(fromPickerCarrier date: Date, in timeZone: TimeZone) throws -> CivilDate {
+        try BillingCivilDay.civilDate(containing: date, in: timeZone)
+    }
+
+    static func string(
+        from canonicalDate: Date, template: String = "dMMMM",
+        locale: Locale = PresentationLocale.current
+    ) throws -> String {
+        _ = try BillingCivilDay.civilDate(fromCanonicalDate: canonicalDate)
+        let formatter = PresentationLocale.dateFormatter(
+            template: template, locale: locale, calendar: BillingCivilDay.calendar
+        )
+        formatter.timeZone = .gmt
+        return formatter.string(from: canonicalDate)
+    }
+}

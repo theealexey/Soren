@@ -19,7 +19,9 @@ struct MonthlyProjection: Identifiable, Equatable {
     }
 
     private static let labelFormatter: DateFormatter = {
-        PresentationLocale.dateFormatter(template: "MMM")
+        let formatter = PresentationLocale.dateFormatter(template: "MMM", calendar: BillingCivilDay.calendar)
+        formatter.timeZone = .gmt
+        return formatter
     }()
 }
 
@@ -111,7 +113,7 @@ final class AnalyticsViewModel {
     private static let cal: Calendar = {
         var calendar = Calendar(identifier: .gregorian)
         calendar.locale = PresentationLocale.current
-        calendar.timeZone = .current
+        calendar.timeZone = .gmt
         return calendar
     }()
 
@@ -121,12 +123,16 @@ final class AnalyticsViewModel {
         getActiveItems: GetActiveItems,
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
         aggregateRecurringSpend: AggregateRecurringSpendUseCase = AggregateRecurringSpendUseCase(),
-        exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider()
+        exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider(),
+        now: @escaping () -> Date = { .now },
+        timeZone: @escaping () -> TimeZone = { .current }
     ) {
         self.getActiveItems = getActiveItems
         self.preferences = preferences
         self.aggregateRecurringSpend = aggregateRecurringSpend
         self.exchangeRateProvider = exchangeRateProvider
+        self.now = now
+        self.timeZone = timeZone
     }
 
     // MARK: - Load
@@ -367,14 +373,20 @@ final class AnalyticsViewModel {
 
     // MARK: - Forecast
 
+    private let now: () -> Date
+    private let timeZone: () -> TimeZone
+
+    var today: CivilDate? { try? BillingCivilDay.civilDate(containing: now(), in: timeZone()) }
+
     private func buildProjections(
         _ items: [RecurringItem],
         snapshot: ExchangeRateSnapshot?,
         months: Int = 6
     ) -> [MonthlyProjection] {
         let calendar = Self.cal
+        guard let today, let date = try? BillingCivilDay.canonicalDate(for: today) else { return [] }
         guard let monthStart = calendar.date(
-            from: calendar.dateComponents([.year, .month], from: .now)
+            from: calendar.dateComponents([.year, .month], from: date)
         ) else { return [] }
 
         var result: [MonthlyProjection] = []

@@ -180,10 +180,10 @@ struct LibraryTotalTests {
             amount: amount,
             currencyCode: currencyCode,
             billingCycle: cycle,
-            startDate: startDate,
-            nextChargeDate: nextChargeDate,
+            startDate: BillingCivilDay.calendar.startOfDay(for: startDate),
+            nextChargeDate: BillingCivilDay.calendar.startOfDay(for: nextChargeDate),
             autoRenew: autoRenew,
-            endDate: endDate,
+            endDate: endDate.map { BillingCivilDay.calendar.startOfDay(for: $0) },
             status: status,
             createdAt: createdAt,
             archivedAt: archivedAt
@@ -739,7 +739,8 @@ struct LibraryTotalTests {
         vm.load()
 
         #expect(annual.nextChargeDate < weekly.nextChargeDate)
-        #expect(weekly.effectiveNextChargeDate() < annual.effectiveNextChargeDate())
+        let today = try BillingDatePresentation.today()
+        #expect(try weekly.effectiveNextChargeDate(relativeTo: today) < annual.effectiveNextChargeDate(relativeTo: today))
         #expect(vm.filteredItems.map(\.title) == ["Weekly", "Annual"])
     }
 

@@ -75,7 +75,9 @@ struct RootView: View {
                 ColorTokens.background.ignoresSafeArea()
             }
         }
-        .environment(\.addSubscriptionAction, AddSubscriptionAction { activeSheet = .addSubscription })
+        .environment(\.addSubscriptionAction, AddSubscriptionAction {
+            activeSheet = .addSubscription(container.makeAddSubscriptionViewModel())
+        })
         .environment(\.navigateToItem, NavigateToItemAction { activeSheet = .itemDetails($0) })
         .sheet(item: $activeSheet, onDismiss: { container.itemsVersion += 1 }, content: sheetContent)
     }
@@ -109,10 +111,10 @@ struct RootView: View {
                     viewModel: container.makeItemDetailsViewModel(item: item)
                 )
             }
-        case .addSubscription:
+        case .addSubscription(let viewModel):
             NavigationStack {
                 ProviderPickerView(
-                    viewModel: container.makeAddSubscriptionViewModel()
+                    viewModel: viewModel
                 )
             }
         }
@@ -141,7 +143,7 @@ private let _sorenMonthYearFormatter: DateFormatter = {
 
 private enum ActiveSheet: Identifiable {
     case itemDetails(RecurringItem)
-    case addSubscription
+    case addSubscription(AddSubscriptionViewModel)
 
     var id: String {
         switch self {

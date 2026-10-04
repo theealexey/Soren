@@ -15,15 +15,15 @@ struct DemoDataSeederTests {
 
     // MARK: - Fixtures
 
-    /// A fixed reference date (2026-06-15 local noon) used wherever
+    /// A fixed canonical billing day (2026-06-15) used wherever
     /// deterministic date assertions are needed.
     private static let refDate: Date = {
         var c = DateComponents()
-        c.year = 2026; c.month = 6; c.day = 15; c.hour = 12
-        return Calendar.current.date(from: c)!
+        c.year = 2026; c.month = 6; c.day = 15
+        return BillingCivilDay.calendar.date(from: c)!
     }()
 
-    private static let cal = Calendar.current
+    private static let cal = BillingCivilDay.calendar
 
     /// Retains the in-memory container for the full lifetime of each test.
     @MainActor

@@ -48,14 +48,14 @@ struct ItemDetailsEditFormTests {
 
     /// Today's calendar day at 00:00 (stable across the test run).
     private var todayStartOfDay: Date {
-        Calendar.current.startOfDay(for: .now)
+        Date(timeIntervalSince1970: 1_786_752_000) // 2026-08-15 UTC
     }
 
     // MARK: - Recompute on startDate change
 
     @Test("Changing startDate applies the calendar-aware automatic monthly suggestion")
     func changingStartDateRecomputesNextCharge() throws {
-        let cal = Calendar.current
+        let cal = BillingCivilDay.calendar
         let today = todayStartOfDay
         let oneMonthFromToday = try #require(
             cal.date(byAdding: .month, value: 1, to: today)
@@ -65,12 +65,13 @@ struct ItemDetailsEditFormTests {
         let vm = ItemDetailsViewModel(
             item: stored,
             repositories: try makeRepositories(),
-            exchangeRateProvider: StaticExchangeRateProvider()
+            exchangeRateProvider: StaticExchangeRateProvider(),
+            now: { self.todayStartOfDay }, timeZone: { .gmt }
         )
         vm.startEditing()
 
         // Seed preserved: next-charge stayed at the stored value.
-        #expect(cal.isDate(vm.editNextChargeDate, inSameDayAs: oneMonthFromToday))
+        #expect(vm.editNextChargeDate == (try BillingCivilDay.civilDate(fromCanonicalDate: oneMonthFromToday)))
 
         // Use the first of the month so calendar clamping at days 29–31 cannot
         // change the intended billing occurrence. The VM owns the current-day
@@ -89,19 +90,19 @@ struct ItemDetailsEditFormTests {
             )
         }
 
-        vm.editStartDate = previousMonthFirst
+        vm.editStartDate = try BillingCivilDay.civilDate(fromCanonicalDate: previousMonthFirst)
 
         // A selected relationship start date is never reused as the next charge.
         // The next charge is the first monthly occurrence on or after today.
         #expect(
-            vm.editNextChargeDate == expectedNextChargeDate,
+            vm.editNextChargeDate == (try BillingCivilDay.civilDate(fromCanonicalDate: expectedNextChargeDate)),
             "Expected \(expectedNextChargeDate), got \(vm.editNextChargeDate)"
         )
     }
 
     @Test("Changing billingCycle recomputes nextChargeDate when not manually overridden")
     func changingBillingCycleRecomputesNextCharge() throws {
-        let cal = Calendar.current
+        let cal = BillingCivilDay.calendar
         let today = todayStartOfDay
         let oneYearFromToday = cal.date(byAdding: .year, value: 1, to: today)!
         // Stored as annual so the seeded next-charge is far enough out that a
@@ -115,24 +116,25 @@ struct ItemDetailsEditFormTests {
         let vm = ItemDetailsViewModel(
             item: stored,
             repositories: try makeRepositories(),
-            exchangeRateProvider: StaticExchangeRateProvider()
+            exchangeRateProvider: StaticExchangeRateProvider(),
+            now: { self.todayStartOfDay }, timeZone: { .gmt }
         )
         vm.startEditing()
-        #expect(cal.isDate(vm.editNextChargeDate, inSameDayAs: oneYearFromToday))
+        #expect(vm.editNextChargeDate == (try BillingCivilDay.civilDate(fromCanonicalDate: oneYearFromToday)))
 
         // User switches cycle to monthly → nextCharge should recompute.
         vm.editBillingCycle = .monthly
 
         // startDate == today, monthly → suggest() advances one month (today not in past).
         let oneMonthFromToday = cal.date(byAdding: .month, value: 1, to: today)!
-        #expect(cal.isDate(vm.editNextChargeDate, inSameDayAs: oneMonthFromToday))
+        #expect(vm.editNextChargeDate == (try BillingCivilDay.civilDate(fromCanonicalDate: oneMonthFromToday)))
     }
 
     // MARK: - Manual override
 
     @Test("After manual nextChargeDate pick, startDate changes do not overwrite it")
     func manualOverrideBlocksRecompute() throws {
-        let cal = Calendar.current
+        let cal = BillingCivilDay.calendar
         let today = todayStartOfDay
         let stored = makeItem(
             startDate: today,
@@ -142,25 +144,26 @@ struct ItemDetailsEditFormTests {
         let vm = ItemDetailsViewModel(
             item: stored,
             repositories: try makeRepositories(),
-            exchangeRateProvider: StaticExchangeRateProvider()
+            exchangeRateProvider: StaticExchangeRateProvider(),
+            now: { self.todayStartOfDay }, timeZone: { .gmt }
         )
         vm.startEditing()
 
         // User explicitly picks a specific next-charge date far in the future.
         let userPick = cal.date(byAdding: .day, value: 45, to: today)!
-        vm.setEditNextChargeDateManually(userPick)
+        vm.setEditNextChargeDateManually(try BillingCivilDay.civilDate(fromCanonicalDate: userPick))
         #expect(vm.isEditNextChargeDateManuallySet)
 
         // Later, user changes startDate — must NOT overwrite the manual pick.
         let oneMonthAgo = cal.date(byAdding: .month, value: -1, to: today)!
-        vm.editStartDate = oneMonthAgo
+        vm.editStartDate = try BillingCivilDay.civilDate(fromCanonicalDate: oneMonthAgo)
 
-        #expect(cal.isDate(vm.editNextChargeDate, inSameDayAs: userPick))
+        #expect(vm.editNextChargeDate == (try BillingCivilDay.civilDate(fromCanonicalDate: userPick)))
     }
 
     @Test("After manual nextChargeDate pick, billingCycle changes do not overwrite it")
     func manualOverrideBlocksCycleRecompute() throws {
-        let cal = Calendar.current
+        let cal = BillingCivilDay.calendar
         let today = todayStartOfDay
         let stored = makeItem(
             startDate: today,
@@ -170,23 +173,24 @@ struct ItemDetailsEditFormTests {
         let vm = ItemDetailsViewModel(
             item: stored,
             repositories: try makeRepositories(),
-            exchangeRateProvider: StaticExchangeRateProvider()
+            exchangeRateProvider: StaticExchangeRateProvider(),
+            now: { self.todayStartOfDay }, timeZone: { .gmt }
         )
         vm.startEditing()
 
         let userPick = cal.date(byAdding: .day, value: 100, to: today)!
-        vm.setEditNextChargeDateManually(userPick)
+        vm.setEditNextChargeDateManually(try BillingCivilDay.civilDate(fromCanonicalDate: userPick))
 
         vm.editBillingCycle = .annual
 
-        #expect(cal.isDate(vm.editNextChargeDate, inSameDayAs: userPick))
+        #expect(vm.editNextChargeDate == (try BillingCivilDay.civilDate(fromCanonicalDate: userPick)))
     }
 
     // MARK: - Seed integrity
 
     @Test("startEditing seeds nextChargeDate exactly to the stored value")
     func startEditingSeedsStoredNextCharge() throws {
-        let cal = Calendar.current
+        let cal = BillingCivilDay.calendar
         let today = todayStartOfDay
         let stored = makeItem(
             startDate: cal.date(byAdding: .day, value: -10, to: today)!,
@@ -196,13 +200,14 @@ struct ItemDetailsEditFormTests {
         let vm = ItemDetailsViewModel(
             item: stored,
             repositories: try makeRepositories(),
-            exchangeRateProvider: StaticExchangeRateProvider()
+            exchangeRateProvider: StaticExchangeRateProvider(),
+            now: { self.todayStartOfDay }, timeZone: { .gmt }
         )
         vm.startEditing()
 
         // Seed must not be clobbered by the billingCycle/startDate didSets that
         // fire during assignment inside startEditing().
-        #expect(vm.editNextChargeDate == stored.nextChargeDate)
+        #expect(vm.editNextChargeDate == (try BillingCivilDay.civilDate(fromCanonicalDate: stored.nextChargeDate)))
         // Manual-override flag must be released after seed so later edits
         // engage the auto-suggest path.
         #expect(vm.isEditNextChargeDateManuallySet == false)

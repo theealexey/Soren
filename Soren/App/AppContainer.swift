@@ -25,9 +25,9 @@ final class AppContainer {
     /// Views observe this to know when to reload their ViewModels.
     var itemsVersion: Int = 0
 
-    init(modelContext: ModelContext) {
+    init(modelContext: ModelContext, repositories: RepositoryContainer? = nil) {
         let prefs      = UserPreferencesRepository()
-        let repos      = RepositoryContainer(context: modelContext)
+        let repos      = repositories ?? RepositoryContainer(context: modelContext)
         let notificationCenter = UNUserNotificationCenterClient()
         let reconciler = NotificationReconciler(center: notificationCenter)
         let notificationObservation = NotificationReconciliationObservation()

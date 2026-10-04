@@ -457,11 +457,13 @@ struct AnalyticsView: View {
     }
 
     private static let chargeDateFormatter: DateFormatter = {
-        PresentationLocale.dateFormatter(template: "d MMMM")
+        let formatter = PresentationLocale.dateFormatter(template: "d MMMM", calendar: BillingCivilDay.calendar)
+        formatter.timeZone = .gmt
+        return formatter
     }()
 
     private func nextAnnualLabel(for item: RecurringItem) -> String {
-        let days = item.daysUntilNextCharge
+        guard let today = viewModel?.today, let days = try? item.daysUntilNextCharge(from: today) else { return "" }
         let dateStr = Self.chargeDateFormatter.string(from: item.nextChargeDate)
         if days < 0   { return String(localized: "Просрочено — \(dateStr)") }
         if days == 0  { return String(localized: "Сегодня") }

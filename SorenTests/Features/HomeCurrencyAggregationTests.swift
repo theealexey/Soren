@@ -725,9 +725,9 @@ struct HomeCurrencyAggregationTests {
         #expect(upcomingRows.count == 3)
         #expect(upcomingRows.allSatisfy { $0.item.title == "Spotify" })
         #expect(upcomingRows.map(\.scheduledDate) == [
-            calendar().startOfDay(for: try date(day: 15, month: 8)),
-            calendar().startOfDay(for: try date(day: 15, month: 9)),
-            calendar().startOfDay(for: try date(day: 15, month: 10)),
+                try BillingCivilDay.canonicalDate(for: CivilDate(year: 2026, month: 8, day: 15)),
+                try BillingCivilDay.canonicalDate(for: CivilDate(year: 2026, month: 9, day: 15)),
+                try BillingCivilDay.canonicalDate(for: CivilDate(year: 2026, month: 10, day: 15)),
         ])
     }
 

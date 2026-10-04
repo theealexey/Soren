@@ -35,8 +35,9 @@ struct NotificationRequestCopyTests {
             title: "Spotify",
             amount: 599,
             currencyCode: "RUB",
-            nextChargeDate: try date(2026, 8, 12),
-            trialEndDate: trial ? try date(2026, 8, 15) : nil,
+            startDate: try canonicalTestDay(1),
+            nextChargeDate: try canonicalTestDay(12),
+            trialEndDate: trial ? try canonicalTestDay(15) : nil,
             trialReminder: trial ? .threeDaysBefore : .never
         )
     }

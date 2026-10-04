@@ -31,24 +31,20 @@ final class ItemDetailsViewModel {
     var editBillingCycle: BillingCycle = .monthly {
         didSet {
             if !isEditNextChargeDateManuallySet {
-                editNextChargeDate = AddSubscriptionViewModel.suggestNextChargeDate(
-                    from: editStartDate, cycle: editBillingCycle
-                )
+                recomputeEditNextChargeDay()
             }
             recomputeEditEndDateIfNeeded()
         }
     }
     var editCategory: ItemCategory = .other
     var editItemType: ItemType = .subscription
-    var editStartDate = Date.now {
+    var editStartDate: CivilDate? {
         didSet {
             guard !isEditNextChargeDateManuallySet else { return }
-            editNextChargeDate = AddSubscriptionViewModel.suggestNextChargeDate(
-                from: editStartDate, cycle: editBillingCycle
-            )
+            recomputeEditNextChargeDay()
         }
     }
-    var editNextChargeDate = Date.now {
+    var editNextChargeDate: CivilDate? {
         didSet { recomputeEditEndDateIfNeeded() }
     }
     /// True once the user explicitly picks a next-charge date from the edit form,
@@ -65,7 +61,8 @@ final class ItemDetailsViewModel {
     var editAutoRenew: Bool = true {
         didSet { recomputeEditEndDateIfNeeded() }
     }
-    var editEndDate: Date = .now
+    var editEndDate: CivilDate?
+    private(set) var dateInputError: Error?
     private(set) var isEditEndDateManuallySet = false
 
     var editChargeReminder: ChargeReminderOption = .threeDaysBefore
@@ -77,6 +74,8 @@ final class ItemDetailsViewModel {
     private let deleteRecurringItem: DeleteRecurringItem
     private let currencyEstimateService: CurrencyEstimateService
     private let preferences: UserPreferencesRepository
+    private let now: () -> Date
+    private let timeZone: () -> TimeZone
     private var estimateTask: Task<Void, Never>?
     private var currentEstimateRequest: CurrencyEstimateRequest?
 
@@ -88,7 +87,9 @@ final class ItemDetailsViewModel {
         exchangeRateProvider: Provider,
         notificationCoordinator: (any NotificationStateReconciling)? = nil,
         convertMoney: ConvertMoneyUseCase = ConvertMoneyUseCase(),
-        preferences: UserPreferencesRepository = UserPreferencesRepository()
+        preferences: UserPreferencesRepository = UserPreferencesRepository(),
+        now: @escaping () -> Date = { .now },
+        timeZone: @escaping () -> TimeZone = { .current }
     ) {
         self.item = item
         self.updateRecurringItem = UpdateRecurringItem(
@@ -104,6 +105,8 @@ final class ItemDetailsViewModel {
             convertMoney: convertMoney
         )
         self.preferences = preferences
+        self.now = now
+        self.timeZone = timeZone
         self.reportingCurrencyCode = preferences.load().defaultCurrencyCode
     }
 
@@ -112,13 +115,17 @@ final class ItemDetailsViewModel {
         updateRecurringItem: UpdateRecurringItem,
         deleteRecurringItem: DeleteRecurringItem,
         currencyEstimateService: CurrencyEstimateService,
-        preferences: UserPreferencesRepository
+        preferences: UserPreferencesRepository,
+        now: @escaping () -> Date = { .now },
+        timeZone: @escaping () -> TimeZone = { .current }
     ) {
         self.item = item
         self.updateRecurringItem = updateRecurringItem
         self.deleteRecurringItem = deleteRecurringItem
         self.currencyEstimateService = currencyEstimateService
         self.preferences = preferences
+        self.now = now
+        self.timeZone = timeZone
         self.reportingCurrencyCode = preferences.load().defaultCurrencyCode
     }
 
@@ -126,26 +133,39 @@ final class ItemDetailsViewModel {
 
     /// Called by the next-charge-date binding in the edit form to record a user-chosen date.
     /// Once called, auto-fill stops updating editNextChargeDate for changes to cycle or startDate.
-    func setEditNextChargeDateManually(_ date: Date) {
+    func setEditNextChargeDateManually(_ date: CivilDate?) {
         editNextChargeDate = date
         isEditNextChargeDateManuallySet = true
     }
 
     // MARK: - Edit End Date
 
-    func setEditEndDateManually(_ date: Date) {
+    func setEditEndDateManually(_ date: CivilDate?) {
         editEndDate = date
         isEditEndDateManuallySet = true
     }
 
     private func recomputeEditEndDateIfNeeded() {
         guard !editAutoRenew, !isEditEndDateManuallySet else { return }
-        editEndDate = editBillingCycle.nextDate(after: editNextChargeDate)
+        guard let editNextChargeDate else { return }
+        do { editEndDate = try AddSubscriptionViewModel.nextDay(after: editNextChargeDate, cycle: editBillingCycle) }
+        catch { dateInputError = error }
+    }
+
+    private func recomputeEditNextChargeDay() {
+        guard let editStartDate else { return }
+        do {
+            let today = try BillingCivilDay.civilDate(containing: now(), in: timeZone())
+            editNextChargeDate = try AddSubscriptionViewModel.suggestNextChargeDay(
+                from: editStartDate, cycle: editBillingCycle, today: today
+            )
+        } catch { dateInputError = error }
     }
 
     // MARK: - Edit Actions
 
     func startEditing() {
+        dateInputError = nil
         editTitle = item.title
         editAmountText = item.amount.description   // locale-independent decimal string
         editCurrencyCode = item.currencyCode
@@ -160,12 +180,16 @@ final class ItemDetailsViewModel {
         // nextChargeDate and silently overwrite the user's persisted date on form open.
         isEditEndDateManuallySet = item.endDate != nil
         isEditNextChargeDateManuallySet = true
-        editStartDate = item.startDate
         editBillingCycle = item.billingCycle
-        editNextChargeDate = item.nextChargeDate
         // Seed endDate: use stored value, or compute a sensible default for existing
         // auto-renew items (unused unless the user switches autoRenew off).
-        editEndDate = item.endDate ?? item.billingCycle.nextDate(after: item.nextChargeDate)
+        do {
+            editStartDate = try BillingCivilDay.civilDate(fromCanonicalDate: item.startDate)
+            let next = try BillingCivilDay.civilDate(fromCanonicalDate: item.nextChargeDate)
+            editNextChargeDate = next
+            editEndDate = try item.endDate.map { try BillingCivilDay.civilDate(fromCanonicalDate: $0) }
+                ?? AddSubscriptionViewModel.nextDay(after: next, cycle: item.billingCycle)
+        } catch { dateInputError = error }
         editAutoRenew = item.autoRenew
         // Release the manual-override flag now that seed is complete. Subsequent
         // startDate / billingCycle changes made by the user in this session will
@@ -184,6 +208,8 @@ final class ItemDetailsViewModel {
     }
 
     func saveChanges() async throws {
+        if let dateInputError { throw dateInputError }
+        guard let editStartDate, let editNextChargeDate else { throw BillingCivilDayError.arithmeticFailed }
         guard let amount = Decimal(string: editAmountText.replacingOccurrences(of: ",", with: ".")) else {
             throw UpdateRecurringItem.ValidationError.invalidAmount
         }
@@ -195,10 +221,10 @@ final class ItemDetailsViewModel {
         updated.billingCycle = editBillingCycle
         updated.category = editCategory
         updated.itemType = editItemType
-        updated.startDate = editStartDate
-        updated.nextChargeDate = editNextChargeDate
+        updated.startDate = try BillingCivilDay.canonicalDate(for: editStartDate)
+        updated.nextChargeDate = try BillingCivilDay.canonicalDate(for: editNextChargeDate)
         updated.autoRenew = editAutoRenew
-        updated.endDate = editAutoRenew ? nil : editEndDate
+        updated.endDate = try editAutoRenew ? nil : editEndDate.map { try BillingCivilDay.canonicalDate(for: $0) }
         updated.chargeReminder = editChargeReminder
         updated.trialReminder  = editTrialReminder
         updated.note = editNote
@@ -294,33 +320,38 @@ final class ItemDetailsViewModel {
 
     // MARK: - Computed
 
+    var today: CivilDate? { try? BillingCivilDay.civilDate(containing: now(), in: timeZone()) }
+    var isActiveTrial: Bool {
+        guard let today else { return false }
+        return (try? item.isActiveTrial(on: today)) ?? false
+    }
+    var renewalDisplay: RecurringItem.RenewalDisplay {
+        guard let today else { return .renewing }
+        return (try? item.renewalDisplay(relativeTo: today)) ?? .renewing
+    }
+    var daysUntilTrialEnd: Int? {
+        guard let today else { return nil }
+        return try? item.daysUntilTrialEnd(from: today)
+    }
+
     var canSave: Bool {
+        guard dateInputError == nil, let editNextChargeDate, editStartDate != nil else { return false }
         let trimmed = editTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, trimmed.count <= 255 else { return false }
         guard let amount = Decimal(string: editAmountText.replacingOccurrences(of: ",", with: ".")),
               amount > 0, amount < 1_000_000_000 else { return false }
         if !editAutoRenew {
+            guard let editEndDate else { return false }
             guard editEndDate >= editNextChargeDate else { return false }
         }
         return true
     }
 
     var formattedNextCharge: String {
-        item.nextChargeDate.formatted(
-            .dateTime
-                .day()
-                .month(.wide)
-                .locale(PresentationLocale.current)
-        )
+        (try? BillingDatePresentation.string(from: item.nextChargeDate)) ?? ""
     }
 
     var formattedStartDate: String {
-        item.startDate.formatted(
-            .dateTime
-                .day()
-                .month(.wide)
-                .year()
-                .locale(PresentationLocale.current)
-        )
+        (try? BillingDatePresentation.string(from: item.startDate, template: "dMMMMyyyy")) ?? ""
     }
 }

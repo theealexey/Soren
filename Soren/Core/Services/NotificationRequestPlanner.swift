@@ -48,7 +48,9 @@ struct NotificationRequestPlanner {
     private let bundle: Bundle
 
     init(calendar: Calendar, locale: Locale, bundle: Bundle = .main) {
-        self.calendar = calendar
+        var gregorian = Calendar(identifier: .gregorian)
+        gregorian.timeZone = calendar.timeZone
+        self.calendar = gregorian
         self.locale = locale
         self.bundle = bundle
     }
@@ -100,7 +102,7 @@ struct NotificationRequestPlanner {
                 return nil
             }
 
-            let next = item.billingCycle.nextDate(after: occurrence, calendar: calendar)
+            let next = item.billingCycle.nextDate(after: occurrence, calendar: BillingCivilDay.calendar)
             guard next > occurrence else {
                 failures.append(.recurrenceDidNotAdvance(itemID: item.id))
                 return nil
@@ -133,7 +135,12 @@ struct NotificationRequestPlanner {
         offsetDays: Int
     ) -> PlannedNotificationRequest? {
         guard
-            let reminderDay = calendar.date(byAdding: .day, value: -offsetDays, to: occurrence),
+            let occurrenceDay = try? BillingCivilDay.civilDate(fromCanonicalDate: occurrence),
+            let canonicalReminderDay = BillingCivilDay.calendar.date(byAdding: .day, value: -offsetDays, to: occurrence),
+            let reminderCivilDay = try? BillingCivilDay.civilDate(fromCanonicalDate: canonicalReminderDay),
+            let reminderDay = calendar.date(from: DateComponents(
+                year: reminderCivilDay.year, month: reminderCivilDay.month, day: reminderCivilDay.day, hour: 12
+            )),
             let fireDate = calendar.date(
                 bySettingHour: 9,
                 minute: 0,
@@ -147,16 +154,18 @@ struct NotificationRequestPlanner {
             return nil
         }
 
-        let occurrenceKey = localDateKey(for: occurrence)
+        let occurrenceKey = String(format: "%04d%02d%02d", locale: Locale(identifier: "en_US_POSIX"),
+                                   occurrenceDay.year, occurrenceDay.month, occurrenceDay.day)
         let components = calendar.dateComponents([.year, .month, .day], from: fireDate)
         guard let year = components.year, let month = components.month, let day = components.day else {
             return nil
         }
 
         let identifier = "soren.v2.\(kind.rawValue).\(item.id.uuidString.lowercased()).\(occurrenceKey).\(offsetDays)"
-        let date = occurrence.formatted(
-            .dateTime.day().month(.wide).year().locale(locale)
-        )
+        var style = Date.FormatStyle.dateTime.day().month(.wide).year().locale(locale)
+        style.timeZone = .gmt
+        style.calendar = BillingCivilDay.calendar
+        let date = occurrence.formatted(style)
         let trigger = NotificationTriggerPlan(
             year: year,
             month: month,
@@ -205,14 +214,6 @@ struct NotificationRequestPlanner {
         }
     }
 
-    private func localDateKey(for date: Date) -> String {
-        let components = calendar.dateComponents([.year, .month, .day], from: date)
-        let year = components.year ?? 0
-        let month = components.month ?? 0
-        let day = components.day ?? 0
-        return String(format: "%04d%02d%02d", locale: Locale(identifier: "en_US_POSIX"), year, month, day)
-    }
-
     private func formattedAmount(for item: RecurringItem) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
@@ -226,6 +227,8 @@ struct NotificationRequestPlanner {
             return false
         }
         guard !item.autoRenew, let endDate = item.endDate else { return true }
-        return calendar.startOfDay(for: endDate) >= calendar.startOfDay(for: now)
+        guard let end = try? BillingCivilDay.civilDate(fromCanonicalDate: endDate),
+              let today = try? BillingCivilDay.civilDate(containing: now, in: calendar.timeZone) else { return false }
+        return end >= today
     }
 }

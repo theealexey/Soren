@@ -9,6 +9,8 @@ import Foundation
 
 @Suite("RecurringItemFormatter")
 struct RecurringItemFormatterTests {
+    private let referenceDay = Date(timeIntervalSince1970: 1_786_752_000)
+
 
     // MARK: - Helpers
 
@@ -23,8 +25,9 @@ struct RecurringItemFormatterTests {
             amount: 299,
             currencyCode: "RUB",
             billingCycle: billingCycle,
-            nextChargeDate: nextCharge ?? Calendar.current.date(byAdding: .day, value: 3, to: .now)!,
-            trialEndDate: trialEndDate,
+            startDate: referenceDay,
+            nextChargeDate: BillingCivilDay.calendar.startOfDay(for: nextCharge ?? BillingCivilDay.calendar.date(byAdding: .day, value: 3, to: referenceDay)!),
+            trialEndDate: trialEndDate.map { BillingCivilDay.calendar.startOfDay(for: $0) },
             status: status
         )
     }
@@ -32,7 +35,7 @@ struct RecurringItemFormatterTests {
     // MARK: - cycleLabel
 
     @Test("cycleLabel maps all BillingCycle variants")
-    func cycleLabelMapping() {
+    func cycleLabelMapping() throws {
         #expect(RecurringItemFormatter.cycleLabel(for: .weekly) == .weekly)
         #expect(RecurringItemFormatter.cycleLabel(for: .monthly) == .monthly)
         #expect(RecurringItemFormatter.cycleLabel(for: .annual) == .yearly)
@@ -57,7 +60,7 @@ struct RecurringItemFormatterTests {
     }
 
     @Test("cycleLabel custom with 1 day")
-    func cycleLabelSingleDay() {
+    func cycleLabelSingleDay() throws {
         if case .custom(let text) = RecurringItemFormatter.cycleLabel(for: .custom(days: 1)) {
             #expect(text == String(localized: "\(1)д"))
         } else {
@@ -68,155 +71,155 @@ struct RecurringItemFormatterTests {
     // MARK: - badge
 
     @Test("badge returns correct type for each status")
-    func badgeMapping() {
+    func badgeMapping() throws {
         let trial = makeItem(status: .trial,
-                             trialEndDate: Calendar.current.date(byAdding: .day, value: 5, to: .now))
-        #expect(RecurringItemFormatter.badge(for: trial) == .trial)
+                             trialEndDate: BillingCivilDay.calendar.date(byAdding: .day, value: 5, to: referenceDay))
+        #expect(RecurringItemFormatter.badge(for: trial, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay)) == .trial)
 
         let failed = makeItem(status: .failed)
-        #expect(RecurringItemFormatter.badge(for: failed) == .failed)
+        #expect(RecurringItemFormatter.badge(for: failed, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay)) == .failed)
 
         let paused = makeItem(status: .paused)
-        #expect(RecurringItemFormatter.badge(for: paused) == .paused)
+        #expect(RecurringItemFormatter.badge(for: paused, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay)) == .paused)
 
         let dueSoon = makeItem(status: .dueSoon)
-        #expect(RecurringItemFormatter.badge(for: dueSoon) == .dueSoon)
+        #expect(RecurringItemFormatter.badge(for: dueSoon, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay)) == .dueSoon)
 
         let dueToday = makeItem(status: .dueToday)
-        #expect(RecurringItemFormatter.badge(for: dueToday) == .dueSoon)
+        #expect(RecurringItemFormatter.badge(for: dueToday, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay)) == .dueSoon)
 
         // Active monthly — no badge
         let active = makeItem(billingCycle: .monthly, status: .active)
-        #expect(RecurringItemFormatter.badge(for: active) == nil)
+        #expect(RecurringItemFormatter.badge(for: active, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay)) == nil)
 
         // Active annual — gets .annual badge
         let annual = makeItem(billingCycle: .annual, status: .active)
-        #expect(RecurringItemFormatter.badge(for: annual) == .annual)
+        #expect(RecurringItemFormatter.badge(for: annual, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay)) == .annual)
     }
 
     @Test("badge returns nil for cancelled items")
-    func badgeCancelledNil() {
+    func badgeCancelledNil() throws {
         let cancelled = makeItem(status: .cancelled)
-        #expect(RecurringItemFormatter.badge(for: cancelled) == nil)
+        #expect(RecurringItemFormatter.badge(for: cancelled, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay)) == nil)
     }
 
     // MARK: - chargeSubtitle
 
     @Test("chargeSubtitle handles edge days correctly")
     func chargeSubtitleEdgeCases() throws {
-        let now = Date.now
+        let now = referenceDay
 
         let today = makeItem(nextCharge: now)
-        let todaySubtitle = RecurringItemFormatter.chargeSubtitle(for: today)
+        let todaySubtitle = RecurringItemFormatter.chargeSubtitle(for: today, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay))
         #expect(todaySubtitle == String(localized: "Списание сегодня"))
 
         let overdue = makeItem(
             status: .paused,
             nextCharge: now.addingTimeInterval(-10 * 24 * 60 * 60)
         )
-        let overdueSubtitle = RecurringItemFormatter.chargeSubtitle(for: overdue)
+        let overdueSubtitle = RecurringItemFormatter.chargeSubtitle(for: overdue, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay))
         let overdueDays = try #require(
-            Calendar.current.dateComponents([.day], from: Date.now, to: overdue.nextChargeDate).day
+            BillingCivilDay.calendar.dateComponents([.day], from: referenceDay, to: overdue.nextChargeDate).day
         )
         #expect(overdueSubtitle == String(localized: "Дата списания была \(abs(overdueDays)) дн. назад"))
 
         let future = makeItem(nextCharge: now.addingTimeInterval(10 * 24 * 60 * 60 + 12 * 60 * 60))
-        let futureSubtitle = RecurringItemFormatter.chargeSubtitle(for: future)
+        let futureSubtitle = RecurringItemFormatter.chargeSubtitle(for: future, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay))
         let futureDays = try #require(
-            Calendar.current.dateComponents([.day], from: Date.now, to: future.nextChargeDate).day
+            BillingCivilDay.calendar.dateComponents([.day], from: referenceDay, to: future.nextChargeDate).day
         )
         #expect(futureSubtitle == String(localized: "Через \(futureDays) дн."))
     }
 
     @Test("chargeSubtitle uses tomorrow label for one full day remaining")
-    func chargeSubtitleTomorrow() {
-        let tomorrow = Date.now.addingTimeInterval(36 * 60 * 60)
+    func chargeSubtitleTomorrow() throws {
+        let tomorrow = referenceDay.addingTimeInterval(36 * 60 * 60)
         let item = makeItem(nextCharge: tomorrow)
-        let subtitle = RecurringItemFormatter.chargeSubtitle(for: item)
+        let subtitle = RecurringItemFormatter.chargeSubtitle(for: item, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay))
         #expect(subtitle == String(localized: "Списание завтра"))
     }
 
     // MARK: - subtitle (full status handling)
 
     @Test("subtitle handles all statuses")
-    func subtitleAllStatuses() {
+    func subtitleAllStatuses() throws {
         let cancelled = makeItem(status: .cancelled)
-        #expect(RecurringItemFormatter.subtitle(for: cancelled) == String(localized: "Отменена"))
+        #expect(RecurringItemFormatter.subtitle(for: cancelled, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay)) == String(localized: "Отменена"))
 
         let paused = makeItem(status: .paused)
-        #expect(RecurringItemFormatter.subtitle(for: paused) == String(localized: "На паузе"))
+        #expect(RecurringItemFormatter.subtitle(for: paused, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay)) == String(localized: "На паузе"))
 
         let archived = makeItem(status: .archived)
-        #expect(RecurringItemFormatter.subtitle(for: archived) == String(localized: "В архиве"))
+        #expect(RecurringItemFormatter.subtitle(for: archived, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay)) == String(localized: "В архиве"))
 
         let active = makeItem(status: .active)
-        let activeSubtitle = RecurringItemFormatter.subtitle(for: active)
+        let activeSubtitle = RecurringItemFormatter.subtitle(for: active, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay))
         #expect(!activeSubtitle.isEmpty)
     }
 
     // MARK: - trialSubtitle
 
     @Test("trialSubtitle handles nil and edge cases")
-    func trialSubtitleEdgeCases() {
+    func trialSubtitleEdgeCases() throws {
         let noTrial = makeItem(status: .active)
-        #expect(RecurringItemFormatter.trialSubtitle(for: noTrial) == String(localized: "Пробный период"))
+        #expect(RecurringItemFormatter.trialSubtitle(for: noTrial, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay)) == String(localized: "Пробный период"))
 
         let endingToday = makeItem(
             status: .trial,
-            trialEndDate: Date.now.addingTimeInterval(12 * 60 * 60)
+            trialEndDate: referenceDay.addingTimeInterval(12 * 60 * 60)
         )
-        let todaySubtitle = RecurringItemFormatter.trialSubtitle(for: endingToday)
-        #expect(todaySubtitle == String(localized: "Пробный период заканчивается сегодня"))
+        let todaySubtitle = RecurringItemFormatter.trialSubtitle(for: endingToday, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay))
+        #expect(todaySubtitle == String(localized: "Пробный период")) // Canonical trial boundary is no longer active on its civil day.
 
         let manyDays = makeItem(
             status: .trial,
-            trialEndDate: Date.now.addingTimeInterval(30 * 24 * 60 * 60 + 12 * 60 * 60)
+            trialEndDate: referenceDay.addingTimeInterval(30 * 24 * 60 * 60 + 12 * 60 * 60)
         )
-        let manySubtitle = RecurringItemFormatter.trialSubtitle(for: manyDays)
+        let manySubtitle = RecurringItemFormatter.trialSubtitle(for: manyDays, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay))
         #expect(manySubtitle == String(localized: "Осталось \(30) дн."))
     }
 
     @Test("trialSubtitle uses one-day label with one full day remaining")
-    func trialSubtitleOneDay() {
+    func trialSubtitleOneDay() throws {
         let item = makeItem(
             status: .trial,
-            trialEndDate: Date.now.addingTimeInterval(36 * 60 * 60)
+            trialEndDate: referenceDay.addingTimeInterval(36 * 60 * 60)
         )
-        let subtitle = RecurringItemFormatter.trialSubtitle(for: item)
+        let subtitle = RecurringItemFormatter.trialSubtitle(for: item, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay))
         #expect(subtitle == String(localized: "Остался 1 день"))
     }
 
     // MARK: - trialSeverity
 
     @Test("trialSeverity returns correct severity levels")
-    func trialSeverityLevels() {
+    func trialSeverityLevels() throws {
         let noTrial = makeItem()
-        #expect(RecurringItemFormatter.trialSeverity(for: noTrial) == .info)
+        #expect(RecurringItemFormatter.trialSeverity(for: noTrial, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay)) == .info)
 
         let critical = makeItem(
             status: .trial,
-            trialEndDate: Calendar.current.date(byAdding: .day, value: 1, to: .now)
+            trialEndDate: BillingCivilDay.calendar.date(byAdding: .day, value: 1, to: referenceDay)
         )
-        #expect(RecurringItemFormatter.trialSeverity(for: critical) == .critical)
+        #expect(RecurringItemFormatter.trialSeverity(for: critical, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay)) == .critical)
 
         let warning = makeItem(
             status: .trial,
-            trialEndDate: Calendar.current.date(byAdding: .day, value: 3, to: .now)
+            trialEndDate: BillingCivilDay.calendar.date(byAdding: .day, value: 3, to: referenceDay)
         )
-        let warningSeverity = RecurringItemFormatter.trialSeverity(for: warning)
+        let warningSeverity = RecurringItemFormatter.trialSeverity(for: warning, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay))
         #expect(warningSeverity == .warning || warningSeverity == .critical)
 
         let info = makeItem(
             status: .trial,
-            trialEndDate: Calendar.current.date(byAdding: .day, value: 10, to: .now)
+            trialEndDate: BillingCivilDay.calendar.date(byAdding: .day, value: 10, to: referenceDay)
         )
-        #expect(RecurringItemFormatter.trialSeverity(for: info) == .info)
+        #expect(RecurringItemFormatter.trialSeverity(for: info, today: try BillingCivilDay.civilDate(fromCanonicalDate: referenceDay)) == .info)
     }
 
     // MARK: - trialCountLabel
 
     @Test("trialCountLabel is non-empty and contains digit for all meaningful counts")
-    func trialCountLabelNonEmpty() {
+    func trialCountLabelNonEmpty() throws {
         // The full string includes the count: "1 пробный", "5 пробных", "1 trial", etc.
         for count in [1, 2, 5, 11, 21, 111] {
             let label = RecurringItemFormatter.trialCountLabel(count: count)
@@ -226,7 +229,7 @@ struct RecurringItemFormatterTests {
     }
 
     @Test("trialCountLabel does not contain raw format specifier (xcstrings key resolved)")
-    func trialCountLabelNoRawSpecifier() {
+    func trialCountLabelNoRawSpecifier() throws {
         for count in [1, 2, 5, 11] {
             let label = RecurringItemFormatter.trialCountLabel(count: count)
             #expect(!label.contains("%lld"), "label contains raw %lld for count=\(count)")
@@ -235,7 +238,7 @@ struct RecurringItemFormatterTests {
     }
 
     @Test("trialCountLabel count=1 and count=2 differ (one vs few/many)")
-    func trialCountLabelOneVsMany() {
+    func trialCountLabelOneVsMany() throws {
         // RU: count=1 → "1 пробный" (one), count=2 → "2 пробных" (few).
         // EN: count=1 → "1 trial"   (one), count=2 → "2 trials"  (other).
         // Either way, the word part must differ — proving CLDR plural selection fires.
@@ -245,7 +248,7 @@ struct RecurringItemFormatterTests {
     }
 
     @Test("trialCountLabel count=2 and count=5 match (few and many use same adjective form)")
-    func trialCountLabelFewEqualsMany() {
+    func trialCountLabelFewEqualsMany() throws {
         // RU: both 2 (few) and 5 (many) → "пробных".
         // EN: both 2 (other) and 5 (other) → "trials".
         // Verify no accidental split between the two non-singular categories.
@@ -258,7 +261,7 @@ struct RecurringItemFormatterTests {
     }
 
     @Test("trialCountLabel teen case (11) uses same form as 5 (many in Russian)")
-    func trialCountLabelTeenCase() {
+    func trialCountLabelTeenCase() throws {
         // Russian: 11 → "many" (пробных), same as 5. Teens are exempt from "few" rule.
         let eleven = RecurringItemFormatter.trialCountLabel(count: 11)
         let five   = RecurringItemFormatter.trialCountLabel(count: 5)
@@ -272,6 +275,8 @@ struct RecurringItemFormatterTests {
 
 @Suite("InsightsBuilder")
 struct InsightsBuilderTests {
+    private let referenceDay = Date(timeIntervalSince1970: 1_786_752_000)
+
 
     private func makeItem(
         status: ItemStatus = .active,
@@ -281,50 +286,50 @@ struct InsightsBuilderTests {
         RecurringItem(
             title: "Test",
             amount: amount,
-            nextChargeDate: Calendar.current.date(byAdding: .day, value: daysOffset, to: .now)!,
+            nextChargeDate: BillingCivilDay.calendar.date(byAdding: .day, value: daysOffset, to: referenceDay)!,
             status: status
         )
     }
 
     @Test("Empty charges produce no insights")
-    func emptyCharges() {
-        let insights = InsightsBuilder.build(from: [])
+    func emptyCharges() throws {
+        let insights = try InsightsBuilder.build(from: [], today: BillingCivilDay.civilDate(fromCanonicalDate: referenceDay))
         #expect(insights.isEmpty)
     }
 
     @Test("Overdue items produce critical insight")
-    func overdueInsight() {
+    func overdueInsight() throws {
         let items = [
             makeItem(daysOffset: -2),
             makeItem(daysOffset: -5),
         ]
-        let insights = InsightsBuilder.build(from: items)
+        let insights = try InsightsBuilder.build(from: items, today: BillingCivilDay.civilDate(fromCanonicalDate: referenceDay))
         #expect(insights.contains { $0.severity == .critical && $0.title.contains("2") })
     }
 
     @Test("Failed items produce critical insight")
-    func failedInsight() {
+    func failedInsight() throws {
         let items = [
             makeItem(status: .failed, daysOffset: 1),
             makeItem(daysOffset: 3),
         ]
-        let insights = InsightsBuilder.build(from: items)
+        let insights = try InsightsBuilder.build(from: items, today: BillingCivilDay.civilDate(fromCanonicalDate: referenceDay))
         #expect(insights.contains { $0.severity == .critical && $0.title.contains("1") })
     }
 
     @Test("Multiple charges produce info insight")
-    func multipleChargesInsight() {
+    func multipleChargesInsight() throws {
         let items = [
             makeItem(daysOffset: 1, amount: 100),
             makeItem(daysOffset: 3, amount: 200),
         ]
-        let insights = InsightsBuilder.build(from: items)
+        let insights = try InsightsBuilder.build(from: items, today: BillingCivilDay.civilDate(fromCanonicalDate: referenceDay))
         #expect(insights.contains { $0.severity == .info && $0.title.contains("2") })
     }
 
     @Test("Single charge with no issues produces no insights")
-    func singleNormalCharge() {
-        let insights = InsightsBuilder.build(from: [makeItem()])
+    func singleNormalCharge() throws {
+        let insights = try InsightsBuilder.build(from: [makeItem()], today: BillingCivilDay.civilDate(fromCanonicalDate: referenceDay))
         #expect(insights.isEmpty)
     }
 }

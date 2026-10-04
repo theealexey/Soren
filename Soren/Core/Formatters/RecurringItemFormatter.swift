@@ -23,8 +23,9 @@ enum RecurringItemFormatter {
     // MARK: - Badges
 
     /// Determines the badge to show on a list row.
-    static func badge(for item: RecurringItem) -> SorenListRow.Badge? {
-        if item.isActiveTrial { return .trial }
+    static func badge(for item: RecurringItem, today: CivilDate? = nil) -> SorenListRow.Badge? {
+        if let today = today ?? (try? BillingDatePresentation.today()),
+           (try? item.isActiveTrial(on: today)) == true { return .trial }
         switch item.status {
         case .failed:   return .failed
         case .paused:   return .paused
@@ -39,8 +40,8 @@ enum RecurringItemFormatter {
     // MARK: - Charge Subtitles
 
     /// Formatted subtitle for upcoming charge rows.
-    static func chargeSubtitle(for item: RecurringItem) -> String {
-        let days = daysFromToday(to: item.effectiveNextChargeDate())
+    static func chargeSubtitle(for item: RecurringItem, today: CivilDate? = nil) -> String {
+        guard let days = effectiveDays(for: item, today: today) else { return "" }
         if days == 0 { return String(localized: "Списание сегодня") }
         if days == 1 { return String(localized: "Списание завтра") }
         if days < 0 { return String(localized: "Дата списания была \(abs(days)) дн. назад") }
@@ -48,7 +49,7 @@ enum RecurringItemFormatter {
     }
 
     /// Formatted subtitle for library list rows — handles all statuses.
-    static func subtitle(for item: RecurringItem) -> String {
+    static func subtitle(for item: RecurringItem, today: CivilDate? = nil) -> String {
         switch item.status {
         case .cancelled:
             return String(localized: "Отменена")
@@ -57,7 +58,7 @@ enum RecurringItemFormatter {
         case .archived:
             return String(localized: "В архиве")
         default:
-            let days = daysFromToday(to: item.effectiveNextChargeDate())
+            guard let days = effectiveDays(for: item, today: today) else { return "" }
             if days < 0 { return String(localized: "Дата списания была \(abs(days)) дн. назад") }
             if days == 0 { return String(localized: "Списание сегодня") }
             if days == 1 { return String(localized: "Списание завтра") }
@@ -67,15 +68,19 @@ enum RecurringItemFormatter {
 
     // MARK: - Private helpers
 
-    private static func daysFromToday(to date: Date) -> Int {
-        Calendar.current.dateComponents([.day], from: .now, to: date).day ?? 0
+    private static func effectiveDays(for item: RecurringItem, today: CivilDate?) -> Int? {
+        guard let today = today ?? (try? BillingDatePresentation.today()),
+              let date = try? item.effectiveNextChargeDate(relativeTo: today),
+              let day = try? BillingCivilDay.civilDate(fromCanonicalDate: date) else { return nil }
+        return try? BillingCivilDay.days(from: today, to: day)
     }
 
     // MARK: - Trial Display
 
     /// Formatted subtitle for trial insight cards.
-    static func trialSubtitle(for item: RecurringItem) -> String {
-        guard let daysLeft = item.daysUntilTrialEnd else {
+    static func trialSubtitle(for item: RecurringItem, today: CivilDate? = nil) -> String {
+        guard let today = today ?? (try? BillingDatePresentation.today()),
+              let daysLeft = try? item.daysUntilTrialEnd(from: today) else {
             return String(localized: "Пробный период")
         }
         if daysLeft <= 0 { return String(localized: "Пробный период заканчивается сегодня") }
@@ -84,8 +89,9 @@ enum RecurringItemFormatter {
     }
 
     /// Determines trial urgency severity for insight cards.
-    static func trialSeverity(for item: RecurringItem) -> InsightCard.Severity {
-        guard let days = item.daysUntilTrialEnd else { return .info }
+    static func trialSeverity(for item: RecurringItem, today: CivilDate? = nil) -> InsightCard.Severity {
+        guard let today = today ?? (try? BillingDatePresentation.today()),
+              let days = try? item.daysUntilTrialEnd(from: today) else { return .info }
         if days <= 1 { return .critical }
         if days <= 3 { return .warning }
         return .info
