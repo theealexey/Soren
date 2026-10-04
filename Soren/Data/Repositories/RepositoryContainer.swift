@@ -16,7 +16,7 @@ final class RepositoryContainer {
     // MARK: - Init
 
     init(context: ModelContext) {
-        self.recurringItems = SwiftDataRecurringItemRepository(context: context)
+        self.recurringItems = SwiftDataRecurringItemRepository(container: context.container)
         self.paymentRecords = SwiftDataPaymentRecordRepository(context: context)
         self.paymentMethods = SwiftDataPaymentMethodRepository(context: context)
     }

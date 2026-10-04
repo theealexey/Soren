@@ -6,7 +6,7 @@ import Foundation
 @MainActor
 struct SaveRecurringItemNotificationTests {
     private func item(title: String = "Spotify", amount: Decimal = 299) -> RecurringItem {
-        RecurringItem(title: title, amount: amount, nextChargeDate: .distantFuture)
+        RecurringItem(title: title, amount: amount, startDate: Date(timeIntervalSinceReferenceDate: 0), nextChargeDate: .distantFuture)
     }
 
     @Test("successful save awaits complete reconciliation after persistence")

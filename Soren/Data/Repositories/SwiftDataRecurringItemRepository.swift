@@ -14,26 +14,32 @@ import SwiftData
 final class SwiftDataRecurringItemRepository: RecurringItemRepository {
 
     private let context: ModelContext
+    private let saveContext: (ModelContext) throws -> Void
 
-    init(context: ModelContext) {
+    init(container: ModelContainer, save: @escaping (ModelContext) throws -> Void = { try $0.save() }) {
+        let context = ModelContext(container)
+        context.autosaveEnabled = false
         self.context = context
+        self.saveContext = save
+    }
+
+    /// Compatibility entry point; the caller's pending changes are never owned here.
+    convenience init(context: ModelContext) {
+        self.init(container: context.container)
     }
 
     // MARK: - Read
 
     func fetchAll() throws -> [RecurringItem] {
-        let descriptor = FetchDescriptor<SDRecurringItem>(
-            sortBy: [SortDescriptor(\.nextChargeDate)]
-        )
-        return try context.fetch(descriptor).map(RecurringItemMapper.toDomain)
+        let descriptor = FetchDescriptor<SDRecurringItem>()
+        return try context.fetch(descriptor).map(RecurringItemMapper.toDomain).sorted(by: canonicalOrder)
     }
 
     func fetchActive() throws -> [RecurringItem] {
         // Fetch all non-archived, then filter statuses in-memory.
         // SwiftData #Predicate doesn't support array.contains() on captured [String] in iOS 18.
         let descriptor = FetchDescriptor<SDRecurringItem>(
-            predicate: #Predicate { item in item.archivedAt == nil },
-            sortBy: [SortDescriptor(\.nextChargeDate)]
+            predicate: #Predicate { item in item.archivedAt == nil }
         )
         let activeStatuses: Set<String> = [
             ItemStatus.active.rawValue,
@@ -44,20 +50,24 @@ final class SwiftDataRecurringItemRepository: RecurringItemRepository {
         return try context.fetch(descriptor)
             .filter { activeStatuses.contains($0.statusRaw) }
             .map(RecurringItemMapper.toDomain)
+            .sorted(by: canonicalOrder)
     }
 
     func fetchUpcoming(within days: Int, from date: Date) throws -> [RecurringItem] {
+        _ = try BillingCivilDay.civilDate(fromCanonicalDate: date)
         guard days > 0 else { return [] }
-        let cutoff = Calendar.current.date(byAdding: .day, value: days, to: date) ?? date
+        guard let cutoff = BillingCivilDay.calendar.date(byAdding: .day, value: days, to: date) else {
+            throw BillingCivilDayError.arithmeticFailed
+        }
+        _ = try BillingCivilDay.civilDate(fromCanonicalDate: cutoff)
         let descriptor = FetchDescriptor<SDRecurringItem>(
             predicate: #Predicate { item in
-                item.nextChargeDate >= date
-                && item.nextChargeDate <= cutoff
-                && item.archivedAt == nil
-            },
-            sortBy: [SortDescriptor(\.nextChargeDate)]
+                item.archivedAt == nil
+            }
         )
         return try context.fetch(descriptor).map(RecurringItemMapper.toDomain)
+            .filter { $0.nextChargeDate >= date && $0.nextChargeDate <= cutoff }
+            .sorted(by: canonicalOrder)
     }
 
     func fetchByCategory(_ category: ItemCategory) throws -> [RecurringItem] {
@@ -83,9 +93,9 @@ final class SwiftDataRecurringItemRepository: RecurringItemRepository {
     // MARK: - Write
 
     func save(_ item: RecurringItem) throws {
-        let sd = RecurringItemMapper.toSD(item)
+        let sd = try RecurringItemMapper.toSD(item)
         context.insert(sd)
-        try context.save()
+        try commit()
     }
 
     func update(_ item: RecurringItem) throws {
@@ -96,8 +106,8 @@ final class SwiftDataRecurringItemRepository: RecurringItemRepository {
         guard let sd = try context.fetch(descriptor).first else {
             throw RepositoryError.notFound(item.id)
         }
-        RecurringItemMapper.update(sd, from: item)
-        try context.save()
+        try RecurringItemMapper.update(sd, from: item)
+        try commit()
     }
 
     func delete(id: UUID) throws {
@@ -107,20 +117,32 @@ final class SwiftDataRecurringItemRepository: RecurringItemRepository {
         )
         guard let sd = try context.fetch(descriptor).first else { return }
         context.delete(sd)
-        try context.save()
+        try commit()
     }
 
     // MARK: - Bulk
 
     func saveAll(_ items: [RecurringItem]) throws {
-        for item in items {
-            context.insert(RecurringItemMapper.toSD(item))
-        }
-        try context.save()
+        let prepared = try items.map(RecurringItemMapper.toSD)
+        for sd in prepared { context.insert(sd) }
+        try commit()
     }
 
     func deleteAll() throws {
         try context.delete(model: SDRecurringItem.self)
-        try context.save()
+        try commit()
+    }
+
+    private func canonicalOrder(_ lhs: RecurringItem, _ rhs: RecurringItem) -> Bool {
+        if lhs.nextChargeDate != rhs.nextChargeDate { return lhs.nextChargeDate < rhs.nextChargeDate }
+        return lhs.id.uuidString < rhs.id.uuidString
+    }
+
+    private func commit() throws {
+        do { try saveContext(context) }
+        catch {
+            context.rollback()
+            throw error
+        }
     }
 }

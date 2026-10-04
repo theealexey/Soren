@@ -30,6 +30,7 @@ struct SaveRecurringItem {
     func execute(_ item: RecurringItem) async throws -> SaveRecurringItemResult {
         let normalized = normalize(item)
         try validate(normalized)
+        try item.validateCanonicalBillingDates()
         try repository.save(normalized)
         let outcome = await notificationCoordinator?.reconcileCurrentState(source: .create)
         return SaveRecurringItemResult(item: normalized, notificationOutcome: outcome)

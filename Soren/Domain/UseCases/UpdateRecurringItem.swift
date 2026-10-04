@@ -28,6 +28,7 @@ struct UpdateRecurringItem {
     func execute(_ item: RecurringItem) async throws -> UpdateRecurringItemResult {
         var normalized = normalize(item)
         try validate(normalized)
+        try item.validateCanonicalBillingDates()
         normalized.updatedAt = .now
         try repository.update(normalized)
         let outcome = await notificationCoordinator?.reconcileCurrentState(source: .update)

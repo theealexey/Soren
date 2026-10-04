@@ -8,7 +8,7 @@ struct UpdateRecurringItemSchedulingTests {
     @Test("update persists first and awaits complete reconciliation")
     func updateReconciles() async throws {
         let fixture = try InMemoryPersistenceFixture()
-        let item = RecurringItem(title: "Spotify", amount: 299, nextChargeDate: .distantFuture)
+        let item = RecurringItem(title: "Spotify", amount: 299, startDate: Date(timeIntervalSinceReferenceDate: 0), nextChargeDate: .distantFuture)
         try fixture.recurringItems.save(item)
         let coordinator = NotificationReconciliationSpy()
         let result = try await UpdateRecurringItem(repository: fixture.recurringItems, notificationCoordinator: coordinator).execute(item)
@@ -19,7 +19,7 @@ struct UpdateRecurringItemSchedulingTests {
     @Test("validation failure does not reconcile")
     func validationFailureDoesNotReconcile() async throws {
         let fixture = try InMemoryPersistenceFixture()
-        var item = RecurringItem(title: "Spotify", amount: 299, nextChargeDate: .distantFuture)
+        var item = RecurringItem(title: "Spotify", amount: 299, startDate: Date(timeIntervalSinceReferenceDate: 0), nextChargeDate: .distantFuture)
         item.title = " "
         let coordinator = NotificationReconciliationSpy()
         await #expect(throws: UpdateRecurringItem.ValidationError.emptyTitle) {
@@ -31,7 +31,7 @@ struct UpdateRecurringItemSchedulingTests {
     @Test("paused update still reconciles the complete desired state")
     func pausedUpdateReconciles() async throws {
         let fixture = try InMemoryPersistenceFixture()
-        var item = RecurringItem(title: "Spotify", amount: 299, nextChargeDate: .distantFuture)
+        var item = RecurringItem(title: "Spotify", amount: 299, startDate: Date(timeIntervalSinceReferenceDate: 0), nextChargeDate: .distantFuture)
         item.status = .paused
         try fixture.recurringItems.save(item)
         let coordinator = NotificationReconciliationSpy()
@@ -42,7 +42,7 @@ struct UpdateRecurringItemSchedulingTests {
     @Test("archived update still reconciles the complete desired state")
     func archivedUpdateReconciles() async throws {
         let fixture = try InMemoryPersistenceFixture()
-        var item = RecurringItem(title: "Spotify", amount: 299, nextChargeDate: .distantFuture)
+        var item = RecurringItem(title: "Spotify", amount: 299, startDate: Date(timeIntervalSinceReferenceDate: 0), nextChargeDate: .distantFuture)
         item.status = .archived
         try fixture.recurringItems.save(item)
         let coordinator = NotificationReconciliationSpy()
@@ -53,7 +53,7 @@ struct UpdateRecurringItemSchedulingTests {
     @Test("update succeeds without an optional notification coordinator")
     func updateWithoutCoordinatorReturnsNoOutcome() async throws {
         let fixture = try InMemoryPersistenceFixture()
-        let item = RecurringItem(title: "Spotify", amount: 299, nextChargeDate: .distantFuture)
+        let item = RecurringItem(title: "Spotify", amount: 299, startDate: Date(timeIntervalSinceReferenceDate: 0), nextChargeDate: .distantFuture)
         try fixture.recurringItems.save(item)
         let result = try await UpdateRecurringItem(repository: fixture.recurringItems).execute(item)
         #expect(result.notificationOutcome == nil)
@@ -62,7 +62,7 @@ struct UpdateRecurringItemSchedulingTests {
     @Test("partial notification outcome does not roll back an update")
     func partialOutcomeDoesNotRollBackUpdate() async throws {
         let fixture = try InMemoryPersistenceFixture()
-        var item = RecurringItem(title: "Spotify", amount: 299, nextChargeDate: .distantFuture)
+        var item = RecurringItem(title: "Spotify", amount: 299, startDate: Date(timeIntervalSinceReferenceDate: 0), nextChargeDate: .distantFuture)
         try fixture.recurringItems.save(item)
         item.title = "Spotify Premium"
         let coordinator = NotificationReconciliationSpy()

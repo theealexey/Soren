@@ -40,7 +40,7 @@ struct LifecycleInvariantTests {
     /// Builds a baseline valid item. Dates are fixed reference points for clarity.
     private func makeItem(
         autoRenew: Bool = true,
-        startDate: Date = .distantPast,
+        startDate: Date = Date(timeIntervalSinceReferenceDate: -86400),
         nextChargeDate: Date,
         endDate: Date? = nil
     ) -> RecurringItem {
@@ -59,15 +59,15 @@ struct LifecycleInvariantTests {
     @Test("Valid: autoRenew=true, endDate=nil — the default, indefinite case")
     func validAutoRenewNoEndDate() async throws {
         let fixture = try makeFixture()
-        let item = makeItem(autoRenew: true, nextChargeDate: .now, endDate: nil)
+        let item = makeItem(autoRenew: true, nextChargeDate: Date(timeIntervalSinceReferenceDate: 0), endDate: nil)
         await #expect(throws: Never.self) { try await fixture.save.execute(item) }
     }
 
     @Test("Valid: autoRenew=false with endDate after nextChargeDate")
     func validFiniteWithEndDateAfterNextCharge() async throws {
         let fixture = try makeFixture()
-        let next  = Date.now
-        let end   = Calendar.current.date(byAdding: .day, value: 30, to: next)!
+        let next  = Date(timeIntervalSinceReferenceDate: 0)
+        let end   = BillingCivilDay.calendar.date(byAdding: .day, value: 30, to: next)!
         let item  = makeItem(autoRenew: false, nextChargeDate: next, endDate: end)
         await #expect(throws: Never.self) { try await fixture.save.execute(item) }
     }
@@ -75,7 +75,7 @@ struct LifecycleInvariantTests {
     @Test("Valid: autoRenew=false with endDate == nextChargeDate (final charge on end date)")
     func validFiniteEndDateEqualsNextCharge() async throws {
         let fixture = try makeFixture()
-        let date = Date.now
+        let date = Date(timeIntervalSinceReferenceDate: 0)
         let item = makeItem(autoRenew: false, nextChargeDate: date, endDate: date)
         await #expect(throws: Never.self) { try await fixture.save.execute(item) }
     }
@@ -84,8 +84,8 @@ struct LifecycleInvariantTests {
     func validAutoRenewWithStaleEndDateAcceptedAfterNormalization() async throws {
         let fixture = try makeFixture()
         // Caller passes endDate even though autoRenew=true; normalization clears it.
-        let item = makeItem(autoRenew: true, nextChargeDate: .now,
-                            endDate: Calendar.current.date(byAdding: .day, value: 10, to: .now))
+        let item = makeItem(autoRenew: true, nextChargeDate: Date(timeIntervalSinceReferenceDate: 0),
+                            endDate: BillingCivilDay.calendar.date(byAdding: .day, value: 10, to: Date(timeIntervalSinceReferenceDate: 0)))
         await #expect(throws: Never.self) { try await fixture.save.execute(item) }
     }
 
@@ -94,7 +94,7 @@ struct LifecycleInvariantTests {
     @Test("R1 Save: finite subscription without endDate is rejected")
     func r1SaveRejectsFiniteWithNoEndDate() async throws {
         let fixture = try makeFixture()
-        let item = makeItem(autoRenew: false, nextChargeDate: .now, endDate: nil)
+        let item = makeItem(autoRenew: false, nextChargeDate: Date(timeIntervalSinceReferenceDate: 0), endDate: nil)
         await #expect(throws: SaveRecurringItem.ValidationError.missingEndDate) {
             try await fixture.save.execute(item)
         }
@@ -103,7 +103,7 @@ struct LifecycleInvariantTests {
     @Test("R1 Update: finite subscription without endDate is rejected")
     func r1UpdateRejectsFiniteWithNoEndDate() async throws {
         let fixture = try makeFixture()
-        let item = makeItem(autoRenew: false, nextChargeDate: .now, endDate: nil)
+        let item = makeItem(autoRenew: false, nextChargeDate: Date(timeIntervalSinceReferenceDate: 0), endDate: nil)
         await #expect(throws: UpdateRecurringItem.ValidationError.missingEndDate) {
             try await fixture.update.execute(item)
         }
@@ -114,8 +114,8 @@ struct LifecycleInvariantTests {
     @Test("R2 Save: endDate one day before nextChargeDate is rejected")
     func r2SaveRejectsEndDateBeforeNextCharge() async throws {
         let fixture = try makeFixture()
-        let next = Date.now
-        let end  = Calendar.current.date(byAdding: .day, value: -1, to: next)!
+        let next = Date(timeIntervalSinceReferenceDate: 0)
+        let end  = BillingCivilDay.calendar.date(byAdding: .day, value: -1, to: next)!
         let item = makeItem(autoRenew: false, nextChargeDate: next, endDate: end)
         await #expect(throws: SaveRecurringItem.ValidationError.endDateBeforeNextCharge) {
             try await fixture.save.execute(item)
@@ -125,8 +125,8 @@ struct LifecycleInvariantTests {
     @Test("R2 Update: endDate one day before nextChargeDate is rejected")
     func r2UpdateRejectsEndDateBeforeNextCharge() async throws {
         let fixture = try makeFixture()
-        let next = Date.now
-        let end  = Calendar.current.date(byAdding: .day, value: -1, to: next)!
+        let next = Date(timeIntervalSinceReferenceDate: 0)
+        let end  = BillingCivilDay.calendar.date(byAdding: .day, value: -1, to: next)!
         let item = makeItem(autoRenew: false, nextChargeDate: next, endDate: end)
         await #expect(throws: UpdateRecurringItem.ValidationError.endDateBeforeNextCharge) {
             try await fixture.update.execute(item)
@@ -136,7 +136,7 @@ struct LifecycleInvariantTests {
     @Test("R2 boundary: endDate == nextChargeDate is NOT rejected")
     func r2BoundaryEndDateEqualNextChargeAccepted() async throws {
         let fixture = try makeFixture()
-        let date = Date.now
+        let date = Date(timeIntervalSinceReferenceDate: 0)
         let item = makeItem(autoRenew: false, nextChargeDate: date, endDate: date)
         await #expect(throws: Never.self) { try await fixture.save.execute(item) }
     }
@@ -146,9 +146,9 @@ struct LifecycleInvariantTests {
     @Test("R3 Save: startDate one day after endDate is rejected")
     func r3SaveRejectsStartDateAfterEndDate() async throws {
         let fixture = try makeFixture()
-        let next  = Date.now
-        let end   = Calendar.current.date(byAdding: .day, value: 30, to: next)!
-        let start = Calendar.current.date(byAdding: .day, value: 31, to: next)!   // start > end
+        let next  = Date(timeIntervalSinceReferenceDate: 0)
+        let end   = BillingCivilDay.calendar.date(byAdding: .day, value: 30, to: next)!
+        let start = BillingCivilDay.calendar.date(byAdding: .day, value: 31, to: next)!   // start > end
         let item  = makeItem(autoRenew: false, startDate: start, nextChargeDate: next, endDate: end)
         await #expect(throws: SaveRecurringItem.ValidationError.startDateAfterEndDate) {
             try await fixture.save.execute(item)
@@ -158,9 +158,9 @@ struct LifecycleInvariantTests {
     @Test("R3 Update: startDate one day after endDate is rejected")
     func r3UpdateRejectsStartDateAfterEndDate() async throws {
         let fixture = try makeFixture()
-        let next  = Date.now
-        let end   = Calendar.current.date(byAdding: .day, value: 30, to: next)!
-        let start = Calendar.current.date(byAdding: .day, value: 31, to: next)!
+        let next  = Date(timeIntervalSinceReferenceDate: 0)
+        let end   = BillingCivilDay.calendar.date(byAdding: .day, value: 30, to: next)!
+        let start = BillingCivilDay.calendar.date(byAdding: .day, value: 31, to: next)!
         let item  = makeItem(autoRenew: false, startDate: start, nextChargeDate: next, endDate: end)
         await #expect(throws: UpdateRecurringItem.ValidationError.startDateAfterEndDate) {
             try await fixture.update.execute(item)
@@ -170,8 +170,8 @@ struct LifecycleInvariantTests {
     @Test("R3 boundary: startDate == endDate is NOT rejected")
     func r3BoundaryStartEqualsEndAccepted() async throws {
         let fixture = try makeFixture()
-        let next = Date.now
-        let end  = Calendar.current.date(byAdding: .day, value: 1, to: next)!
+        let next = Date(timeIntervalSinceReferenceDate: 0)
+        let end  = BillingCivilDay.calendar.date(byAdding: .day, value: 1, to: next)!
         // Use same date for start and end — not rejected by R3 (strict >)
         let item = makeItem(autoRenew: false, startDate: end, nextChargeDate: next, endDate: end)
         await #expect(throws: Never.self) { try await fixture.save.execute(item) }
@@ -182,8 +182,8 @@ struct LifecycleInvariantTests {
     @Test("Normalization: autoRenew=true clears endDate before persistence (Save)")
     func normalizationClearsEndDateOnSave() async throws {
         let fixture = try makeFixture()
-        let staleEnd = Calendar.current.date(byAdding: .day, value: 30, to: .now)!
-        let item = makeItem(autoRenew: true, nextChargeDate: .now, endDate: staleEnd)
+        let staleEnd = BillingCivilDay.calendar.date(byAdding: .day, value: 30, to: Date(timeIntervalSinceReferenceDate: 0))!
+        let item = makeItem(autoRenew: true, nextChargeDate: Date(timeIntervalSinceReferenceDate: 0), endDate: staleEnd)
 
         _ = try await fixture.save.execute(item)
 
@@ -199,8 +199,8 @@ struct LifecycleInvariantTests {
         let seedContainer = try SorenModelContainer.inMemory()
         let seedRepo      = SwiftDataRecurringItemRepository(context: seedContainer.mainContext)
 
-        let end  = Calendar.current.date(byAdding: .day, value: 30, to: .now)!
-        var item = makeItem(autoRenew: false, nextChargeDate: .now, endDate: end)
+        let end  = BillingCivilDay.calendar.date(byAdding: .day, value: 30, to: Date(timeIntervalSinceReferenceDate: 0))!
+        var item = makeItem(autoRenew: false, nextChargeDate: Date(timeIntervalSinceReferenceDate: 0), endDate: end)
 
         // Persist the finite item first so the update use case can find and mutate it.
         let saveUC = SaveRecurringItem(repository: seedRepo)
@@ -218,8 +218,8 @@ struct LifecycleInvariantTests {
     @Test("Normalization: autoRenew=false preserves endDate unchanged")
     func normalizationPreservesEndDateForFiniteSubscription() async throws {
         let fixture = try makeFixture()
-        let end  = Calendar.current.date(byAdding: .day, value: 60, to: .now)!
-        let item = makeItem(autoRenew: false, nextChargeDate: .now, endDate: end)
+        let end  = BillingCivilDay.calendar.date(byAdding: .day, value: 60, to: Date(timeIntervalSinceReferenceDate: 0))!
+        let item = makeItem(autoRenew: false, nextChargeDate: Date(timeIntervalSinceReferenceDate: 0), endDate: end)
 
         _ = try await fixture.save.execute(item)
 
@@ -231,7 +231,7 @@ struct LifecycleInvariantTests {
     @Test("Update clears archivedAt when an archived item returns to a current status")
     func updateClearsArchivedAtForCurrentStatus() async throws {
         let fixture = try makeFixture()
-        var item = makeItem(autoRenew: true, nextChargeDate: .now)
+        var item = makeItem(autoRenew: true, nextChargeDate: Date(timeIntervalSinceReferenceDate: 0))
         item.status = .archived
         item.archivedAt = .distantPast
         try fixture.persistence.recurringItems.save(item)
@@ -247,7 +247,7 @@ struct LifecycleInvariantTests {
     @Test("Update supplies archivedAt when an item becomes archived")
     func updateSuppliesArchivedAtForArchivedStatus() async throws {
         let fixture = try makeFixture()
-        var item = makeItem(autoRenew: true, nextChargeDate: .now)
+        var item = makeItem(autoRenew: true, nextChargeDate: Date(timeIntervalSinceReferenceDate: 0))
         try fixture.persistence.recurringItems.save(item)
 
         item.status = .archived
@@ -276,8 +276,8 @@ struct LifecycleInvariantTests {
             amountValue: 9.99,
             currencyCode: "USD",
             billingCycleRaw: "monthly",
-            startDate: .now,
-            nextChargeDate: .now,
+            startDate: Date(timeIntervalSinceReferenceDate: 0),
+            nextChargeDate: Date(timeIntervalSinceReferenceDate: 0),
             trialEndDate: nil,
             autoRenew: nil,       // ← legacy: no value in store
             endDate: nil,
@@ -294,9 +294,10 @@ struct LifecycleInvariantTests {
             updatedAt: .now,
             archivedAt: nil
         )
+        sd.legacyBillingDateInterpretationTimeZoneIdentifier = "GMT"
         context.insert(sd)
 
-        let domain = RecurringItemMapper.toDomain(sd)
+        let domain = try RecurringItemMapper.toDomain(sd)
 
         #expect(domain.autoRenew == true)   // nil → true (safe legacy default)
         #expect(domain.endDate == nil)
@@ -307,7 +308,7 @@ struct LifecycleInvariantTests {
         let container = try SorenModelContainer.inMemory()
         let context   = ModelContext(container)
 
-        let end = Calendar.current.date(byAdding: .day, value: 30, to: .now)!
+        let end = BillingCivilDay.calendar.date(byAdding: .day, value: 30, to: Date(timeIntervalSinceReferenceDate: 0))!
         let sd  = SDRecurringItem(
             id: UUID(),
             title: "Finite Sub",
@@ -318,8 +319,8 @@ struct LifecycleInvariantTests {
             amountValue: 9.99,
             currencyCode: "USD",
             billingCycleRaw: "monthly",
-            startDate: .now,
-            nextChargeDate: .now,
+            startDate: Date(timeIntervalSinceReferenceDate: 0),
+            nextChargeDate: Date(timeIntervalSinceReferenceDate: 0),
             trialEndDate: nil,
             autoRenew: false,
             endDate: end,
@@ -336,9 +337,10 @@ struct LifecycleInvariantTests {
             updatedAt: .now,
             archivedAt: nil
         )
+        sd.legacyBillingDateInterpretationTimeZoneIdentifier = "GMT"
         context.insert(sd)
 
-        let domain = RecurringItemMapper.toDomain(sd)
+        let domain = try RecurringItemMapper.toDomain(sd)
 
         #expect(domain.autoRenew == false)
         #expect(domain.endDate == end)
@@ -349,18 +351,19 @@ struct LifecycleInvariantTests {
         let container = try SorenModelContainer.inMemory()
         let context   = ModelContext(container)
 
-        let end      = Calendar.current.date(byAdding: .day, value: 45, to: .now)!
+        let end      = BillingCivilDay.calendar.date(byAdding: .day, value: 45, to: Date(timeIntervalSinceReferenceDate: 0))!
         let original = RecurringItem(
             title: "Finite",
             amount: 12.99,
-            nextChargeDate: .now,
+            startDate: Date(timeIntervalSinceReferenceDate: 0),
+            nextChargeDate: Date(timeIntervalSinceReferenceDate: 0),
             autoRenew: false,
             endDate: end
         )
 
-        let sd       = RecurringItemMapper.toSD(original)
+        let sd       = try RecurringItemMapper.toSD(original)
         context.insert(sd)
-        let restored = RecurringItemMapper.toDomain(sd)
+        let restored = try RecurringItemMapper.toDomain(sd)
 
         #expect(restored.autoRenew == false)
         #expect(restored.endDate == end)

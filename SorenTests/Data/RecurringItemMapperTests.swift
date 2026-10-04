@@ -25,8 +25,8 @@ struct RecurringItemMapperTests {
             amountValue: 699,
             currencyCode: "RUB",
             billingCycleRaw: "monthly",
-            startDate: now,
-            nextChargeDate: now,
+            startDate: Date(timeIntervalSinceReferenceDate: 0),
+            nextChargeDate: Date(timeIntervalSinceReferenceDate: 0),
             trialEndDate: nil,
             statusRaw: "active",
             usageStatusRaw: "frequentlyUsed",
@@ -41,9 +41,10 @@ struct RecurringItemMapperTests {
             updatedAt: now,
             archivedAt: nil
         )
+        sd.billingDateEncodingVersion = 1
         context.insert(sd)
 
-        let domain = RecurringItemMapper.toDomain(sd)
+        let domain = try RecurringItemMapper.toDomain(sd)
 
         #expect(domain.id == id)
         #expect(domain.title == "Netflix")
@@ -67,7 +68,7 @@ struct RecurringItemMapperTests {
         let container = try SorenModelContainer.inMemory()
         let context = ModelContext(container)
         let sd = makeSDItem(context: context, itemTypeRaw: "totally_unknown_type")
-        let domain = RecurringItemMapper.toDomain(sd)
+        let domain = try RecurringItemMapper.toDomain(sd)
         #expect(domain.itemType == .otherRecurring)
     }
 
@@ -76,7 +77,7 @@ struct RecurringItemMapperTests {
         let container = try SorenModelContainer.inMemory()
         let context = ModelContext(container)
         let sd = makeSDItem(context: context, statusRaw: "???")
-        let domain = RecurringItemMapper.toDomain(sd)
+        let domain = try RecurringItemMapper.toDomain(sd)
         #expect(domain.status == .active)
     }
 
@@ -85,7 +86,7 @@ struct RecurringItemMapperTests {
         let container = try SorenModelContainer.inMemory()
         let context = ModelContext(container)
         let sd = makeSDItem(context: context, categoryRaw: "not_a_category")
-        let domain = RecurringItemMapper.toDomain(sd)
+        let domain = try RecurringItemMapper.toDomain(sd)
         #expect(domain.category == .other)
     }
 
@@ -96,7 +97,6 @@ struct RecurringItemMapperTests {
         let container = try SorenModelContainer.inMemory()
         let context = ModelContext(container)
 
-        let now = Date(timeIntervalSinceReferenceDate: 1_500_000)
         let original = RecurringItem(
             id: UUID(),
             title: "Яндекс Плюс",
@@ -107,8 +107,8 @@ struct RecurringItemMapperTests {
             amount: 399,
             currencyCode: "RUB",
             billingCycle: .monthly,
-            startDate: now,
-            nextChargeDate: now,
+            startDate: Date(timeIntervalSinceReferenceDate: 0),
+            nextChargeDate: Date(timeIntervalSinceReferenceDate: 0),
             status: .active,
             usageStatus: .frequentlyUsed,
             tags: ["Bundle", "Family"],
@@ -116,9 +116,9 @@ struct RecurringItemMapperTests {
             isFamilyPlan: true
         )
 
-        let sd = RecurringItemMapper.toSD(original)
+        let sd = try RecurringItemMapper.toSD(original)
         context.insert(sd)
-        let restored = RecurringItemMapper.toDomain(sd)
+        let restored = try RecurringItemMapper.toDomain(sd)
 
         #expect(restored.id == original.id)
         #expect(restored.title == original.title)
@@ -142,11 +142,12 @@ struct RecurringItemMapperTests {
             title: "Custom",
             amount: 100,
             billingCycle: .custom(days: 14),
-            nextChargeDate: .now
+            startDate: Date(timeIntervalSinceReferenceDate: 0),
+            nextChargeDate: Date(timeIntervalSinceReferenceDate: 0)
         )
-        let sd = RecurringItemMapper.toSD(item)
+        let sd = try RecurringItemMapper.toSD(item)
         context.insert(sd)
-        let restored = RecurringItemMapper.toDomain(sd)
+        let restored = try RecurringItemMapper.toDomain(sd)
         #expect(restored.billingCycle == .custom(days: 14))
     }
 
@@ -160,14 +161,15 @@ struct RecurringItemMapperTests {
         var domain = RecurringItem(
             title: "Old Title",
             amount: 100,
-            nextChargeDate: .now
+            startDate: Date(timeIntervalSinceReferenceDate: 0),
+            nextChargeDate: Date(timeIntervalSinceReferenceDate: 0)
         )
-        let sd = RecurringItemMapper.toSD(domain)
+        let sd = try RecurringItemMapper.toSD(domain)
         context.insert(sd)
 
         domain.title = "New Title"
         domain.amount = 999
-        RecurringItemMapper.update(sd, from: domain)
+        try RecurringItemMapper.update(sd, from: domain)
 
         #expect(sd.title == "New Title")
         #expect(sd.amountValue == 999)
@@ -179,14 +181,15 @@ struct RecurringItemMapperTests {
         let context = ModelContext(container)
 
         let originalID = UUID()
-        let domain = RecurringItem(id: originalID, title: "Test", amount: 100, nextChargeDate: .now)
-        let sd = RecurringItemMapper.toSD(domain)
+        let domain = RecurringItem(id: originalID, title: "Test", amount: 100, startDate: Date(timeIntervalSinceReferenceDate: 0),
+            nextChargeDate: Date(timeIntervalSinceReferenceDate: 0))
+        let sd = try RecurringItemMapper.toSD(domain)
         context.insert(sd)
 
         // Simulate update with a different domain (same id but changed data)
         var updated = domain
         updated.title = "Changed"
-        RecurringItemMapper.update(sd, from: updated)
+        try RecurringItemMapper.update(sd, from: updated)
 
         // id must never change
         #expect(sd.id == originalID)
@@ -211,8 +214,8 @@ private func makeSDItem(
         amountValue: 100,
         currencyCode: "RUB",
         billingCycleRaw: "monthly",
-        startDate: .now,
-        nextChargeDate: .now,
+        startDate: Date(timeIntervalSinceReferenceDate: 0),
+        nextChargeDate: Date(timeIntervalSinceReferenceDate: 0),
         trialEndDate: nil,
         statusRaw: statusRaw,
         usageStatusRaw: "unknown",
@@ -227,6 +230,7 @@ private func makeSDItem(
         updatedAt: .now,
         archivedAt: nil
     )
+    sd.billingDateEncodingVersion = 1
     context.insert(sd)
     return sd
 }

@@ -50,70 +50,70 @@ struct TrialReminderOptionTests {
 @Suite("Trial reminder persistence")
 struct TrialReminderMapperTests {
     private func item(reminder: TrialReminderOption) -> RecurringItem {
-        RecurringItem(title: "Test", amount: 299, nextChargeDate: .distantFuture, trialReminder: reminder)
+        RecurringItem(title: "Test", amount: 299, startDate: Date(timeIntervalSinceReferenceDate: 0), nextChargeDate: .distantFuture, trialReminder: reminder)
     }
 
     @Test("mapper retains all trial reminder options and defaults legacy rows to never")
-    func mapperContract() {
+    func mapperContract() throws {
         for option in TrialReminderOption.allCases {
-            let mapped = RecurringItemMapper.toDomain(RecurringItemMapper.toSD(item(reminder: option)))
+            let mapped = try RecurringItemMapper.toDomain(RecurringItemMapper.toSD(item(reminder: option)))
             #expect(mapped.trialReminder == option)
         }
-        let legacy = RecurringItemMapper.toSD(item(reminder: .threeDaysBefore))
+        let legacy = try RecurringItemMapper.toSD(item(reminder: .threeDaysBefore))
         legacy.trialReminderRaw = nil
-        #expect(RecurringItemMapper.toDomain(legacy).trialReminder == .never)
+        #expect(try RecurringItemMapper.toDomain(legacy).trialReminder == .never)
     }
 
     @Test("legacy nil trial reminder decodes to never")
-    func nilRawValueDefaultsToNever() {
-        let legacy = RecurringItemMapper.toSD(item(reminder: .threeDaysBefore))
+    func nilRawValueDefaultsToNever() throws {
+        let legacy = try RecurringItemMapper.toSD(item(reminder: .threeDaysBefore))
         legacy.trialReminderRaw = nil
-        #expect(RecurringItemMapper.toDomain(legacy).trialReminder == .never)
+        #expect(try RecurringItemMapper.toDomain(legacy).trialReminder == .never)
     }
 
     @Test("unknown legacy trial reminder decodes to never")
-    func unknownRawValueDefaultsToNever() {
-        let legacy = RecurringItemMapper.toSD(item(reminder: .sameDay))
+    func unknownRawValueDefaultsToNever() throws {
+        let legacy = try RecurringItemMapper.toSD(item(reminder: .sameDay))
         legacy.trialReminderRaw = "twoWeeksBefore"
-        #expect(RecurringItemMapper.toDomain(legacy).trialReminder == .never)
+        #expect(try RecurringItemMapper.toDomain(legacy).trialReminder == .never)
     }
 
     @Test("mapper writes the selected trial reminder raw value")
-    func mapperWritesSelectedRawValue() {
-        let stored = RecurringItemMapper.toSD(item(reminder: .never))
-        var updated = RecurringItemMapper.toDomain(stored)
+    func mapperWritesSelectedRawValue() throws {
+        let stored = try RecurringItemMapper.toSD(item(reminder: .never))
+        var updated = try RecurringItemMapper.toDomain(stored)
         updated.trialReminder = .sevenDaysBefore
-        RecurringItemMapper.update(stored, from: updated)
+        try RecurringItemMapper.update(stored, from: updated)
         #expect(stored.trialReminderRaw == TrialReminderOption.sevenDaysBefore.rawValue)
     }
 
     @Test("never survives trial reminder persistence")
-    func neverRoundTrips() {
-        let mapped = RecurringItemMapper.toDomain(RecurringItemMapper.toSD(item(reminder: .never)))
+    func neverRoundTrips() throws {
+        let mapped = try RecurringItemMapper.toDomain(RecurringItemMapper.toSD(item(reminder: .never)))
         #expect(mapped.trialReminder == .never)
     }
 
     @Test("same-day survives trial reminder persistence")
-    func sameDayRoundTrips() {
-        let mapped = RecurringItemMapper.toDomain(RecurringItemMapper.toSD(item(reminder: .sameDay)))
+    func sameDayRoundTrips() throws {
+        let mapped = try RecurringItemMapper.toDomain(RecurringItemMapper.toSD(item(reminder: .sameDay)))
         #expect(mapped.trialReminder == .sameDay)
     }
 
     @Test("one-day survives trial reminder persistence")
-    func oneDayRoundTrips() {
-        let mapped = RecurringItemMapper.toDomain(RecurringItemMapper.toSD(item(reminder: .oneDayBefore)))
+    func oneDayRoundTrips() throws {
+        let mapped = try RecurringItemMapper.toDomain(RecurringItemMapper.toSD(item(reminder: .oneDayBefore)))
         #expect(mapped.trialReminder == .oneDayBefore)
     }
 
     @Test("three-day survives trial reminder persistence")
-    func threeDayRoundTrips() {
-        let mapped = RecurringItemMapper.toDomain(RecurringItemMapper.toSD(item(reminder: .threeDaysBefore)))
+    func threeDayRoundTrips() throws {
+        let mapped = try RecurringItemMapper.toDomain(RecurringItemMapper.toSD(item(reminder: .threeDaysBefore)))
         #expect(mapped.trialReminder == .threeDaysBefore)
     }
 
     @Test("seven-day survives trial reminder persistence")
-    func sevenDayRoundTrips() {
-        let mapped = RecurringItemMapper.toDomain(RecurringItemMapper.toSD(item(reminder: .sevenDaysBefore)))
+    func sevenDayRoundTrips() throws {
+        let mapped = try RecurringItemMapper.toDomain(RecurringItemMapper.toSD(item(reminder: .sevenDaysBefore)))
         #expect(mapped.trialReminder == .sevenDaysBefore)
     }
 }

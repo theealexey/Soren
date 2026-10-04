@@ -10,8 +10,9 @@ enum RecurringItemMapper {
 
     // MARK: - SD → Domain
 
-    static func toDomain(_ sd: SDRecurringItem) -> RecurringItem {
-        RecurringItem(
+    static func toDomain(_ sd: SDRecurringItem) throws -> RecurringItem {
+        let dates = try decodedBillingDates(sd)
+        return RecurringItem(
             id: sd.id,
             title: sd.title,
             providerID: sd.providerID,
@@ -21,11 +22,11 @@ enum RecurringItemMapper {
             amount: sd.amountValue,
             currencyCode: sd.currencyCode,
             billingCycle: BillingCycleEncoder.decode(sd.billingCycleRaw),
-            startDate: sd.startDate,
-            nextChargeDate: sd.nextChargeDate,
-            trialEndDate: sd.trialEndDate,
+            startDate: dates.startDate,
+            nextChargeDate: dates.nextChargeDate,
+            trialEndDate: dates.trialEndDate,
             autoRenew: sd.autoRenew ?? true,   // nil = legacy record → treat as auto-renewing
-            endDate: sd.endDate,
+            endDate: dates.endDate,
             chargeReminder: sd.chargeReminderRaw.flatMap(ChargeReminderOption.init) ?? .threeDaysBefore,
             trialReminder: sd.trialReminderRaw.flatMap(TrialReminderOption.init) ?? .never,
             status: ItemStatus(rawValue: sd.statusRaw) ?? .active,
@@ -45,8 +46,9 @@ enum RecurringItemMapper {
 
     // MARK: - Domain → SD (new)
 
-    static func toSD(_ domain: RecurringItem) -> SDRecurringItem {
-        SDRecurringItem(
+    static func toSD(_ domain: RecurringItem) throws -> SDRecurringItem {
+        let dates = try preparedBillingDates(domain)
+        let sd = SDRecurringItem(
             id: domain.id,
             title: domain.title,
             providerID: domain.providerID,
@@ -56,11 +58,11 @@ enum RecurringItemMapper {
             amountValue: domain.amount,
             currencyCode: domain.currencyCode,
             billingCycleRaw: BillingCycleEncoder.encode(domain.billingCycle),
-            startDate: domain.startDate,
-            nextChargeDate: domain.nextChargeDate,
-            trialEndDate: domain.trialEndDate,
+            startDate: dates.startDate,
+            nextChargeDate: dates.nextChargeDate,
+            trialEndDate: dates.trialEndDate,
             autoRenew: domain.autoRenew,
-            endDate: domain.endDate,
+            endDate: dates.endDate,
             chargeReminderRaw: domain.chargeReminder.rawValue,
             trialReminderRaw: domain.trialReminder.rawValue,
             statusRaw: domain.status.rawValue,
@@ -76,13 +78,19 @@ enum RecurringItemMapper {
             updatedAt: domain.updatedAt,
             archivedAt: domain.archivedAt
         )
+        sd.billingDateEncodingVersion = RecurringItemBillingDateAdapter.canonicalEncodingVersion
+        return sd
     }
 
     // MARK: - Domain → SD (update existing)
 
     /// Updates an existing SDRecurringItem in-place from a domain entity.
     /// Used by the Repository's `update` method — avoids deleting/reinserting.
-    static func update(_ sd: SDRecurringItem, from domain: RecurringItem) {
+    static func update(_ sd: SDRecurringItem, from domain: RecurringItem) throws {
+        // Prove the persisted tuple is readable, then prepare the entire replacement
+        // before the first managed mutation. Metadata, not date equality, chooses decoding.
+        _ = try decodedBillingDates(sd)
+        let dates = try preparedBillingDates(domain)
         sd.title = domain.title
         sd.providerID = domain.providerID
         sd.providerName = domain.providerName
@@ -91,11 +99,11 @@ enum RecurringItemMapper {
         sd.amountValue = domain.amount
         sd.currencyCode = domain.currencyCode
         sd.billingCycleRaw = BillingCycleEncoder.encode(domain.billingCycle)
-        sd.startDate = domain.startDate
-        sd.nextChargeDate = domain.nextChargeDate
-        sd.trialEndDate = domain.trialEndDate
+        sd.startDate = dates.startDate
+        sd.nextChargeDate = dates.nextChargeDate
+        sd.trialEndDate = dates.trialEndDate
         sd.autoRenew = domain.autoRenew
-        sd.endDate = domain.endDate
+        sd.endDate = dates.endDate
         sd.chargeReminderRaw = domain.chargeReminder.rawValue
         sd.trialReminderRaw = domain.trialReminder.rawValue
         sd.statusRaw = domain.status.rawValue
@@ -109,6 +117,26 @@ enum RecurringItemMapper {
         sd.managementURL = domain.managementURL
         sd.updatedAt = domain.updatedAt
         sd.archivedAt = domain.archivedAt
+        sd.billingDateEncodingVersion = RecurringItemBillingDateAdapter.canonicalEncodingVersion
+        // Existing legacy interpretation policy remains intact after conversion.
+    }
+
+    private static func decodedBillingDates(_ sd: SDRecurringItem) throws -> RecurringItemBillingDateAdapter.Dates {
+        try RecurringItemBillingDateAdapter().decode(
+            .init(startDate: sd.startDate, nextChargeDate: sd.nextChargeDate,
+                  trialEndDate: sd.trialEndDate, endDate: sd.endDate),
+            itemID: sd.id, encodingVersion: sd.billingDateEncodingVersion,
+            legacyTimeZoneIdentifier: sd.legacyBillingDateInterpretationTimeZoneIdentifier
+        )
+    }
+
+    private static func preparedBillingDates(_ domain: RecurringItem) throws -> RecurringItemBillingDateAdapter.Dates {
+        try RecurringItemBillingDateAdapter().decode(
+            .init(startDate: domain.startDate, nextChargeDate: domain.nextChargeDate,
+                  trialEndDate: domain.trialEndDate, endDate: domain.endDate),
+            itemID: domain.id, encodingVersion: RecurringItemBillingDateAdapter.canonicalEncodingVersion,
+            legacyTimeZoneIdentifier: nil
+        )
     }
 }
 

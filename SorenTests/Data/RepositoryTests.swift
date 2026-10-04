@@ -21,7 +21,7 @@ struct RecurringItemRepositoryTests {
     private func makeItem(
         title: String = "Netflix",
         status: ItemStatus = .active,
-        nextCharge: Date = .now,
+        nextCharge: Date = Date(timeIntervalSinceReferenceDate: 0),
         category: ItemCategory = .video,
         archived: Bool = false
     ) -> RecurringItem {
@@ -35,7 +35,7 @@ struct RecurringItemRepositoryTests {
             amount: 9.99,
             currencyCode: "USD",
             billingCycle: .monthly,
-            startDate: .now,
+            startDate: Date(timeIntervalSinceReferenceDate: 0),
             nextChargeDate: nextCharge,
             trialEndDate: nil,
             status: status,
@@ -85,7 +85,7 @@ struct RecurringItemRepositoryTests {
         let duplicate = RecurringItem(
             id: item.id, title: "Duplicate", providerID: nil, providerName: "Dup",
             itemType: .subscription, category: .video, amount: 1.00, currencyCode: "USD",
-            billingCycle: .monthly, startDate: .now, nextChargeDate: .now,
+            billingCycle: .monthly, startDate: Date(timeIntervalSinceReferenceDate: 0), nextChargeDate: Date(timeIntervalSinceReferenceDate: 0),
             trialEndDate: nil, status: .active, usageStatus: .unknown,
             paymentMethodID: nil, note: "", tags: [], isShared: false, isFamilyPlan: false,
             bundleID: nil, managementURL: nil, createdAt: .now, updatedAt: .now, archivedAt: nil
@@ -185,8 +185,8 @@ struct RecurringItemRepositoryTests {
     @Test("fetchUpcoming with 7 days returns only items in window")
     func fetchUpcomingWindow() throws {
         let fixture = try makeFixture()
-        let now = Date()
-        let cal = Calendar.current
+        let now = Date(timeIntervalSinceReferenceDate: 0)
+        let cal = BillingCivilDay.calendar
 
         let tomorrow = cal.date(byAdding: .day, value: 1, to: now)!
         let in10 = cal.date(byAdding: .day, value: 10, to: now)!
@@ -204,10 +204,10 @@ struct RecurringItemRepositoryTests {
     @Test("fetchUpcoming with 0 days returns empty")
     func fetchUpcomingZeroDays() throws {
         let fixture = try makeFixture()
-        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: .now)!
+        let tomorrow = BillingCivilDay.calendar.date(byAdding: .day, value: 1, to: Date(timeIntervalSinceReferenceDate: 0))!
         try fixture.recurringItems.save(makeItem(nextCharge: tomorrow))
 
-        let result = try fixture.recurringItems.fetchUpcoming(within: 0, from: .now)
+        let result = try fixture.recurringItems.fetchUpcoming(within: 0, from: Date(timeIntervalSinceReferenceDate: 0))
         #expect(result.isEmpty)
     }
 

@@ -144,6 +144,75 @@ struct RecurringItem: Identifiable, Hashable, Sendable {
     }
 }
 
+// MARK: - Explicit canonical civil-day API
+
+extension RecurringItem {
+    func validateCanonicalBillingDates() throws {
+        let fields: [(RecurringItemBillingDateValidationError.Field, Date?)] = [
+            (.startDate, startDate), (.nextChargeDate, nextChargeDate),
+            (.trialEndDate, trialEndDate), (.endDate, endDate)
+        ]
+        for (field, date) in fields {
+            guard let date else { continue }
+            do { _ = try BillingCivilDay.civilDate(fromCanonicalDate: date) }
+            catch {
+                throw RecurringItemBillingDateValidationError(itemID: id, field: field, underlying: error)
+            }
+        }
+    }
+
+    func isActiveTrial(on today: CivilDate) throws -> Bool {
+        guard status == .trial, let trialEndDate else { return false }
+        return try BillingCivilDay.civilDate(fromCanonicalDate: trialEndDate) > today
+    }
+
+    func daysUntilTrialEnd(from today: CivilDate) throws -> Int? {
+        guard try isActiveTrial(on: today), let trialEndDate else { return nil }
+        return try BillingCivilDay.days(from: today, to: BillingCivilDay.civilDate(fromCanonicalDate: trialEndDate))
+    }
+
+    func renewalDisplay(relativeTo today: CivilDate) throws -> RenewalDisplay {
+        guard !autoRenew, let endDate else { return .renewing }
+        let days = try BillingCivilDay.days(from: today, to: BillingCivilDay.civilDate(fromCanonicalDate: endDate))
+        if days < 0 { return .expired }
+        if days <= 30 { return .endingSoon(daysLeft: days) }
+        return .renewing
+    }
+
+    func isExpired(on today: CivilDate) throws -> Bool {
+        if case .expired = try renewalDisplay(relativeTo: today) { return true }
+        return false
+    }
+
+    func daysUntilNextCharge(from today: CivilDate) throws -> Int {
+        try BillingCivilDay.days(from: today, to: BillingCivilDay.civilDate(fromCanonicalDate: nextChargeDate))
+    }
+
+    func isDue(within days: Int, from today: CivilDate) throws -> Bool {
+        let difference = try daysUntilNextCharge(from: today)
+        return difference >= 0 && difference <= days
+    }
+
+    /// Deterministic equivalent of the existing display-only rollover helper.
+    /// Schedule projection remains owned by RecurringScheduleProjector.
+    func effectiveNextChargeDate(relativeTo today: CivilDate) throws -> Date {
+        _ = try BillingCivilDay.civilDate(fromCanonicalDate: nextChargeDate)
+        let boundary = try BillingCivilDay.canonicalDate(for: today)
+        switch status {
+        case .paused, .cancelled, .archived: return nextChargeDate
+        default: break
+        }
+        guard autoRenew, nextChargeDate < boundary else { return nextChargeDate }
+        var candidate = nextChargeDate
+        var iterations = 0
+        while candidate < boundary, iterations < 1_000 {
+            candidate = billingCycle.nextDate(after: candidate, calendar: BillingCivilDay.calendar)
+            iterations += 1
+        }
+        return candidate
+    }
+}
+
 // MARK: - Computed Properties
 
 extension RecurringItem {
