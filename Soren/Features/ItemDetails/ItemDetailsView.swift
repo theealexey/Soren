@@ -64,6 +64,7 @@ struct ItemDetailsView: View {
         .onChange(of: viewModel.isDeleted) { _, deleted in
             if deleted { dismiss() }
         }
+        .onAppear { viewModel.refreshNextScheduledCharge() }
     }
 
     // MARK: - Display Helpers
@@ -175,7 +176,7 @@ struct ItemDetailsView: View {
 
                     infoRow(
                         icon: "calendar",
-                        label: "Следующее списание",
+                        label: "itemDetails.nextScheduledCharge.label",
                         value: viewModel.formattedNextCharge
                     )
 

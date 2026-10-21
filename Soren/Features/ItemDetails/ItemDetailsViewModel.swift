@@ -8,7 +8,17 @@ final class ItemDetailsViewModel {
 
     // MARK: - Display State
 
-    var item: RecurringItem
+    var item: RecurringItem {
+        didSet { refreshNextScheduledCharge() }
+    }
+    enum NextScheduledChargeState: Equatable {
+        case scheduled(CivilDate)
+        case notScheduled
+        case unavailable
+    }
+    private(set) var nextScheduledChargeState: NextScheduledChargeState = .unavailable
+    private(set) var nextScheduledChargeError: Error?
+    private(set) var formattedNextCharge = String(localized: "itemDetails.nextScheduledCharge.unavailable")
     var isEditing = false
     var showDeleteConfirmation = false
     private(set) var isDeleted = false
@@ -108,6 +118,7 @@ final class ItemDetailsViewModel {
         self.now = now
         self.timeZone = timeZone
         self.reportingCurrencyCode = preferences.load().defaultCurrencyCode
+        refreshNextScheduledCharge()
     }
 
     init(
@@ -127,6 +138,7 @@ final class ItemDetailsViewModel {
         self.now = now
         self.timeZone = timeZone
         self.reportingCurrencyCode = preferences.load().defaultCurrencyCode
+        refreshNextScheduledCharge()
     }
 
     // MARK: - Edit Next Charge Date
@@ -347,8 +359,25 @@ final class ItemDetailsViewModel {
         return true
     }
 
-    var formattedNextCharge: String {
-        (try? BillingDatePresentation.string(from: item.nextChargeDate)) ?? ""
+    /// Refreshes at presentation and when the source item changes, rather than
+    /// running schedule projection during SwiftUI body evaluation.
+    func refreshNextScheduledCharge() {
+        do {
+            let today = try BillingCivilDay.civilDate(containing: now(), in: timeZone())
+            if let day = try RecurringScheduleProjector().nextScheduledCharge(for: item, onOrAfter: today) {
+                let formatted = try BillingDatePresentation.string(from: BillingCivilDay.canonicalDate(for: day))
+                nextScheduledChargeState = .scheduled(day)
+                formattedNextCharge = formatted
+            } else {
+                nextScheduledChargeState = .notScheduled
+                formattedNextCharge = String(localized: "itemDetails.nextScheduledCharge.notScheduled")
+            }
+            nextScheduledChargeError = nil
+        } catch {
+            nextScheduledChargeError = error
+            nextScheduledChargeState = .unavailable
+            formattedNextCharge = String(localized: "itemDetails.nextScheduledCharge.unavailable")
+        }
     }
 
     var formattedStartDate: String {

@@ -697,6 +697,105 @@ struct RecurringScheduleProjectorTests {
         #expect(projection.monetaryCompleteness == .unavailable)
     }
 
+    // MARK: - Nearest Canonical Charge
+
+    @Test("Next charge uses the same anchored occurrence as interval projection", arguments: [
+        (2026, 10, 15, BillingCycle.monthly, 2026, 10, 21, 2026, 11, 15),
+        (2026, 10, 15, .monthly, 2026, 10, 15, 2026, 10, 15),
+        (2026, 11, 15, .monthly, 2026, 10, 21, 2026, 11, 15),
+        (2040, 11, 15, .annual, 2026, 10, 21, 2040, 11, 15),
+        (2026, 1, 31, .monthly, 2026, 3, 1, 2026, 3, 31),
+        (2024, 2, 29, .annual, 2027, 3, 1, 2028, 2, 29)
+    ])
+    func nearestCanonicalCharge(_ ay: Int, _ am: Int, _ ad: Int, _ cycle: BillingCycle,
+                                _ ty: Int, _ tm: Int, _ td: Int, _ ey: Int, _ em: Int, _ ed: Int) throws {
+        let calendar = BillingCivilDay.calendar
+        let today = try CivilDate(year: ty, month: tm, day: td)
+        let expected = try CivilDate(year: ey, month: em, day: ed)
+        let source = item(anchor: try date(ay, am, ad, calendar: calendar), billingCycle: cycle)
+        let projector = RecurringScheduleProjector()
+        #expect(try projector.nextScheduledCharge(for: source, onOrAfter: today) == expected)
+        let start = try BillingCivilDay.canonicalDate(for: today)
+        let expectedDate = try BillingCivilDay.canonicalDate(for: expected)
+        let end = try #require(calendar.date(byAdding: .day, value: 1, to: expectedDate))
+        let projection = try projector.project(source, in: start..<end, asOf: start, calendar: calendar)
+        #expect(chargeDates(in: projection).first == expectedDate)
+        #expect(source.nextChargeDate == (try date(ay, am, ad, calendar: calendar)))
+    }
+
+    @Test("Next charge shares lifecycle eligibility", arguments: [
+        ItemStatus.active, .dueSoon, .dueToday, .overdue, .failed, .paused, .cancelled, .archived
+    ])
+    func nextChargeLifecycle(_ status: ItemStatus) throws {
+        let anchor = try date(2026, 10, 15, calendar: BillingCivilDay.calendar)
+        let result = try RecurringScheduleProjector().nextScheduledCharge(
+            for: item(anchor: anchor, status: status),
+            onOrAfter: CivilDate(year: 2026, month: 10, day: 21)
+        )
+        #expect(result == (status.countsInTotals ? try CivilDate(year: 2026, month: 11, day: 15) : nil))
+    }
+
+    @Test("Finite end is inclusive; exhausted and expired schedules are absent")
+    func nextChargeFiniteBounds() throws {
+        let calendar = BillingCivilDay.calendar
+        let anchor = try date(2026, 10, 15, calendar: calendar)
+        var source = item(anchor: anchor, autoRenew: false,
+                          endDate: try date(2026, 11, 15, calendar: calendar))
+        let projector = RecurringScheduleProjector()
+        let today = try CivilDate(year: 2026, month: 10, day: 21)
+        #expect(try projector.nextScheduledCharge(for: source, onOrAfter: today)
+                == CivilDate(year: 2026, month: 11, day: 15))
+        source.endDate = try date(2026, 11, 14, calendar: calendar)
+        #expect(try projector.nextScheduledCharge(for: source, onOrAfter: today) == nil)
+        #expect(try projector.nextScheduledCharge(
+            for: source, onOrAfter: CivilDate(year: 2026, month: 11, day: 16)) == nil)
+        source.archivedAt = anchor
+        #expect(try projector.nextScheduledCharge(for: source, onOrAfter: today) == nil)
+    }
+
+    @Test("Distant lifecycle start is respected without a search horizon")
+    func nextChargeDistantStart() throws {
+        let calendar = BillingCivilDay.calendar
+        let source = item(anchor: try date(2026, 10, 15, calendar: calendar),
+                          startDate: try date(2050, 10, 16, calendar: calendar))
+        #expect(try RecurringScheduleProjector().nextScheduledCharge(
+            for: source, onOrAfter: CivilDate(year: 2026, month: 10, day: 21))
+                == CivilDate(year: 2050, month: 11, day: 15))
+    }
+
+    @Test("Trial-only projection is unavailable, never a monetary date")
+    func nextChargeTrialTruth() throws {
+        let calendar = BillingCivilDay.calendar
+        let boundary = try date(2026, 11, 15, calendar: calendar)
+        var source = item(anchor: try date(2026, 11, 20, calendar: calendar),
+                          startDate: try date(2026, 10, 1, calendar: calendar),
+                          status: .trial, trialEndDate: boundary)
+        let today = try CivilDate(year: 2026, month: 10, day: 21)
+        let projector = RecurringScheduleProjector()
+        #expect(throws: RecurringScheduleProjectionError.monetaryScheduleUnavailable) {
+            try projector.nextScheduledCharge(for: source, onOrAfter: today)
+        }
+        source.nextChargeDate = boundary
+        #expect(try projector.nextScheduledCharge(for: source, onOrAfter: today)
+                == CivilDate(year: 2026, month: 11, day: 15))
+    }
+
+    @Test("Unavailable schedules throw rather than report absence", arguments: [0, 1, 2, 3])
+    func nextChargeUnavailable(_ kind: Int) throws {
+        let anchor = try date(2026, 10, 15, calendar: BillingCivilDay.calendar)
+        var source = item(anchor: anchor)
+        switch kind {
+        case 0: source.amount = 0
+        case 1: source.currencyCode = "???"
+        case 2: source.billingCycle = .custom(days: 0)
+        default: source.autoRenew = false
+        }
+        #expect(throws: RecurringScheduleProjectionError.monetaryScheduleUnavailable) {
+            try RecurringScheduleProjector().nextScheduledCharge(
+                for: source, onOrAfter: CivilDate(year: 2026, month: 10, day: 21))
+        }
+    }
+
     // MARK: - Integrity
 
     @Test("Projection does not mutate the persisted schedule anchor")

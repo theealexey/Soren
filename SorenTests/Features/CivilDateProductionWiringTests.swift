@@ -201,7 +201,8 @@ struct CivilDateFormInputTests {
         try await edit.togglePause()
         try await edit.archive()
         #expect(edit.item.nextChargeDate == item.nextChargeDate)
-        #expect(edit.formattedNextCharge.contains("15"))
+        #expect(edit.nextScheduledChargeState == .notScheduled)
+        #expect(edit.formattedNextCharge == String(localized: "itemDetails.nextScheduledCharge.notScheduled"))
     }
 }
 

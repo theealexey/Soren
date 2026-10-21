@@ -53,6 +53,76 @@ struct ItemDetailsEditFormTests {
 
     // MARK: - Recompute on startDate change
 
+    @Test("Details projects November while Edit preserves the October anchor")
+    func projectedDisplayPreservesEditAnchor() async throws {
+        let anchor = try BillingCivilDay.canonicalDate(for: CivilDate(year: 2026, month: 10, day: 15))
+        let reference = try BillingCivilDay.canonicalDate(for: CivilDate(year: 2026, month: 10, day: 21))
+        let source = makeItem(startDate: anchor, nextChargeDate: anchor)
+        let repositories = try makeRepositories()
+        try repositories.recurringItems.save(source)
+        var clockReads = 0
+        let vm = ItemDetailsViewModel(
+            item: source, repositories: repositories, exchangeRateProvider: StaticExchangeRateProvider(),
+            now: { clockReads += 1; return reference }, timeZone: { .gmt }
+        )
+        let expected = try CivilDate(year: 2026, month: 11, day: 15)
+        #expect(vm.nextScheduledChargeState == .scheduled(expected))
+        #expect(vm.nextScheduledChargeError == nil)
+        #expect(vm.formattedNextCharge == (try BillingDatePresentation.string(
+            from: BillingCivilDay.canonicalDate(for: expected))))
+        let reads = clockReads
+        _ = vm.formattedNextCharge
+        _ = vm.nextScheduledChargeState
+        #expect(clockReads == reads)
+        #expect(try repositories.recurringItems.fetch(id: source.id)?.nextChargeDate == anchor)
+        vm.startEditing()
+        let anchorDay = try CivilDate(year: 2026, month: 10, day: 15)
+        #expect(vm.editNextChargeDate == anchorDay)
+        vm.editTitle = "Renamed"
+        try await vm.saveChanges()
+        #expect(vm.item.nextChargeDate == anchor)
+        #expect(try repositories.recurringItems.fetch(id: source.id)?.nextChargeDate == anchor)
+        #expect(vm.nextScheduledChargeState == .scheduled(expected))
+    }
+
+    @Test("Unavailable projection retains error and differs from absence")
+    func unavailableDisplayRetainsDiagnostic() throws {
+        let anchor = try BillingCivilDay.canonicalDate(for: CivilDate(year: 2026, month: 10, day: 15))
+        var source = makeItem(startDate: anchor, nextChargeDate: anchor)
+        source.status = .trial
+        let vm = ItemDetailsViewModel(
+            item: source, repositories: try makeRepositories(), exchangeRateProvider: StaticExchangeRateProvider(),
+            now: { anchor }, timeZone: { .gmt }
+        )
+        #expect(vm.nextScheduledChargeState == .unavailable)
+        #expect(vm.nextScheduledChargeError as? RecurringScheduleProjectionError == .monetaryScheduleUnavailable)
+        #expect(vm.formattedNextCharge == String(localized: "itemDetails.nextScheduledCharge.unavailable"))
+        vm.item.status = .paused
+        #expect(vm.nextScheduledChargeState == .notScheduled)
+        #expect(vm.nextScheduledChargeError == nil)
+        #expect(vm.formattedNextCharge == String(localized: "itemDetails.nextScheduledCharge.notScheduled"))
+        vm.item.status = .active
+        let anchorDay = try CivilDate(year: 2026, month: 10, day: 15)
+        #expect(vm.nextScheduledChargeState == .scheduled(anchorDay))
+    }
+
+    @Test("Same explicit local today projects the same civil date", arguments: [
+        "Europe/Stockholm", "America/Los_Angeles", "Asia/Tokyo"
+    ])
+    func scheduledDisplayTimezoneStability(_ zoneID: String) throws {
+        let zone = try #require(TimeZone(identifier: zoneID))
+        let today = try CivilDate(year: 2026, month: 10, day: 21)
+        let now = try BillingDatePresentation.pickerCarrier(for: today, in: zone)
+        let anchor = try BillingCivilDay.canonicalDate(for: CivilDate(year: 2026, month: 10, day: 15))
+        let vm = ItemDetailsViewModel(
+            item: makeItem(startDate: anchor, nextChargeDate: anchor), repositories: try makeRepositories(),
+            exchangeRateProvider: StaticExchangeRateProvider(), now: { now }, timeZone: { zone }
+        )
+        #expect(vm.today == today)
+        let expectedDay = try CivilDate(year: 2026, month: 11, day: 15)
+        #expect(vm.nextScheduledChargeState == .scheduled(expectedDay))
+    }
+
     @Test("Changing startDate applies the calendar-aware automatic monthly suggestion")
     func changingStartDateRecomputesNextCharge() throws {
         let cal = BillingCivilDay.calendar

@@ -17,6 +17,7 @@ struct RecurringScheduleProjection: Equatable, Sendable {
 
 enum RecurringScheduleProjectionError: Error, Equatable, Sendable {
     case invalidCalendarArithmetic
+    case monetaryScheduleUnavailable
 }
 
 /// Projects the schedule truth implied by one recurring item into a half-open
@@ -33,34 +34,98 @@ struct RecurringScheduleProjector: Sendable {
             return complete()
         }
 
-        guard item.status.countsInTotals, item.archivedAt == nil else {
-            return complete()
+        let resolution = monetarySchedule(for: item, asOf: referenceDate, calendar: calendar)
+        if case .absent = resolution { return complete() }
+        let trialBoundary = trialBoundaryEvent(
+            for: item,
+            in: interval,
+            startDate: calendar.startOfDay(for: item.startDate),
+            endDate: item.endDate.map { calendar.startOfDay(for: $0) },
+            calendar: calendar
+        )
+        guard case let .available(schedule) = resolution else {
+            return unavailable(events: trialBoundary)
         }
+        let recurrence = try AnchoredRecurrence(
+            billingCycle: item.billingCycle,
+            anchor: schedule.anchor,
+            calendar: calendar
+        )
+        let chargeDates = try recurrence.dates(
+            in: interval,
+            lifecycleStart: schedule.start,
+            lifecycleEnd: schedule.end
+        )
+        let charges = chargeDates.map {
+            RecurringScheduleEvent.scheduledCharge(
+                itemID: item.id,
+                date: $0,
+                money: schedule.money
+            )
+        }
+        return complete(events: trialBoundary + charges)
+    }
 
+    /// Finds one monetary occurrence directly from the original anchor. No search
+    /// horizon or enumeration is needed; nil is reserved for proven absence.
+    func nextScheduledCharge(
+        for item: RecurringItem,
+        onOrAfter today: CivilDate
+    ) throws -> CivilDate? {
+        try item.validateCanonicalBillingDates()
+        let calendar = BillingCivilDay.calendar
+        let reference = try BillingCivilDay.canonicalDate(for: today)
+        switch monetarySchedule(for: item, asOf: reference, calendar: calendar) {
+        case .absent:
+            return nil
+        case .unavailable:
+            throw RecurringScheduleProjectionError.monetaryScheduleUnavailable
+        case let .available(schedule):
+            let recurrence = try AnchoredRecurrence(
+                billingCycle: item.billingCycle, anchor: schedule.anchor, calendar: calendar
+            )
+            let offset = try recurrence.firstOffset(onOrAfter: max(reference, schedule.start))
+            let candidate = try recurrence.date(at: offset)
+            if let end = schedule.end, candidate > end { return nil }
+            return try BillingCivilDay.civilDate(fromCanonicalDate: candidate)
+        }
+    }
+}
+
+// MARK: - Shared Monetary Truth
+
+private extension RecurringScheduleProjector {
+    struct MonetarySchedule {
+        let start: Date
+        let anchor: Date
+        let end: Date?
+        let money: Money
+    }
+
+    enum MonetaryScheduleResolution {
+        case absent
+        case unavailable
+        case available(MonetarySchedule)
+    }
+
+    func monetarySchedule(
+        for item: RecurringItem,
+        asOf referenceDate: Date,
+        calendar: Calendar
+    ) -> MonetaryScheduleResolution {
+        guard item.status.countsInTotals, item.archivedAt == nil else { return .absent }
         let referenceDay = calendar.startOfDay(for: referenceDate)
         let startDate = calendar.startOfDay(for: item.startDate)
         let scheduleAnchor = calendar.startOfDay(for: item.nextChargeDate)
         let endDate = item.endDate.map { calendar.startOfDay(for: $0) }
-
-        if let endDate, endDate < referenceDay {
-            return complete()
-        }
-
-        let trialBoundary = trialBoundaryEvent(
-            for: item,
-            in: interval,
-            startDate: startDate,
-            endDate: endDate,
-            calendar: calendar
-        )
-
+        if let endDate, endDate < referenceDay { return .absent }
         if !item.autoRenew, endDate == nil {
-            return unavailable(events: trialBoundary)
+            return .unavailable
         }
 
         if let endDate,
            startDate > endDate || scheduleAnchor > endDate {
-            return unavailable(events: trialBoundary)
+            return .unavailable
         }
 
         let effectiveStartDate: Date
@@ -70,7 +135,7 @@ struct RecurringScheduleProjector: Sendable {
                   item.nextChargeDate >= trialEndDate,
                   calendar.isDate(item.nextChargeDate, inSameDayAs: trialEndDate)
             else {
-                return unavailable(events: trialBoundary)
+                return .unavailable
             }
 
             effectiveStartDate = max(
@@ -84,7 +149,7 @@ struct RecurringScheduleProjector: Sendable {
         guard item.amount > 0,
               isValid(item.billingCycle)
         else {
-            return unavailable(events: trialBoundary)
+            return .unavailable
         }
 
         let money: Money
@@ -94,28 +159,11 @@ struct RecurringScheduleProjector: Sendable {
                 currencyCode: item.currencyCode
             )
         } catch {
-            return unavailable(events: trialBoundary)
+            return .unavailable
         }
-
-        let recurrence = try AnchoredRecurrence(
-            billingCycle: item.billingCycle,
-            anchor: scheduleAnchor,
-            calendar: calendar
-        )
-        let chargeDates = try recurrence.dates(
-            in: interval,
-            lifecycleStart: effectiveStartDate,
-            lifecycleEnd: endDate
-        )
-        let charges = chargeDates.map {
-            RecurringScheduleEvent.scheduledCharge(
-                itemID: item.id,
-                date: $0,
-                money: money
-            )
-        }
-
-        return complete(events: trialBoundary + charges)
+        return .available(MonetarySchedule(
+            start: effectiveStartDate, anchor: scheduleAnchor, end: endDate, money: money
+        ))
     }
 }
 

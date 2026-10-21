@@ -1,6 +1,24 @@
 {
   "sourceLanguage" : "ru",
   "strings" : {
+    "itemDetails.nextScheduledCharge.label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Next scheduled charge" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Следующее по расписанию" } }
+      }
+    },
+    "itemDetails.nextScheduledCharge.notScheduled" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Not scheduled" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Не запланировано" } }
+      }
+    },
+    "itemDetails.nextScheduledCharge.unavailable" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unable to determine" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Не удалось определить" } }
+      }
+    },
     "calendar.emptySelectedDay" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "No charges are scheduled for this day." } },
