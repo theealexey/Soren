@@ -40,7 +40,7 @@ struct RootView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if selectedTab != .overview && selectedTab != .subscriptions {
+            if selectedTab == .insights {
                 SorenContextBar(tab: selectedTab) { contextBarTrailing }
             }
 
@@ -69,7 +69,7 @@ struct RootView: View {
                 .frame(maxWidth: .infinity, alignment: .center)
         }
         .background {
-            if selectedTab == .overview || selectedTab == .subscriptions {
+            if selectedTab == .overview || selectedTab == .subscriptions || selectedTab == .calendar {
                 SoftClubColor.canvas.ignoresSafeArea()
             } else {
                 ColorTokens.background.ignoresSafeArea()

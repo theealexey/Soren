@@ -55,10 +55,22 @@ final class CalendarViewModel {
         !monthlyProjections.isEmpty
     }
 
+    /// Read-only UI carrier calendar; schedule calculations remain canonical.
+    var presentationCalendar: Calendar { calendar }
+
+    var hasMonthlyEvents: Bool { !occurrencesByDay.isEmpty }
+
     var monthTitle: String {
-        let formatter = PresentationLocale.dateFormatter(template: "LLLL yyyy", calendar: calendar)
+        monthTitle(locale: PresentationLocale.current)
+    }
+
+    func monthTitle(locale: Locale) -> String {
+        let formatter = PresentationLocale.dateFormatter(template: "LLLL yyyy", locale: locale, calendar: calendar)
         formatter.timeZone = calendar.timeZone
-        return formatter.string(from: displayedMonth).capitalized
+        let title = formatter.string(from: displayedMonth)
+            .replacingOccurrences(of: "\u{00A0}", with: " ")
+            .replacingOccurrences(of: "\u{202F}", with: " ")
+        return title.prefix(1).uppercased(with: locale) + title.dropFirst()
     }
 
     // MARK: - Private

@@ -1,22 +1,15 @@
 import SwiftUI
 
-// MARK: - Calendar View
-
-/// Full monthly calendar showing subscription charge dates.
-///
-/// Layout: month navigation header → weekday labels →
-/// 7-column day grid with charge indicators → selected-day charge list.
+/// Presentation only; SOR-105A owns canonical occurrence projection and money.
 struct CalendarView: View {
     @Environment(AppContainer.self) private var container
     @Environment(\.navigateToItem) private var navigateToItem
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var viewModel: CalendarViewModel?
-
-    /// Maximum width of the calendar content column.
-    /// Keeps day cells at a comfortable size on iPad and Mac — matching the
-    /// ~55-65 pt per cell cadence that feels natural on iPhone.
-    /// On any iPhone (max 430 pt wide) this cap is never reached.
-    private let calendarContentMaxWidth: CGFloat = 460
+    @ScaledMetric(relativeTo: .headline) private var headingSize = 17.0
+    @ScaledMetric(relativeTo: .caption2) private var weekdaySize = 11.0
+    @ScaledMetric(relativeTo: .subheadline) private var emptySize = 14.0
 
     var body: some View {
         Group {
@@ -26,7 +19,7 @@ struct CalendarView: View {
                 LoadingStateView()
             }
         }
-        .background(ColorTokens.background)
+        .background(SoftClubColor.canvas.ignoresSafeArea())
         .task {
             guard viewModel == nil else { return }
             let vm = container.makeCalendarViewModel()
@@ -42,10 +35,7 @@ struct CalendarView: View {
         }
     }
 
-    // MARK: - Calendar Content
-
-    @ViewBuilder
-    private func calendarContent(_ vm: CalendarViewModel) -> some View {
+    @ViewBuilder private func calendarContent(_ vm: CalendarViewModel) -> some View {
         Group {
             if vm.error != nil {
                 ErrorStateView(message: "Не удалось загрузить данные") {
@@ -54,12 +44,19 @@ struct CalendarView: View {
             } else {
                 ScrollView {
                     VStack(spacing: 0) {
-                        monthNavHeader(vm)
-                        weekdayHeader
+                        monthHeader(vm)
+                        weekdayHeader(calendar: vm.presentationCalendar)
+                            .padding(.top, 8)
+                            .padding(.bottom, 6)
                         calendarGrid(vm)
+                        CalendarMonthSummary(aggregation: vm.monthlyAggregation, hasEvents: vm.hasMonthlyEvents)
+                            .padding(.top, 12)
                         selectedDaySection(vm)
+                            .padding(.top, 18)
                     }
-                    .frame(maxWidth: calendarContentMaxWidth)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                    .frame(maxWidth: 460)
                     .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
@@ -70,363 +67,97 @@ struct CalendarView: View {
         }
     }
 
-    // MARK: - Month Navigation
-
-    private func monthNavHeader(_ vm: CalendarViewModel) -> some View {
-        HStack {
-            Button {
-                HapticEngine.selection()
-                vm.previousMonth()
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(ColorTokens.accent)
-                    .frame(width: 36, height: 36)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Text(String(localized: "Предыдущий месяц")))
-            .disabled(!vm.canNavigatePreviousMonth)
-
-            Spacer()
-
+    private func monthHeader(_ vm: CalendarViewModel) -> some View {
+        ZStack {
             Text(vm.monthTitle)
-                .font(Typography.headline)
-                .foregroundStyle(ColorTokens.textPrimary)
-                .contentTransition(.numericText())
-                .animation(MotionTokens.snappy, value: vm.monthTitle)
-
-            Spacer()
-
-            Button {
-                HapticEngine.selection()
-                vm.nextMonth()
-            } label: {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(ColorTokens.accent)
-                    .frame(width: 36, height: 36)
+                .font(.system(size: headingSize, weight: .semibold))
+                .foregroundStyle(SoftClubColor.textPrimary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 44)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilitySortPriority(3)
+            HStack(spacing: 0) {
+                Button {
+                    HapticEngine.selection()
+                    vm.previousMonth()
+                } label: {
+                    navigationSymbol("chevron.left", enabled: vm.canNavigatePreviousMonth)
+                }
+                .disabled(!vm.canNavigatePreviousMonth)
+                .accessibilityLabel(String(localized: "Предыдущий месяц"))
+                .accessibilitySortPriority(2)
+                Spacer(minLength: 0)
+                Button {
+                    HapticEngine.selection()
+                    vm.nextMonth()
+                } label: {
+                    navigationSymbol("chevron.right", enabled: true)
+                }
+                .accessibilityLabel(String(localized: "Следующий месяц"))
+                .accessibilitySortPriority(1)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(Text(String(localized: "Следующий месяц")))
         }
-        .padding(.horizontal, Spacing.lg)
-        .padding(.vertical, Spacing.sm)
+        .frame(minHeight: dynamicTypeSize.isAccessibilitySize ? headingSize * 2.5 : 44)
+        .accessibilityElement(children: .contain)
     }
 
-    // MARK: - Weekday Header
+    private func navigationSymbol(_ name: String, enabled: Bool) -> some View {
+        Image(systemName: name)
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(enabled ? SoftClubColor.textPrimary : SoftClubColor.textSecondary)
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
+    }
 
-    private var weekdayHeader: some View {
-        HStack(spacing: 0) {
-            ForEach(Self.weekdayLabels, id: \.self) { label in
+    private func weekdayHeader(calendar: Calendar) -> some View {
+        let symbols = calendar.veryShortStandaloneWeekdaySymbols
+        let labels = Array(symbols.dropFirst()) + Array(symbols.prefix(1))
+        return HStack(spacing: 0) {
+            ForEach(Array(labels.enumerated()), id: \.offset) { _, label in
                 Text(label)
-                    .font(Typography.captionMedium)
-                    .foregroundStyle(ColorTokens.textTertiary)
+                    .font(.system(size: weekdaySize, weight: .medium))
+                    .foregroundStyle(SoftClubColor.textSecondary)
                     .frame(maxWidth: .infinity)
             }
         }
-        .padding(.horizontal, Spacing.sm)
-        .padding(.bottom, Spacing.xs)
-        .accessibilityHidden(true)
+        .accessibilityHidden(true) // Every day button speaks its full weekday and date.
     }
-
-    /// Mon-first short weekday labels derived from the app's presentation locale.
-    /// Rotation uses `firstWeekday` so the logic matches `buildGrid()` in the ViewModel.
-    private static let weekdayLabels: [String] = {
-        var cal = Calendar(identifier: .gregorian)
-        cal.locale = PresentationLocale.current
-        cal.firstWeekday = 2
-        var symbols = cal.veryShortStandaloneWeekdaySymbols
-        // API returns Sun-first: [Вс, Пн, Вт, Ср, Чт, Пт, Сб]
-        // Rotate by (firstWeekday - 1) to get Mon-first: [Пн, Вт, Ср, Чт, Пт, Сб, Вс]
-        let rotation = cal.firstWeekday - 1
-        guard rotation > 0, symbols.count > rotation else { return symbols }
-        symbols = Array(symbols[rotation...]) + Array(symbols[..<rotation])
-        return symbols
-    }()
-
-    // MARK: - Calendar Grid
 
     private func calendarGrid(_ vm: CalendarViewModel) -> some View {
-        let rows = vm.daysInGrid.chunked(into: 7)
-        return VStack(spacing: 0) {
-            // Use first day's date as stable row identifier so SwiftUI can animate
-            // correctly when row count changes between months (4 vs 5 vs 6 rows).
-            ForEach(rows, id: \.first?.date) { row in
-                HStack(spacing: 0) {
-                    ForEach(row) { day in
-                        dayCell(day, vm: vm)
-                    }
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 0) {
+            ForEach(vm.daysInGrid) { day in
+                let selected = vm.presentationCalendar.isDate(day.date, inSameDayAs: vm.selectedDate)
+                let events = vm.occurrencesByDate[day.date] ?? []
+                CalendarDayCell(
+                    presentation: CalendarDayPresentation(day: day, isSelected: selected, occurrences: events),
+                    calendar: vm.presentationCalendar
+                ) {
+                    vm.selectDate(day.date)
+                    if !events.isEmpty { HapticEngine.selection() }
                 }
             }
         }
-        .padding(.horizontal, Spacing.sm)
-        .animation(MotionTokens.snappy, value: vm.displayedMonth)
     }
 
-    // MARK: - Day Cell
-
-    private func dayCell(_ day: CalendarDay, vm: CalendarViewModel) -> some View {
-        let isSelected = CalendarViewModel.cal.isDate(day.date, inSameDayAs: vm.selectedDate)
-        let charges = (vm.occurrencesByDate[day.date] ?? []).map(\.item)
-        let dayNumber = CalendarViewModel.cal.component(.day, from: day.date)
-
-        return Button {
-            withAnimation(MotionTokens.snappy) { vm.selectDate(day.date) }
-            if !charges.isEmpty { HapticEngine.selection() }
-        } label: {
-            VStack(spacing: Spacing.xxs) {
-                dayNumberView(number: dayNumber, day: day, isSelected: isSelected)
-                chargeDots(charges: charges, isSelected: isSelected)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, Spacing.xs)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(accessibilityDayLabel(day: day, charges: charges))
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-
-    private func dayNumberView(number: Int, day: CalendarDay, isSelected: Bool) -> some View {
-        Text("\(number)")
-            .font(day.isToday ? Typography.bodyMedium : Typography.body)
-            .foregroundStyle(
-                isSelected         ? .white :
-                day.isToday        ? ColorTokens.accent :
-                day.isCurrentMonth ? ColorTokens.textPrimary :
-                                     ColorTokens.textTertiary
-            )
-            .frame(width: 32, height: 32)
-            .background {
-                if isSelected {
-                    Circle().fill(ColorTokens.accent)
-                } else if day.isToday {
-                    Circle().strokeBorder(ColorTokens.accent, lineWidth: 1.5)
-                }
-            }
-    }
-
-    @ViewBuilder
-    private func chargeDots(charges: [RecurringItem], isSelected: Bool) -> some View {
-        if charges.isEmpty {
-            Color.clear.frame(height: 6)
-        } else {
-            HStack(spacing: 3) {
-                // Use stable item IDs so SwiftUI animates dot add/remove correctly.
-                ForEach(Array(charges.prefix(3).enumerated()), id: \.offset) { _ in
-                    Circle()
-                        .fill(isSelected ? Color.white : ColorTokens.accent)
-                        .frame(width: 4, height: 4)
-                }
-                if charges.count > 3 {
-                    Text("+\(charges.count - 3)")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundStyle(isSelected ? Color.white : ColorTokens.accent)
-                }
-            }
-            .frame(height: 6)
-        }
-    }
-
-    private func accessibilityDayLabel(day: CalendarDay, charges: [RecurringItem]) -> Text {
-        let dayStr = Self.accessibilityDayFormatter.string(from: day.date)
-        if charges.isEmpty { return Text(verbatim: dayStr) }
-        return Text(verbatim: "\(dayStr), \(pluralPayments(charges.count))")
-    }
-
-    private func pluralPayments(_ count: Int) -> String {
-        String(localized: "\(count) платежей")
-    }
-
-    private static let accessibilityDayFormatter: DateFormatter = {
-        PresentationLocale.dateFormatter(
-            template: "d MMMM",
-            calendar: CalendarViewModel.cal
-        )
-    }()
-
-    // MARK: - Selected Day Section
-
-    @ViewBuilder
     private func selectedDaySection(_ vm: CalendarViewModel) -> some View {
-        let charges = vm.selectedDayOccurrences
-
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            Divider()
-                .padding(.top, Spacing.sm)
-
-            SectionHeader(Self.dayTitle(for: vm.selectedDate))
-                .padding(.horizontal, Spacing.lg)
-                .padding(.top, Spacing.sm)
-
-            if charges.isEmpty {
-                Text(String(localized: "Нет платежей"))
-                    .font(Typography.body)
-                    .foregroundStyle(ColorTokens.textTertiary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, Spacing.xl)
+        let day = vm.daysInGrid.first { vm.presentationCalendar.isDate($0.date, inSameDayAs: vm.selectedDate) }
+        return VStack(alignment: .leading, spacing: 10) {
+            if let day {
+                Text(CalendarPresentation.selectedDayTitle(day: day, calendar: vm.presentationCalendar))
+                    .font(.system(size: headingSize, weight: .semibold))
+                    .foregroundStyle(SoftClubColor.textPrimary)
+                    .accessibilityAddTraits(.isHeader)
+            }
+            if vm.selectedDayOccurrences.isEmpty {
+                Text(String(localized: "calendar.emptySelectedDay"))
+                    .font(.system(size: emptySize, weight: .regular))
+                    .foregroundStyle(SoftClubColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             } else {
-                // Inline card mirrors Library row geometry so the Calendar list reads at
-                // the same compact visual scale. SorenListRow is shared with Library, so
-                // icon/typography/inner spacing already match — only per-row padding and
-                // the surrounding card chrome needed to tighten. Not using PremiumCard
-                // here: its fixed Spacing.md (16pt) jacket makes the row stack feel
-                // heavier than a Library list.
-                VStack(spacing: 0) {
-                    ForEach(Array(charges.enumerated()), id: \.offset) { idx, occurrence in
-                        Button { navigateToItem(occurrence.item) } label: {
-                            let item = occurrence.item
-                            if let money = occurrence.money {
-                            SorenListRow(
-                                title: item.title,
-                                subtitle: item.providerName == item.title ? nil : item.providerName,
-                                amount: money.amount,
-                                currency: money.currencyCode,
-                                cycle: RecurringItemFormatter.cycleLabel(for: item.billingCycle),
-                                providerTemplate: item.providerTemplate,
-                                category: item.category
-                            )
-                            .padding(.vertical, Spacing.xs)
-                            .padding(.horizontal, Spacing.lg)
-                            } else {
-                                HStack(spacing: Spacing.sm) {
-                                    if let provider = item.providerTemplate {
-                                        ProviderIcon(provider: provider, size: .medium)
-                                    } else {
-                                        ProviderIcon(category: item.category, size: .medium)
-                                    }
-                                    VStack(alignment: .leading, spacing: Spacing.xxxs) {
-                                        Text(item.title).font(Typography.headline).foregroundStyle(ColorTokens.textPrimary)
-                                        Text(String(localized: "Пробный период"))
-                                            .font(Typography.caption).foregroundStyle(ColorTokens.textTertiary)
-                                    }
-                                    Spacer(minLength: Spacing.xs)
-                                }
-                                .padding(.vertical, Spacing.xs)
-                                .padding(.horizontal, Spacing.lg)
-                            }
-                        }
-                        .buttonStyle(.plain)
-
-                        if idx < charges.count - 1 {
-                            Divider()
-                                .padding(.leading, Spacing.lg + SorenListRow.dividerInset)
-                        }
-                    }
-                }
-                .background(ColorTokens.surface)
-                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
-                .overlay {
-                    RoundedRectangle(cornerRadius: CornerRadius.large)
-                        .strokeBorder(ColorTokens.separator.opacity(0.5), lineWidth: 0.5)
-                }
-                .padding(.horizontal, Spacing.lg)
-            }
-
-            if vm.hasMonthlyCharges, vm.monthlyAggregation != nil {
-                monthlyTotalFooter(vm: vm)
+                CalendarAgendaView(occurrences: vm.selectedDayOccurrences, openItem: { navigateToItem($0) })
             }
         }
-        .padding(.bottom, Spacing.xxxl)
-        .animation(MotionTokens.snappy, value: vm.selectedDate)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
-
-    private func monthlyTotalFooter(vm: CalendarViewModel) -> some View {
-        Group {
-            if let aggregation = vm.monthlyAggregation {
-                HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: Spacing.xxxs) {
-                        Text(String(localized: "Итого за месяц"))
-                            .font(Typography.captionMedium)
-                            .foregroundStyle(ColorTokens.textSecondary)
-
-                        switch aggregation {
-                        case let .complete(_, metadata):
-                            if let metadata, case .stale = metadata.freshness {
-                                Text(String(localized: "По сохранённому курсу"))
-                                    .font(Typography.footnote)
-                                    .foregroundStyle(ColorTokens.warning)
-                            }
-
-                        case let .partial(_, missingCodes, metadata):
-                            Text(String(localized: "Нет курсов для \(missingCodes.joined(separator: ", "))"))
-                                .font(Typography.footnote)
-                                .foregroundStyle(ColorTokens.warning)
-                            if let metadata, case .stale = metadata.freshness {
-                                Text(String(localized: "По сохранённому курсу"))
-                                    .font(Typography.footnote)
-                                    .foregroundStyle(ColorTokens.warning)
-                            }
-
-                        case let .unavailable(_, missingCodes, _, metadata):
-                            Text(String(localized: "Курсы валют недоступны"))
-                                .font(Typography.footnote)
-                                .foregroundStyle(ColorTokens.textTertiary)
-                            if !missingCodes.isEmpty {
-                                Text(String(localized: "Нет курсов для \(missingCodes.joined(separator: ", "))"))
-                                    .font(Typography.footnote)
-                                    .foregroundStyle(ColorTokens.textTertiary)
-                            }
-                            if let metadata, case .stale = metadata.freshness {
-                                Text(String(localized: "По сохранённому курсу"))
-                                    .font(Typography.footnote)
-                                    .foregroundStyle(ColorTokens.warning)
-                            }
-                        }
-                    }
-                    Spacer()
-                    if let total = aggregation.total {
-                        AmountLabel(
-                            total.amount,
-                            currency: total.currencyCode,
-                            size: .medium
-                        )
-                    }
-                }
-                .padding(.horizontal, Spacing.lg)
-                .padding(.top, Spacing.sm)
-            }
-        }
-    }
-
-    // MARK: - Helpers
-
-    private static func dayTitle(for date: Date) -> String {
-        if CalendarViewModel.cal.isDateInToday(date) {
-            return String(localized: "Сегодня")
-        }
-        if CalendarViewModel.cal.isDateInTomorrow(date) {
-            return String(localized: "Завтра")
-        }
-        return Self.dayFormatter
-            .string(from: date)
-            .capitalized(with: PresentationLocale.current)
-    }
-
-    private static let dayFormatter: DateFormatter = {
-        PresentationLocale.dateFormatter(
-            template: "d MMMM",
-            calendar: CalendarViewModel.cal
-        )
-    }()
-}
-
-// MARK: - Array+Chunked
-
-private extension Array {
-    func chunked(into size: Int) -> [[Element]] {
-        guard size > 0 else { return [] }
-        return stride(from: 0, to: count, by: size).map {
-            Array(self[$0..<Swift.min($0 + size, count)])
-        }
-    }
-}
-
-
-// MARK: - Preview
-
-#Preview {
-    CalendarView()
-        .environment(
-            AppContainer(modelContext: try! SorenModelContainer.inMemory().mainContext)
-        )
 }

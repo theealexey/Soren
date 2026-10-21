@@ -71,6 +71,10 @@
 		3E6405A4F0A59A5EF54A5056 /* GetUpcomingCharges.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AE23A399CED2B38971BCB57 /* GetUpcomingCharges.swift */; };
 		C105A1000000000000000001 /* GetCalendarSchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C105A1000000000000000002 /* GetCalendarSchedule.swift */; };
 		C105A1000000000000000003 /* CalendarScheduleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C105A1000000000000000004 /* CalendarScheduleTests.swift */; };
+		C105B1000000000000000001 /* CalendarPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = C105B1000000000000000002 /* CalendarPresentation.swift */; };
+		C105B1000000000000000003 /* CalendarDayCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C105B1000000000000000004 /* CalendarDayCell.swift */; };
+		C105B1000000000000000005 /* CalendarAgendaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C105B1000000000000000006 /* CalendarAgendaView.swift */; };
+		C105B1000000000000000007 /* CalendarPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C105B1000000000000000008 /* CalendarPresentationTests.swift */; };
 		40B9AED4D39EF8E91FE3ADAE /* PaymentMethodRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = E649AB3F110DA227AEAD1E55 /* PaymentMethodRepository.swift */; };
 		40D4336F2D0E3F84A6F0FCDB /* NotificationDiagnosticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56890545E88B469DFD308368 /* NotificationDiagnosticsView.swift */; };
 		40D591A8E4F0F1F842AA791E /* UserPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3040DE9BC5A648451E24ACD3 /* UserPreferencesTests.swift */; };
@@ -377,6 +381,10 @@
 		6AE23A399CED2B38971BCB57 /* GetUpcomingCharges.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetUpcomingCharges.swift; sourceTree = "<group>"; };
 		C105A1000000000000000002 /* GetCalendarSchedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetCalendarSchedule.swift; sourceTree = "<group>"; };
 		C105A1000000000000000004 /* CalendarScheduleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarScheduleTests.swift; sourceTree = "<group>"; };
+		C105B1000000000000000002 /* CalendarPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarPresentation.swift; sourceTree = "<group>"; };
+		C105B1000000000000000004 /* CalendarDayCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarDayCell.swift; sourceTree = "<group>"; };
+		C105B1000000000000000006 /* CalendarAgendaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarAgendaView.swift; sourceTree = "<group>"; };
+		C105B1000000000000000008 /* CalendarPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarPresentationTests.swift; sourceTree = "<group>"; };
 		6B4ED267EDB217E4783C0540 /* ValidationErrorFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationErrorFormatterTests.swift; sourceTree = "<group>"; };
 		6BC0056301AA302B544B628D /* AppContainer+CalendarFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppContainer+CalendarFactory.swift"; sourceTree = "<group>"; };
 		6C5D8E927985B3D9BE99290A /* NotificationDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationDiagnostics.swift; sourceTree = "<group>"; };
@@ -933,6 +941,7 @@
 				AF7BD15F0BA562AB78DC878E /* LibraryTotalTests.swift */,
 				8CEEF7B37513315DE9DE3C6C /* NextChargeDateSuggestionTests.swift */,
 				C105A1000000000000000004 /* CalendarScheduleTests.swift */,
+				C105B1000000000000000008 /* CalendarPresentationTests.swift */,
 				71B630834E09F48BCE08F7A5 /* NotificationDiagnosticsTests.swift */,
 				E357561751930021CAD058B8 /* NotificationPermissionCoordinatorTests.swift */,
 				57386AB781234F7E0834187C /* NotificationReconciliationObservationTests.swift */,
@@ -1316,6 +1325,9 @@
 			children = (
 				E0BCBA25E3733B23E1C13244 /* Components */,
 				044C4CC94022CAD6BD7876C3 /* CalendarView.swift */,
+				C105B1000000000000000002 /* CalendarPresentation.swift */,
+				C105B1000000000000000004 /* CalendarDayCell.swift */,
+				C105B1000000000000000006 /* CalendarAgendaView.swift */,
 				32D559E2D2DF29D539F3D1AB /* CalendarViewModel.swift */,
 			);
 			path = Calendar;
@@ -1514,6 +1526,9 @@
 				F3FD5F08E064C7378A305F93 /* Bundle.swift in Sources */,
 				20741D2FEFBB8A071EE15538 /* BundledRegionalPricingLoader.swift in Sources */,
 				84020A9857573194026531D7 /* CalendarView.swift in Sources */,
+				C105B1000000000000000001 /* CalendarPresentation.swift in Sources */,
+				C105B1000000000000000003 /* CalendarDayCell.swift in Sources */,
+				C105B1000000000000000005 /* CalendarAgendaView.swift in Sources */,
 				258B7245AC9BD0C58B8C7759 /* CalendarViewModel.swift in Sources */,
 				6943DE8531F86DDCE40082AB /* ChargeReminderOption+Display.swift in Sources */,
 				70F8633DEF6781223D15CC66 /* ChargeReminderOption.swift in Sources */,
@@ -1699,6 +1714,7 @@
 				446776A4B4A8B61EACD9791E /* MotionTokenTests.swift in Sources */,
 				F3A0EDAD0443BF22B192AA40 /* NextChargeDateSuggestionTests.swift in Sources */,
 				C105A1000000000000000003 /* CalendarScheduleTests.swift in Sources */,
+				C105B1000000000000000007 /* CalendarPresentationTests.swift in Sources */,
 				856B2BC3A457843655F9519E /* NotificationDiagnosticsTests.swift in Sources */,
 				79828644A4B6FF4047173228 /* NotificationPermissionCoordinatorTests.swift in Sources */,
 				D992669DC73444A3136FF3A5 /* NotificationReconciliationObservationTests.swift in Sources */,

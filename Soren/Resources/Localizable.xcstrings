@@ -1,6 +1,18 @@
 {
   "sourceLanguage" : "ru",
   "strings" : {
+    "calendar.emptySelectedDay" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No charges are scheduled for this day." } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "На этот день списаний не запланировано" } }
+      }
+    },
+    "calendar.emptyMonth" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No charges are scheduled for this month." } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "В этом месяце списаний не запланировано" } }
+      }
+    },
     "" : {
 
     },
