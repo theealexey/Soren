@@ -9,6 +9,7 @@ extension AppContainer {
     func makeAnalyticsViewModel() -> AnalyticsViewModel {
         AnalyticsViewModel(
             getActiveItems: GetActiveItems(repository: repositories.recurringItems),
+            getForecast: GetAnalyticsForecast(repository: repositories.recurringItems),
             preferences: preferences,
             aggregateRecurringSpend: AggregateRecurringSpendUseCase(),
             exchangeRateProvider: exchangeRateProvider

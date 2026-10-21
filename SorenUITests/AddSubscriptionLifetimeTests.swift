@@ -23,7 +23,7 @@ final class AddSubscriptionLifetimeTests: XCTestCase {
         amount.typeText("123")
 
         let nextChargeControls = app.buttons.matching(
-            NSPredicate(format: "label BEGINSWITH %@", "Следующее списание, ")
+            NSPredicate(format: "label BEGINSWITH %@", "Дата списания, ")
         )
         XCTAssertEqual(nextChargeControls.count, 1)
         let nextCharge = nextChargeControls.element
@@ -39,13 +39,13 @@ final class AddSubscriptionLifetimeTests: XCTestCase {
         formatter.locale = Locale(identifier: "ru_RU")
         formatter.setLocalizedDateFormatFromTemplate("dMMMyyyy")
         let initialLabel = nextCharge.label
-        let initialText = String(initialLabel.dropFirst("Следующее списание, ".count))
+        let initialText = String(initialLabel.dropFirst("Дата списания, ".count))
         let initialDate = try XCTUnwrap(formatter.date(from: initialText))
         var chosenComponents = calendar.dateComponents([.year, .month, .day], from: initialDate)
         let chosenDay = chosenComponents.day == 15 ? 16 : 15
         chosenComponents.day = chosenDay
         let chosenDate = try XCTUnwrap(calendar.date(from: chosenComponents))
-        let expectedLabel = "Следующее списание, " + formatter.string(from: chosenDate)
+        let expectedLabel = "Дата списания, " + formatter.string(from: chosenDate)
 
         nextCharge.tap()
         let done = app.buttons["Готово"]

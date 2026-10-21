@@ -171,6 +171,7 @@ struct AnalyticsCurrencyAggregationTests {
             getActiveItems: GetActiveItems(
                 repository: InMemoryRecurringItemRepository(items: items)
             ),
+            getForecast: GetAnalyticsForecast(repository: InMemoryRecurringItemRepository(items: items)),
             preferences: preferences,
             aggregateRecurringSpend: AggregateRecurringSpendUseCase(),
             exchangeRateProvider: provider
@@ -553,6 +554,7 @@ struct AnalyticsCurrencyAggregationTests {
 
         #expect(vm.screenState.monthlyAggregation?.total?.currencyCode == "USD")
         #expect(vm.screenState.monthlyAggregation?.total?.amount == 19)
+        #expect(vm.screenState.monthlyProjections.allSatisfy { $0.total == 19 })
         #expect(await provider.requests() == 2)
     }
 
@@ -619,5 +621,288 @@ struct AnalyticsCurrencyAggregationTests {
         #expect(vm.screenState.monthlyProjections.count == 6)
         #expect(vm.screenState.monthlyProjections.allSatisfy { $0.total == 1_000 })
         #expect(await provider.requests() == 1)
+    }
+}
+
+// MARK: - Canonical Six-Month Forecast
+
+extension AnalyticsCurrencyAggregationTests {
+    private final class ForecastRepository: RecurringItemRepository {
+        var items: [RecurringItem]
+        var allReads = 0
+        var activeReads = 0
+        var readError: RateProviderError?
+        init(_ items: [RecurringItem]) { self.items = items }
+        func fetchAll() throws -> [RecurringItem] {
+            allReads += 1
+            if let readError { throw readError }
+            return items
+        }
+        func fetchActive() throws -> [RecurringItem] {
+            activeReads += 1
+            return items.filter {
+                [.active, .dueSoon, .dueToday, .trial].contains($0.status) && $0.archivedAt == nil
+            }
+        }
+        func fetchUpcoming(within days: Int, from date: Date) throws -> [RecurringItem] { [] }
+        func fetchByCategory(_ category: ItemCategory) throws -> [RecurringItem] { [] }
+        func fetch(id: UUID) throws -> RecurringItem? { items.first { $0.id == id } }
+        func save(_ item: RecurringItem) throws {}
+        func update(_ item: RecurringItem) throws {}
+        func delete(id: UUID) throws {}
+        func saveAll(_ items: [RecurringItem]) throws {}
+        func deleteAll() throws {}
+    }
+
+    private func civil(_ year: Int = 2026, _ month: Int = 10, _ day: Int = 1) throws -> CivilDate {
+        try CivilDate(year: year, month: month, day: day)
+    }
+
+    private func canonical(_ year: Int = 2026, _ month: Int = 10, _ day: Int = 1) throws -> Date {
+        try BillingCivilDay.canonicalDate(for: civil(year, month, day))
+    }
+
+    private func scheduledItem(cycle: BillingCycle = .monthly, amount: Decimal = 100,
+                               status: ItemStatus = .active, currency: String = "RUB") throws -> RecurringItem {
+        RecurringItem(title: "Schedule", amount: amount, currencyCode: currency, billingCycle: cycle,
+                      startDate: try canonical(), nextChargeDate: try canonical(2026, 10, 15), status: status)
+    }
+
+    private func forecast(_ items: [RecurringItem], today: CivilDate? = nil) throws -> [AnalyticsForecastMonth] {
+        try GetAnalyticsForecast(repository: ForecastRepository(items)).execute(today: today ?? civil())
+    }
+
+    private func chargeDates(_ months: [AnalyticsForecastMonth]) throws -> [CivilDate] {
+        try months.flatMap(\.charges).map { try BillingCivilDay.civilDate(fromCanonicalDate: $0.date) }
+    }
+
+    private func scheduledViewModel(_ repository: ForecastRepository, preferences: UserPreferencesRepository,
+                                    today: CivilDate? = nil, zone: TimeZone = .gmt,
+                                    provider: any ExchangeRateProvider = StaticExchangeRateProvider()) throws -> AnalyticsViewModel {
+        let today = try today ?? civil(2026, 10, 21)
+        var local = BillingCivilDay.calendar
+        local.timeZone = zone
+        let instant = try #require(local.date(from: DateComponents(
+            year: today.year, month: today.month, day: today.day, hour: 12
+        )))
+        return AnalyticsViewModel(getActiveItems: GetActiveItems(repository: repository),
+                                  getForecast: GetAnalyticsForecast(repository: repository),
+                                  preferences: preferences, exchangeRateProvider: provider,
+                                  now: { instant }, timeZone: { zone })
+    }
+
+    @Test("Quarterly forecast uses monetary occurrences, not monthly equivalents")
+    func quarterlyCanonicalAmounts() throws {
+        let months = try forecast([scheduledItem(cycle: .quarterly, amount: 600)])
+        #expect(months.map { $0.charges.reduce(Decimal.zero) { $0 + $1.amount } } == [600, 0, 0, 600, 0, 0])
+        #expect(try chargeDates(months) == [civil(2026, 10, 15), civil(2027, 1, 15)])
+        #expect(try months.map { try BillingCivilDay.civilDate(fromCanonicalDate: $0.range.lowerBound) }
+                == [civil(2026, 10), civil(2026, 11), civil(2026, 12), civil(2027, 1), civil(2027, 2), civil(2027, 3)])
+        #expect(months.last?.range.upperBound == (try canonical(2027, 4)))
+    }
+
+    @Test("Elapsed current-month days remain scheduled occurrences")
+    func monthlyIncludesElapsedDays() throws {
+        let months = try forecast([scheduledItem()], today: civil(2026, 10, 21))
+        #expect(try chargeDates(months) == (10...15).map {
+            try civil($0 <= 12 ? 2026 : 2027, $0 <= 12 ? $0 : $0 - 12, 15)
+        })
+        #expect(months.allSatisfy { $0.charges.map(\.amount) == [100] })
+    }
+
+    @Test("Weekly forecast preserves every monetary occurrence")
+    func weeklyCountsEveryCharge() throws {
+        var item = try scheduledItem(cycle: .weekly)
+        item.nextChargeDate = try canonical()
+        let months = try forecast([item])
+        #expect(months.map { $0.charges.count } == [5, 4, 5, 4, 4, 4])
+        #expect(try chargeDates([months[0]]) == [1, 8, 15, 22, 29].map { try civil(2026, 10, $0) })
+        #expect(months[0].charges.reduce(Decimal.zero) { $0 + $1.amount } == 500)
+    }
+
+    @Test("Annual forecast contains the full charge only in its occurrence month")
+    func annualFullOccurrence() throws {
+        var item = try scheduledItem(cycle: .annual, amount: 1_200)
+        item.nextChargeDate = try canonical(2026, 12, 15)
+        let months = try forecast([item])
+        #expect(months.map { $0.charges.reduce(Decimal.zero) { $0 + $1.amount } } == [0, 0, 1_200, 0, 0, 0])
+        #expect(try chargeDates(months) == [civil(2026, 12, 15)])
+    }
+
+    @Test("Month-end forecast retains the original January 31 anchor")
+    func monthEndRecovery() throws {
+        var item = try scheduledItem()
+        item.startDate = try canonical(2026, 1)
+        item.nextChargeDate = try canonical(2026, 1, 31)
+        let months = try forecast([item], today: civil(2026, 1, 20))
+        #expect(try chargeDates(months) == [civil(2026, 1, 31), civil(2026, 2, 28), civil(2026, 3, 31),
+                                            civil(2026, 4, 30), civil(2026, 5, 31), civil(2026, 6, 30)])
+    }
+
+    @Test("Leap-day annual forecast recovers the original leap day", arguments: [2027, 2028])
+    func leapDayRecovery(year: Int) throws {
+        var item = try scheduledItem(cycle: .annual)
+        item.startDate = try canonical(2024, 2)
+        item.nextChargeDate = try canonical(2024, 2, 29)
+        #expect(try chargeDates(forecast([item], today: civil(year, 2))) == [civil(year, 2, year == 2028 ? 29 : 28)])
+    }
+
+    @Test("Same-day occurrences from separate items are never collapsed")
+    func sameDayChargesRemainSeparate() throws {
+        let first = try scheduledItem(amount: 100)
+        let second = try scheduledItem(amount: 250)
+        let months = try forecast([first, second])
+        #expect(months.allSatisfy { $0.charges.count == 2 && $0.charges.reduce(Decimal.zero) { $0 + $1.amount } == 350 })
+    }
+
+    @Test("Forecast lifecycle eligibility follows the projector", arguments: ItemStatus.allCases.filter { $0 != .trial })
+    func canonicalLifecycle(status: ItemStatus) throws {
+        let item = try scheduledItem(status: status)
+        let months = try forecast([item])
+        let included = [.active, .dueSoon, .dueToday, .overdue, .failed].contains(status)
+        #expect(months.flatMap(\.charges).count == (included ? 6 : 0))
+        #expect(months.allSatisfy { $0.monetaryCompleteness == .complete })
+    }
+
+    @Test("Trial boundary is not an extra monetary charge")
+    func trialBoundaryDistinctFromCharge() throws {
+        var item = try scheduledItem(status: .trial)
+        item.trialEndDate = item.nextChargeDate
+        let months = try forecast([item])
+        #expect(months[0].eventCount == 2)
+        #expect(months[0].charges.count == 1)
+        #expect(months[0].charges.first?.amount == 100)
+        item.nextChargeDate = try canonical(2026, 10, 16)
+        let unknown = try forecast([item])
+        #expect(unknown[0].eventCount == 1)
+        #expect(unknown.flatMap(\.charges).isEmpty)
+        #expect(unknown.allSatisfy { $0.monetaryCompleteness == .unavailable })
+    }
+
+    @Test("Finite bounds include start and end, but not later occurrences")
+    func finiteBoundsInclusive() throws {
+        var item = try scheduledItem()
+        item.startDate = try canonical(2026, 11, 15)
+        item.autoRenew = false
+        item.endDate = try canonical(2026, 12, 15)
+        #expect(try chargeDates(forecast([item])) == [civil(2026, 11, 15), civil(2026, 12, 15)])
+        #expect(try forecast([item], today: civil(2027, 1)).flatMap(\.charges).isEmpty)
+    }
+
+    @Test("Six-month boundary is stable in positive and negative local timezones",
+          arguments: ["Pacific/Kiritimati", "America/Los_Angeles"])
+    func forecastCivilTimezoneStability(zoneID: String) throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let zone = try #require(TimeZone(identifier: zoneID))
+        let vm = try scheduledViewModel(ForecastRepository([scheduledItem()]), preferences: fixture.repository,
+                                         today: civil(2026, 10, 1), zone: zone)
+        vm.load()
+        #expect(vm.error == nil)
+        #expect(vm.screenState.monthlyProjections.map(\.month) == (try forecast([scheduledItem()]).map { $0.range.lowerBound }))
+        #expect(vm.screenState.monthlyProjections.map(\.total) == [100, 100, 100, 100, 100, 100])
+    }
+
+    @Test("Forecast fetches all once while preserving the original normalized population")
+    func forecastPopulationAndSummaryRemainIndependent() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let repository = try ForecastRepository([scheduledItem(cycle: .quarterly, amount: 600),
+                                                 scheduledItem(status: .overdue), scheduledItem(status: .failed)])
+        let vm = try scheduledViewModel(repository, preferences: fixture.repository)
+        vm.load()
+        #expect(repository.allReads == 1)
+        #expect(repository.activeReads == 1)
+        #expect(vm.screenState.summary.activeItemCount == 1)
+        #expect(vm.screenState.monthlyAggregation?.total?.amount == repository.items[0].monthlyEquivalent)
+        #expect(vm.screenState.summary.yearlyProjection == repository.items[0].monthlyEquivalent * 12)
+        #expect(vm.screenState.topItems.count == 1)
+        #expect(vm.screenState.monthlyProjections.map(\.total) == [800, 200, 200, 800, 200, 200])
+        let originalAnchor = repository.items[0].nextChargeDate
+        await refresh(vm)
+        #expect(repository.allReads == 1)
+        #expect(repository.items[0].nextChargeDate == originalAnchor)
+        repository.items.removeLast()
+        vm.load(forceReload: true)
+        #expect(repository.allReads == 2)
+        #expect(vm.screenState.monthlyProjections[0].total == 700)
+    }
+
+    @Test("Forecast-only foreign charges request FX and retain incomplete results")
+    func forecastOnlyCurrenciesAndMissingRates() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let repository = try ForecastRepository([scheduledItem(status: .failed, currency: "GBP")])
+        let provider = RecordingExchangeRateProvider(responses: [.success(snapshot())])
+        let vm = try scheduledViewModel(repository, preferences: fixture.repository, provider: provider)
+        vm.load()
+        await refresh(vm)
+        #expect(await provider.requests() == 1)
+        #expect(repository.allReads == 1)
+        #expect(vm.screenState.summary.activeItemCount == 0)
+        #expect(vm.screenState.isEmpty == false)
+        #expect(vm.screenState.monthlyProjections.isEmpty)
+        #expect(vm.screenState.forecastMonths.count == 6)
+        #expect(vm.screenState.forecastMonths.allSatisfy {
+            $0.aggregation.total == nil && $0.aggregation.missingCurrencyCodes == ["GBP"] && $0.completeTotal == nil
+        })
+    }
+
+    @Test("Partial forecast is retained distinctly from a complete total")
+    func partialForecastRetainsKnownMoney() throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let repository = try ForecastRepository([scheduledItem(), scheduledItem(currency: "GBP")])
+        let vm = try scheduledViewModel(repository, preferences: fixture.repository)
+        vm.load()
+        #expect(vm.screenState.monthlyProjections.isEmpty)
+        #expect(vm.screenState.forecastMonths.allSatisfy {
+            $0.aggregation.isComplete == false && $0.aggregation.total?.amount == 100
+                && $0.aggregation.missingCurrencyCodes == ["GBP"] && $0.completeTotal == nil
+        })
+    }
+
+    @Test("Unknown trial money never becomes a complete zero forecast")
+    func unavailableScheduleIsNotZero() throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        var item = try scheduledItem(status: .trial)
+        item.trialEndDate = try canonical(2026, 10, 14)
+        let vm = try scheduledViewModel(ForecastRepository([item]), preferences: fixture.repository)
+        vm.load()
+        #expect(vm.screenState.forecastMonths.count == 6)
+        #expect(vm.screenState.forecastMonths.allSatisfy { $0.completeTotal == nil })
+        #expect(vm.screenState.monthlyProjections.isEmpty)
+    }
+
+    @Test("Repository failure is surfaced rather than replaced with an empty forecast")
+    func forecastReadFailurePropagates() throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let repository = ForecastRepository([])
+        repository.readError = .unavailable
+        let vm = try scheduledViewModel(repository, preferences: fixture.repository)
+        vm.load()
+        #expect(vm.error != nil)
+        #expect(vm.isLoaded == false)
+    }
+
+    @Test("Cancelled FX response cannot complete the forecast")
+    func cancelledForecastFXIsIgnored() async throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let provider = ControlledExchangeRateProvider()
+        let repository = try ForecastRepository([scheduledItem(status: .failed, currency: "USD")])
+        let vm = try scheduledViewModel(repository, preferences: fixture.repository, provider: provider)
+        vm.load()
+        let revision = vm.aggregationRevision
+        let task = Task { await vm.refreshCurrencyAggregation(revision: revision) }
+        await provider.waitForRequests(1)
+        task.cancel()
+        await provider.succeedRequest(at: 0, with: snapshot())
+        await task.value
+        #expect(vm.screenState.monthlyProjections.isEmpty)
+        #expect(vm.screenState.forecastMonths.allSatisfy { $0.aggregation.isComplete == false })
+        #expect(repository.allReads == 1)
     }
 }

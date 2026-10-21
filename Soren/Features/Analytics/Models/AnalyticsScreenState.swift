@@ -3,9 +3,8 @@ import Foundation
 // MARK: - Analytics Screen State
 
 /// Complete value-type snapshot of all Analytics tab outputs.
-/// Built atomically by AnalyticsViewModel — every field
-/// is derived from the same [RecurringItem] array, so counts and totals
-/// across sections are guaranteed to be consistent.
+/// Built atomically by AnalyticsViewModel. Normalized summary uses the existing
+/// active population; forecast uses all canonical schedule candidates.
 ///
 /// Mirrors the HomeScreenState pattern: ViewModel exposes one state root;
 /// AnalyticsView reads exclusively from screenState.
@@ -18,6 +17,7 @@ struct AnalyticsScreenState {
     /// Complete-only provider grouping retained for ranking/comparison consumers.
     let providerBreakdown: [ProviderSpend]
     let monthlyProjections: [MonthlyProjection]
+    let forecastMonths: [AnalyticsForecastMonthResult]
     /// Complete-only comparable trend derived from reporting-currency projections.
     let trendComparison: AnalyticsTrendComparison?
     let topItems: [TopSpendRowModel]
@@ -29,7 +29,11 @@ struct AnalyticsScreenState {
     let unusedMonthlyCost: Decimal?
 
     /// Empty is a source-data fact, never an alias for failed FX aggregation.
-    var isEmpty: Bool { summary.activeItemCount == 0 }
+    var isEmpty: Bool {
+        summary.activeItemCount == 0 && forecastMonths.allSatisfy {
+            $0.schedule.eventCount == 0 && $0.schedule.monetaryCompleteness == .complete
+        }
+    }
 
     static let empty = AnalyticsScreenState(
         summary: .empty,
@@ -37,6 +41,7 @@ struct AnalyticsScreenState {
         categoryBreakdown: [],
         providerBreakdown: [],
         monthlyProjections: [],
+        forecastMonths: [],
         trendComparison: nil,
         topItems: [] as [TopSpendRowModel],
         annualItems: [],

@@ -75,7 +75,7 @@ struct AnalyticsView: View {
             LazyVStack(alignment: .leading, spacing: Spacing.lg) {
                 overviewSection(state)
 
-                if state.monthlyProjections.count > 1 {
+                if state.forecastMonths.count == 6 {
                     forecastSection(state)
                 }
 
@@ -274,31 +274,42 @@ struct AnalyticsView: View {
                 .padding(.horizontal, Spacing.lg)
 
             PremiumCard {
-                Chart(state.monthlyProjections) { proj in
-                    BarMark(
-                        x: .value(String(localized: "Месяц"), proj.shortLabel),
-                        y: .value(String(localized: "Сумма"), proj.doubleTotal)
-                    )
-                    .foregroundStyle(ColorTokens.accent.gradient)
-                    .cornerRadius(6)
-                    .annotation(position: .top, alignment: .center) {
-                        if proj.doubleTotal > 0 {
-                            Text(compactAmount(proj.total, currency: state.defaultCurrency))
-                                .font(.system(size: 10, weight: .medium))
+                if state.monthlyProjections.isEmpty {
+                    if state.forecastMonths.contains(where: { $0.schedule.monetaryCompleteness == .unavailable }) {
+                        Text(String(localized: "Прогноз недоступен"))
+                            .font(Typography.footnote)
+                            .foregroundStyle(ColorTokens.textTertiary)
+                    }
+                    if let incomplete = state.forecastMonths.first(where: { !$0.aggregation.isComplete }) {
+                        aggregationStatus(incomplete.aggregation)
+                    }
+                } else {
+                    Chart(state.monthlyProjections) { proj in
+                        BarMark(
+                            x: .value(String(localized: "Месяц"), proj.shortLabel),
+                            y: .value(String(localized: "Сумма"), proj.doubleTotal)
+                        )
+                        .foregroundStyle(ColorTokens.accent.gradient)
+                        .cornerRadius(6)
+                        .annotation(position: .top, alignment: .center) {
+                            if proj.doubleTotal > 0 {
+                                Text(compactAmount(proj.total, currency: state.defaultCurrency))
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundStyle(ColorTokens.textSecondary)
+                            }
+                        }
+                    }
+                    .chartYAxis(.hidden)
+                    .chartXAxis {
+                        AxisMarks { _ in
+                            AxisValueLabel()
+                                .font(.system(size: 12))
                                 .foregroundStyle(ColorTokens.textSecondary)
                         }
                     }
+                    .frame(height: 160)
+                    .padding(.top, Spacing.xs)
                 }
-                .chartYAxis(.hidden)
-                .chartXAxis {
-                    AxisMarks { _ in
-                        AxisValueLabel()
-                            .font(.system(size: 12))
-                            .foregroundStyle(ColorTokens.textSecondary)
-                    }
-                }
-                .frame(height: 160)
-                .padding(.top, Spacing.xs)
             }
             .padding(.horizontal, Spacing.lg)
         }

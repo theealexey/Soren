@@ -25,6 +25,17 @@ struct MonthlyProjection: Identifiable, Equatable {
     }()
 }
 
+/// Retains incomplete FX and schedule results without manufacturing chart zeros.
+struct AnalyticsForecastMonthResult {
+    let schedule: AnalyticsForecastMonth
+    let aggregation: RecurringSpendAggregationResult
+
+    var completeTotal: Decimal? {
+        guard schedule.monetaryCompleteness == .complete, aggregation.isComplete else { return nil }
+        return aggregation.total?.amount
+    }
+}
+
 // MARK: - Comparative Spend Models
 
 /// Complete monthly spend for one category, normalized to reporting currency.
@@ -73,8 +84,8 @@ struct TopSpendRowModel: Identifiable {
 
 // MARK: - Analytics View Model
 
-/// Drives the Analytics tab from one recurring-item snapshot and, when needed,
-/// one exchange-rate snapshot per calculation revision.
+/// Preserves the active normalized summary and an independent complete schedule
+/// population, sharing one exchange-rate snapshot per calculation revision.
 @MainActor @Observable
 final class AnalyticsViewModel {
 
@@ -89,6 +100,7 @@ final class AnalyticsViewModel {
     // MARK: - Dependencies
 
     private let getActiveItems: GetActiveItems
+    private let getForecast: GetAnalyticsForecast
     private let preferences: UserPreferencesRepository
     private let aggregateRecurringSpend: AggregateRecurringSpendUseCase
     private let exchangeRateProvider: any ExchangeRateProvider
@@ -96,6 +108,7 @@ final class AnalyticsViewModel {
     // MARK: - Revision State
 
     private var items: [RecurringItem] = []
+    private var forecast: [AnalyticsForecastMonth] = []
     private var reportingCurrencyCode = UserPreferences.default.defaultCurrencyCode
     private var exchangeRateSnapshot: ExchangeRateSnapshot?
     private var inFlightRevision: Int?
@@ -110,17 +123,11 @@ final class AnalyticsViewModel {
         return start..<start.addingTimeInterval(1)
     }()
 
-    private static let cal: Calendar = {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.locale = PresentationLocale.current
-        calendar.timeZone = .gmt
-        return calendar
-    }()
-
     // MARK: - Init
 
     init(
         getActiveItems: GetActiveItems,
+        getForecast: GetAnalyticsForecast,
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
         aggregateRecurringSpend: AggregateRecurringSpendUseCase = AggregateRecurringSpendUseCase(),
         exchangeRateProvider: any ExchangeRateProvider = StaticExchangeRateProvider(),
@@ -128,6 +135,7 @@ final class AnalyticsViewModel {
         timeZone: @escaping () -> TimeZone = { .current }
     ) {
         self.getActiveItems = getActiveItems
+        self.getForecast = getForecast
         self.preferences = preferences
         self.aggregateRecurringSpend = aggregateRecurringSpend
         self.exchangeRateProvider = exchangeRateProvider
@@ -146,7 +154,11 @@ final class AnalyticsViewModel {
 
         do {
             reportingCurrencyCode = preferences.load().defaultCurrencyCode
-            items = try getActiveItems.execute()
+            let activeItems = try getActiveItems.execute()
+            let localToday = try BillingCivilDay.civilDate(containing: now(), in: timeZone())
+            let forecast = try getForecast.execute(today: localToday)
+            items = activeItems
+            self.forecast = forecast
             rebuildScreenState(snapshot: nil)
             isLoaded = true
         } catch {
@@ -193,6 +205,13 @@ final class AnalyticsViewModel {
 
     private func rebuildScreenState(snapshot: ExchangeRateSnapshot?) {
         let monthlyAggregation = aggregateMonthly(items, snapshot: snapshot)
+        let forecastMonths = forecast.map { month in
+            AnalyticsForecastMonthResult(schedule: month, aggregation: aggregateRecurringSpend.execute(
+                projections: month.charges, reportingCurrencyCode: reportingCurrencyCode,
+                snapshot: snapshot, range: month.range
+            ))
+        }
+        let projections = buildProjections(forecastMonths)
         let monthlyTotal = monthlyAggregation.total?.amount ?? .zero
         let unusedItems = items.filter { $0.usageStatus == .unused }
         let summary = DashboardSummary(
@@ -210,8 +229,9 @@ final class AnalyticsViewModel {
                 monthlyAggregation: monthlyAggregation,
                 categoryBreakdown: [],
                 providerBreakdown: [],
-                monthlyProjections: [],
-                trendComparison: nil,
+                monthlyProjections: projections,
+                forecastMonths: forecastMonths,
+                trendComparison: buildTrendComparison(projections),
                 topItems: [],
                 annualItems: annualItems,
                 unusedItems: unusedItems,
@@ -221,7 +241,6 @@ final class AnalyticsViewModel {
             return
         }
 
-        let projections = buildProjections(items, snapshot: snapshot)
         let categoryBreakdown = buildCategoryBreakdown(items, grandTotal: monthlyTotal, snapshot: snapshot)
         let providerBreakdown = buildProviderBreakdown(items, snapshot: snapshot)
 
@@ -231,6 +250,7 @@ final class AnalyticsViewModel {
             categoryBreakdown: categoryBreakdown,
             providerBreakdown: providerBreakdown,
             monthlyProjections: projections,
+            forecastMonths: forecastMonths,
             trendComparison: buildTrendComparison(projections),
             topItems: buildTopRows(items, snapshot: snapshot),
             annualItems: annualItems,
@@ -272,7 +292,11 @@ final class AnalyticsViewModel {
             projections: items.map(monthlyProjection(for:)),
             reportingCurrencyCode: reportingCurrencyCode,
             range: Self.normalizedProjectionRange
-        )
+        ) || forecast.contains { month in
+            aggregateRecurringSpend.requiresExchangeRates(
+                projections: month.charges, reportingCurrencyCode: reportingCurrencyCode, range: month.range
+            )
+        }
     }
 
     // MARK: - Complete-only Comparisons
@@ -379,72 +403,13 @@ final class AnalyticsViewModel {
     var today: CivilDate? { try? BillingCivilDay.civilDate(containing: now(), in: timeZone()) }
 
     private func buildProjections(
-        _ items: [RecurringItem],
-        snapshot: ExchangeRateSnapshot?,
-        months: Int = 6
+        _ months: [AnalyticsForecastMonthResult]
     ) -> [MonthlyProjection] {
-        let calendar = Self.cal
-        guard let today, let date = try? BillingCivilDay.canonicalDate(for: today) else { return [] }
-        guard let monthStart = calendar.date(
-            from: calendar.dateComponents([.year, .month], from: date)
-        ) else { return [] }
-
         var result: [MonthlyProjection] = []
-        for offset in 0..<months {
-            guard let start = calendar.date(byAdding: .month, value: offset, to: monthStart),
-                  let end = calendar.date(byAdding: .month, value: 1, to: start)
-            else { return [] }
-
-            let projections = items.compactMap { item -> RecurringSpendProjection? in
-                let amount: Decimal
-                if item.billingCycle.isLongCycle {
-                    guard hasCharge(item, from: start, to: end) else { return nil }
-                    amount = item.amount
-                } else {
-                    amount = item.monthlyEquivalent
-                }
-                return RecurringSpendProjection(
-                    date: start,
-                    amount: amount,
-                    currencyCode: item.currencyCode
-                )
-            }
-
-            let aggregation = aggregateRecurringSpend.execute(
-                projections: projections,
-                reportingCurrencyCode: reportingCurrencyCode,
-                snapshot: snapshot,
-                range: start..<end
-            )
-            guard aggregation.isComplete, let total = aggregation.total else { return [] }
-            result.append(MonthlyProjection(month: start, total: total.amount))
+        for month in months {
+            guard let total = month.completeTotal else { return [] }
+            result.append(MonthlyProjection(month: month.schedule.range.lowerBound, total: total))
         }
         return result
-    }
-
-    private func hasCharge(_ item: RecurringItem, from start: Date, to end: Date) -> Bool {
-        let calendar = Self.cal
-        let cycleMonths: Int
-        switch item.billingCycle {
-        case .quarterly: cycleMonths = 3
-        case .semiannual: cycleMonths = 6
-        case .annual: cycleMonths = 12
-        default: return true
-        }
-
-        var check = item.nextChargeDate
-        while check >= end {
-            guard let previous = calendar.date(byAdding: .month, value: -cycleMonths, to: check) else {
-                return false
-            }
-            check = previous
-        }
-        while check < start {
-            guard let next = calendar.date(byAdding: .month, value: cycleMonths, to: check) else {
-                return false
-            }
-            check = next
-        }
-        return check >= start && check < end
     }
 }

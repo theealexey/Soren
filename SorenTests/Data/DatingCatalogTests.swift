@@ -158,6 +158,7 @@ struct DatingCatalogTests {
         ))
         let viewModel = AnalyticsViewModel(
             getActiveItems: GetActiveItems(repository: repository),
+            getForecast: GetAnalyticsForecast(repository: repository),
             preferences: preferences,
             exchangeRateProvider: rateProvider
         )
