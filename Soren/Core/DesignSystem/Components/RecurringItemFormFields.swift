@@ -99,7 +99,7 @@ struct RecurringItemFormFields: View {
                 selection: $startDate
             )
             DatePickerRow(
-                label: String(localized: "Следующее списание"),
+                label: String(localized: "Дата списания"),
                 selection: $nextChargeDate
             )
             Toggle(String(localized: "Автопродление"), isOn: $autoRenew)

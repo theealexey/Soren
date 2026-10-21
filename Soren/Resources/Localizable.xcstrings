@@ -5627,12 +5627,12 @@
         }
       }
     },
-    "Следующее списание" : {
+    "Дата списания" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Next Charge"
+            "value" : "Billing date"
           }
         }
       }
