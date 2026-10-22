@@ -8,6 +8,17 @@ private typealias HomePlanStub = @Sendable (
 
 @Suite("Overview money formatting")
 struct OverviewMoneyFormattingTests {
+    @Test("Normalized currency midpoint rounding uses target precision", arguments: [
+        ("RUB", "2.345", "2.35"), ("RUB", "2.344", "2.34"),
+        ("JPY", "2.5", "3"), ("JPY", "2.49", "2"),
+        ("RUB", "0.005", "0.01"), ("RUB", "100000000000000.005", "100,000,000,000,000.01")
+    ])
+    func normalizedCurrencyRounding(example: (String, String, String)) throws {
+        let amount = try #require(Decimal(string: example.1))
+        #expect(NormalizedMoneyFormatter.string(amount: amount, currencyCode: example.0,
+            locale: Locale(identifier: "en_US"), style: .decimal) == example.2)
+        #expect(amount == (try #require(Decimal(string: example.1))))
+    }
     private let nonBreakingSpace = "\u{00A0}"
 
     @Test("Russian UI uses Russian grouping even when the device region is US")
@@ -66,6 +77,33 @@ struct OverviewMoneyFormattingTests {
 @Suite("HomeViewModel production Overview")
 @MainActor
 struct HomeViewModelTests {
+    private actor NormalizationInsightStub {
+        var fails = true
+        func recover() { fails = false }
+        func execute() throws -> OverviewInsight? {
+            if fails { throw BillingCycle.ValidationError.invalidCustomDays(0) }
+            return .annualScale(try Money(amount: 1488, currencyCode: "RUB"))
+        }
+    }
+
+    @Test("Normalization failure affects only the insight and retains its typed diagnostic")
+    func normalizationFailureKeepsSchedule() async throws {
+        let zero = try zeroPlan()
+        let insight = NormalizationInsightStub()
+        let (vm, defaults, suite) = try viewModel(plan: { _, _, _, _ in zero },
+            insight: { _, _, _, _ in try await insight.execute() })
+        defer { defaults.removePersistentDomain(forName: suite) }
+        await vm.load()
+        #expect(vm.normalizationError == .invalidCustomDays(0))
+        #expect(vm.overviewInsight?.primary == String(localized: "normalization.unavailable"))
+        #expect(vm.hasError == false)
+        #expect(vm.statusCounts != nil)
+        #expect(vm.monthSchedule != nil)
+        await insight.recover()
+        await vm.load(forceReload: true)
+        #expect(vm.normalizationError == nil)
+        #expect(vm.overviewInsight?.primary == NormalizedMoneyFormatter.string(amount: 1488, currencyCode: "RUB"))
+    }
     private final class Repository: RecurringItemRepository {
         var items: [RecurringItem]
 

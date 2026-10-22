@@ -6,6 +6,33 @@ import Testing
 @Suite("Library currency aggregation")
 @MainActor
 struct LibraryTotalTests {
+    @Test("Normalization failure keeps rows and original amounts, clears stale total and recovers")
+    func normalizationFailureAndRecovery() throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let source = item(title: "Original", amount: 124, currencyCode: "RUB")
+        let repository = InMemoryRecurringItemRepository(items: [source])
+        let vm = LibraryViewModel(getLibraryItems: GetLibraryItems(repository: repository),
+            deleteRecurringItem: DeleteRecurringItem(repository: repository), preferences: fixture.repository)
+        vm.load()
+        #expect(vm.filteredMonthlyAggregation?.total?.amount == 124)
+        var damaged = source
+        damaged.billingCycle = .custom(days: 0)
+        try repository.update(damaged)
+        vm.load()
+        #expect(vm.normalizationError as? BillingCycle.ValidationError == .invalidCustomDays(0))
+        #expect(vm.filteredMonthlyAggregation == nil)
+        #expect(vm.filteredItems == [damaged])
+        #expect(vm.sections.flatMap(\.items) == [damaged])
+        #expect(vm.error == nil)
+        vm.sortOrder = .amountAsc
+        #expect(vm.normalizationErrors[source.id] as? BillingCycle.ValidationError == .invalidCustomDays(0))
+        try repository.update(source)
+        vm.load()
+        #expect(vm.normalizationError == nil)
+        #expect(vm.normalizationErrors.isEmpty)
+        #expect(vm.filteredMonthlyAggregation?.total?.amount == 124)
+    }
     @MainActor
     private final class InMemoryRecurringItemRepository: RecurringItemRepository {
         private var items: [RecurringItem]
@@ -343,7 +370,7 @@ struct LibraryTotalTests {
 
         vm.load()
 
-        #expect(vm.filteredMonthlyAggregation?.total?.amount == Decimal(1_200) * BillingCycle.annual.monthlyMultiplier)
+        #expect(vm.filteredMonthlyAggregation?.total?.amount == 100)
     }
 
     @Test("Existing status contract excludes cancelled paused and archived items")

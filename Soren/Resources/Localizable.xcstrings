@@ -1,6 +1,12 @@
 {
   "sourceLanguage" : "ru",
   "strings" : {
+    "normalization.unavailable" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unable to calculate" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Не удалось рассчитать" } }
+      }
+    },
     "analytics.includedCount %@" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Included: %@" } },

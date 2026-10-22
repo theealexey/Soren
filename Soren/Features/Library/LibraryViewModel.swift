@@ -36,6 +36,8 @@ final class LibraryViewModel {
     private(set) var filteredItems: [RecurringItem] = []
     private(set) var filterCounts: [StatusFilter: Int] = [:]
     private(set) var filteredMonthlyAggregation: RecurringSpendAggregationResult?
+    private(set) var normalizationError: Error?
+    private(set) var normalizationErrors: [UUID: Error] = [:]
     private(set) var activeCategories: [ItemCategory] = []
     private(set) var sections: [LibrarySection] = []
 
@@ -224,6 +226,8 @@ final class LibraryViewModel {
 
     private func recompute(on today: CivilDate, scheduleSnapshotIfNeeded: Bool) throws {
         let previouslyRequiredRates = currentCalculationRequiresExchangeRates()
+        normalizationErrors = [:]
+        normalizationError = nil
 
         // 1. Filter counts: one pass per status filter over allItems.
         var counts: [StatusFilter: Int] = [.all: allItems.count]
@@ -249,16 +253,22 @@ final class LibraryViewModel {
         // 3. Monthly total and active categories derived from the filtered result.
         // Existing Library semantics include only the statuses that historically
         // contributed to totals; aggregation itself is now the shared Domain policy.
-        filteredMonthlyProjections = try result
-            .filter { try $0.status.countsInTotals && !$0.isExpired(on: today) }
-            .map { item in
-                RecurringSpendProjection(
-                    date: item.nextChargeDate,
-                    amount: item.monthlyEquivalent,
-                    currencyCode: item.currencyCode
-                )
-            }
-        rebuildMonthlyAggregation(snapshot: exchangeRateSnapshot)
+        do {
+            filteredMonthlyProjections = try result
+                .filter { try $0.status.countsInTotals && !$0.isExpired(on: today) }
+                .map { item in
+                    RecurringSpendProjection(
+                        date: item.nextChargeDate,
+                        amount: try item.monthlyEquivalent,
+                        currencyCode: item.currencyCode
+                    )
+                }
+            rebuildMonthlyAggregation(snapshot: exchangeRateSnapshot)
+        } catch {
+            normalizationError = error
+            filteredMonthlyProjections = []
+            filteredMonthlyAggregation = nil
+        }
 
         if scheduleSnapshotIfNeeded,
            exchangeRateSnapshot == nil,
@@ -342,9 +352,16 @@ final class LibraryViewModel {
     }
 
     private func monthlyAmountSortKey(for item: RecurringItem) -> MonthlyAmountSortKey {
+        let amount: Decimal
+        do {
+            amount = try item.monthlyEquivalent
+        } catch {
+            normalizationErrors[item.id] = error
+            return .unavailable
+        }
         guard let reportingCurrencyCode = try? Money.normalizeCurrencyCode(defaultCurrency),
               let monthlyMoney = try? Money(
-                  amount: item.monthlyEquivalent,
+                  amount: amount,
                   currencyCode: item.currencyCode
               )
         else {

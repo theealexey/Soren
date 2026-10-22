@@ -6,9 +6,9 @@ import Foundation
 /// Computed from active recurring items — no persistence needed.
 struct DashboardSummary: Equatable, Sendable {
     /// Total monthly cost across all active items (converted to target currency if rates available).
-    let monthlyTotal: Decimal
-    /// Projected yearly cost (monthlyTotal × 12).
-    let yearlyProjection: Decimal
+    let monthlyTotal: Decimal?
+    /// Annualized equivalent aggregated from unrounded annual contributions.
+    let yearlyProjection: Decimal?
     /// Number of active (non-archived, non-cancelled) items.
     let activeItemCount: Int
     /// Number of active trials.

@@ -69,7 +69,7 @@ extension OverviewInsightPresentation {
         case let .annualScale(total):
             return presentation(
                 kind: .annualScale,
-                primary: OverviewMoneyFormatter.string(total, locale: locale),
+                primary: NormalizedMoneyFormatter.string(amount: total.amount, currencyCode: total.currencyCode, locale: locale),
                 supporting: String(localized: "при текущем наборе подписок")
             )
 

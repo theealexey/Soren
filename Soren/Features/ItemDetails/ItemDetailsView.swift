@@ -253,18 +253,20 @@ struct ItemDetailsView: View {
                     PremiumCard(.elevated) {
                         StatBlock(
                             title: "В месяц",
-                            amount: viewModel.item.monthlyEquivalent,
+                            amount: viewModel.normalizedMonthlyAmount,
                             currency: viewModel.item.currencyCode,
-                            amountSize: .large
+                            amountSize: .large,
+                            normalized: true
                         )
                     }
 
                     PremiumCard(.elevated) {
                         StatBlock(
                             title: "В год",
-                            amount: viewModel.item.annualEquivalent,
+                            amount: viewModel.normalizedAnnualAmount,
                             currency: viewModel.item.currencyCode,
-                            amountSize: .large
+                            amountSize: .large,
+                            normalized: true
                         )
                     }
                 }

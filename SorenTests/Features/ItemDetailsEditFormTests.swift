@@ -16,6 +16,30 @@ import SwiftData
 @Suite("ItemDetailsViewModel — edit form nextChargeDate")
 @MainActor
 struct ItemDetailsEditFormTests {
+    @Test("Derived normalized costs retain errors, original amount and edit capability, then recover")
+    func normalizationFailureRecovers() throws {
+        let anchor = todayStartOfDay
+        let source = makeItem(startDate: anchor, nextChargeDate: anchor)
+        let repositories = try makeRepositories()
+        try repositories.recurringItems.save(source)
+        let vm = ItemDetailsViewModel(item: source, repositories: repositories,
+            exchangeRateProvider: StaticExchangeRateProvider(), now: { anchor }, timeZone: { .gmt })
+        #expect(vm.normalizedMonthlyAmount == 299)
+        #expect(vm.normalizedAnnualAmount == 3588)
+        vm.item.billingCycle = .custom(days: -1)
+        #expect(vm.normalizationError as? BillingCycle.ValidationError == .invalidCustomDays(-1))
+        #expect(vm.normalizedMonthlyAmount == nil)
+        #expect(vm.normalizedAnnualAmount == nil)
+        #expect(vm.item.amount == source.amount)
+        vm.startEditing()
+        #expect(vm.editNextChargeDate == (try BillingCivilDay.civilDate(fromCanonicalDate: anchor)))
+        #expect(try repositories.recurringItems.fetch(id: source.id) == source)
+        vm.item.billingCycle = .annual
+        #expect(vm.normalizationError == nil)
+        #expect(vm.normalizedAnnualAmount == 299)
+        #expect(vm.normalizedMonthlyAmount == Decimal(299) / 12)
+        #expect(vm.nextScheduledChargeState == .scheduled(try BillingCivilDay.civilDate(fromCanonicalDate: anchor)))
+    }
 
     // MARK: - Helpers
 

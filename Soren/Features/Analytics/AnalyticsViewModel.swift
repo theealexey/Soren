@@ -113,6 +113,7 @@ final class AnalyticsViewModel {
     private var reportingCurrencyCode = UserPreferences.default.defaultCurrencyCode
     private var exchangeRateSnapshot: ExchangeRateSnapshot?
     private var inFlightRevision: Int?
+    private var normalizedProjections: [RecurringSpendProjection] = []
 
     // MARK: - Stable Calculation Context
 
@@ -208,7 +209,6 @@ final class AnalyticsViewModel {
 
     private func rebuildScreenState(snapshot: ExchangeRateSnapshot?, today: CivilDate) {
         let annualItems = buildAnnualItems(today: today)
-        let monthlyAggregation = aggregateMonthly(items, snapshot: snapshot)
         let forecastMonths = forecast.map { month in
             AnalyticsForecastMonthResult(schedule: month, aggregation: aggregateRecurringSpend.execute(
                 projections: month.charges, reportingCurrencyCode: reportingCurrencyCode,
@@ -216,52 +216,75 @@ final class AnalyticsViewModel {
             ))
         }
         let projections = buildProjections(forecastMonths)
-        let monthlyTotal = monthlyAggregation.total?.amount ?? .zero
         let unusedItems = items.filter { $0.usageStatus == .unused }
-        let summary = DashboardSummary(
-            monthlyTotal: monthlyTotal,
-            yearlyProjection: monthlyTotal * 12,
-            activeItemCount: items.count,
-            activeTrialCount: items.filter { $0.status == .trial }.count,
-            containsMixedCurrencies: Set(items.map(\.currencyCode)).count > 1,
-            ratesAvailable: monthlyAggregation.rateMetadata != nil
-        )
+        do {
+            normalizedProjections = try items.map(monthlyProjection(for:))
+            let monthlyAggregation = try aggregateMonthly(items, snapshot: snapshot)
+            let annualAggregation = aggregateRecurringSpend.execute(
+                projections: try items.map { item in
+                    RecurringSpendProjection(date: Self.normalizedProjectionDate,
+                        amount: try item.annualEquivalent, currencyCode: item.currencyCode)
+                }, reportingCurrencyCode: reportingCurrencyCode, snapshot: snapshot,
+                range: Self.normalizedProjectionRange)
+            let monthlyTotal = monthlyAggregation.total?.amount
+            let summary = DashboardSummary(
+                monthlyTotal: monthlyTotal,
+                yearlyProjection: annualAggregation.total?.amount,
+                activeItemCount: items.count,
+                activeTrialCount: items.filter { $0.status == .trial }.count,
+                containsMixedCurrencies: Set(items.map(\.currencyCode)).count > 1,
+                ratesAvailable: monthlyAggregation.rateMetadata != nil
+            )
 
-        guard monthlyAggregation.isComplete else {
+            guard monthlyAggregation.isComplete else {
+                screenState = AnalyticsScreenState(
+                    summary: summary,
+                    monthlyAggregation: monthlyAggregation,
+                    categoryBreakdown: [],
+                    providerBreakdown: [],
+                    monthlyProjections: projections,
+                    forecastMonths: forecastMonths,
+                    trendComparison: buildTrendComparison(projections),
+                    topItems: [],
+                    annualItems: annualItems,
+                    unusedItems: unusedItems,
+                    defaultCurrency: reportingCurrencyCode,
+                    unusedMonthlyCost: nil,
+                    annualAggregation: annualAggregation
+                )
+                return
+            }
+
+            let categoryBreakdown = try buildCategoryBreakdown(items, grandTotal: monthlyTotal ?? .zero, snapshot: snapshot)
+            let providerBreakdown = try buildProviderBreakdown(items, snapshot: snapshot)
+
             screenState = AnalyticsScreenState(
                 summary: summary,
                 monthlyAggregation: monthlyAggregation,
-                categoryBreakdown: [],
-                providerBreakdown: [],
+                categoryBreakdown: categoryBreakdown,
+                providerBreakdown: providerBreakdown,
                 monthlyProjections: projections,
                 forecastMonths: forecastMonths,
                 trendComparison: buildTrendComparison(projections),
-                topItems: [],
+                topItems: try buildTopRows(items, snapshot: snapshot),
                 annualItems: annualItems,
                 unusedItems: unusedItems,
                 defaultCurrency: reportingCurrencyCode,
-                unusedMonthlyCost: nil
+                unusedMonthlyCost: try aggregateMonthly(unusedItems, snapshot: snapshot).total?.amount,
+                annualAggregation: annualAggregation
             )
-            return
+        } catch {
+            normalizedProjections = []
+            screenState = AnalyticsScreenState(
+                summary: DashboardSummary(monthlyTotal: nil, yearlyProjection: nil,
+                    activeItemCount: items.count, activeTrialCount: items.filter { $0.status == .trial }.count,
+                    containsMixedCurrencies: Set(items.map(\.currencyCode)).count > 1, ratesAvailable: false),
+                monthlyAggregation: nil, categoryBreakdown: [], providerBreakdown: [],
+                monthlyProjections: projections, forecastMonths: forecastMonths,
+                trendComparison: buildTrendComparison(projections), topItems: [], annualItems: annualItems,
+                unusedItems: unusedItems, defaultCurrency: reportingCurrencyCode, unusedMonthlyCost: nil,
+                normalizationError: error)
         }
-
-        let categoryBreakdown = buildCategoryBreakdown(items, grandTotal: monthlyTotal, snapshot: snapshot)
-        let providerBreakdown = buildProviderBreakdown(items, snapshot: snapshot)
-
-        screenState = AnalyticsScreenState(
-            summary: summary,
-            monthlyAggregation: monthlyAggregation,
-            categoryBreakdown: categoryBreakdown,
-            providerBreakdown: providerBreakdown,
-            monthlyProjections: projections,
-            forecastMonths: forecastMonths,
-            trendComparison: buildTrendComparison(projections),
-            topItems: buildTopRows(items, snapshot: snapshot),
-            annualItems: annualItems,
-            unusedItems: unusedItems,
-            defaultCurrency: reportingCurrencyCode,
-            unusedMonthlyCost: aggregateMonthly(unusedItems, snapshot: snapshot).total?.amount
-        )
     }
 
     private func buildAnnualItems(today: CivilDate) -> [AnalyticsAnnualRow] {
@@ -307,26 +330,26 @@ final class AnalyticsViewModel {
     private func aggregateMonthly(
         _ items: [RecurringItem],
         snapshot: ExchangeRateSnapshot?
-    ) -> RecurringSpendAggregationResult {
+    ) throws -> RecurringSpendAggregationResult {
         aggregateRecurringSpend.execute(
-            projections: items.map(monthlyProjection(for:)),
+            projections: try items.map(monthlyProjection(for:)),
             reportingCurrencyCode: reportingCurrencyCode,
             snapshot: snapshot,
             range: Self.normalizedProjectionRange
         )
     }
 
-    private func monthlyProjection(for item: RecurringItem) -> RecurringSpendProjection {
+    private func monthlyProjection(for item: RecurringItem) throws -> RecurringSpendProjection {
         RecurringSpendProjection(
             date: Self.normalizedProjectionDate,
-            amount: item.monthlyEquivalent,
+            amount: try item.monthlyEquivalent,
             currencyCode: item.currencyCode
         )
     }
 
     private func currentCalculationRequiresExchangeRates() -> Bool {
         aggregateRecurringSpend.requiresExchangeRates(
-            projections: items.map(monthlyProjection(for:)),
+            projections: normalizedProjections,
             reportingCurrencyCode: reportingCurrencyCode,
             range: Self.normalizedProjectionRange
         ) || forecast.contains { month in
@@ -342,12 +365,12 @@ final class AnalyticsViewModel {
         _ items: [RecurringItem],
         grandTotal: Decimal,
         snapshot: ExchangeRateSnapshot?
-    ) -> [CategorySpend] {
+    ) throws -> [CategorySpend] {
         guard grandTotal > .zero else { return [] }
 
         let grouped = Dictionary(grouping: items, by: \.category)
-        return grouped.compactMap { category, categoryItems in
-            let result = aggregateMonthly(categoryItems, snapshot: snapshot)
+        return try grouped.compactMap { category, categoryItems in
+            let result = try aggregateMonthly(categoryItems, snapshot: snapshot)
             guard result.isComplete, let total = result.total else { return nil }
             return CategorySpend(
                 category: category,
@@ -368,7 +391,7 @@ final class AnalyticsViewModel {
     private func buildProviderBreakdown(
         _ items: [RecurringItem],
         snapshot: ExchangeRateSnapshot?
-    ) -> [ProviderSpend] {
+    ) throws -> [ProviderSpend] {
         var groups: [String: ProviderGroup] = [:]
         for item in items {
             let id = item.providerID ?? "manual:\(item.providerName)"
@@ -380,8 +403,8 @@ final class AnalyticsViewModel {
             }
         }
 
-        return groups.values.compactMap { group in
-            let result = aggregateMonthly(group.items, snapshot: snapshot)
+        return try groups.values.compactMap { group in
+            let result = try aggregateMonthly(group.items, snapshot: snapshot)
             guard result.isComplete, let total = result.total else { return nil }
             return ProviderSpend(
                 id: group.id,
@@ -396,9 +419,9 @@ final class AnalyticsViewModel {
     private func buildTopRows(
         _ items: [RecurringItem],
         snapshot: ExchangeRateSnapshot?
-    ) -> [TopSpendRowModel] {
-        items.compactMap { item in
-            let result = aggregateMonthly([item], snapshot: snapshot)
+    ) throws -> [TopSpendRowModel] {
+        try items.compactMap { item in
+            let result = try aggregateMonthly([item], snapshot: snapshot)
             guard result.isComplete, let total = result.total else { return nil }
             return TopSpendRowModel(
                 id: item.id,

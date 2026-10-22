@@ -16,21 +16,23 @@ import SwiftUI
 /// ```
 struct StatBlock: View {
     let title: LocalizedStringKey
-    let amount: Decimal
+    let amount: Decimal?
     let currencyCode: String
     let trend: Trend?
     let amountSize: AmountLabel.Size
     /// When true, the currency symbol is rendered on its own line below the amount.
     /// Useful for dashboard cards where visual alignment matters more than compactness.
     let breakCurrency: Bool
+    let normalized: Bool
 
     init(
         title: LocalizedStringKey,
-        amount: Decimal,
+        amount: Decimal?,
         currency currencyCode: String = "RUB",
         trend: Trend? = nil,
         amountSize: AmountLabel.Size = .large,
-        breakCurrency: Bool = false
+        breakCurrency: Bool = false,
+        normalized: Bool = false
     ) {
         self.title = title
         self.amount = amount
@@ -38,6 +40,7 @@ struct StatBlock: View {
         self.trend = trend
         self.amountSize = amountSize
         self.breakCurrency = breakCurrency
+        self.normalized = normalized
     }
 
     var body: some View {
@@ -45,9 +48,9 @@ struct StatBlock: View {
             Text(title)
                 .overlineStyle()
 
-            if breakCurrency {
+            if let amount, breakCurrency {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(formattedNumber)
+                    Text(formattedNumber(amount))
                         .font(amountSize.font)
                         .foregroundStyle(ColorTokens.textPrimary)
                         .contentTransition(.numericText(value: Double(truncating: amount as NSDecimalNumber)))
@@ -57,8 +60,12 @@ struct StatBlock: View {
                         .font(amountSize.font)
                         .foregroundStyle(ColorTokens.textPrimary)
                 }
+            } else if let amount {
+                AmountLabel(amount, currency: currencyCode, size: amountSize, normalized: normalized)
             } else {
-                AmountLabel(amount, currency: currencyCode, size: amountSize)
+                Text(String(localized: "normalization.unavailable"))
+                    .font(Typography.footnote)
+                    .foregroundStyle(ColorTokens.textSecondary)
             }
 
             if let trend {
@@ -68,7 +75,10 @@ struct StatBlock: View {
     }
 
     @MainActor
-    private var formattedNumber: String {
+    private func formattedNumber(_ amount: Decimal) -> String {
+        if normalized {
+            return NormalizedMoneyFormatter.string(amount: amount, currencyCode: currencyCode, style: .decimal)
+        }
         let fmt = NumberFormatter()
         fmt.numberStyle = .decimal
         fmt.minimumFractionDigits = 0

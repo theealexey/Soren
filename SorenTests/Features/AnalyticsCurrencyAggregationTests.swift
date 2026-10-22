@@ -5,6 +5,103 @@ import Testing
 @Suite("Analytics currency aggregation")
 @MainActor
 struct AnalyticsCurrencyAggregationTests {
+    @Test("All normalized screen consumers share the same annual basis", arguments: [
+        BillingCycle.weekly, .monthly, .quarterly, .semiannual, .annual, .custom(days: 30)
+    ])
+    func crossScreenNormalization(cycle: BillingCycle) async throws {
+        let today = try BillingCivilDay.canonicalDate(for: CivilDate(year: 2026, month: 10, day: 21))
+        let anchor = try BillingCivilDay.canonicalDate(for: CivilDate(year: 2027, month: 1, day: 15))
+        var source = item(title: "Normalized", amount: 100, currencyCode: "RUB", cycle: cycle,
+            nextChargeDate: anchor, usageStatus: .unused)
+        source.startDate = today
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let repository = InMemoryRecurringItemRepository(items: [source])
+        let analytics = AnalyticsViewModel(getCurrentObligations: GetAnalyticsCurrentObligations(repository: repository),
+            getForecast: GetAnalyticsForecast(repository: repository), preferences: fixture.repository,
+            now: { today }, timeZone: { .gmt })
+        let library = LibraryViewModel(getLibraryItems: GetLibraryItems(repository: repository),
+            deleteRecurringItem: DeleteRecurringItem(repository: repository), preferences: fixture.repository,
+            now: { today }, timeZone: { .gmt })
+        let persistence = try InMemoryPersistenceFixture()
+        try persistence.recurringItems.save(source)
+        let details = ItemDetailsViewModel(item: source,
+            repositories: RepositoryContainer(context: persistence.modelContainer.mainContext),
+            exchangeRateProvider: StaticExchangeRateProvider(), now: { today }, timeZone: { .gmt })
+        analytics.load()
+        library.load()
+        let annual = try source.annualEquivalent
+        let monthly = try source.monthlyEquivalent
+        #expect(analytics.screenState.summary.monthlyTotal == monthly)
+        #expect(analytics.screenState.summary.yearlyProjection == annual)
+        #expect(analytics.screenState.categoryBreakdown.first?.monthlyTotal == monthly)
+        #expect(analytics.screenState.topItems.first?.monthlyAmount == monthly)
+        #expect(analytics.screenState.unusedMonthlyCost == monthly)
+        #expect(library.filteredMonthlyAggregation?.total?.amount == monthly)
+        #expect(details.normalizedAnnualAmount == annual)
+        #expect(details.normalizedMonthlyAmount == monthly)
+        let insight = try await OverviewInsightUseCase(repository: repository).execute(today: today,
+            calendar: BillingCivilDay.calendar, reportingCurrencyCode: "RUB", exchangeRateSnapshot: nil)
+        guard case let .annualScale(total)? = insight else {
+            Issue.record("Expected the normalized annual insight")
+            return
+        }
+        #expect(total.amount == annual)
+        #expect(try persistence.recurringItems.fetch(id: source.id) == source)
+    }
+    @Test("Normalization failure preserves independent forecast and recovers on a valid reload")
+    func normalizationFailureAndRecovery() throws {
+        let today = try CivilDate(year: 2026, month: 10, day: 21)
+        let anchor = try BillingCivilDay.canonicalDate(for: today)
+        var invalid = item(title: "Invalid", amount: 100, currencyCode: "RUB",
+            cycle: .custom(days: 0), nextChargeDate: anchor, usageStatus: .unused)
+        let normalizedRepository = InMemoryRecurringItemRepository(items: [invalid])
+        let scheduled = item(title: "Scheduled", amount: 124, currencyCode: "RUB", nextChargeDate: anchor)
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let vm = AnalyticsViewModel(
+            getCurrentObligations: GetAnalyticsCurrentObligations(repository: normalizedRepository),
+            getForecast: GetAnalyticsForecast(repository: InMemoryRecurringItemRepository(items: [scheduled])),
+            preferences: fixture.repository, now: { anchor }, timeZone: { .gmt })
+        vm.load()
+        #expect(vm.error == nil)
+        #expect(vm.screenState.normalizationError as? BillingCycle.ValidationError == .invalidCustomDays(0))
+        #expect(vm.screenState.summary.monthlyTotal == nil)
+        #expect(vm.screenState.summary.yearlyProjection == nil)
+        #expect(vm.screenState.monthlyAggregation == nil)
+        #expect(vm.screenState.annualAggregation == nil)
+        #expect(vm.screenState.unusedMonthlyCost == nil)
+        #expect(vm.screenState.topItems.isEmpty)
+        #expect(vm.screenState.categoryBreakdown.isEmpty)
+        #expect(vm.screenState.monthlyProjections.count == 6)
+        #expect(vm.screenState.monthlyProjections.allSatisfy { $0.total == 124 })
+        invalid.billingCycle = .monthly
+        try normalizedRepository.update(invalid)
+        vm.load(forceReload: true)
+        #expect(vm.screenState.normalizationError == nil)
+        #expect(vm.screenState.summary.monthlyTotal == 100)
+        #expect(vm.screenState.summary.yearlyProjection == 1200)
+        #expect(vm.screenState.unusedMonthlyCost == 100)
+    }
+
+    @Test("Normalized contributions aggregate before currency rounding")
+    func fractionalNormalizationAggregate() throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let today = try BillingCivilDay.canonicalDate(for: CivilDate(year: 2026, month: 10, day: 21))
+        let amount = try decimal("0.06")
+        let items = ["A", "B"].map { item(title: $0, amount: amount, currencyCode: "RUB", cycle: .annual, nextChargeDate: today) }
+        let repository = InMemoryRecurringItemRepository(items: items)
+        let vm = AnalyticsViewModel(getCurrentObligations: GetAnalyticsCurrentObligations(repository: repository),
+            getForecast: GetAnalyticsForecast(repository: repository), preferences: fixture.repository,
+            now: { today }, timeZone: { .gmt })
+        vm.load()
+        #expect(vm.screenState.summary.monthlyTotal == (try decimal("0.01")))
+        #expect(vm.screenState.summary.yearlyProjection == (try decimal("0.12")))
+        #expect(vm.screenState.topItems.allSatisfy { $0.monthlyAmount == amount / 12 })
+        #expect(vm.screenState.monthlyProjections.first?.total == amount * 2)
+        #expect(repository.itemsForTesting.map(\.amount) == [amount, amount])
+    }
     @MainActor
     private final class InMemoryRecurringItemRepository: RecurringItemRepository {
         private var items: [RecurringItem]
@@ -14,6 +111,7 @@ struct AnalyticsCurrencyAggregationTests {
         }
 
         func fetchAll() throws -> [RecurringItem] { items }
+        var itemsForTesting: [RecurringItem] { items }
         func fetchActive() throws -> [RecurringItem] { items }
         func fetchUpcoming(within days: Int, from date: Date) throws -> [RecurringItem] { [] }
         func fetchByCategory(_ category: ItemCategory) throws -> [RecurringItem] {
@@ -596,7 +694,7 @@ struct AnalyticsCurrencyAggregationTests {
         vm.load()
         await refresh(vm)
 
-        let expectedAnnual = annual.monthlyEquivalent * 2
+        let expectedAnnual = try annual.monthlyEquivalent * 2
         #expect(vm.screenState.topItems.first?.title == "Monthly")
         #expect(vm.screenState.topItems.first { $0.title == "Annual" }?.monthlyAmount == expectedAnnual)
         #expect(vm.screenState.monthlyAggregation?.total?.amount == 300 + expectedAnnual)
@@ -817,13 +915,13 @@ extension AnalyticsCurrencyAggregationTests {
         #expect(repository.activeReads == 0)
         #expect(repository.allReads == 2)
         #expect(vm.screenState.summary.activeItemCount == active.count + 1)
-        #expect(vm.screenState.summary.monthlyTotal == active.reduce(Decimal(100)) { $0 + $1.monthlyEquivalent })
+        #expect(vm.screenState.summary.monthlyTotal == (try active.reduce(Decimal(100)) { try $0 + $1.monthlyEquivalent }))
         #expect(vm.screenState.includedItemCount == active.count + 1)
         #expect(vm.screenState.topItems.count == 5)
         #expect(Set(vm.screenState.topItems.map(\.id)).isSubset(of: Set((active + [monthly]).map(\.id))))
         #expect(Set(vm.screenState.unusedItems.map(\.id)) == Set(active.map(\.id)))
         #expect(vm.screenState.categoryBreakdown.first { $0.category == .music }?.itemCount == active.count)
-        #expect(vm.screenState.unusedMonthlyCost == active.reduce(Decimal.zero) { $0 + $1.monthlyEquivalent })
+        #expect(vm.screenState.unusedMonthlyCost == (try active.reduce(Decimal.zero) { try $0 + $1.monthlyEquivalent }))
         let expected = try forecast(sources, today: civil(2026, 10, 21))
         #expect(vm.screenState.forecastMonths.map(\.schedule) == expected)
     }
@@ -839,7 +937,7 @@ extension AnalyticsCurrencyAggregationTests {
         let row = try #require(vm.screenState.annualItems.first)
         #expect(row.chargeState == .found(try civil(2026, 11, 15)))
         #expect(vm.screenState.includedItemCount == 1)
-        #expect(vm.screenState.monthlyAggregation?.total?.amount == source.monthlyEquivalent)
+        #expect(vm.screenState.monthlyAggregation?.total?.amount == (try source.monthlyEquivalent))
         let formatter = PresentationLocale.dateFormatter(template: "d MMMM", calendar: BillingCivilDay.calendar)
         formatter.timeZone = .gmt
         let dateText = formatter.string(from: try canonical(2026, 11, 15))
@@ -1033,7 +1131,7 @@ extension AnalyticsCurrencyAggregationTests {
         #expect(repository.allReads == 2)
         #expect(repository.activeReads == 0)
         #expect(vm.screenState.includedItemCount == 3)
-        let expected = repository.items.reduce(Decimal.zero) { $0 + $1.monthlyEquivalent }
+        let expected = try repository.items.reduce(Decimal.zero) { try $0 + $1.monthlyEquivalent }
         #expect(vm.screenState.monthlyAggregation?.total?.amount == expected)
         #expect(vm.screenState.summary.yearlyProjection == expected * 12)
         #expect(vm.screenState.topItems.count == 3)

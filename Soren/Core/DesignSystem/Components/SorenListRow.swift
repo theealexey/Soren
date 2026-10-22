@@ -37,6 +37,7 @@ struct SorenListRow: View {
     let providerTemplate: ProviderTemplate?
     let category: ItemCategory
     let badge: Badge?
+    let normalized: Bool
 
     init(
         title: String,
@@ -46,7 +47,8 @@ struct SorenListRow: View {
         cycle: AmountLabel.CycleLabel? = .monthly,
         providerTemplate: ProviderTemplate? = nil,
         category: ItemCategory = .other,
-        badge: Badge? = nil
+        badge: Badge? = nil,
+        normalized: Bool = false
     ) {
         self.title = title
         self.subtitle = subtitle
@@ -56,6 +58,7 @@ struct SorenListRow: View {
         self.providerTemplate = providerTemplate
         self.category = category
         self.badge = badge
+        self.normalized = normalized
     }
 
     var body: some View {
@@ -85,7 +88,7 @@ struct SorenListRow: View {
 
             Spacer(minLength: Spacing.xs)
 
-            AmountLabel(amount, currency: currencyCode, size: .medium, cycle: cycle)
+            AmountLabel(amount, currency: currencyCode, size: .medium, cycle: cycle, normalized: normalized)
         }
         .padding(.vertical, Spacing.xs)
         .contentShape(Rectangle())
@@ -110,7 +113,8 @@ struct SorenListRow: View {
         var parts: [String] = [title]
         if let badge { parts.append(badge.title) }
         let fmt = Self.currencyFormatter(for: currencyCode)
-        let amountStr = fmt.string(from: amount as NSDecimalNumber) ?? "\(amount) \(currencyCode)"
+        let amountStr = normalized ? NormalizedMoneyFormatter.string(amount: amount, currencyCode: currencyCode)
+            : fmt.string(from: amount as NSDecimalNumber) ?? "\(amount) \(currencyCode)"
         let cycleStr = cycle.map { " \($0.accessibilityText)" } ?? ""
         parts.append("\(amountStr)\(cycleStr)")
         if let subtitle { parts.append(subtitle) }

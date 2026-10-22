@@ -218,12 +218,12 @@ extension RecurringItem {
 extension RecurringItem {
     /// Monthly-normalised cost in the item's native currency.
     var monthlyEquivalent: Decimal {
-        amount * billingCycle.monthlyMultiplier
+        get throws { try annualEquivalent / 12 }
     }
 
-    /// Approximate annual cost.
+    /// Annualized recurring cost, independent of occurrences in a particular year.
     var annualEquivalent: Decimal {
-        monthlyEquivalent * 12
+        get throws { try billingCycle.annualEquivalent(for: amount) }
     }
 
     /// Display-layer classification of how this item's lifecycle will end.

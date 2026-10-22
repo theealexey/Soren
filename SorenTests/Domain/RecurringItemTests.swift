@@ -9,37 +9,36 @@ struct RecurringItemTests {
 
     // MARK: - Monthly Equivalent
 
-    @Test("Monthly equivalent for weekly billing uses the 4.333 multiplier")
+    @Test("Weekly normalization preserves Decimal precision from the annual basis")
     func monthlyEquivalentWeekly() throws {
         let item = RecurringItem.stub(amount: 100, cycle: .weekly)
         let expectedAmount = try #require(
             Decimal(
-                string: "433.3",
+                string: "434.523809523809523809523809523809",
                 locale: Locale(identifier: "en_US_POSIX")
             )
         )
-        #expect(item.monthlyEquivalent == expectedAmount)
+        let tolerance = try #require(Decimal(string: "0.000000000000000000000000000001"))
+        #expect(abs(try item.monthlyEquivalent - expectedAmount) < tolerance)
     }
 
     @Test("Monthly equivalent for monthly billing equals amount exactly")
     func monthlyEquivalentMonthly() throws {
         let item = RecurringItem.stub(amount: 299, cycle: .monthly)
-        #expect(item.monthlyEquivalent == 299)
+        #expect(try item.monthlyEquivalent == 299)
     }
 
     @Test("Monthly equivalent for annual billing divides by 12")
     func monthlyEquivalentAnnual() throws {
         let item = RecurringItem.stub(amount: 1200, cycle: .annual)
         // 1200 * (1/12) = 100
-        let expected = Decimal(1200) * BillingCycle.annual.monthlyMultiplier
-        #expect(item.monthlyEquivalent == expected)
+        #expect(try item.monthlyEquivalent == 100)
     }
 
     @Test("Monthly equivalent for custom cycle with small number of days")
     func monthlyEquivalentCustomShort() throws {
         let item = RecurringItem.stub(amount: 100, cycle: .custom(days: 1))
-        // 100 * (30/1) = 3000
-        #expect(item.monthlyEquivalent == 3000)
+        #expect(try item.monthlyEquivalent == Decimal(36_500) / 12)
     }
 
     // MARK: - Annual Equivalent
@@ -47,7 +46,47 @@ struct RecurringItemTests {
     @Test("Annual equivalent is 12x monthly equivalent")
     func annualEquivalent() throws {
         let item = RecurringItem.stub(amount: 100, cycle: .monthly)
-        #expect(item.annualEquivalent == 1200)
+        #expect(try item.annualEquivalent == 1200)
+    }
+
+    @Test("Exact annual basis and monthly equivalents", arguments: [
+        (BillingCycle.annual, 1200, 1200, 100),
+        (.quarterly, 600, 2400, 200), (.semiannual, 600, 1200, 100),
+        (.monthly, 124, 1488, 124), (.custom(days: 365), 100, 100, 0)
+    ])
+    func exactAnnualBasis(example: (BillingCycle, Int, Int, Int)) throws {
+        let item = RecurringItem.stub(amount: Decimal(example.1), cycle: example.0)
+        #expect(try item.annualEquivalent == Decimal(example.2))
+        if example.3 > 0 { #expect(try item.monthlyEquivalent == Decimal(example.3)) }
+        #expect(item.amount == Decimal(example.1))
+    }
+
+    @Test("Weekly and custom-seven normalization agree without drift")
+    func weeklyAndCustomAgree() throws {
+        let weekly = RecurringItem.stub(amount: 100, cycle: .weekly)
+        let custom = RecurringItem.stub(amount: 100, cycle: .custom(days: 7))
+        #expect(try weekly.annualEquivalent == custom.annualEquivalent)
+        #expect(try weekly.monthlyEquivalent == custom.monthlyEquivalent)
+        let expected = try #require(Decimal(string: "5214.285714285714285714285714285714"))
+        let tolerance = try #require(Decimal(string: "0.000000000000000000000000000001"))
+        #expect(abs(try weekly.annualEquivalent - expected) < tolerance)
+    }
+
+    @Test("Custom cycles and fractional amounts retain unrounded Decimal contributions", arguments: [1, 30, 60, 365])
+    func customPrecision(days: Int) throws {
+        let amount = try #require(Decimal(string: "0.015"))
+        let item = RecurringItem.stub(amount: amount, cycle: .custom(days: days))
+        #expect(try item.annualEquivalent == amount * 365 / Decimal(days))
+        #expect(try item.monthlyEquivalent == item.annualEquivalent / 12)
+    }
+
+    @Test("Every normalization API rejects invalid custom cycles before division", arguments: [0, -1])
+    func invalidNormalization(days: Int) {
+        let item = RecurringItem.stub(amount: 100, cycle: .custom(days: days))
+        let error = BillingCycle.ValidationError.invalidCustomDays(days)
+        #expect(throws: error) { try item.billingCycle.monthlyMultiplier }
+        #expect(throws: error) { try item.annualEquivalent }
+        #expect(throws: error) { try item.monthlyEquivalent }
     }
 
     // MARK: - isDue

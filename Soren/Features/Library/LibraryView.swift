@@ -419,11 +419,13 @@ struct LibraryView: View {
         _ vm: LibraryViewModel,
         alignment: HorizontalAlignment
     ) -> some View {
-        if let aggregation = vm.filteredMonthlyAggregation {
+        if vm.normalizationError != nil {
+            Text(String(localized: "normalization.unavailable"))
+        } else if let aggregation = vm.filteredMonthlyAggregation {
             VStack(alignment: alignment, spacing: 3) {
                 if let total = aggregation.total, total.amount > .zero {
                     HStack(alignment: .firstTextBaseline, spacing: 3) {
-                        Text(verbatim: OverviewMoneyFormatter.string(
+                        Text(verbatim: NormalizedMoneyFormatter.string(
                             amount: total.amount,
                             currencyCode: total.currencyCode
                         ))

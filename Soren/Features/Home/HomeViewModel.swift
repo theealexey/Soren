@@ -21,6 +21,7 @@ typealias OverviewInsightCalculation = @Sendable (
 @MainActor @Observable
 final class HomeViewModel {
     private(set) var screenState: HomeScreenState
+    private(set) var normalizationError: BillingCycle.ValidationError?
 
     var monthLabel: String { screenState.monthLabel }
     var monthlyPlan: MonthlyPlanHeroPresentation { screenState.monthlyPlan }
@@ -146,7 +147,7 @@ final class HomeViewModel {
                 snapshot
             )
         }
-        async let insightResult = optionalResult {
+        async let insightResult = insightCalculationResult {
             try await self.calculateOverviewInsight(
                 today,
                 self.calendar,
@@ -155,10 +156,17 @@ final class HomeViewModel {
             )
         }
 
-        return await DomainState(
-            currentMonth: currentMonthResult,
-            insight: insightResult
-        )
+        let insight = await insightResult
+        return await DomainState(currentMonth: currentMonthResult,
+            insight: insight.value, normalizationError: insight.error)
+    }
+
+    private func insightCalculationResult(
+        _ operation: @escaping @Sendable () async throws -> OverviewInsight?
+    ) async -> (value: OverviewInsight?, error: BillingCycle.ValidationError?) {
+        do { return (try await operation(), nil) }
+        catch let error as BillingCycle.ValidationError { return (nil, error) }
+        catch { return (nil, nil) }
     }
 
     private func optionalResult<Value: Sendable>(
@@ -206,6 +214,7 @@ final class HomeViewModel {
         upcomingOccurrences: [UpcomingScheduledCharge],
         today: Date
     ) {
+        normalizationError = result.normalizationError
         screenState = HomeScreenState(
             monthLabel: Self.monthLabel(for: today, calendar: calendar),
             monthlyPlan: Self.monthlyPlanPresentation(
@@ -215,7 +224,11 @@ final class HomeViewModel {
                 Self.monthSchedulePresentation($0, today: today, calendar: calendar)
             },
             statusCounts: result.currentMonth?.statusCounts,
-            overviewInsight: result.insight.map {
+            overviewInsight: result.normalizationError != nil
+                ? OverviewInsightPresentation(kind: .annualScale,
+                    primary: String(localized: "normalization.unavailable"),
+                    supporting: String(localized: "при текущем наборе подписок"))
+                : result.insight.map {
                 OverviewInsightPresentation.make(from: $0, today: today, calendar: calendar)
             },
             upcoming: upcomingPresentation(
@@ -403,5 +416,6 @@ private extension HomeViewModel {
     struct DomainState: Sendable {
         let currentMonth: CurrentMonthSubscriptionPlanSnapshot?
         let insight: OverviewInsight?
+        let normalizationError: BillingCycle.ValidationError?
     }
 }

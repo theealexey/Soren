@@ -5,36 +5,34 @@ import Foundation
 @Suite("BillingCycle — multipliers and helpers")
 struct BillingCycleTests {
 
-    @Test("Weekly multiplier preserves the 52/12 three-decimal contract")
+    @Test("Weekly multiplier uses the annual 365/7 basis")
     func weeklyMultiplier() throws {
-        let expected = try #require(Decimal(string: "4.333"))
-        #expect(BillingCycle.weekly.monthlyMultiplier == expected)
+        #expect(try BillingCycle.weekly.monthlyMultiplier == Decimal(365) / 7 / 12)
     }
 
     @Test("Monthly multiplier is exactly 1")
-    func monthlyMultiplier() {
-        #expect(BillingCycle.monthly.monthlyMultiplier == 1)
+    func monthlyMultiplier() throws {
+        #expect(try BillingCycle.monthly.monthlyMultiplier == 1)
     }
 
     @Test("Annual multiplier is approximately 1/12")
-    func annualMultiplier() {
-        let expected = Decimal(string: "0.0833")!
-        #expect(BillingCycle.annual.monthlyMultiplier == expected)
+    func annualMultiplier() throws {
+        #expect(try BillingCycle.annual.monthlyMultiplier == Decimal(1) / 12)
     }
 
-    @Test("Custom 30-day cycle has multiplier of 1")
-    func custom30Days() {
-        #expect(BillingCycle.custom(days: 30).monthlyMultiplier == 1)
+    @Test("Custom 30-day cycle uses 365 days per year")
+    func custom30Days() throws {
+        #expect(try BillingCycle.custom(days: 30).monthlyMultiplier == Decimal(365) / 30 / 12)
     }
 
-    @Test("Custom 60-day cycle has multiplier of 0.5")
-    func custom60Days() {
-        #expect(BillingCycle.custom(days: 60).monthlyMultiplier == Decimal(string: "0.5")!)
+    @Test("Custom 60-day cycle uses 365 days per year")
+    func custom60Days() throws {
+        #expect(try BillingCycle.custom(days: 60).monthlyMultiplier == Decimal(365) / 60 / 12)
     }
 
-    @Test("Custom 1-day cycle produces large multiplier (30)")
-    func custom1Day() {
-        #expect(BillingCycle.custom(days: 1).monthlyMultiplier == 30)
+    @Test("Custom 1-day cycle uses the annual basis")
+    func custom1Day() throws {
+        #expect(try BillingCycle.custom(days: 1).monthlyMultiplier == Decimal(365) / 12)
     }
 
     @Test("isLongCycle is true for annual")

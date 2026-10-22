@@ -1,5 +1,27 @@
 import SwiftUI
 
+/// Opt-in formatting for normalized equivalents only. Stored and scheduled amounts keep their existing policy.
+enum NormalizedMoneyFormatter {
+    static func string(amount: Decimal, currencyCode: String,
+                       locale: Locale = PresentationLocale.current,
+                       style: NumberFormatter.Style = .currency) -> String {
+        let formatter = NumberFormatter()
+        formatter.locale = locale.language.languageCode?.identifier == "ru" ? Locale(identifier: "ru") : locale
+        formatter.numberStyle = style
+        formatter.currencyCode = currencyCode
+        let places = SupportedCurrency.all.first { $0.code == currencyCode }?.decimalPlaces
+            ?? formatter.maximumFractionDigits
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = places
+        formatter.roundingMode = .halfUp
+        var source = amount
+        var rounded = Decimal.zero
+        NSDecimalRound(&rounded, &source, places, .plain)
+        return formatter.string(from: rounded as NSDecimalNumber)
+            ?? String(localized: "normalization.unavailable")
+    }
+}
+
 // MARK: - Amount Label
 
 /// Formatted currency display with consistent styling.
@@ -16,19 +38,22 @@ struct AmountLabel: View {
     let size: Size
     let cycle: CycleLabel?
     let tint: Color?
+    let normalized: Bool
 
     init(
         _ amount: Decimal,
         currency currencyCode: String = "RUB",
         size: Size = .medium,
         cycle: CycleLabel? = nil,
-        tint: Color? = nil
+        tint: Color? = nil,
+        normalized: Bool = false
     ) {
         self.amount = amount
         self.currencyCode = currencyCode
         self.size = size
         self.cycle = cycle
         self.tint = tint
+        self.normalized = normalized
     }
 
     var body: some View {
@@ -52,14 +77,15 @@ struct AmountLabel: View {
     }
 
     private var accessibilityLabel: String {
-        let formatted = Self.formatter(for: currencyCode)
-            .string(from: amount as NSDecimalNumber) ?? "\(amount) \(currencyCode)"
+        let formatted = normalized ? NormalizedMoneyFormatter.string(amount: amount, currencyCode: currencyCode)
+            : Self.formatter(for: currencyCode).string(from: amount as NSDecimalNumber) ?? "\(amount) \(currencyCode)"
         guard let cycle else { return formatted }
         return "\(formatted) \(cycle.accessibilityText)"
     }
 
     var formattedAmount: String {
-        let formatted = Self.formatter(for: currencyCode).string(
+        let formatted = normalized ? NormalizedMoneyFormatter.string(amount: amount, currencyCode: currencyCode)
+            : Self.formatter(for: currencyCode).string(
             from: amount as NSDecimalNumber
         ) ?? "\(amount)"
         // NumberFormatter inserts a non-breaking space between value and

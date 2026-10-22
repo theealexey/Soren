@@ -33,17 +33,23 @@ extension BillingCycle {
         }
     }
 
-    /// Monthly equivalent cost multiplier.
-    /// Used to normalise costs in Analytics.
-    /// All literals use Decimal(string:) to avoid Double intermediate representation (binary imprecision).
-    var monthlyMultiplier: Decimal {
+    /// Annual equivalent is the basis; repeating divisions retain Foundation Decimal precision.
+    func annualEquivalent(for amount: Decimal) throws -> Decimal {
+        try validate()
         switch self {
-        case .weekly:           Decimal(string: "4.333")!   // 52 weeks / 12 months
-        case .monthly:          Decimal(1)
-        case .quarterly:        Decimal(string: "0.3333")!  // 1/3
-        case .semiannual:       Decimal(string: "0.1667")!  // 1/6
-        case .annual:           Decimal(string: "0.0833")!  // 1/12
-        case .custom(let d):    Decimal(30) / Decimal(d)
+        case .weekly: return amount * 365 / 7
+        case .monthly: return amount * 12
+        case .quarterly: return amount * 4
+        case .semiannual: return amount * 2
+        case .annual: return amount
+        case let .custom(days): return amount * 365 / Decimal(days)
+        }
+    }
+
+    /// Compatibility coefficient. Item amounts normalize before division to avoid coefficient truncation.
+    var monthlyMultiplier: Decimal {
+        get throws {
+            try annualEquivalent(for: 1) / 12
         }
     }
 

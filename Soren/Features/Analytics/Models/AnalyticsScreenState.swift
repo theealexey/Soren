@@ -42,6 +42,9 @@ struct AnalyticsScreenState {
     /// Pre-computed total monthly cost of unused items.
     /// Stored rather than computed to avoid requiring exchange-rate access on the struct.
     let unusedMonthlyCost: Decimal?
+    var annualAggregation: RecurringSpendAggregationResult? = nil
+    /// Separate from missing FX; no normalized subtotal is valid after this failure.
+    var normalizationError: Error? = nil
 
     var includedItemCount: Int { summary.activeItemCount }
 

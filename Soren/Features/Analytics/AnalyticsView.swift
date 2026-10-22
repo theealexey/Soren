@@ -79,7 +79,10 @@ struct AnalyticsView: View {
                     forecastSection(state)
                 }
 
-                if !state.categoryBreakdown.isEmpty {
+                if state.normalizationError != nil {
+                    normalizedSectionUnavailable("По категориям")
+                    normalizedSectionUnavailable("Топ подписки")
+                } else if !state.categoryBreakdown.isEmpty {
                     categorySection(state)
                 }
 
@@ -145,36 +148,48 @@ struct AnalyticsView: View {
                     StatBlock(
                         title: "В месяц",
                         amount: total.amount,
-                        currency: total.currencyCode
+                        currency: total.currencyCode,
+                        normalized: true
                     )
                 } else {
-                    unavailableStat(title: "В месяц")
+                    unavailableStat(title: "В месяц", normalizationFailed: state.normalizationError != nil)
                 }
             }
 
             PremiumCard(.elevated) {
-                if let total = state.monthlyAggregation?.total {
+                if let total = state.annualAggregation?.total {
                     StatBlock(
                         title: "В год",
-                        amount: total.amount * 12,
-                        currency: total.currencyCode
+                        amount: total.amount,
+                        currency: total.currencyCode,
+                        normalized: true
                     )
                 } else {
-                    unavailableStat(title: "В год")
+                    unavailableStat(title: "В год", normalizationFailed: state.normalizationError != nil)
                 }
             }
         }
         .padding(.horizontal, Spacing.lg)
     }
 
-    private func unavailableStat(title: LocalizedStringKey) -> some View {
+    private func unavailableStat(title: LocalizedStringKey, normalizationFailed: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: Spacing.xxs) {
             Text(title)
                 .overlineStyle()
-            Text(verbatim: "—")
-                .font(Typography.amountLarge)
+            Text(verbatim: normalizationFailed ? String(localized: "normalization.unavailable") : "—")
+                .font(normalizationFailed ? Typography.footnote : Typography.amountLarge)
                 .foregroundStyle(ColorTokens.textTertiary)
         }
+    }
+
+    private func normalizedSectionUnavailable(_ title: String) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            SectionHeader(title)
+            Text(String(localized: "normalization.unavailable"))
+                .font(Typography.footnote)
+                .foregroundStyle(ColorTokens.textSecondary)
+        }
+        .padding(.horizontal, Spacing.lg)
     }
 
     @ViewBuilder
@@ -395,7 +410,7 @@ struct AnalyticsView: View {
             }
             .frame(height: 6)
 
-            AmountLabel(spend.monthlyTotal, currency: currency, size: .small)
+            AmountLabel(spend.monthlyTotal, currency: currency, size: .small, normalized: true)
                 .frame(minWidth: 70, alignment: .trailing)
         }
     }
@@ -418,7 +433,8 @@ struct AnalyticsView: View {
                                 currency: row.currency,
                                 cycle: .monthly,
                                 providerTemplate: row.providerTemplate,
-                                category: row.category
+                                category: row.category,
+                                normalized: true
                             )
                         }
                         .buttonStyle(.plain)
@@ -474,8 +490,12 @@ struct AnalyticsView: View {
             HStack {
                 SectionHeader(String(localized: "Не используются"))
                 Spacer()
-                if let unusedMonthlyCost = state.unusedMonthlyCost, unusedMonthlyCost > 0 {
-                    Text(String(localized: "−\(wasteString(unusedMonthlyCost)) \(state.defaultCurrency)/мес"))
+                if state.normalizationError != nil {
+                    Text(String(localized: "normalization.unavailable"))
+                        .font(Typography.caption)
+                        .foregroundStyle(ColorTokens.textSecondary)
+                } else if let unusedMonthlyCost = state.unusedMonthlyCost, unusedMonthlyCost > 0 {
+                    Text(String(localized: "−\(wasteString(unusedMonthlyCost, currency: state.defaultCurrency)) \(state.defaultCurrency)/мес"))
                         .font(Typography.captionMedium)
                         .foregroundStyle(ColorTokens.warning)
                         .padding(.horizontal, Spacing.sm)
@@ -511,15 +531,8 @@ struct AnalyticsView: View {
         }
     }
 
-    private static let wasteFormatter: NumberFormatter = {
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.maximumFractionDigits = 0
-        return f
-    }()
-
-    private func wasteString(_ amount: Decimal) -> String {
-        Self.wasteFormatter.string(from: NSDecimalNumber(decimal: amount)) ?? amount.description
+    private func wasteString(_ amount: Decimal, currency: String) -> String {
+        NormalizedMoneyFormatter.string(amount: amount, currencyCode: currency, style: .decimal)
     }
 }
 

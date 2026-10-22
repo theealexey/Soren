@@ -9,7 +9,23 @@ final class ItemDetailsViewModel {
     // MARK: - Display State
 
     var item: RecurringItem {
-        didSet { refreshNextScheduledCharge() }
+        didSet { refreshNextScheduledCharge(); refreshNormalizedCosts() }
+    }
+    private(set) var normalizedMonthlyAmount: Decimal?
+    private(set) var normalizedAnnualAmount: Decimal?
+    private(set) var normalizationError: Error?
+
+    private func refreshNormalizedCosts() {
+        do {
+            let annual = try item.annualEquivalent
+            normalizedAnnualAmount = annual
+            normalizedMonthlyAmount = annual / 12
+            normalizationError = nil
+        } catch {
+            normalizedAnnualAmount = nil
+            normalizedMonthlyAmount = nil
+            normalizationError = error
+        }
     }
     enum NextScheduledChargeState: Equatable {
         case scheduled(CivilDate)
@@ -119,6 +135,7 @@ final class ItemDetailsViewModel {
         self.timeZone = timeZone
         self.reportingCurrencyCode = preferences.load().defaultCurrencyCode
         refreshNextScheduledCharge()
+        refreshNormalizedCosts()
     }
 
     init(
@@ -139,6 +156,7 @@ final class ItemDetailsViewModel {
         self.timeZone = timeZone
         self.reportingCurrencyCode = preferences.load().defaultCurrencyCode
         refreshNextScheduledCharge()
+        refreshNormalizedCosts()
     }
 
     // MARK: - Edit Next Charge Date

@@ -490,7 +490,7 @@ struct OverviewInsightUseCaseTests {
     @Test("Annual multipliers match every supported standard recurrence")
     func annualStandardRecurrenceMultipliers() async throws {
         let cases: [(BillingCycle, Decimal)] = [
-            (.weekly, 5_200),
+            (.weekly, Decimal(36_500) / 7),
             (.monthly, 1_200),
             (.quarterly, 400),
             (.semiannual, 200),
@@ -521,11 +521,11 @@ struct OverviewInsightUseCaseTests {
 
     @Test("Invalid custom cycle never divides and prevents annual scale")
     func annualInvalidCustomCycle() async throws {
-        let insight = try await execute(items: [
-            item(id: 1, amount: 100, billingCycle: .custom(days: 0), nextChargeDate: day(40))
-        ])
-
-        #expect(insight == nil)
+        await #expect(throws: BillingCycle.ValidationError.invalidCustomDays(0)) {
+            try await execute(items: [
+                item(id: 1, amount: 100, billingCycle: .custom(days: 0), nextChargeDate: day(40))
+            ])
+        }
     }
 
     @Test("Mixed recurrence annualizes each item independently")
@@ -536,7 +536,7 @@ struct OverviewInsightUseCaseTests {
             item(id: 3, amount: 50, billingCycle: .weekly, nextChargeDate: day(40))
         ])
 
-        #expect(annualTotal(in: insight)?.amount == 4_800)
+        #expect(annualTotal(in: insight)?.amount == Decimal(2200) + Decimal(18_250) / 7)
     }
 
     @Test("Annual calculation preserves Decimal precision")

@@ -72,7 +72,7 @@ where Repository: RecurringItemRepository, Repository: Sendable {
             return .denseWeek(denseWeek)
         }
 
-        return annualScale(
+        return try annualScale(
             for: eligibleItems,
             reportingCurrencyCode: reportingCurrencyCode,
             exchangeRateSnapshot: exchangeRateSnapshot,
@@ -360,8 +360,8 @@ private extension OverviewInsightUseCase {
         exchangeRateSnapshot: ExchangeRateSnapshot?,
         range: Range<Date>,
         calendar: Calendar
-    ) -> OverviewInsight? {
-        let projections = items.compactMap { item -> RecurringSpendProjection? in
+    ) throws -> OverviewInsight? {
+        let projections = try items.compactMap { item -> RecurringSpendProjection? in
             let money: Money
             let billingCycle: BillingCycle
 
@@ -384,10 +384,9 @@ private extension OverviewInsightUseCase {
                 billingCycle = item.billingCycle
             }
 
-            guard let multiplier = annualMultiplier(for: billingCycle) else { return nil }
             return RecurringSpendProjection(
                 date: range.lowerBound,
-                amount: money.amount * multiplier,
+                amount: try billingCycle.annualEquivalent(for: money.amount),
                 currencyCode: money.currencyCode
             )
         }
@@ -402,23 +401,6 @@ private extension OverviewInsightUseCase {
         )
         guard case let .complete(total, _) = result, total.amount > 0 else { return nil }
         return .annualScale(total)
-    }
-
-    func annualMultiplier(for billingCycle: BillingCycle) -> Decimal? {
-        switch billingCycle {
-        case .weekly:
-            52
-        case .monthly:
-            12
-        case .quarterly:
-            4
-        case .semiannual:
-            2
-        case .annual:
-            1
-        case let .custom(days):
-            days > 0 ? Decimal(365) / Decimal(days) : nil
-        }
     }
 
     func isValid(_ billingCycle: BillingCycle) -> Bool {
