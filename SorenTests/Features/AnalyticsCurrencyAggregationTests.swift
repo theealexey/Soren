@@ -627,6 +627,134 @@ struct AnalyticsCurrencyAggregationTests {
 // MARK: - Canonical Six-Month Forecast
 
 extension AnalyticsCurrencyAggregationTests {
+    private func annualItem(_ id: UInt8 = 1, anchor: CivilDate,
+                            status: ItemStatus = .active, amount: Decimal = 1_200) throws -> RecurringItem {
+        let date = try BillingCivilDay.canonicalDate(for: anchor)
+        return RecurringItem(id: UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, id)),
+            title: "Annual", amount: amount, currencyCode: "RUB", billingCycle: .annual,
+            startDate: date, nextChargeDate: date, status: status)
+    }
+
+    @Test("Annual rows use the nearest canonical anniversary", arguments: [
+        (2025, 10, 15, 2026, 10, 21, 2027, 10, 15),
+        (2026, 11, 15, 2026, 10, 21, 2026, 11, 15),
+        (2026, 10, 21, 2026, 10, 21, 2026, 10, 21),
+        (2024, 2, 29, 2027, 3, 1, 2028, 2, 29),
+        (2040, 11, 15, 2026, 10, 21, 2040, 11, 15)
+    ])
+    func annualCanonicalDates(_ ay: Int, _ am: Int, _ ad: Int, _ ty: Int, _ tm: Int, _ td: Int,
+                              _ ey: Int, _ em: Int, _ ed: Int) throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let source = try annualItem(anchor: civil(ay, am, ad))
+        let vm = try scheduledViewModel(ForecastRepository([source]), preferences: fixture.repository,
+                                         today: civil(ty, tm, td))
+        vm.load()
+        let row = try #require(vm.screenState.annualItems.first)
+        #expect(row.chargeState == .found(try civil(ey, em, ed)))
+        #expect(row.projectionError == nil)
+        #expect(row.item.nextChargeDate == source.nextChargeDate)
+        #expect(row.subtitle.contains("Просрочено") == false)
+        if ty == ey && tm == em && td == ed { #expect(row.subtitle == String(localized: "Сегодня")) }
+    }
+
+    @Test("Annual finite bounds are inclusive and absence stays visible", arguments: [14, 15])
+    func annualFiniteResult(endDay: Int) throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        var source = try annualItem(anchor: civil(2025, 11, 15))
+        source.autoRenew = false
+        source.endDate = try canonical(2026, 11, endDay)
+        let vm = try scheduledViewModel(ForecastRepository([source]), preferences: fixture.repository)
+        vm.load()
+        let row = try #require(vm.screenState.annualItems.first)
+        #expect(row.chargeState == (endDay == 15 ? .found(try civil(2026, 11, 15)) : .absent))
+        #expect(row.projectionError == nil)
+        if endDay == 14 { #expect(row.subtitle == String(localized: "analytics.annual.notScheduled")) }
+    }
+
+    @Test("Annual trial boundary cannot manufacture a monetary date", arguments: [true, false])
+    func annualTrialResult(provenCharge: Bool) throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        var source = try annualItem(anchor: civil(2026, 11, 15), status: .trial)
+        source.startDate = try canonical(2026, 10, 1)
+        source.trialEndDate = try canonical(2026, 11, provenCharge ? 15 : 14)
+        let vm = try scheduledViewModel(ForecastRepository([source]), preferences: fixture.repository)
+        vm.load()
+        let row = try #require(vm.screenState.annualItems.first)
+        #expect(row.chargeState == (provenCharge ? .found(try civil(2026, 11, 15)) : .unavailable))
+        if provenCharge {
+            #expect(vm.screenState.forecastMonths[1].schedule.eventCount == 2)
+            #expect(vm.screenState.forecastMonths[1].schedule.charges.count == 1)
+        } else {
+            #expect(row.projectionError as? RecurringScheduleProjectionError == .monetaryScheduleUnavailable)
+            #expect(row.subtitle == String(localized: "analytics.annual.unavailable"))
+        }
+    }
+
+    @Test("Annual rows sort by projected dates then error and absence with UUID ties")
+    func annualProjectedOrdering() throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let september = try annualItem(3, anchor: civil(2020, 9, 1))
+        let november2 = try annualItem(2, anchor: civil(2026, 11, 15))
+        let november1 = try annualItem(1, anchor: civil(2026, 11, 15))
+        var error2 = try annualItem(5, anchor: civil(2026, 11, 15))
+        error2.autoRenew = false
+        var error1 = try annualItem(4, anchor: civil(2026, 11, 15))
+        error1.autoRenew = false
+        var absent2 = try annualItem(7, anchor: civil(2025, 11, 15))
+        absent2.endDate = try canonical(2026, 1, 1)
+        var absent1 = try annualItem(6, anchor: civil(2025, 11, 15))
+        absent1.endDate = try canonical(2026, 1, 1)
+        let vm = try scheduledViewModel(ForecastRepository([absent2, error2, september, november2,
+                                                            absent1, november1, error1]), preferences: fixture.repository)
+        vm.load()
+        #expect(vm.screenState.annualItems.map(\.id) == [november1, november2, september, error1, error2, absent1, absent2].map(\.id))
+        #expect(vm.screenState.annualItems.map(\.chargeState) == [
+            .found(try civil(2026, 11, 15)), .found(try civil(2026, 11, 15)), .found(try civil(2027, 9, 1)),
+            .unavailable, .unavailable, .absent, .absent
+        ])
+    }
+
+    @Test("Annual membership preserves fetchActive and leaves summary and forecast intact")
+    func annualMembershipAndOtherSections() throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        var sources = try ItemStatus.allCases.enumerated().map { index, status in
+            try annualItem(UInt8(index + 1), anchor: civil(2026, 11, 15), status: status)
+        }
+        let active = sources.filter { [.active, .dueSoon, .dueToday, .trial].contains($0.status) }
+        sources.append(try scheduledItem())
+        let repository = ForecastRepository(sources)
+        let vm = try scheduledViewModel(repository, preferences: fixture.repository)
+        vm.load()
+        #expect(Set(vm.screenState.annualItems.map(\.id)) == Set(active.map(\.id)))
+        #expect(repository.activeReads == 1)
+        #expect(repository.allReads == 1)
+        #expect(vm.screenState.summary.activeItemCount == active.count + 1)
+        #expect(vm.screenState.summary.monthlyTotal == active.reduce(Decimal(100)) { $0 + $1.monthlyEquivalent })
+        let expected = try forecast(sources, today: civil(2026, 10, 21))
+        #expect(vm.screenState.forecastMonths.map(\.schedule) == expected)
+    }
+
+    @Test("Annual civil dates and countdowns are timezone stable", arguments: ["Pacific/Kiritimati", "America/Los_Angeles"])
+    func annualTimezoneStability(zoneID: String) throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let source = try annualItem(anchor: civil(2025, 11, 15))
+        let zone = try #require(TimeZone(identifier: zoneID))
+        let vm = try scheduledViewModel(ForecastRepository([source]), preferences: fixture.repository, zone: zone)
+        vm.load()
+        let row = try #require(vm.screenState.annualItems.first)
+        #expect(row.chargeState == .found(try civil(2026, 11, 15)))
+        let formatter = PresentationLocale.dateFormatter(template: "d MMMM", calendar: BillingCivilDay.calendar)
+        formatter.timeZone = .gmt
+        let dateText = formatter.string(from: try canonical(2026, 11, 15))
+        #expect(row.subtitle == String(localized: "Через \(25) дн. — \(dateText)"))
+    }
+
     private final class ForecastRepository: RecurringItemRepository {
         var items: [RecurringItem]
         var allReads = 0

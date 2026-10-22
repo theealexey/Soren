@@ -1,6 +1,18 @@
 {
   "sourceLanguage" : "ru",
   "strings" : {
+    "analytics.annual.notScheduled" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Not scheduled" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Не запланировано" } }
+      }
+    },
+    "analytics.annual.unavailable" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unable to determine" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Не удалось определить" } }
+      }
+    },
     "itemDetails.nextScheduledCharge.label" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Next scheduled charge" } },

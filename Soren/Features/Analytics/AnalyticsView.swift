@@ -443,11 +443,12 @@ struct AnalyticsView: View {
 
             PremiumCard {
                 VStack(spacing: 0) {
-                    ForEach(Array(state.annualItems.enumerated()), id: \.element.id) { idx, item in
+                    ForEach(Array(state.annualItems.enumerated()), id: \.element.id) { idx, row in
+                        let item = row.item
                         Button { navigateToItem(item) } label: {
                             SorenListRow(
                                 title: item.title,
-                                subtitle: nextAnnualLabel(for: item),
+                                subtitle: row.subtitle,
                                 amount: item.amount,
                                 currency: item.currencyCode,
                                 cycle: .yearly,
@@ -465,21 +466,6 @@ struct AnalyticsView: View {
             }
             .padding(.horizontal, Spacing.lg)
         }
-    }
-
-    private static let chargeDateFormatter: DateFormatter = {
-        let formatter = PresentationLocale.dateFormatter(template: "d MMMM", calendar: BillingCivilDay.calendar)
-        formatter.timeZone = .gmt
-        return formatter
-    }()
-
-    private func nextAnnualLabel(for item: RecurringItem) -> String {
-        guard let today = viewModel?.today, let days = try? item.daysUntilNextCharge(from: today) else { return "" }
-        let dateStr = Self.chargeDateFormatter.string(from: item.nextChargeDate)
-        if days < 0   { return String(localized: "Просрочено — \(dateStr)") }
-        if days == 0  { return String(localized: "Сегодня") }
-        if days <= 30 { return String(localized: "Через \(days) дн. — \(dateStr)") }
-        return String(localized: "\(dateStr)")
     }
 
     // MARK: - 6. Unused / Waste

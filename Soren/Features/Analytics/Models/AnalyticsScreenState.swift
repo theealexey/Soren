@@ -1,5 +1,20 @@
 import Foundation
 
+enum AnalyticsAnnualChargeState: Equatable {
+    case found(CivilDate)
+    case absent
+    case unavailable
+}
+
+struct AnalyticsAnnualRow: Identifiable {
+    let item: RecurringItem
+    let chargeState: AnalyticsAnnualChargeState
+    let subtitle: String
+    let projectionError: Error?
+
+    var id: UUID { item.id }
+}
+
 // MARK: - Analytics Screen State
 
 /// Complete value-type snapshot of all Analytics tab outputs.
@@ -21,7 +36,7 @@ struct AnalyticsScreenState {
     /// Complete-only comparable trend derived from reporting-currency projections.
     let trendComparison: AnalyticsTrendComparison?
     let topItems: [TopSpendRowModel]
-    let annualItems: [RecurringItem]
+    let annualItems: [AnalyticsAnnualRow]
     let unusedItems: [RecurringItem]
     let defaultCurrency: String
     /// Pre-computed total monthly cost of unused items.

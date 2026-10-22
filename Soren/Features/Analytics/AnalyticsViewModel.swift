@@ -109,6 +109,7 @@ final class AnalyticsViewModel {
 
     private var items: [RecurringItem] = []
     private var forecast: [AnalyticsForecastMonth] = []
+    private var calculationToday: CivilDate?
     private var reportingCurrencyCode = UserPreferences.default.defaultCurrencyCode
     private var exchangeRateSnapshot: ExchangeRateSnapshot?
     private var inFlightRevision: Int?
@@ -159,7 +160,8 @@ final class AnalyticsViewModel {
             let forecast = try getForecast.execute(today: localToday)
             items = activeItems
             self.forecast = forecast
-            rebuildScreenState(snapshot: nil)
+            calculationToday = localToday
+            rebuildScreenState(snapshot: nil, today: localToday)
             isLoaded = true
         } catch {
             self.error = error
@@ -190,9 +192,10 @@ final class AnalyticsViewModel {
 
         do {
             let snapshot = try await exchangeRateProvider.latestSnapshot()
-            guard !Task.isCancelled, revision == aggregationRevision else { return }
+            guard !Task.isCancelled, revision == aggregationRevision,
+                  let calculationToday else { return }
             exchangeRateSnapshot = snapshot
-            rebuildScreenState(snapshot: snapshot)
+            rebuildScreenState(snapshot: snapshot, today: calculationToday)
         } catch is CancellationError {
             return
         } catch {
@@ -203,7 +206,8 @@ final class AnalyticsViewModel {
 
     // MARK: - State Construction
 
-    private func rebuildScreenState(snapshot: ExchangeRateSnapshot?) {
+    private func rebuildScreenState(snapshot: ExchangeRateSnapshot?, today: CivilDate) {
+        let annualItems = buildAnnualItems(today: today)
         let monthlyAggregation = aggregateMonthly(items, snapshot: snapshot)
         let forecastMonths = forecast.map { month in
             AnalyticsForecastMonthResult(schedule: month, aggregation: aggregateRecurringSpend.execute(
@@ -260,12 +264,45 @@ final class AnalyticsViewModel {
         )
     }
 
-    private var annualItems: [RecurringItem] {
-        items.filter {
-            if case .annual = $0.billingCycle { return true }
-            return false
+    private func buildAnnualItems(today: CivilDate) -> [AnalyticsAnnualRow] {
+        let projector = RecurringScheduleProjector()
+        return items.filter { $0.billingCycle == .annual }.map { item in
+            do {
+                guard let date = try projector.nextScheduledCharge(for: item, onOrAfter: today) else {
+                    return AnalyticsAnnualRow(item: item, chargeState: .absent,
+                        subtitle: String(localized: "analytics.annual.notScheduled"), projectionError: nil)
+                }
+                let days = try BillingCivilDay.days(from: today, to: date)
+                let dateText = Self.annualDateFormatter.string(from: try BillingCivilDay.canonicalDate(for: date))
+                let subtitle: String
+                if days == 0 {
+                    subtitle = String(localized: "Сегодня")
+                } else if days <= 30 {
+                    subtitle = String(localized: "Через \(days) дн. — \(dateText)")
+                } else {
+                    subtitle = dateText
+                }
+                return AnalyticsAnnualRow(item: item, chargeState: .found(date),
+                    subtitle: subtitle, projectionError: nil)
+            } catch {
+                return AnalyticsAnnualRow(item: item, chargeState: .unavailable,
+                    subtitle: String(localized: "analytics.annual.unavailable"), projectionError: error)
+            }
+        }.sorted { lhs, rhs in
+            switch (lhs.chargeState, rhs.chargeState) {
+            case let (.found(left), .found(right)) where left != right: return left < right
+            case (.found, .unavailable), (.found, .absent), (.unavailable, .absent): return true
+            case (.unavailable, .found), (.absent, .found), (.absent, .unavailable): return false
+            default: return lhs.id.uuidString < rhs.id.uuidString
+            }
         }
     }
+
+    private static let annualDateFormatter: DateFormatter = {
+        let formatter = PresentationLocale.dateFormatter(template: "d MMMM", calendar: BillingCivilDay.calendar)
+        formatter.timeZone = .gmt
+        return formatter
+    }()
 
     private func aggregateMonthly(
         _ items: [RecurringItem],
