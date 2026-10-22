@@ -71,6 +71,7 @@
 		3E6405A4F0A59A5EF54A5056 /* GetUpcomingCharges.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AE23A399CED2B38971BCB57 /* GetUpcomingCharges.swift */; };
 		C105A1000000000000000001 /* GetCalendarSchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C105A1000000000000000002 /* GetCalendarSchedule.swift */; };
 		A101A1000000000000000001 /* GetAnalyticsForecast.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101A1000000000000000002 /* GetAnalyticsForecast.swift */; };
+		A103A1000000000000000001 /* GetAnalyticsCurrentObligations.swift in Sources */ = {isa = PBXBuildFile; fileRef = A103A1000000000000000002 /* GetAnalyticsCurrentObligations.swift */; };
 		C105A1000000000000000003 /* CalendarScheduleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C105A1000000000000000004 /* CalendarScheduleTests.swift */; };
 		C105B1000000000000000001 /* CalendarPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = C105B1000000000000000002 /* CalendarPresentation.swift */; };
 		C105B1000000000000000003 /* CalendarDayCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C105B1000000000000000004 /* CalendarDayCell.swift */; };
@@ -384,6 +385,7 @@
 		6AE23A399CED2B38971BCB57 /* GetUpcomingCharges.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetUpcomingCharges.swift; sourceTree = "<group>"; };
 		C105A1000000000000000002 /* GetCalendarSchedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetCalendarSchedule.swift; sourceTree = "<group>"; };
 		A101A1000000000000000002 /* GetAnalyticsForecast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetAnalyticsForecast.swift; sourceTree = "<group>"; };
+		A103A1000000000000000002 /* GetAnalyticsCurrentObligations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetAnalyticsCurrentObligations.swift; sourceTree = "<group>"; };
 		C105A1000000000000000004 /* CalendarScheduleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarScheduleTests.swift; sourceTree = "<group>"; };
 		C105B1000000000000000002 /* CalendarPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarPresentation.swift; sourceTree = "<group>"; };
 		C105B1000000000000000004 /* CalendarDayCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarDayCell.swift; sourceTree = "<group>"; };
@@ -1017,6 +1019,7 @@
 				6AE23A399CED2B38971BCB57 /* GetUpcomingCharges.swift */,
 				C105A1000000000000000002 /* GetCalendarSchedule.swift */,
 				A101A1000000000000000002 /* GetAnalyticsForecast.swift */,
+				A103A1000000000000000002 /* GetAnalyticsCurrentObligations.swift */,
 				AF405D32A4B2469385D24DBD /* OverviewInsightUseCase.swift */,
 				12205303AA4AF4D9AF33450A /* ResolveRegionalPlanPriceUseCase.swift */,
 				6937BB77EA2ED3E831320FCE /* SaveRecurringItem.swift */,
@@ -1560,6 +1563,7 @@
 				3E6405A4F0A59A5EF54A5056 /* GetUpcomingCharges.swift in Sources */,
 				C105A1000000000000000001 /* GetCalendarSchedule.swift in Sources */,
 				A101A1000000000000000001 /* GetAnalyticsForecast.swift in Sources */,
+				A103A1000000000000000001 /* GetAnalyticsCurrentObligations.swift in Sources */,
 				DB49E0177D4FD6870A3615B2 /* HapticEngine.swift in Sources */,
 				B0B92A81FC0E0D9E361E30DA /* HomeScreenState.swift in Sources */,
 				C7A695C4B22130DC3F0EF8EE /* HomeView.swift in Sources */,

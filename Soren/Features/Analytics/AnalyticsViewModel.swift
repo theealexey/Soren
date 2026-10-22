@@ -84,7 +84,7 @@ struct TopSpendRowModel: Identifiable {
 
 // MARK: - Analytics View Model
 
-/// Preserves the active normalized summary and an independent complete schedule
+/// Preserves the current-obligation normalized summary and an independent complete schedule
 /// population, sharing one exchange-rate snapshot per calculation revision.
 @MainActor @Observable
 final class AnalyticsViewModel {
@@ -99,7 +99,7 @@ final class AnalyticsViewModel {
 
     // MARK: - Dependencies
 
-    private let getActiveItems: GetActiveItems
+    private let getCurrentObligations: GetAnalyticsCurrentObligations
     private let getForecast: GetAnalyticsForecast
     private let preferences: UserPreferencesRepository
     private let aggregateRecurringSpend: AggregateRecurringSpendUseCase
@@ -127,7 +127,7 @@ final class AnalyticsViewModel {
     // MARK: - Init
 
     init(
-        getActiveItems: GetActiveItems,
+        getCurrentObligations: GetAnalyticsCurrentObligations,
         getForecast: GetAnalyticsForecast,
         preferences: UserPreferencesRepository = UserPreferencesRepository(),
         aggregateRecurringSpend: AggregateRecurringSpendUseCase = AggregateRecurringSpendUseCase(),
@@ -135,7 +135,7 @@ final class AnalyticsViewModel {
         now: @escaping () -> Date = { .now },
         timeZone: @escaping () -> TimeZone = { .current }
     ) {
-        self.getActiveItems = getActiveItems
+        self.getCurrentObligations = getCurrentObligations
         self.getForecast = getForecast
         self.preferences = preferences
         self.aggregateRecurringSpend = aggregateRecurringSpend
@@ -155,10 +155,10 @@ final class AnalyticsViewModel {
 
         do {
             reportingCurrencyCode = preferences.load().defaultCurrencyCode
-            let activeItems = try getActiveItems.execute()
             let localToday = try BillingCivilDay.civilDate(containing: now(), in: timeZone())
+            let currentObligations = try getCurrentObligations.execute(today: localToday)
             let forecast = try getForecast.execute(today: localToday)
-            items = activeItems
+            items = currentObligations
             self.forecast = forecast
             calculationToday = localToday
             rebuildScreenState(snapshot: nil, today: localToday)

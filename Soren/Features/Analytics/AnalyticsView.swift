@@ -115,8 +115,7 @@ struct AnalyticsView: View {
             HStack(spacing: Spacing.xs) {
                 metricChip(
                     icon: "repeat",
-                    value: "\(state.summary.activeItemCount)",
-                    label: String(localized: "активных")
+                    text: state.includedCountLabel()
                 )
 
                 if state.summary.activeTrialCount > 0 {

@@ -1,6 +1,12 @@
 {
   "sourceLanguage" : "ru",
   "strings" : {
+    "analytics.includedCount %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Included: %@" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Учтено: %@" } }
+      }
+    },
     "analytics.annual.notScheduled" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Not scheduled" } },

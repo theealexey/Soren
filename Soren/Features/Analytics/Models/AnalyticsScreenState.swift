@@ -18,8 +18,8 @@ struct AnalyticsAnnualRow: Identifiable {
 // MARK: - Analytics Screen State
 
 /// Complete value-type snapshot of all Analytics tab outputs.
-/// Built atomically by AnalyticsViewModel. Normalized summary uses the existing
-/// active population; forecast uses all canonical schedule candidates.
+/// Built atomically by AnalyticsViewModel. Normalized sections use current
+/// non-trial obligations; forecast uses all canonical schedule candidates.
 ///
 /// Mirrors the HomeScreenState pattern: ViewModel exposes one state root;
 /// AnalyticsView reads exclusively from screenState.
@@ -42,6 +42,13 @@ struct AnalyticsScreenState {
     /// Pre-computed total monthly cost of unused items.
     /// Stored rather than computed to avoid requiring exchange-rate access on the struct.
     let unusedMonthlyCost: Decimal?
+
+    var includedItemCount: Int { summary.activeItemCount }
+
+    func includedCountLabel(locale: Locale = PresentationLocale.current, bundle: Bundle = .main) -> String {
+        let count = includedItemCount.formatted(.number.locale(locale))
+        return String(localized: "analytics.includedCount \(count)", bundle: bundle, locale: locale)
+    }
 
     /// Empty is a source-data fact, never an alias for failed FX aggregation.
     var isEmpty: Bool {

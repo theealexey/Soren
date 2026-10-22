@@ -146,7 +146,8 @@ struct DatingCatalogTests {
             category: .dating,
             amount: 10,
             currencyCode: "USD",
-            nextChargeDate: .now
+            startDate: BillingCivilDay.calendar.startOfDay(for: .now),
+            nextChargeDate: BillingCivilDay.calendar.startOfDay(for: .now)
         )
         let repository = DatingAnalyticsRepository(items: [item])
         let rateDate = Date(timeIntervalSince1970: 1_700_000_000)
@@ -157,7 +158,7 @@ struct DatingCatalogTests {
             fetchedAt: rateDate
         ))
         let viewModel = AnalyticsViewModel(
-            getActiveItems: GetActiveItems(repository: repository),
+            getCurrentObligations: GetAnalyticsCurrentObligations(repository: repository),
             getForecast: GetAnalyticsForecast(repository: repository),
             preferences: preferences,
             exchangeRateProvider: rateProvider
