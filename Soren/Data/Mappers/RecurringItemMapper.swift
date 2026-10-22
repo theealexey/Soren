@@ -21,7 +21,7 @@ enum RecurringItemMapper {
             category: ItemCategory(rawValue: sd.categoryRaw) ?? .other,
             amount: sd.amountValue,
             currencyCode: sd.currencyCode,
-            billingCycle: BillingCycleEncoder.decode(sd.billingCycleRaw),
+            billingCycle: try BillingCycleEncoder.decode(sd.billingCycleRaw),
             startDate: dates.startDate,
             nextChargeDate: dates.nextChargeDate,
             trialEndDate: dates.trialEndDate,
@@ -145,6 +145,9 @@ enum RecurringItemMapper {
 /// Encodes BillingCycle to/from a stable string.
 /// Uses simple string format: "weekly", "monthly", "custom:30"
 enum BillingCycleEncoder {
+    enum DecodingError: Error, Equatable {
+        case invalidCustomCycle(String)
+    }
 
     static func encode(_ cycle: BillingCycle) -> String {
         switch cycle {
@@ -157,21 +160,22 @@ enum BillingCycleEncoder {
         }
     }
 
-    static func decode(_ raw: String) -> BillingCycle {
+    static func decode(_ raw: String) throws -> BillingCycle {
         switch raw {
-        case "weekly":      .weekly
-        case "monthly":     .monthly
-        case "quarterly":   .quarterly
-        case "semiannual":  .semiannual
-        case "annual":      .annual
+        case "weekly":      return .weekly
+        case "monthly":     return .monthly
+        case "quarterly":   return .quarterly
+        case "semiannual":  return .semiannual
+        case "annual":      return .annual
         default:
-            if raw.hasPrefix("custom:"),
-               let daysStr = raw.split(separator: ":").last,
-               let days = Int(daysStr), days > 0 {
-                .custom(days: days)
-            } else {
-                .monthly  // safe fallback
+            if raw == "custom" || raw.hasPrefix("custom:") {
+                guard raw.hasPrefix("custom:"),
+                      let days = Int(raw.dropFirst("custom:".count)), days > 0 else {
+                    throw DecodingError.invalidCustomCycle(raw)
+                }
+                return .custom(days: days)
             }
+            return .monthly  // Existing policy for unrelated unknown encodings.
         }
     }
 }

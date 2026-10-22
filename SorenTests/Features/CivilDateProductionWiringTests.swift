@@ -7,6 +7,33 @@ private enum CivilWiringFailure: Error { case bootstrap, validation, opening }
 
 @MainActor
 struct CivilDateStartupTests {
+    @Test func malformedCustomCycleBlocksAndRetriesWithoutStoreMutation() throws {
+        let container = try SorenModelContainer.inMemory()
+        let row = try RecurringItemMapper.toSD(canonicalTestItem())
+        row.billingCycleRaw = "custom:0"
+        let originalDates = [row.startDate, row.nextChargeDate]
+        let context = ModelContext(container)
+        context.autosaveEnabled = false
+        context.insert(row)
+        try context.save()
+        var opens = 0
+        let state = AppState(openStore: { opens += 1; return container }, interpretationTimeZone: .gmt)
+        for _ in 0..<2 {
+            #expect(state.preparationState == .civilDateBlocked)
+            #expect(state.appContainer == nil)
+            #expect(state.modelContainer === container)
+            #expect(state.preparationError as? BillingCycleEncoder.DecodingError == .invalidCustomCycle("custom:0"))
+            state.recoverWithReset() // Blocked validation must not permit the store-reset path.
+            let stored = try ModelContext(container).fetch(FetchDescriptor<SDRecurringItem>())
+            let preserved = try #require(stored.first)
+            #expect(stored.count == 1)
+            #expect(preserved.billingCycleRaw == "custom:0")
+            #expect([preserved.startDate, preserved.nextChargeDate] == originalDates)
+            state.prepare()
+        }
+        #expect(opens == 1)
+    }
+
     @Test func validatesSameRepositoryBeforePublication() throws {
         let container = try SorenModelContainer.inMemory()
         var order: [String] = []

@@ -5,6 +5,30 @@ import Foundation
 @Suite("SaveRecurringItem notification reconciliation")
 @MainActor
 struct SaveRecurringItemNotificationTests {
+    @Test("Save rejects invalid custom cycles before persistence or reconciliation", arguments: [0, -1])
+    func invalidCustomCycle(days: Int) async throws {
+        let fixture = try InMemoryPersistenceFixture()
+        let coordinator = NotificationReconciliationSpy()
+        var subscription = item()
+        subscription.billingCycle = .custom(days: days)
+        await #expect(throws: BillingCycle.ValidationError.invalidCustomDays(days)) {
+            try await SaveRecurringItem(repository: fixture.recurringItems, notificationCoordinator: coordinator).execute(subscription)
+        }
+        #expect(try fixture.recurringItems.fetchAll().isEmpty)
+        #expect(coordinator.callCount == 0)
+    }
+
+    @Test("Save preserves valid standard and custom cycles", arguments: BillingCycle.allCases + [
+        .custom(days: 1), .custom(days: 30), .custom(days: 365)
+    ])
+    func validBillingCycle(cycle: BillingCycle) async throws {
+        let fixture = try InMemoryPersistenceFixture()
+        var subscription = item()
+        subscription.billingCycle = cycle
+        _ = try await SaveRecurringItem(repository: fixture.recurringItems).execute(subscription)
+        #expect(try fixture.recurringItems.fetch(id: subscription.id)?.billingCycle == cycle)
+    }
+
     private func item(title: String = "Spotify", amount: Decimal = 299) -> RecurringItem {
         RecurringItem(title: title, amount: amount, startDate: Date(timeIntervalSinceReferenceDate: 0), nextChargeDate: .distantFuture)
     }

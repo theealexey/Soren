@@ -11,6 +11,16 @@ enum BillingCycle: Codable, Hashable, Sendable {
 }
 
 extension BillingCycle {
+    enum ValidationError: Error, Equatable {
+        case invalidCustomDays(Int)
+    }
+
+    func validate() throws {
+        if case let .custom(days) = self, days <= 0 {
+            throw ValidationError.invalidCustomDays(days)
+        }
+    }
+
     /// Approximate number of days in one cycle.
     var approximateDays: Int {
         switch self {

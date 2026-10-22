@@ -8,73 +8,97 @@ struct BillingCycleEncoderTests {
     // MARK: - Round-trip
 
     @Test("Weekly round-trips correctly", arguments: [BillingCycle.weekly])
-    func weeklyRoundTrip(cycle: BillingCycle) {
+    func weeklyRoundTrip(cycle: BillingCycle) throws {
         let encoded = BillingCycleEncoder.encode(cycle)
-        let decoded = BillingCycleEncoder.decode(encoded)
+        let decoded = try BillingCycleEncoder.decode(encoded)
         #expect(decoded == cycle)
     }
 
     @Test("All standard cycles round-trip without data loss")
-    func allStandardCyclesRoundTrip() {
+    func allStandardCyclesRoundTrip() throws {
         let cycles: [BillingCycle] = [.weekly, .monthly, .quarterly, .semiannual, .annual]
         for cycle in cycles {
-            let decoded = BillingCycleEncoder.decode(BillingCycleEncoder.encode(cycle))
+            let decoded = try BillingCycleEncoder.decode(BillingCycleEncoder.encode(cycle))
             #expect(decoded == cycle, "Failed round-trip for \(cycle)")
         }
     }
 
     @Test("Custom cycle round-trips with correct day count")
-    func customCycleRoundTrip() {
+    func customCycleRoundTrip() throws {
         let cycle = BillingCycle.custom(days: 45)
         let encoded = BillingCycleEncoder.encode(cycle)
-        let decoded = BillingCycleEncoder.decode(encoded)
+        let decoded = try BillingCycleEncoder.decode(encoded)
         #expect(decoded == cycle)
     }
 
     @Test("Custom cycle with 1 day round-trips")
-    func customOneDayRoundTrip() {
+    func customOneDayRoundTrip() throws {
         let cycle = BillingCycle.custom(days: 1)
-        #expect(BillingCycleEncoder.decode(BillingCycleEncoder.encode(cycle)) == cycle)
+        #expect(try BillingCycleEncoder.decode(BillingCycleEncoder.encode(cycle)) == cycle)
     }
 
     @Test("Custom cycle with large day count round-trips")
-    func customLargeDaysRoundTrip() {
+    func customLargeDaysRoundTrip() throws {
         let cycle = BillingCycle.custom(days: 999)
-        #expect(BillingCycleEncoder.decode(BillingCycleEncoder.encode(cycle)) == cycle)
+        #expect(try BillingCycleEncoder.decode(BillingCycleEncoder.encode(cycle)) == cycle)
     }
 
     // MARK: - Decode edge cases
 
     @Test("Unknown raw value falls back to monthly")
-    func unknownRawFallsBackToMonthly() {
-        let decoded = BillingCycleEncoder.decode("unknown_garbage")
+    func unknownRawFallsBackToMonthly() throws {
+        let decoded = try BillingCycleEncoder.decode("unknown_garbage")
         #expect(decoded == .monthly)
     }
 
     @Test("Empty string falls back to monthly")
-    func emptyStringFallback() {
-        #expect(BillingCycleEncoder.decode("") == .monthly)
+    func emptyStringFallback() throws {
+        #expect(try BillingCycleEncoder.decode("") == .monthly)
     }
 
-    @Test("custom: prefix without number falls back to monthly")
+    @Test("custom: prefix without number throws a typed error")
     func customPrefixNoNumber() {
-        #expect(BillingCycleEncoder.decode("custom:") == .monthly)
+        #expect(throws: BillingCycleEncoder.DecodingError.invalidCustomCycle("custom:")) {
+            try BillingCycleEncoder.decode("custom:")
+        }
     }
 
-    @Test("custom: prefix with zero days falls back to monthly")
+    @Test("custom: prefix with zero days throws a typed error")
     func customZeroDaysFallback() {
         // days must be > 0 to be valid
-        #expect(BillingCycleEncoder.decode("custom:0") == .monthly)
+        #expect(throws: BillingCycleEncoder.DecodingError.invalidCustomCycle("custom:0")) {
+            try BillingCycleEncoder.decode("custom:0")
+        }
     }
 
-    @Test("custom: prefix with negative number falls back to monthly")
+    @Test("custom: prefix with negative number throws a typed error")
     func customNegativeDaysFallback() {
-        #expect(BillingCycleEncoder.decode("custom:-5") == .monthly)
+        #expect(throws: BillingCycleEncoder.DecodingError.invalidCustomCycle("custom:-5")) {
+            try BillingCycleEncoder.decode("custom:-5")
+        }
     }
 
-    @Test("custom: with non-integer value falls back to monthly")
+    @Test("custom: with non-integer value throws a typed error")
     func customNonIntegerFallback() {
-        #expect(BillingCycleEncoder.decode("custom:abc") == .monthly)
+        #expect(throws: BillingCycleEncoder.DecodingError.invalidCustomCycle("custom:abc")) {
+            try BillingCycleEncoder.decode("custom:abc")
+        }
+    }
+
+    @Test("Malformed and overflowing custom encodings never become monthly", arguments: [
+        "custom", "custom:1:2", "custom:1.5", "custom:999999999999999999999999999999999999"
+    ])
+    func invalidCustomPayload(raw: String) {
+        #expect(throws: BillingCycleEncoder.DecodingError.invalidCustomCycle(raw)) {
+            try BillingCycleEncoder.decode(raw)
+        }
+    }
+
+    @Test("Positive custom days retain the persisted representation", arguments: [1, 30, 365])
+    func validCustomDays(days: Int) throws {
+        let raw = "custom:\(days)"
+        #expect(BillingCycleEncoder.encode(.custom(days: days)) == raw)
+        #expect(try BillingCycleEncoder.decode(raw) == .custom(days: days))
     }
 
     @Test("Encoded weekly is lowercase 'weekly'")

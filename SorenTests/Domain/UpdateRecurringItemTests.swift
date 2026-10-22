@@ -5,6 +5,37 @@ import Foundation
 @Suite("UpdateRecurringItem notification reconciliation")
 @MainActor
 struct UpdateRecurringItemSchedulingTests {
+    @Test("Rejected custom-cycle update leaves the original row unchanged", arguments: [0, -1])
+    func invalidCustomCycle(days: Int) async throws {
+        let fixture = try InMemoryPersistenceFixture()
+        let original = RecurringItem(title: "Original", amount: 299,
+            startDate: Date(timeIntervalSinceReferenceDate: 0), nextChargeDate: .distantFuture)
+        try fixture.recurringItems.save(original)
+        var changed = original
+        changed.title = "Must not persist"
+        changed.amount = 999
+        changed.billingCycle = .custom(days: days)
+        let coordinator = NotificationReconciliationSpy()
+        await #expect(throws: BillingCycle.ValidationError.invalidCustomDays(days)) {
+            try await UpdateRecurringItem(repository: fixture.recurringItems, notificationCoordinator: coordinator).execute(changed)
+        }
+        #expect(try fixture.recurringItems.fetch(id: original.id) == original)
+        #expect(coordinator.callCount == 0)
+    }
+
+    @Test("Update preserves valid standard and custom cycles", arguments: BillingCycle.allCases + [
+        .custom(days: 1), .custom(days: 30), .custom(days: 365)
+    ])
+    func validBillingCycle(cycle: BillingCycle) async throws {
+        let fixture = try InMemoryPersistenceFixture()
+        var subscription = RecurringItem(title: "Original", amount: 299,
+            startDate: Date(timeIntervalSinceReferenceDate: 0), nextChargeDate: .distantFuture)
+        try fixture.recurringItems.save(subscription)
+        subscription.billingCycle = cycle
+        _ = try await UpdateRecurringItem(repository: fixture.recurringItems).execute(subscription)
+        #expect(try fixture.recurringItems.fetch(id: subscription.id)?.billingCycle == cycle)
+    }
+
     @Test("update persists first and awaits complete reconciliation")
     func updateReconciles() async throws {
         let fixture = try InMemoryPersistenceFixture()

@@ -26,6 +26,7 @@ struct UpdateRecurringItem {
     /// complete desired notification state from fresh repository data.
     @discardableResult
     func execute(_ item: RecurringItem) async throws -> UpdateRecurringItemResult {
+        try item.billingCycle.validate()
         var normalized = normalize(item)
         try validate(normalized)
         try item.validateCanonicalBillingDates()

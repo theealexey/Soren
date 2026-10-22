@@ -11,6 +11,34 @@ import SwiftData
 @Suite("RecurringItemRepository")
 @MainActor
 struct RecurringItemRepositoryTests {
+    @Test("Repository reads propagate malformed custom cycles without skipping or rewriting rows", arguments: [
+        "custom:0", "custom:-1", "custom:", "custom:abc", "custom:1:2",
+        "custom:999999999999999999999999999999999999"
+    ])
+    func malformedCustomCycleRead(raw: String) throws {
+        let fixture = try makeFixture()
+        let valid = makeItem(title: "Valid")
+        try fixture.recurringItems.save(valid)
+        let damaged = try RecurringItemMapper.toSD(makeItem(title: "Damaged"))
+        damaged.billingCycleRaw = raw
+        let context = ModelContext(fixture.modelContainer)
+        context.autosaveEnabled = false
+        context.insert(damaged)
+        try context.save()
+        let expected = BillingCycleEncoder.DecodingError.invalidCustomCycle(raw)
+        #expect(throws: expected) { try fixture.recurringItems.fetchAll() }
+        #expect(throws: expected) { try fixture.recurringItems.fetchActive() }
+        #expect(throws: expected) { try fixture.recurringItems.fetch(id: damaged.id) }
+        #expect(throws: expected) { try fixture.recurringItems.fetchByCategory(.video) }
+        #expect(throws: expected) {
+            try fixture.recurringItems.fetchUpcoming(within: 7, from: Date(timeIntervalSinceReferenceDate: 0))
+        }
+        #expect(try fixture.recurringItems.fetch(id: valid.id) == valid)
+        let stored = try ModelContext(fixture.modelContainer).fetch(FetchDescriptor<SDRecurringItem>())
+        #expect(stored.count == 2)
+        #expect(stored.first { $0.id == damaged.id }?.billingCycleRaw == raw)
+    }
+
 
     // MARK: - Helpers
 

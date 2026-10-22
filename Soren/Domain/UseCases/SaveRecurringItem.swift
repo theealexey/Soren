@@ -28,6 +28,7 @@ struct SaveRecurringItem {
 
     @discardableResult
     func execute(_ item: RecurringItem) async throws -> SaveRecurringItemResult {
+        try item.billingCycle.validate()
         let normalized = normalize(item)
         try validate(normalized)
         try item.validateCanonicalBillingDates()
