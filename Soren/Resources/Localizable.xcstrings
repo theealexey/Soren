@@ -1,6 +1,12 @@
 {
   "sourceLanguage" : "ru",
   "strings" : {
+    "analytics.recurringCost" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Recurring cost" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Регулярная стоимость" } }
+      }
+    },
     "normalization.unavailable" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Unable to calculate" } },

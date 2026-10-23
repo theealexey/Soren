@@ -40,10 +40,6 @@ struct RootView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if selectedTab == .insights {
-                SorenContextBar(tab: selectedTab) { contextBarTrailing }
-            }
-
             ZStack {
                 ForEach(AppTab.allCases) { tab in
                     // Opacity wrapper always exists — preserves crossfade animation.
@@ -69,7 +65,7 @@ struct RootView: View {
                 .frame(maxWidth: .infinity, alignment: .center)
         }
         .background {
-            if selectedTab == .overview || selectedTab == .subscriptions || selectedTab == .calendar {
+            if selectedTab == .overview || selectedTab == .subscriptions || selectedTab == .calendar || selectedTab == .insights {
                 SoftClubColor.canvas.ignoresSafeArea()
             } else {
                 ColorTokens.background.ignoresSafeArea()

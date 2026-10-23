@@ -1,30 +1,38 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 // MARK: - Analytics View
 
 /// Insights & Analytics tab.
 ///
-/// Sections:
-/// 1. Overview — monthly/yearly totals
-/// 2. Spending by category — stacked bar + category list
-/// 3. Top subscriptions — top 5 by monthly cost
-/// 4. Annual payments — big one-time lump sums to plan for
-/// 5. Unused — waste candidates with total savings potential
+/// Presentation of normalized current obligations and the independent canonical forecast.
 struct AnalyticsView: View {
     @Environment(AppContainer.self) private var container
     @Environment(\.navigateToItem) private var navigateToItem
     @State private var viewModel: AnalyticsViewModel?
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .largeTitle) private var titleSize = 32
+    @ScaledMetric(relativeTo: .largeTitle) private var monthlySize = 40
+    @ScaledMetric(relativeTo: .title2) private var annualSize = 22
+    @ScaledMetric(relativeTo: .subheadline) private var heroCaptionSize = 14
+    @ScaledMetric(relativeTo: .caption) private var metricCaptionSize = 13
 
     var body: some View {
-        Group {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Аналитика")
+                .font(.system(size: titleSize, weight: .semibold))
+                .foregroundStyle(SoftClubColor.textPrimary)
+                .accessibilityAddTraits(.isHeader)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 16)
             if let vm = viewModel {
                 analyticsContent(vm)
             } else {
                 LoadingStateView()
             }
         }
-        .background(ColorTokens.background)
+        .background(SoftClubColor.canvas)
         .task {
             guard viewModel == nil else { return }
             let vm = container.makeAnalyticsViewModel()
@@ -75,19 +83,22 @@ struct AnalyticsView: View {
             LazyVStack(alignment: .leading, spacing: Spacing.lg) {
                 overviewSection(state)
 
-                if state.forecastMonths.count == 6 {
-                    forecastSection(state)
-                }
-
                 if state.normalizationError != nil {
-                    normalizedSectionUnavailable("По категориям")
                     normalizedSectionUnavailable("Топ подписки")
-                } else if !state.categoryBreakdown.isEmpty {
-                    categorySection(state)
                 }
 
                 if !state.topItems.isEmpty {
                     topItemsSection(state)
+                }
+
+                if state.normalizationError != nil {
+                    normalizedSectionUnavailable("По категориям")
+                } else if !state.categoryBreakdown.isEmpty {
+                    categorySection(state)
+                }
+
+                if state.forecastMonths.count == 6 {
+                    forecastSection(state)
                 }
 
                 if !state.annualItems.isEmpty {
@@ -98,7 +109,7 @@ struct AnalyticsView: View {
                     unusedSection(state)
                 }
             }
-            .padding(.vertical, Spacing.md)
+            .padding(.bottom, 16)
         }
         .scrollIndicators(.hidden)
     }
@@ -106,88 +117,104 @@ struct AnalyticsView: View {
     // MARK: - 1. Overview
 
     private func overviewSection(_ state: AnalyticsScreenState) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader(String(localized: "Обзор"))
-                .padding(.horizontal, Spacing.lg)
+        AnalyticsSurface(inset: 20) {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                Text("analytics.recurringCost")
+                    .font(.system(size: heroCaptionSize, weight: .medium))
+                    .foregroundStyle(SoftClubColor.textSecondary)
 
-            overviewCards(state)
+                overviewCards(state)
 
-            aggregationStatus(state.monthlyAggregation)
-                .padding(.horizontal, Spacing.lg)
+                aggregationStatus(state.monthlyAggregation)
 
-            HStack(spacing: Spacing.xs) {
-                metricChip(
-                    icon: "repeat",
-                    text: state.includedCountLabel()
-                )
-
-                if state.summary.activeTrialCount > 0 {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
                     metricChip(
-                        icon: "clock",
-                        text: RecurringItemFormatter.trialCountLabel(count: state.summary.activeTrialCount)
+                        icon: "repeat",
+                        text: state.includedCountLabel()
                     )
-                }
 
-                if !state.unusedItems.isEmpty {
-                    metricChip(
-                        icon: "exclamationmark.circle",
-                        value: "\(state.unusedItems.count)",
-                        label: String(localized: "неиспользуемых"),
-                        isWarning: true
-                    )
+                    if state.summary.activeTrialCount > 0 {
+                        metricChip(
+                            icon: "clock",
+                            text: RecurringItemFormatter.trialCountLabel(count: state.summary.activeTrialCount)
+                        )
+                    }
+
+                    if !state.unusedItems.isEmpty {
+                        metricChip(
+                            icon: "exclamationmark.circle",
+                            value: "\(state.unusedItems.count)",
+                            label: String(localized: "неиспользуемых"),
+                            isWarning: true
+                        )
+                    }
                 }
             }
-            .padding(.horizontal, Spacing.lg)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(minHeight: 152)
+        .padding(.horizontal, 20)
     }
 
     private func overviewCards(_ state: AnalyticsScreenState) -> some View {
-        HStack(spacing: Spacing.sm) {
-            PremiumCard(.elevated) {
-                if let total = state.monthlyAggregation?.total {
-                    StatBlock(
-                        title: "В месяц",
-                        amount: total.amount,
-                        currency: total.currencyCode,
-                        normalized: true
+        ViewThatFits(in: .horizontal) {
+            if !dynamicTypeSize.isAccessibilitySize {
+                HStack(alignment: .bottom, spacing: 20) {
+                    heroMetric(
+                        state.monthlyAggregation, title: "В месяц", size: monthlySize,
+                        failed: state.normalizationError != nil
                     )
-                } else {
-                    unavailableStat(title: "В месяц", normalizationFailed: state.normalizationError != nil)
+                    .layoutPriority(1)
+                    .fixedSize(horizontal: true, vertical: true)
+                    Spacer(minLength: 0)
+                    heroMetric(
+                        state.annualAggregation, title: "В год", size: annualSize,
+                        failed: state.normalizationError != nil
+                    )
+                    .fixedSize(horizontal: true, vertical: true)
                 }
             }
-
-            PremiumCard(.elevated) {
-                if let total = state.annualAggregation?.total {
-                    StatBlock(
-                        title: "В год",
-                        amount: total.amount,
-                        currency: total.currencyCode,
-                        normalized: true
-                    )
-                } else {
-                    unavailableStat(title: "В год", normalizationFailed: state.normalizationError != nil)
-                }
+            VStack(alignment: .leading, spacing: 16) {
+                heroMetric(
+                    state.monthlyAggregation, title: "В месяц", size: monthlySize,
+                    failed: state.normalizationError != nil)
+                heroMetric(
+                    state.annualAggregation, title: "В год", size: annualSize,
+                    failed: state.normalizationError != nil)
             }
         }
-        .padding(.horizontal, Spacing.lg)
     }
 
-    private func unavailableStat(title: LocalizedStringKey, normalizationFailed: Bool = false) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.xxs) {
-            Text(title)
-                .overlineStyle()
-            Text(verbatim: normalizationFailed ? String(localized: "normalization.unavailable") : "—")
-                .font(normalizationFailed ? Typography.footnote : Typography.amountLarge)
-                .foregroundStyle(ColorTokens.textTertiary)
+    private func heroMetric(
+        _ aggregation: RecurringSpendAggregationResult?, title: LocalizedStringKey,
+        size: CGFloat, failed: Bool
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).font(.system(size: metricCaptionSize)).foregroundStyle(
+                SoftClubColor.textSecondary)
+            if let total = aggregation?.total {
+                Text(
+                    NormalizedMoneyFormatter.string(amount: total.amount, currencyCode: total.currencyCode)
+                )
+                .font(.system(size: size)).monospacedDigit()
+                .foregroundStyle(SoftClubColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+                if case .partial = aggregation {
+                    Text("Частично").font(.caption).foregroundStyle(SoftClubColor.textSecondary)
+                }
+            } else {
+                Text(verbatim: failed ? String(localized: "normalization.unavailable") : "—")
+                    .font(.body).foregroundStyle(SoftClubColor.textSecondary)
+            }
         }
+        .accessibilityElement(children: .combine)
     }
 
     private func normalizedSectionUnavailable(_ title: String) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader(title)
+        AnalyticsSurface(title: title) {
             Text(String(localized: "normalization.unavailable"))
-                .font(Typography.footnote)
-                .foregroundStyle(ColorTokens.textSecondary)
+                .font(.footnote)
+                .foregroundStyle(SoftClubColor.textSecondary)
         }
         .padding(.horizontal, Spacing.lg)
     }
@@ -195,28 +222,30 @@ struct AnalyticsView: View {
     @ViewBuilder
     private func aggregationStatus(_ aggregation: RecurringSpendAggregationResult?) -> some View {
         if let aggregation {
-            VStack(alignment: .leading, spacing: Spacing.xxxs) {
-                switch aggregation {
-                case let .complete(_, metadata):
-                    staleRateLabel(metadata)
+            switch aggregation {
+            case .complete(_, let metadata):
+                staleRateLabel(metadata)
 
-                case let .partial(_, missingCodes, metadata):
+            case .partial(_, let missingCodes, let metadata):
+                VStack(alignment: .leading, spacing: Spacing.xxxs) {
                     Text(String(localized: "Частично"))
-                        .font(Typography.footnote)
+                        .font(.footnote)
                         .foregroundStyle(ColorTokens.warning)
                     Text(String(localized: "Нет курсов для \(missingCodes.joined(separator: ", "))"))
-                        .font(Typography.footnote)
+                        .font(.footnote)
                         .foregroundStyle(ColorTokens.warning)
                     staleRateLabel(metadata)
+                }
 
-                case let .unavailable(_, missingCodes, _, metadata):
+            case .unavailable(_, let missingCodes, _, let metadata):
+                VStack(alignment: .leading, spacing: Spacing.xxxs) {
                     Text(String(localized: "Курсы валют недоступны"))
-                        .font(Typography.footnote)
-                        .foregroundStyle(ColorTokens.textTertiary)
+                        .font(.footnote)
+                        .foregroundStyle(SoftClubColor.textSecondary)
                     if !missingCodes.isEmpty {
                         Text(String(localized: "Нет курсов для \(missingCodes.joined(separator: ", "))"))
-                            .font(Typography.footnote)
-                            .foregroundStyle(ColorTokens.textTertiary)
+                            .font(.footnote)
+                            .foregroundStyle(SoftClubColor.textSecondary)
                     }
                     staleRateLabel(metadata)
                 }
@@ -228,7 +257,7 @@ struct AnalyticsView: View {
     private func staleRateLabel(_ metadata: SpendAggregationRateMetadata?) -> some View {
         if let metadata, case .stale = metadata.freshness {
             Text(String(localized: "По сохранённому курсу"))
-                .font(Typography.footnote)
+                .font(.footnote)
                 .foregroundStyle(ColorTokens.warning)
         }
     }
@@ -243,10 +272,11 @@ struct AnalyticsView: View {
         HStack(spacing: Spacing.xxs) {
             Image(systemName: icon)
                 .font(.system(size: 12, weight: .medium))
+                .accessibilityHidden(true)
             Text(verbatim: value)
-                .font(Typography.captionMedium)
+                .font(.system(.caption, weight: .medium))
             Text(verbatim: label)
-                .font(Typography.caption)
+                .font(.caption)
         }
         .foregroundStyle(isWarning ? ColorTokens.warning : ColorTokens.textSecondary)
         .padding(.horizontal, Spacing.sm)
@@ -255,6 +285,7 @@ struct AnalyticsView: View {
             (isWarning ? ColorTokens.warning : ColorTokens.textSecondary).opacity(0.1),
             in: Capsule()
         )
+        .accessibilityElement(children: .combine)
     }
 
     /// Single-text chip: icon + one pre-composed localized string (e.g. "3 пробных").
@@ -268,8 +299,9 @@ struct AnalyticsView: View {
         HStack(spacing: Spacing.xxs) {
             Image(systemName: icon)
                 .font(.system(size: 12, weight: .medium))
+                .accessibilityHidden(true)
             Text(verbatim: text)
-                .font(Typography.captionMedium)
+                .font(.system(.caption, weight: .medium))
         }
         .foregroundStyle(isWarning ? ColorTokens.warning : ColorTokens.textSecondary)
         .padding(.horizontal, Spacing.sm)
@@ -278,24 +310,38 @@ struct AnalyticsView: View {
             (isWarning ? ColorTokens.warning : ColorTokens.textSecondary).opacity(0.1),
             in: Capsule()
         )
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - 2. Spending Forecast
 
     private func forecastSection(_ state: AnalyticsScreenState) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader(String(localized: "Прогноз на 6 месяцев"))
-                .padding(.horizontal, Spacing.lg)
-
-            PremiumCard {
+        AnalyticsSurface(title: String(localized: "Прогноз на 6 месяцев")) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("overview.monthlyPlan.scheduled")
+                    .font(.caption).foregroundStyle(SoftClubColor.textSecondary)
                 if state.monthlyProjections.isEmpty {
-                    if state.forecastMonths.contains(where: { $0.schedule.monetaryCompleteness == .unavailable }) {
+                    if state.forecastMonths.contains(where: {
+                        $0.schedule.monetaryCompleteness == .unavailable
+                    }) {
                         Text(String(localized: "Прогноз недоступен"))
-                            .font(Typography.footnote)
-                            .foregroundStyle(ColorTokens.textTertiary)
+                            .font(.footnote)
+                            .foregroundStyle(SoftClubColor.textSecondary)
                     }
                     if let incomplete = state.forecastMonths.first(where: { !$0.aggregation.isComplete }) {
                         aggregationStatus(incomplete.aggregation)
+                    }
+                } else if dynamicTypeSize.isAccessibilitySize {
+                    ForEach(state.monthlyProjections) { projection in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(projection.shortLabel).font(.headline)
+                            Text(
+                                AnalyticsPresentation.forecastAmount(
+                                    projection.total, currency: state.defaultCurrency)
+                            )
+                            .font(.body).monospacedDigit()
+                        }
+                        .accessibilityElement(children: .combine)
                     }
                 } else {
                     Chart(state.monthlyProjections) { proj in
@@ -307,9 +353,11 @@ struct AnalyticsView: View {
                         .cornerRadius(6)
                         .annotation(position: .top, alignment: .center) {
                             if proj.doubleTotal > 0 {
-                                Text(compactAmount(proj.total, currency: state.defaultCurrency))
-                                    .font(.system(size: 10, weight: .medium))
-                                    .foregroundStyle(ColorTokens.textSecondary)
+                                Text(
+                                    AnalyticsPresentation.forecastAmount(proj.total, currency: state.defaultCurrency)
+                                )
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(SoftClubColor.textSecondary)
                             }
                         }
                     }
@@ -321,195 +369,177 @@ struct AnalyticsView: View {
                                 .foregroundStyle(ColorTokens.textSecondary)
                         }
                     }
-                    .frame(height: 160)
+                    .frame(height: 168)
                     .padding(.top, Spacing.xs)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(Text("Прогноз на 6 месяцев"))
+                    .accessibilityValue(
+                        state.monthlyProjections.map {
+                            $0.shortLabel + ": "
+                                + AnalyticsPresentation.forecastAmount($0.total, currency: state.defaultCurrency)
+                        }.joined(separator: "; "))
                 }
             }
-            .padding(.horizontal, Spacing.lg)
         }
+        .padding(.horizontal, 20)
     }
-
-    private func compactAmount(_ amount: Decimal, currency: String) -> String {
-        let n = NSDecimalNumber(decimal: amount).doubleValue
-        Self.annotationFormatter.currencyCode = currency
-        let symbol = Self.annotationFormatter.currencySymbol ?? currency
-        if n >= 1_000_000 {
-            return String(format: "%.1fM %@", n / 1_000_000, symbol)
-        } else if n >= 1_000 {
-            return String(format: "%.0fK %@", n / 1_000, symbol)
-        }
-        return String(format: "%.0f %@", n, symbol)
-    }
-
-    private static let annotationFormatter: NumberFormatter = {
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        return f
-    }()
 
     // MARK: - 3. Category Breakdown
 
     private func categorySection(_ state: AnalyticsScreenState) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader(String(localized: "По категориям"))
-                .padding(.horizontal, Spacing.lg)
-
-            stackedBar(state.categoryBreakdown)
-                .padding(.horizontal, Spacing.lg)
-
-            PremiumCard {
-                VStack(spacing: Spacing.sm) {
-                    let maxProportion = state.categoryBreakdown.first?.proportion ?? 1
-                    ForEach(state.categoryBreakdown) { spend in
-                        categoryRow(spend, maxProportion: maxProportion, currency: state.defaultCurrency)
-                    }
-                }
-            }
-            .padding(.horizontal, Spacing.lg)
-        }
-    }
-
-    private func stackedBar(_ breakdown: [CategorySpend]) -> some View {
-        GeometryReader { proxy in
-            HStack(spacing: 2) {
-                ForEach(breakdown.prefix(8)) { spend in
-                    spend.category.color
-                        .frame(width: max(2, proxy.size.width * spend.proportion - 2))
+        AnalyticsSurface(title: String(localized: "По категориям")) {
+            VStack(spacing: Spacing.sm) {
+                ForEach(state.categoryBreakdown) { spend in
+                    categoryRow(spend, currency: state.defaultCurrency)
                 }
             }
         }
-        .frame(height: 8)
-        .clipShape(RoundedRectangle(cornerRadius: 4))
+        .padding(.horizontal, 20)
     }
 
     private func categoryRow(
         _ spend: CategorySpend,
-        maxProportion: Double,
         currency: String
     ) -> some View {
-        HStack(spacing: Spacing.sm) {
-            Image(systemName: spend.category.systemIconName)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(spend.category.color)
-                .frame(width: 20)
-
-            Text(spend.category.displayName)
-                .font(Typography.body)
-                .foregroundStyle(ColorTokens.textPrimary)
-                .lineLimit(1)
-                .frame(minWidth: 70, alignment: .leading)
-
-            GeometryReader { proxy in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(spend.category.color.opacity(0.12))
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(spend.category.color)
-                        .frame(width: max(4, proxy.size.width * (spend.proportion / maxProportion)))
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(spend.category.displayName).font(.body)
+                    categoryAmount(spend, currency: currency)
+                    categoryTrack(spend)
+                }
+            } else {
+                HStack(spacing: 12) {
+                    Image(systemName: spend.category.systemIconName)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(SoftClubColor.textSecondary)
+                        .frame(width: 20)
+                        .accessibilityHidden(true)
+                    Text(spend.category.displayName)
+                        .font(.body)
+                        .frame(minWidth: 70, alignment: .leading)
+                    categoryTrack(spend)
+                    categoryAmount(spend, currency: currency)
+                        .frame(minWidth: 70, alignment: .trailing)
                 }
             }
-            .frame(height: 6)
-
-            AmountLabel(spend.monthlyTotal, currency: currency, size: .small, normalized: true)
-                .frame(minWidth: 70, alignment: .trailing)
         }
+        .foregroundStyle(SoftClubColor.textPrimary)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func categoryAmount(_ spend: CategorySpend, currency: String) -> some View {
+        Text(NormalizedMoneyFormatter.string(amount: spend.monthlyTotal, currencyCode: currency))
+            .font(.subheadline).monospacedDigit()
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func categoryTrack(_ spend: CategorySpend) -> some View {
+        GeometryReader { proxy in
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(SoftClubColor.icyPrimary.opacity(0.12))
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(ColorTokens.accent.gradient)
+                    .frame(width: proxy.size.width * spend.proportion)
+            }
+        }
+        .frame(height: 6)
+        .accessibilityHidden(true)
     }
 
     // MARK: - 4. Top Subscriptions
 
     private func topItemsSection(_ state: AnalyticsScreenState) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader(String(localized: "Топ подписки"))
-                .padding(.horizontal, Spacing.lg)
+        AnalyticsSurface(title: String(localized: "Топ подписки")) {
+            VStack(spacing: 0) {
+                ForEach(Array(state.topItems.enumerated()), id: \.element.id) { idx, row in
+                    Button {
+                        navigateToItem(row.navigationItem)
+                    } label: {
+                        AnalyticsItemRow(
+                            title: row.title,
+                            subtitle: row.subtitle,
+                            amount: row.monthlyAmount,
+                            currency: row.currency,
+                            cycle: .monthly,
+                            providerTemplate: row.providerTemplate,
+                            category: row.category,
+                            normalized: true
+                        )
+                    }
+                    .buttonStyle(.plain)
 
-            PremiumCard {
-                VStack(spacing: 0) {
-                    ForEach(Array(state.topItems.enumerated()), id: \.element.id) { idx, row in
-                        Button { navigateToItem(row.navigationItem) } label: {
-                            SorenListRow(
-                                title: row.title,
-                                subtitle: row.subtitle,
-                                amount: row.monthlyAmount,
-                                currency: row.currency,
-                                cycle: .monthly,
-                                providerTemplate: row.providerTemplate,
-                                category: row.category,
-                                normalized: true
-                            )
-                        }
-                        .buttonStyle(.plain)
-
-                        if idx < state.topItems.count - 1 {
-                            Divider().padding(.leading, SorenListRow.dividerInset)
-                        }
+                    if idx < state.topItems.count - 1 {
+                        Divider().padding(.leading, SorenListRow.dividerInset)
                     }
                 }
             }
-            .padding(.horizontal, Spacing.lg)
         }
+        .padding(.horizontal, 20)
     }
 
     // MARK: - 5. Annual Payments
 
     private func annualSection(_ state: AnalyticsScreenState) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader(String(localized: "Годовые платежи"))
-                .padding(.horizontal, Spacing.lg)
+        AnalyticsSurface(title: String(localized: "Годовые платежи")) {
+            VStack(spacing: 0) {
+                ForEach(Array(state.annualItems.enumerated()), id: \.element.id) { idx, row in
+                    let item = row.item
+                    Button {
+                        navigateToItem(item)
+                    } label: {
+                        AnalyticsItemRow(
+                            title: item.title,
+                            subtitle: row.subtitle,
+                            amount: item.amount,
+                            currency: item.currencyCode,
+                            cycle: .yearly,
+                            providerTemplate: item.providerTemplate,
+                            category: item.category
+                        )
+                    }
+                    .buttonStyle(.plain)
 
-            PremiumCard {
-                VStack(spacing: 0) {
-                    ForEach(Array(state.annualItems.enumerated()), id: \.element.id) { idx, row in
-                        let item = row.item
-                        Button { navigateToItem(item) } label: {
-                            SorenListRow(
-                                title: item.title,
-                                subtitle: row.subtitle,
-                                amount: item.amount,
-                                currency: item.currencyCode,
-                                cycle: .yearly,
-                                providerTemplate: item.providerTemplate,
-                                category: item.category
-                            )
-                        }
-                        .buttonStyle(.plain)
-
-                        if idx < state.annualItems.count - 1 {
-                            Divider().padding(.leading, SorenListRow.dividerInset)
-                        }
+                    if idx < state.annualItems.count - 1 {
+                        Divider().padding(.leading, SorenListRow.dividerInset)
                     }
                 }
             }
-            .padding(.horizontal, Spacing.lg)
         }
+        .padding(.horizontal, 20)
     }
 
     // MARK: - 6. Unused / Waste
 
     private func unusedSection(_ state: AnalyticsScreenState) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            HStack {
-                SectionHeader(String(localized: "Не используются"))
-                Spacer()
-                if state.normalizationError != nil {
-                    Text(String(localized: "normalization.unavailable"))
-                        .font(Typography.caption)
-                        .foregroundStyle(ColorTokens.textSecondary)
-                } else if let unusedMonthlyCost = state.unusedMonthlyCost, unusedMonthlyCost > 0 {
-                    Text(String(localized: "−\(wasteString(unusedMonthlyCost, currency: state.defaultCurrency)) \(state.defaultCurrency)/мес"))
+        AnalyticsSurface(title: String(localized: "Не используются")) {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                HStack {
+                    if state.normalizationError != nil {
+                        Text(String(localized: "normalization.unavailable"))
+                            .font(Typography.caption)
+                            .foregroundStyle(ColorTokens.textSecondary)
+                    } else if let unusedMonthlyCost = state.unusedMonthlyCost, unusedMonthlyCost > 0 {
+                        Text(
+                            String(
+                                localized:
+                                    "−\(wasteString(unusedMonthlyCost, currency: state.defaultCurrency)) \(state.defaultCurrency)/мес"
+                            )
+                        )
                         .font(Typography.captionMedium)
                         .foregroundStyle(ColorTokens.warning)
                         .padding(.horizontal, Spacing.sm)
                         .padding(.vertical, Spacing.xxxs)
                         .background(ColorTokens.warning.opacity(0.1), in: Capsule())
+                    }
                 }
-            }
-            .padding(.horizontal, Spacing.lg)
-
-            PremiumCard {
                 VStack(spacing: 0) {
                     ForEach(Array(state.unusedItems.enumerated()), id: \.element.id) { idx, item in
-                        Button { navigateToItem(item) } label: {
-                            SorenListRow(
+                        Button {
+                            navigateToItem(item)
+                        } label: {
+                            AnalyticsItemRow(
                                 title: item.title,
                                 subtitle: String(localized: "Не используется"),
                                 amount: item.amount,
@@ -527,12 +557,129 @@ struct AnalyticsView: View {
                     }
                 }
             }
-            .padding(.horizontal, Spacing.lg)
         }
+        .padding(.horizontal, 20)
     }
 
     private func wasteString(_ amount: Decimal, currency: String) -> String {
         NormalizedMoneyFormatter.string(amount: amount, currencyCode: currency, style: .decimal)
+    }
+}
+
+// MARK: - Analytics-local surfaces and rows
+
+private struct AnalyticsSurface<Content: View>: View {
+    @Environment(\.colorSchemeContrast) private var contrast
+    @ScaledMetric(relativeTo: .headline) private var headingSize = 18
+    var title: String? = nil
+    var inset: CGFloat = 16
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let title {
+                Text(title).font(.system(size: headingSize, weight: .semibold))
+                    .foregroundStyle(SoftClubColor.textPrimary)
+                    .accessibilityAddTraits(.isHeader)
+            }
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(inset)
+        .background(SoftClubColor.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .strokeBorder(
+                    contrast == .increased ? SoftClubColor.textSecondary : SoftClubColor.subtleBorder,
+                    lineWidth: contrast == .increased ? 1 : 0.5)
+        }
+    }
+}
+
+private struct AnalyticsItemRow: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .body) private var textSize = 16
+    let title: String
+    let subtitle: String?
+    let amount: Decimal
+    let currency: String
+    let cycle: AmountLabel.CycleLabel?
+    let providerTemplate: ProviderTemplate?
+    let category: ItemCategory
+    var normalized = false
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            icon.accessibilityHidden(true)
+            ViewThatFits(in: .horizontal) {
+                if !dynamicTypeSize.isAccessibilitySize {
+                    HStack(spacing: 12) {
+                        identity
+                            .fixedSize(horizontal: true, vertical: true)
+                        Spacer(minLength: 0)
+                        money
+                            .fixedSize(horizontal: true, vertical: true)
+                    }
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    identity
+                    money
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+
+    private var identity: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).font(.system(size: textSize, weight: .semibold))
+                .foregroundStyle(SoftClubColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            if let subtitle {
+                Text(subtitle).font(.caption)
+                    .foregroundStyle(SoftClubColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var money: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(formattedAmount).font(.system(size: textSize, weight: .medium))
+                .monospacedDigit().foregroundStyle(SoftClubColor.textPrimary)
+            if let cycle {
+                Text(cycle.label).font(.caption).foregroundStyle(SoftClubColor.textSecondary)
+                    .accessibilityLabel(cycle.accessibilityText)
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var formattedAmount: String {
+        if normalized {
+            return NormalizedMoneyFormatter.string(amount: amount, currencyCode: currency)
+        }
+        // Match existing original-amount formatting without changing shared components.
+        let formatter = NumberFormatter()
+        formatter.locale = PresentationLocale.current
+        formatter.numberStyle = .currency
+        formatter.currencyCode = currency
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 2
+        return formatter.string(from: amount as NSDecimalNumber) ?? "\(amount) \(currency)"
+    }
+
+    @ViewBuilder private var icon: some View {
+        if let providerTemplate {
+            ProviderIcon(provider: providerTemplate, size: .medium)
+        } else {
+            Image(systemName: category.systemIconName)
+                .font(.body).foregroundStyle(SoftClubColor.textSecondary)
+                .frame(width: 40, height: 40)
+                .background(SoftClubColor.elevatedSurface, in: RoundedRectangle(cornerRadius: 10))
+        }
     }
 }
 

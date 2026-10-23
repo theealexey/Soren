@@ -5,6 +5,28 @@ import Testing
 @Suite("Analytics currency aggregation")
 @MainActor
 struct AnalyticsCurrencyAggregationTests {
+    @Test("Forecast labels preserve positive fractional money", arguments: ["0.01", "0.0001", "124", "1000000.25"])
+    func forecastLabelPrecision(source: String) throws {
+        let value = try #require(Decimal(string: source, locale: Locale(identifier: "en_US_POSIX")))
+        let label = AnalyticsPresentation.forecastAmount(value, currency: "RUB", locale: Locale(identifier: "en_US"))
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "en_US")
+        formatter.numberStyle = .currency
+        formatter.currencyCode = "RUB"
+        let parsed = try #require(formatter.number(from: label))
+        #expect(parsed.decimalValue == value)
+        #expect(label.contains("K") == false)
+        #expect(label.contains("M") == false)
+    }
+
+    @Test("Forecast zero and nonzero are distinct in Russian and English", arguments: ["ru_RU", "en_US"])
+    func forecastZeroLabel(localeID: String) throws {
+        let tiny = try #require(Decimal(string: "0.0001"))
+        let locale = Locale(identifier: localeID)
+        #expect(AnalyticsPresentation.forecastAmount(tiny, currency: "JPY", locale: locale)
+            != AnalyticsPresentation.forecastAmount(0, currency: "JPY", locale: locale))
+    }
+
     @Test("All normalized screen consumers share the same annual basis", arguments: [
         BillingCycle.weekly, .monthly, .quarterly, .semiannual, .annual, .custom(days: 30)
     ])

@@ -1,5 +1,25 @@
 import Foundation
 
+/// Analytics-only chart text. Decimal rounding never turns a positive value into a zero label.
+enum AnalyticsPresentation {
+    static func forecastAmount(_ amount: Decimal, currency: String,
+                               locale: Locale = PresentationLocale.current) -> String {
+        let formatter = NumberFormatter()
+        formatter.locale = locale
+        formatter.numberStyle = .currency
+        formatter.currencyCode = currency
+        let places = SupportedCurrency.all.first { $0.code == currency }?.decimalPlaces
+            ?? formatter.maximumFractionDigits
+        var source = amount
+        var rounded = Decimal.zero
+        NSDecimalRound(&rounded, &source, places, .plain)
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = amount != 0 && rounded == 0 ? 38 : places
+        formatter.roundingMode = .halfUp
+        return formatter.string(from: amount as NSDecimalNumber) ?? "\(amount) \(currency)"
+    }
+}
+
 enum AnalyticsAnnualChargeState: Equatable {
     case found(CivilDate)
     case absent
