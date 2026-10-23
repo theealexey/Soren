@@ -1,53 +1,69 @@
 # Soren
 
-**Subscriptions, recurring obligations, and a clearer view of what is scheduled next.**
+**A clearer view of subscriptions and recurring obligations.**
 
-Soren is an iOS-first app for organizing subscriptions and other recurring commitments. It brings upcoming charges, renewal schedules, lifecycle states, and normalized recurring costs into one place—without pretending to be a banking app.
+Soren is an iOS app for understanding what you subscribe to, when your recurring obligations are scheduled, and what they cost over time.
 
-> **Status:** Under active development. This repository does not currently publish a packaged app release.
+It combines a focused interface with calendar-based projections and transparent cost calculations. Instead of trying to imitate a bank statement, Soren works from the recurring schedules you maintain.
 
-## What Soren does
+## Explore Soren
 
-- **Overview** — see the month's scheduled amount, upcoming charges, and counts of active, trial, and paused subscriptions.
-- **Subscriptions** — manage recurring items, inspect their details, and keep track of billing cycles and lifecycle states.
-- **Calendar** — explore projected charges by date, based on each item's recurrence rules.
-- **Analytics** — compare normalized monthly and annual costs, see category and subscription breakdowns, and review a six-month schedule forecast.
-- **Reminders** — manage notifications associated with recurring obligations.
-- **Currencies** — work with supported currencies; analytics distinguishes complete, partial, and unavailable conversion data rather than silently treating missing values as zero.
+| Section | What it helps you understand |
+| --- | --- |
+| **Overview** | This month's scheduled charges, the next upcoming occurrences, and subscription lifecycle counts. |
+| **Subscriptions** | Your recurring items, billing cycles, details, and management actions. |
+| **Calendar** | Which monetary occurrences are projected for a given date or month. |
+| **Analytics** | Normalized monthly and annual costs, cost composition, categories, and a six-month schedule forecast. |
 
-### Schedule truth, not transaction history
+Soren also supports subscription lifecycle states, trial periods, reminders, and multiple currencies. Analytics distinguishes complete and incomplete currency-conversion data rather than presenting an incomplete calculation as a complete total.
 
-Soren primarily knows **what is scheduled** from the recurring information you maintain. A projected charge is **not** confirmation that money was withdrawn. Without a transaction integration, Soren cannot verify successful payments, declined cards, or payment attempts.
+## Built around schedule truth
 
-Two numbers that may appear together have different meanings:
+A scheduled charge is **not** a verified payment.
 
-- **Normalized cost:** a monthly or annual equivalent of current recurring obligations.
-- **Schedule forecast:** monetary events projected for specific calendar dates.
+Soren projects recurring obligations from their dates and recurrence rules. It does not infer whether a bank transaction succeeded, a card was declined, or a payment attempt took place.
 
-These are deliberately separate calculations. Trial endings are not automatically treated as monetary charges.
+Two related views of cost are intentionally kept distinct:
+
+- **Normalized cost** expresses current recurring obligations as comparable monthly or annual equivalents.
+- **Schedule forecast** shows projected monetary occurrences on actual calendar dates.
+
+A trial ending is not itself treated as a monetary charge. The calendar and analytics use the same canonical schedule projection rather than maintaining competing recurrence rules.
 
 ## Technology
 
-| Area | Implementation |
+| | |
 | --- | --- |
-| Platform | iOS 18.0+ |
-| Language | Swift 6, strict concurrency checking |
-| Interface | SwiftUI |
-| Persistence | SwiftData |
-| Concurrency | Swift Concurrency |
-| Architecture | Feature-based presentation, domain use cases, repository contracts, dependency injection |
-| Tests | Swift Testing and UI tests |
-| Localization | Russian and English via String Catalog |
+| **Platform** | iOS 18+ |
+| **Language** | Swift 6 with strict concurrency checking |
+| **UI** | SwiftUI |
+| **Persistence** | SwiftData |
+| **Concurrency** | Swift Concurrency |
+| **Localization** | Russian and English, String Catalog |
+| **Testing** | Swift Testing and Xcode UI tests |
 
-The interface uses a restrained light/dark design language, with native system APIs where supported and fallbacks for older deployment versions. The project includes a widget target, but the widget extension is not yet wired into the main app build.
+The app uses a feature-oriented presentation layer, domain use cases, repository contracts, and dependency injection. Domain logic is independent of SwiftUI and SwiftData; persistence details stay behind infrastructure boundaries.
 
-## Getting started
+The interface supports Light and Dark appearances, native Apple visual APIs where available, and appropriate fallbacks on older supported iOS versions.
 
-**Requirements**
+## Repository structure
 
-- A Mac with Xcode installed (the checked-in `project.yml` currently specifies Xcode 26.3).
-- An iOS 18.0+ simulator or compatible device.
-- A suitable signing team if running on a physical device.
+```text
+Soren/
+├── App/            App entry point, composition, navigation
+├── Core/           Design system, formatting, shared services
+├── Domain/         Entities, business rules, repository contracts, use cases
+├── Data/           SwiftData, mappers, repositories
+└── Features/       Overview, subscriptions, calendar, analytics
+SorenTests/         Unit and integration tests
+SorenUITests/       UI regression tests
+Soren.xcodeproj/    Xcode project
+project.yml         Project configuration
+```
+
+## Build and run
+
+You need Xcode and an iOS 18+ simulator or compatible device.
 
 ```bash
 git clone https://github.com/theealexey/Soren.git
@@ -55,58 +71,20 @@ cd Soren
 open Soren.xcodeproj
 ```
 
-In Xcode, select the **Soren** scheme and an available iOS simulator, then build and run.
+Choose the **Soren** scheme and an available simulator in Xcode, then build and run. Device builds require an appropriate Apple development signing configuration.
 
-The repository also contains `project.yml`, but opening the checked-in `Soren.xcodeproj` does not require regenerating the project.
+## Tests
 
-## Project structure
-
-```text
-Soren/
-├── App/            # App entry, composition root, navigation
-├── Core/           # Design system, formatters, shared services
-├── Domain/         # Entities, contracts, use cases, recurrence projection
-├── Data/           # SwiftData, mappers, repositories, supporting data
-└── Features/       # Overview, subscriptions, calendar, analytics, and flows
-SorenTests/         # Domain, data, and presentation tests
-SorenUITests/       # UI regression tests
-SorenWidgets/       # Widget target (integration pending)
-```
-
-The **Domain** layer has no SwiftUI or SwiftData dependency. Presentation consumes domain-facing use cases and state; persistence is kept behind repository boundaries.
-
-Recurring occurrences are projected through the canonical schedule projector rather than independently recalculated in each view.
-
-## Building and testing
-
-For command-line builds and tests, disable generated localization-string extraction to avoid unrelated String Catalog changes:
+The Xcode **Soren** scheme contains unit and UI tests. For command-line runs, set `SWIFT_EMIT_LOC_STRINGS=NO` to prevent build-time localization extraction from modifying the String Catalog.
 
 ```bash
 xcodebuild \
   -project Soren.xcodeproj \
   -scheme Soren \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-  SWIFT_EMIT_LOC_STRINGS=NO \
-  build
-```
-
-```bash
-xcodebuild \
-  -project Soren.xcodeproj \
-  -scheme Soren \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-  -testLanguage ru \
-  -testRegion RU \
+  -testLanguage ru -testRegion RU \
   SWIFT_EMIT_LOC_STRINGS=NO \
   test
 ```
 
-Replace the simulator name with one installed in your Xcode environment. The explicit Russian locale reflects the current regression-test baseline, not a restriction of the app's supported languages.
-
-## Development status
-
-Soren is being developed iteratively. Features, presentation, and internal APIs may change before a public release. No App Store availability, bank connection, or transaction-sync functionality is implied by this repository.
-
-## License
-
-No license has been published for this repository. Public source availability does **not** grant permission to copy, modify, or redistribute the code.
+Replace the simulator name with a device available in your Xcode installation. The explicit `ru/RU` configuration is the project's current deterministic regression-test environment.
