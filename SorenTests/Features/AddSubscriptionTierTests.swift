@@ -2,6 +2,207 @@ import Foundation
 import Testing
 @testable import Soren
 
+@Suite("Add Subscription — Save submission")
+@MainActor
+struct AddSubscriptionSaveTests {
+    private enum PersistenceFailure: Error { case rejected }
+
+    private final class Repository: RecurringItemRepository {
+        private(set) var items: [RecurringItem] = []
+        private(set) var saveCalls = 0
+        var rejectsSave = false
+
+        func fetchAll() throws -> [RecurringItem] { items }
+        func fetchActive() throws -> [RecurringItem] { items }
+        func fetchUpcoming(within days: Int, from date: Date) throws -> [RecurringItem] { items }
+        func fetchByCategory(_ category: ItemCategory) throws -> [RecurringItem] { items.filter { $0.category == category } }
+        func fetch(id: UUID) throws -> RecurringItem? { items.first { $0.id == id } }
+        func save(_ item: RecurringItem) throws {
+            saveCalls += 1
+            if rejectsSave { throw PersistenceFailure.rejected }
+            items.append(item)
+        }
+        func update(_ item: RecurringItem) throws { throw PersistenceFailure.rejected }
+        func delete(id: UUID) throws { throw PersistenceFailure.rejected }
+        func saveAll(_ items: [RecurringItem]) throws { throw PersistenceFailure.rejected }
+        func deleteAll() throws { throw PersistenceFailure.rejected }
+    }
+
+    private final class Reconciliation: NotificationStateReconciling {
+        private(set) var calls = 0
+        var suspends = false
+        var outcome = NotificationRefreshOutcome.reconciled(NotificationReconciliationReport(
+            desiredCount: 1, removedPendingCount: 0, removedDeliveredCount: 0,
+            addedCount: 1, authorizationStatus: .authorized, addFailures: [], planningFailures: []
+        ))
+        private var pending: CheckedContinuation<NotificationRefreshOutcome, Never>?
+        private var entered: CheckedContinuation<Void, Never>?
+
+        func reconcileCurrentState(source: NotificationReconciliationSource) async -> NotificationRefreshOutcome {
+            calls += 1
+            guard suspends else { return outcome }
+            return await withCheckedContinuation { continuation in
+                pending = continuation
+                entered?.resume()
+                entered = nil
+            }
+        }
+
+        func waitUntilSuspended() async {
+            guard pending == nil else { return }
+            await withCheckedContinuation { entered = $0 }
+        }
+
+        func release() {
+            let continuation = pending
+            pending = nil
+            continuation?.resume(returning: outcome)
+        }
+    }
+
+    private struct Fixture {
+        let suite: String
+        let defaults: UserDefaults
+        let repository: Repository
+        let reconciliation: Reconciliation
+        let vm: AddSubscriptionViewModel
+        func cleanUp() { defaults.removePersistentDomain(forName: suite) }
+    }
+
+    private func fixture() throws -> Fixture {
+        let suite = "AddSubscriptionSaveTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        let preferences = UserPreferencesRepository(defaults: defaults, initialDeviceRegionCode: "RU")
+        let repository = Repository()
+        let reconciliation = Reconciliation()
+        let today = try BillingCivilDay.canonicalDate(for: CivilDate(year: 2026, month: 10, day: 21))
+        let vm = AddSubscriptionViewModel(
+            catalog: InMemoryProviderCatalogRepository(),
+            saveRecurringItem: SaveRecurringItem(repository: repository, notificationCoordinator: reconciliation),
+            preferences: preferences, currentDate: { today }, timeZone: { .gmt }
+        )
+        vm.title = "Submission"
+        vm.amountText = "124"
+        vm.currencyCode = "RUB"
+        return Fixture(suite: suite, defaults: defaults, repository: repository,
+                       reconciliation: reconciliation, vm: vm)
+    }
+
+    @Test("Suspended save admits one identity and one reconciliation; saved submission stays closed")
+    func suspendedSaveIsSingleFlight() async throws {
+        let f = try fixture()
+        defer { f.cleanUp() }
+        f.reconciliation.suspends = true
+        #expect(f.vm.canSave)
+        #expect(f.vm.isSaving == false)
+        #expect(f.vm.isSaved == false)
+        let first = Task { try await f.vm.save() }
+        await f.reconciliation.waitUntilSuspended()
+        defer { f.reconciliation.release() }
+        #expect(f.vm.isSaving)
+        #expect(f.vm.isSaved == false)
+        #expect(f.vm.canSave == false)
+        #expect(f.repository.items.count == 1)
+        #expect(f.repository.saveCalls == 1)
+        #expect(try await f.vm.save() == false)
+        #expect(f.vm.saveError == nil)
+        #expect(f.repository.items.count == 1)
+        f.reconciliation.release()
+        #expect(try await first.value)
+        #expect(f.vm.isSaving == false)
+        #expect(f.vm.isSaved)
+        #expect(f.vm.canSave == false)
+        #expect(try await f.vm.save() == false)
+        #expect(f.repository.saveCalls == 1)
+        #expect(Set(f.repository.items.map(\.id)).count == 1)
+        #expect(f.reconciliation.calls == 1)
+    }
+
+    @Test("Validation failures retain the draft, unlock submission and allow correction", arguments: [false, true])
+    func validationAllowsRetry(invalidAmount: Bool) async throws {
+        let f = try fixture()
+        defer { f.cleanUp() }
+        if invalidAmount { f.vm.amountText = "invalid" } else { f.vm.title = "" }
+        #expect(f.vm.canSave == false)
+        do {
+            try await f.vm.save()
+            Issue.record("Invalid submission unexpectedly succeeded")
+        } catch SaveRecurringItem.ValidationError.invalidAmount {
+            #expect(invalidAmount)
+        } catch SaveRecurringItem.ValidationError.emptyTitle {
+            #expect(invalidAmount == false)
+        } catch {
+            Issue.record("Unexpected validation error: \(error)")
+        }
+        #expect(f.vm.saveError is SaveRecurringItem.ValidationError)
+        #expect(f.vm.isSaving == false)
+        #expect(f.vm.isSaved == false)
+        #expect(f.repository.items.isEmpty)
+        #expect(f.repository.saveCalls == 0)
+        #expect(f.reconciliation.calls == 0)
+        #expect(f.vm.amountText == (invalidAmount ? "invalid" : "124"))
+        f.vm.title = "Corrected"
+        f.vm.amountText = "124"
+        #expect(f.vm.canSave)
+        #expect(try await f.vm.save())
+        #expect(f.vm.saveError == nil)
+        #expect(f.vm.isSaved)
+        #expect(f.repository.items.count == 1)
+    }
+
+    @Test("Repository failure propagates and a corrected retry persists exactly once")
+    func persistenceAllowsRetry() async throws {
+        let f = try fixture()
+        defer { f.cleanUp() }
+        f.repository.rejectsSave = true
+        await #expect(throws: PersistenceFailure.rejected) { try await f.vm.save() }
+        #expect(f.vm.saveError is PersistenceFailure)
+        #expect(f.vm.isSaving == false)
+        #expect(f.vm.isSaved == false)
+        #expect(f.vm.canSave)
+        #expect(f.vm.title == "Submission")
+        #expect(f.vm.amountText == "124")
+        #expect(f.repository.items.isEmpty)
+        #expect(f.reconciliation.calls == 0)
+        f.repository.rejectsSave = false
+        #expect(try await f.vm.save())
+        #expect(f.vm.saveError == nil)
+        #expect(f.repository.items.count == 1)
+        #expect(f.repository.saveCalls == 2)
+        #expect(f.reconciliation.calls == 1)
+    }
+
+    @Test("Nonfatal notification failure remains a saved submission")
+    func notificationFailureDoesNotReinsert() async throws {
+        let f = try fixture()
+        defer { f.cleanUp() }
+        f.reconciliation.outcome = .repositoryFetchFailed
+        #expect(try await f.vm.save())
+        #expect(f.vm.isSaved)
+        #expect(f.vm.isSaving == false)
+        #expect(f.vm.canSave == false)
+        #expect(f.vm.saveError == nil)
+        #expect(try await f.vm.save() == false)
+        #expect(f.repository.items.count == 1)
+        #expect(f.repository.saveCalls == 1)
+        #expect(f.reconciliation.calls == 1)
+    }
+
+    @Test("Identical fields in independent Add lifetimes remain legitimate")
+    func independentSubmissionsAreAllowed() async throws {
+        let first = try fixture()
+        let second = try fixture()
+        defer { first.cleanUp(); second.cleanUp() }
+        #expect(try await first.vm.save())
+        #expect(try await second.vm.save())
+        let a = try #require(first.repository.items.first)
+        let b = try #require(second.repository.items.first)
+        #expect(a.title == b.title)
+        #expect(a.amount == b.amount)
+        #expect(a.id != b.id)
+    }
+}
+
 @Suite("Add Subscription — Regional Pricing")
 @MainActor
 struct AddSubscriptionTierTests {

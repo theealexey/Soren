@@ -8,6 +8,7 @@ struct SubscriptionFormView: View {
     @Bindable var viewModel: AddSubscriptionViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var showSaveError = false
+    @State private var isSubmitting = false
 
     var body: some View {
         Form {
@@ -48,7 +49,7 @@ struct SubscriptionFormView: View {
                     saveAndDismiss()
                 }
                 .fontWeight(.semibold)
-                .disabled(!viewModel.canSave)
+                .disabled(isSubmitting || !viewModel.canSave)
             }
         }
         .alert(String(localized: "Не удалось сохранить"), isPresented: $showSaveError) {
@@ -170,11 +171,15 @@ struct SubscriptionFormView: View {
     // MARK: - Save
 
     private func saveAndDismiss() {
+        guard !isSubmitting, viewModel.canSave else { return }
+        isSubmitting = true
         Task { @MainActor in
+            defer { isSubmitting = false }
             do {
-                try await viewModel.save()
-                HapticEngine.success()
-                dismiss()
+                if try await viewModel.save() {
+                    HapticEngine.success()
+                    dismiss()
+                }
             } catch {
                 HapticEngine.error()
                 showSaveError = true

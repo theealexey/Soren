@@ -152,6 +152,7 @@ final class AddSubscriptionViewModel {
     // MARK: - Save State
 
     private(set) var saveError: Error?
+    private(set) var isSaving = false
     private(set) var isSaved = false
 
     /// Localized message for the most recent save failure, mapped through
@@ -574,6 +575,7 @@ final class AddSubscriptionViewModel {
     // MARK: - Validation
 
     var canSave: Bool {
+        guard !isSaving, !isSaved else { return false }
         guard dateInputError == nil, let nextChargeDate, startDate != nil else { return false }
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, trimmed.count <= 255 else { return false }
@@ -590,39 +592,45 @@ final class AddSubscriptionViewModel {
 
     // MARK: - Save
 
-    func save() async throws {
+    /// False means this invocation was rejected as duplicate control flow.
+    @discardableResult
+    func save() async throws -> Bool {
+        guard !isSaving, !isSaved else { return false }
+        isSaving = true
+        defer { isSaving = false }
         saveError = nil
 
-        if let dateInputError { throw dateInputError }
-        guard let startDate, let nextChargeDate else { throw BillingCivilDayError.arithmeticFailed }
-
-        guard let amount = Decimal(string: amountText.replacingOccurrences(of: ",", with: ".")) else {
-            throw SaveRecurringItem.ValidationError.invalidAmount
-        }
-
-        let item = RecurringItem(
-            title: title.trimmingCharacters(in: .whitespacesAndNewlines),
-            providerID: selectedProvider?.id,
-            providerName: selectedProvider?.displayName ?? title,
-            itemType: itemType,
-            category: category,
-            amount: amount,
-            currencyCode: currencyCode,
-            billingCycle: billingCycle,
-            startDate: try BillingCivilDay.canonicalDate(for: startDate),
-            nextChargeDate: try BillingCivilDay.canonicalDate(for: nextChargeDate),
-            autoRenew: autoRenew,
-            endDate: try autoRenew ? nil : endDate.map { try BillingCivilDay.canonicalDate(for: $0) },
-            chargeReminder: chargeReminder,
-            trialReminder: trialReminder,
-            status: .active,
-            usageStatus: usageStatus,
-            note: note
-        )
-
         do {
+            if let dateInputError { throw dateInputError }
+            guard let startDate, let nextChargeDate else { throw BillingCivilDayError.arithmeticFailed }
+
+            guard let amount = Decimal(string: amountText.replacingOccurrences(of: ",", with: ".")) else {
+                throw SaveRecurringItem.ValidationError.invalidAmount
+            }
+
+            let item = RecurringItem(
+                title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+                providerID: selectedProvider?.id,
+                providerName: selectedProvider?.displayName ?? title,
+                itemType: itemType,
+                category: category,
+                amount: amount,
+                currencyCode: currencyCode,
+                billingCycle: billingCycle,
+                startDate: try BillingCivilDay.canonicalDate(for: startDate),
+                nextChargeDate: try BillingCivilDay.canonicalDate(for: nextChargeDate),
+                autoRenew: autoRenew,
+                endDate: try autoRenew ? nil : endDate.map { try BillingCivilDay.canonicalDate(for: $0) },
+                chargeReminder: chargeReminder,
+                trialReminder: trialReminder,
+                status: .active,
+                usageStatus: usageStatus,
+                note: note
+            )
+
             _ = try await saveRecurringItem.execute(item)
             isSaved = true
+            return true
         } catch {
             saveError = error
             throw error
