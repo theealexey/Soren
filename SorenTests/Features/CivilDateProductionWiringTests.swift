@@ -261,6 +261,7 @@ struct CivilDateNotificationBoundaryTests {
         let day = try CivilDate(year: parts.0, month: parts.1, day: parts.2)
         var item = try canonicalTestItem()
         item.nextChargeDate = try BillingCivilDay.canonicalDate(for: day)
+        item.startDate = item.nextChargeDate
         item.chargeReminder = .oneDayBefore
         let now = try #require(BillingCivilDay.calendar.date(byAdding: .day, value: -4, to: item.nextChargeDate))
         let plan = NotificationRequestPlanner(calendar: calendar, locale: Locale(identifier: "en_US")).plan(items: [item], now: now)

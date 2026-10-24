@@ -29,6 +29,7 @@ struct PlannedNotificationRequest: Sendable, Equatable, Identifiable {
 }
 
 enum NotificationPlanningFailure: Sendable, Equatable {
+    case projectionFailed(itemID: UUID, reason: RecurringScheduleProjectionError)
     case recurrenceDidNotAdvance(itemID: UUID)
     case recurrenceLimitExceeded(itemID: UUID)
     case invalidDate(itemID: UUID)
@@ -59,11 +60,11 @@ struct NotificationRequestPlanner {
         var requests: [PlannedNotificationRequest] = []
         var failures: [NotificationPlanningFailure] = []
 
-        for item in items where isEligible(item, at: now) {
+        for item in items {
             if let charge = planCharge(for: item, now: now, failures: &failures) {
                 requests.append(charge)
             }
-            if let trial = planTrial(for: item, now: now) {
+            if isEligible(item, at: now), let trial = planTrial(for: item, now: now) {
                 requests.append(trial)
             }
         }
@@ -78,38 +79,34 @@ struct NotificationRequestPlanner {
     ) -> PlannedNotificationRequest? {
         guard let offsetDays = item.chargeReminder.alertDays else { return nil }
 
-        var occurrence = item.nextChargeDate
-        var iterations = 0
-
-        while true {
-            guard let request = makeRequest(
-                item: item,
-                kind: .charge,
-                occurrence: occurrence,
-                offsetDays: offsetDays
-            ) else {
-                failures.append(.invalidDate(itemID: item.id))
-                return nil
+        do {
+            let projector = RecurringScheduleProjector()
+            var lowerBound = try BillingCivilDay.civilDate(containing: now, in: calendar.timeZone)
+            // Jump directly to today, never enumerate from the persisted anchor.
+            // Only occurrences within the reminder-offset window can have a
+            // missed fire time. Every subsequent query advances a civil day;
+            // recurrence arithmetic and finite bounds remain owned by Domain.
+            while let day = try projector.nextScheduledCharge(for: item, onOrAfter: lowerBound) {
+                let occurrence = try BillingCivilDay.canonicalDate(for: day)
+                guard let request = makeRequest(
+                    item: item, kind: .charge, occurrence: occurrence, offsetDays: offsetDays
+                ) else {
+                    failures.append(.invalidDate(itemID: item.id))
+                    return nil
+                }
+                if request.fireDate > now { return request }
+                guard let nextDay = BillingCivilDay.calendar.date(byAdding: .day, value: 1, to: occurrence) else {
+                    failures.append(.invalidDate(itemID: item.id))
+                    return nil
+                }
+                lowerBound = try BillingCivilDay.civilDate(fromCanonicalDate: nextDay)
             }
-
-            if request.fireDate > now {
-                return request
-            }
-
-            guard item.autoRenew else { return nil }
-            guard iterations < 1_000 else {
-                failures.append(.recurrenceLimitExceeded(itemID: item.id))
-                return nil
-            }
-
-            let next = item.billingCycle.nextDate(after: occurrence, calendar: BillingCivilDay.calendar)
-            guard next > occurrence else {
-                failures.append(.recurrenceDidNotAdvance(itemID: item.id))
-                return nil
-            }
-            occurrence = next
-            iterations += 1
+        } catch let reason as RecurringScheduleProjectionError {
+            failures.append(.projectionFailed(itemID: item.id, reason: reason))
+        } catch {
+            failures.append(.invalidDate(itemID: item.id))
         }
+        return nil
     }
 
     private func planTrial(for item: RecurringItem, now: Date) -> PlannedNotificationRequest? {
@@ -223,7 +220,8 @@ struct NotificationRequestPlanner {
     }
 
     private func isEligible(_ item: RecurringItem, at now: Date) -> Bool {
-        guard item.status != .paused, item.status != .cancelled, item.status != .archived else {
+        guard item.archivedAt == nil,
+              item.status != .paused, item.status != .cancelled, item.status != .archived else {
             return false
         }
         guard !item.autoRenew, let endDate = item.endDate else { return true }

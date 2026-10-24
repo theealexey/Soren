@@ -276,10 +276,13 @@ struct NotificationRequestPlannerTests {
         #expect(count == 1)
     }
 
-    @Test("trial status remains eligible")
+    @Test("trial without proven monetary terms reports unavailable")
     func trialStatusIsEligible() throws {
-        let count = try requestCount(status: .trial)
-        #expect(count == 1)
+        var subscription = try item(date: try date(2026, 8, 12))
+        subscription.status = .trial
+        let plan = planner.plan(items: [subscription], now: try date(2026, 8, 1))
+        #expect(plan.requests.isEmpty)
+        #expect(plan.failures == [.projectionFailed(itemID: subscription.id, reason: .monetaryScheduleUnavailable)])
     }
 
     @Test("failed status remains eligible")
@@ -358,6 +361,160 @@ struct NotificationRequestPlannerTests {
         let request = try #require(planner.plan(items: [subscription], now: now).requests.first)
         let expected = try date(2027, 8, 12)
         #expect(request.occurrenceDate == (try canonical(expected)))
+    }
+
+    @Test("January month-end recovers in March after the February reminder passed")
+    func canonicalMonthEndRecovery() throws {
+        let source = try item(date: try date(2026, 1, 31))
+        let february = planner.plan(items: [source], now: try date(2026, 2, 1))
+        let march = planner.plan(items: [source], now: try date(2026, 3, 1))
+        #expect(february.requests.first?.occurrenceDate == (try canonical(date(2026, 2, 28))))
+        #expect(march.requests.first?.occurrenceDate == (try canonical(date(2026, 3, 31))))
+        #expect(march.failures.isEmpty)
+        #expect(source.nextChargeDate == (try canonical(date(2026, 1, 31))))
+    }
+
+    @Test("Annual leap-day anchor recovers after a non-leap year")
+    func canonicalLeapRecovery() throws {
+        var source = try item(date: try date(2024, 2, 29))
+        source.billingCycle = .annual
+        let ordinary = planner.plan(items: [source], now: try date(2027, 1, 1))
+        let leap = planner.plan(items: [source], now: try date(2027, 3, 1))
+        #expect(ordinary.requests.first?.occurrenceDate == (try canonical(date(2027, 2, 28))))
+        #expect(leap.requests.first?.occurrenceDate == (try canonical(date(2028, 2, 29))))
+    }
+
+    @Test("Future lifecycle start excludes earlier anchor occurrences")
+    func futureStartUsesCanonicalEligibility() throws {
+        var source = try item(date: try date(2026, 10, 15))
+        source.startDate = try canonical(date(2026, 12, 1))
+        let plan = planner.plan(items: [source], now: try date(2026, 10, 1))
+        #expect(plan.requests.first?.occurrenceDate == (try canonical(date(2026, 12, 15))))
+    }
+
+    @Test("Finite recurrence advances to inclusive final occurrence, then proves absence")
+    func finiteCanonicalRollover() throws {
+        var source = try item(date: try date(2026, 10, 15), autoRenew: false)
+        source.endDate = try canonical(date(2026, 12, 15))
+        let november = planner.plan(items: [source], now: try date(2026, 10, 21))
+        let december = planner.plan(items: [source], now: try date(2026, 11, 21))
+        let exhausted = planner.plan(items: [source], now: try date(2026, 12, 13))
+        #expect(november.requests.first?.occurrenceDate == (try canonical(date(2026, 11, 15))))
+        #expect(december.requests.first?.occurrenceDate == source.endDate)
+        #expect(exhausted.requests.isEmpty)
+        #expect(exhausted.failures.isEmpty)
+    }
+
+    @Test("At 09:00 the offset reminder advances canonically", arguments: [
+        ChargeReminderOption.sameDay, .oneDayBefore, .threeDaysBefore, .sevenDaysBefore
+    ])
+    func exactFireBoundary(option: ChargeReminderOption) throws {
+        let offset = try #require(option.alertDays)
+        let source = try item(date: try date(2026, 8, 12), chargeReminder: option)
+        let fire = try date(2026, 8, 12 - offset, 9)
+        let before = planner.plan(items: [source], now: fire.addingTimeInterval(-1))
+        let at = planner.plan(items: [source], now: fire)
+        #expect(before.requests.first?.occurrenceDate == source.nextChargeDate)
+        #expect(before.requests.first?.fireDate == fire)
+        #expect(at.requests.first?.occurrenceDate == (try canonical(date(2026, 9, 12))))
+    }
+
+    @Test("Ambiguous trial retains its independent nonmonetary reminder")
+    func ambiguousTrialPreservesBoundary() throws {
+        var source = try item(date: try date(2026, 11, 20),
+            trialEndDate: try date(2026, 11, 15), trialReminder: .threeDaysBefore)
+        source.startDate = try canonical(date(2026, 10, 1))
+        source.status = .trial
+        let plan = planner.plan(items: [source], now: try date(2026, 11, 1))
+        #expect(plan.requests.count == 1)
+        #expect(plan.requests.first?.kind == .trial)
+        #expect(plan.requests.first?.occurrenceDate == source.trialEndDate)
+        #expect(plan.failures == [.projectionFailed(itemID: source.id, reason: .monetaryScheduleUnavailable)])
+        source.nextChargeDate = try #require(source.trialEndDate)
+        let proven = planner.plan(items: [source], now: try date(2026, 11, 1))
+        #expect(proven.requests.count == 2)
+        #expect(proven.failures.isEmpty)
+    }
+
+    @Test("archivedAt excludes both kinds independently of status")
+    func archivedTimestampExcludesRequests() throws {
+        var source = try item(date: try date(2026, 8, 12),
+            trialEndDate: try date(2026, 8, 15), trialReminder: .threeDaysBefore)
+        source.archivedAt = try date(2026, 8, 1)
+        let plan = planner.plan(items: [source], now: try date(2026, 8, 1))
+        #expect(plan.requests.isEmpty)
+        #expect(plan.failures.isEmpty)
+    }
+
+    @Test("Valid cycles agree with canonical next charge", arguments: [
+        BillingCycle.weekly, .monthly, .quarterly, .semiannual, .annual, .custom(days: 1), .custom(days: 7), .custom(days: 60)
+    ])
+    func cycleParity(cycle: BillingCycle) throws {
+        var source = try item(date: try date(2020, 1, 31), chargeReminder: .sameDay)
+        source.billingCycle = cycle
+        let today = try CivilDate(year: 2026, month: 3, day: 1)
+        let expected = try #require(try RecurringScheduleProjector().nextScheduledCharge(for: source, onOrAfter: today))
+        let plan = planner.plan(items: [source], now: try date(2026, 3, 1, 8))
+        let request = try #require(plan.requests.first)
+        #expect(request.occurrenceDate == (try BillingCivilDay.canonicalDate(for: expected)))
+        #expect(request.id == "soren.v2.charge.\(source.id.uuidString.lowercased()).\(request.occurrenceLocalDateKey).0")
+        #expect(plan.failures.isEmpty)
+    }
+
+    @Test("Distant future anchor has no one-year search horizon")
+    func distantFutureAnchor() throws {
+        let source = try item(date: try date(2040, 11, 15))
+        let plan = planner.plan(items: [source], now: try date(2026, 10, 21))
+        #expect(plan.requests.first?.occurrenceDate == source.nextChargeDate)
+        #expect(plan.failures.isEmpty)
+    }
+
+    @Test("Invalid custom schedule reports unavailable instead of absence")
+    func invalidScheduleReportsFailure() throws {
+        var source = try item(date: try date(2026, 8, 12))
+        source.billingCycle = .custom(days: 0)
+        let plan = planner.plan(items: [source], now: try date(2026, 8, 1))
+        #expect(plan.requests.isEmpty)
+        #expect(plan.failures == [.projectionFailed(itemID: source.id, reason: .monetaryScheduleUnavailable)])
+    }
+
+    @Test("Unsupported recurrence arithmetic remains a typed planning failure")
+    func arithmeticFailureIsRetained() throws {
+        var source = try item(date: try date(2020, 1, 1))
+        source.billingCycle = .custom(days: Int.max)
+        let plan = planner.plan(items: [source], now: try date(2026, 8, 1))
+        #expect(plan.requests.isEmpty)
+        #expect(plan.failures == [.projectionFailed(itemID: source.id, reason: .invalidCalendarArithmetic)])
+    }
+
+    @Test("Daily recurrence skips only missed offset reminders and has no anchor iteration limit")
+    func dailyReminderWindow() throws {
+        var source = try item(date: try date(2020, 1, 1), chargeReminder: .sevenDaysBefore)
+        source.billingCycle = .custom(days: 1)
+        let plan = planner.plan(items: [source], now: try date(2026, 8, 1, 10))
+        #expect(plan.requests.first?.occurrenceDate == (try canonical(date(2026, 8, 9))))
+        #expect(plan.requests.first?.fireDate == (try date(2026, 8, 2, 9)))
+        #expect(plan.failures.isEmpty)
+    }
+
+    @Test("Local 09:00 survives DST and positive/negative zones", arguments: [
+        ("America/New_York", 2026, 3, 8), ("America/New_York", 2026, 11, 1),
+        ("Europe/Berlin", 2026, 3, 29), ("Pacific/Kiritimati", 2026, 3, 8)
+    ])
+    func localFireTimeAcrossDST(_ zoneID: String, _ year: Int, _ month: Int, _ day: Int) throws {
+        var local = Calendar(identifier: .gregorian)
+        local.timeZone = try #require(TimeZone(identifier: zoneID))
+        let civil = try CivilDate(year: year, month: month, day: day)
+        let occurrence = try BillingCivilDay.canonicalDate(for: civil)
+        let before = try #require(local.date(from: DateComponents(year: year, month: month, day: day, hour: 8)))
+        let fire = try #require(local.date(from: DateComponents(year: year, month: month, day: day, hour: 9)))
+        let source = RecurringItem(title: "DST", amount: 100, currencyCode: "RUB", billingCycle: .monthly,
+            startDate: occurrence, nextChargeDate: occurrence, chargeReminder: .sameDay)
+        let localPlanner = NotificationRequestPlanner(calendar: local, locale: Locale(identifier: "en_US"))
+        let plan = localPlanner.plan(items: [source], now: before)
+        #expect(plan.requests.first?.fireDate == fire)
+        #expect(plan.requests.first?.occurrenceDate == occurrence)
+        #expect(plan.requests.first?.trigger.timeZoneIdentifier == zoneID)
     }
 }
 
