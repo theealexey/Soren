@@ -19,7 +19,7 @@ struct LibraryView: View {
             if let viewModel {
                 libraryContent(viewModel)
             } else {
-                LoadingStateView()
+                libraryStateContent { LoadingStateView() }
             }
         }
         .background(SoftClubColor.canvas.ignoresSafeArea())
@@ -83,12 +83,16 @@ struct LibraryView: View {
     @ToolbarContentBuilder
     private var libraryToolbar: some ToolbarContent {
         if #available(iOS 26, *) {
-            ToolbarItem(placement: .topBarLeading) { rootTitle }
-                .sharedBackgroundVisibility(.hidden)
+            if !dynamicTypeSize.isAccessibilitySize {
+                ToolbarItem(placement: .topBarLeading) { rootTitle }
+                    .sharedBackgroundVisibility(.hidden)
+            }
             ToolbarItem(placement: .topBarTrailing) { addButton }
                 .sharedBackgroundVisibility(.hidden)
         } else {
-            ToolbarItem(placement: .topBarLeading) { rootTitle }
+            if !dynamicTypeSize.isAccessibilitySize {
+                ToolbarItem(placement: .topBarLeading) { rootTitle }
+            }
             ToolbarItem(placement: .topBarTrailing) { addButton }
         }
     }
@@ -97,7 +101,10 @@ struct LibraryView: View {
         Text("Подписки")
             .font(.system(size: titleSize, weight: .semibold))
             .foregroundStyle(SoftClubColor.textPrimary)
-            .fixedSize(horizontal: true, vertical: false)
+            .fixedSize(
+                horizontal: !dynamicTypeSize.isAccessibilitySize,
+                vertical: dynamicTypeSize.isAccessibilitySize
+            )
             .frame(minHeight: 48, alignment: .leading)
             .accessibilityAddTraits(.isHeader)
     }
@@ -124,11 +131,13 @@ struct LibraryView: View {
     private func libraryContent(_ vm: LibraryViewModel) -> some View {
         Group {
             if vm.failedAction == .load {
-                ErrorStateView(message: "Не удалось загрузить подписки") {
-                    vm.load()
+                libraryStateContent {
+                    ErrorStateView(message: "Не удалось загрузить подписки") {
+                        vm.load()
+                    }
                 }
             } else if !vm.isLoaded {
-                LoadingStateView()
+                libraryStateContent { LoadingStateView() }
             } else {
                 loadedLibrary(vm)
             }
@@ -140,12 +149,33 @@ struct LibraryView: View {
     }
 
     @ViewBuilder
+    private func libraryStateContent<Content: View>(
+        @ViewBuilder _ content: () -> Content
+    ) -> some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    rootTitle
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 20)
+                    content()
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 12)
+                .padding(.bottom, 24)
+            }
+        } else {
+            content()
+        }
+    }
+
+    @ViewBuilder
     private func loadedLibrary(_ vm: LibraryViewModel) -> some View {
         @Bindable var vm = vm
 
         let content = Group {
             if vm.allItems.isEmpty {
-                emptyLibrary
+                libraryStateContent { emptyLibrary }
             } else {
                 populatedLibrary(vm)
             }
@@ -203,6 +233,9 @@ struct LibraryView: View {
 
     private func collectionHeader(_ vm: LibraryViewModel) -> some View {
         VStack(alignment: .leading, spacing: 12) {
+            if dynamicTypeSize.isAccessibilitySize {
+                rootTitle
+            }
             collectionControls(vm)
             summary(vm)
         }
@@ -254,7 +287,11 @@ struct LibraryView: View {
         Button {
             navigateToItem(item)
         } label: {
-            LibrarySubscriptionRow(item: item, today: viewModel?.today)
+            LibrarySubscriptionRow(
+                item: item,
+                chargeDateLabel: viewModel?.nextChargeLabel(for: item)
+                    ?? String(localized: "library.nextCharge.unavailable")
+            )
         }
         .buttonStyle(.plain)
         .listRowBackground(Color.clear)
@@ -538,11 +575,13 @@ struct LibraryView: View {
 private struct LibrarySubscriptionRow: View {
     static let artworkSpacing: CGFloat = 14
     static let textInset = ProviderIcon.Size.medium.frame + artworkSpacing
+    private static let minimumIdentityWidth: CGFloat = 120
 
     let item: RecurringItem
-    let today: CivilDate?
+    let chargeDateLabel: String
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .body) private var titleFontSize: CGFloat = 17
 
     var body: some View {
         Group {
@@ -562,27 +601,29 @@ private struct LibrarySubscriptionRow: View {
 
     private var compactLayout: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: Self.artworkSpacing) {
-                providerArtwork
-                    .accessibilityHidden(true)
-                compactIdentity
-                Spacer(minLength: 12)
-                amount
-            }
-
             HStack(alignment: .top, spacing: Self.artworkSpacing) {
                 providerArtwork
                     .accessibilityHidden(true)
+                compactIdentity
+                    .frame(
+                        minWidth: Self.minimumIdentityWidth,
+                        idealWidth: Self.minimumIdentityWidth,
+                        maxWidth: .infinity,
+                        alignment: .leading
+                    )
+                amount
+                    .fixedSize(horizontal: true, vertical: true)
+            }
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(verbatim: item.title)
-                        .font(.body.weight(.medium))
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    secondaryIdentity
-                    amount
+            VStack(alignment: .trailing, spacing: 6) {
+                HStack(alignment: .top, spacing: Self.artworkSpacing) {
+                    providerArtwork
+                        .accessibilityHidden(true)
+                    compactIdentity
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                amount
+                    .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
     }
@@ -614,10 +655,11 @@ private struct LibrarySubscriptionRow: View {
     private var compactIdentity: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(verbatim: item.title)
-                .font(.body.weight(.medium))
-                .fixedSize(horizontal: true, vertical: false)
+                .font(.system(size: titleFontSize, weight: .medium))
+                .fixedSize(horizontal: false, vertical: true)
 
             secondaryIdentity
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -637,12 +679,6 @@ private struct LibrarySubscriptionRow: View {
                 .foregroundStyle(SoftClubColor.textSecondary)
             }
         }
-    }
-
-    private var chargeDateLabel: String {
-        guard let today,
-              let date = try? item.effectiveNextChargeDate(relativeTo: today) else { return "" }
-        return (try? BillingDatePresentation.string(from: date)) ?? ""
     }
 
     private var amount: some View {

@@ -40,6 +40,10 @@ final class LibraryViewModel {
     private(set) var normalizationErrors: [UUID: Error] = [:]
     private(set) var activeCategories: [ItemCategory] = []
     private(set) var sections: [LibrarySection] = []
+    /// One canonical snapshot drives both date ordering and the visible row label.
+    private(set) var nextCharges: [UUID: NextCharge] = [:]
+    private(set) var nextChargeErrors: [UUID: Error] = [:]
+    private(set) var nextChargeLabels: [UUID: String] = [:]
 
     var hasError: Bool { error != nil }
 
@@ -229,6 +233,8 @@ final class LibraryViewModel {
         normalizationErrors = [:]
         normalizationError = nil
 
+        rebuildNextCharges(on: today)
+
         // 1. Filter counts: one pass per status filter over allItems.
         var counts: [StatusFilter: Int] = [.all: allItems.count]
         for filter in StatusFilter.allCases where filter != .all {
@@ -312,6 +318,37 @@ final class LibraryViewModel {
         }
     }
 
+    private func rebuildNextCharges(on today: CivilDate) {
+        var charges: [UUID: NextCharge] = [:]
+        var labels: [UUID: String] = [:]
+        var errors: [UUID: Error] = [:]
+        let projector = RecurringScheduleProjector()
+        for item in allItems {
+            do {
+                if let day = try projector.nextScheduledCharge(for: item, onOrAfter: today) {
+                    labels[item.id] = try BillingDatePresentation.string(
+                        from: BillingCivilDay.canonicalDate(for: day)
+                    )
+                    charges[item.id] = .found(day)
+                } else {
+                    charges[item.id] = .absent
+                    labels[item.id] = String(localized: "library.nextCharge.notScheduled")
+                }
+            } catch {
+                charges[item.id] = .unavailable
+                labels[item.id] = String(localized: "library.nextCharge.unavailable")
+                errors[item.id] = error
+            }
+        }
+        nextCharges = charges
+        nextChargeLabels = labels
+        nextChargeErrors = errors
+    }
+
+    func nextChargeLabel(for item: RecurringItem) -> String {
+        nextChargeLabels[item.id] ?? String(localized: "library.nextCharge.unavailable")
+    }
+
     private func rebuildMonthlyAggregation(snapshot: ExchangeRateSnapshot?) {
         filteredMonthlyAggregation = aggregateRecurringSpend.execute(
             projections: filteredMonthlyProjections,
@@ -336,7 +373,7 @@ final class LibraryViewModel {
     /// to a raw amount from another currency.
     private func sortItems(_ items: [RecurringItem], today: CivilDate) throws -> [RecurringItem] {
         guard sortOrder.isAmountBased else {
-            return try sortOrder.apply(to: items, today: today)
+            return sortOrder.apply(to: items, nextCharges: nextCharges)
         }
 
         var sortKeys: [UUID: MonthlyAmountSortKey] = [:]
@@ -423,6 +460,20 @@ private enum MonthlyAmountSortKey {
 // MARK: - Library Section
 
 extension LibraryViewModel {
+    enum NextCharge: Equatable {
+        case found(CivilDate)
+        case unavailable
+        case absent
+
+        fileprivate var sortGroup: Int {
+            switch self {
+            case .found: 0
+            case .unavailable: 1
+            case .absent: 2
+            }
+        }
+    }
+
     enum FailedAction: Equatable {
         case load
         case delete(itemID: UUID)
@@ -542,11 +593,22 @@ extension LibraryViewModel {
             }
         }
 
-        func apply(to items: [RecurringItem], today: CivilDate) throws -> [RecurringItem] {
+        func apply(to items: [RecurringItem], nextCharges: [UUID: NextCharge]) -> [RecurringItem] {
             switch self {
             case .nextCharge:
-                return try items.sorted {
-                    try $0.effectiveNextChargeDate(relativeTo: today) < $1.effectiveNextChargeDate(relativeTo: today)
+                return items.sorted { lhs, rhs in
+                    let left = nextCharges[lhs.id] ?? .unavailable
+                    let right = nextCharges[rhs.id] ?? .unavailable
+                    if left.sortGroup != right.sortGroup {
+                        return left.sortGroup < right.sortGroup
+                    }
+                    if case let .found(leftDate) = left,
+                       case let .found(rightDate) = right, leftDate != rightDate {
+                        return leftDate < rightDate
+                    }
+                    let titleOrder = lhs.title.localizedCaseInsensitiveCompare(rhs.title)
+                    if titleOrder != .orderedSame { return titleOrder == .orderedAscending }
+                    return lhs.id.uuidString < rhs.id.uuidString
                 }
             case .name:
                 return items.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }

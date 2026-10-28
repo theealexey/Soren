@@ -283,7 +283,8 @@ struct LibraryTotalTests {
         #expect(vm.filteredMonthlyAggregation?.total?.amount == Decimal(299) + usd * rubRate)
         #expect(vm.filteredMonthlyAggregation?.total?.currencyCode == "RUB")
         #expect(vm.filteredMonthlyAggregation?.isComplete == true)
-        #expect(vm.filteredItems.map(\.currencyCode) == ["RUB", "USD"])
+        #expect(vm.filteredItems.map(\.title) == ["Apple TV+", "IVI"])
+        #expect(vm.filteredItems.map(\.currencyCode) == ["USD", "RUB"])
     }
 
     @Test("Unavailable rates never create a raw mixed-currency total")
@@ -736,39 +737,191 @@ struct LibraryTotalTests {
         #expect(vm.filteredItems.map(\.title) == ["Zulu", "Bravo", "Alpha"])
     }
 
-    @Test("Date sorting follows the effective next charge date shown to the user")
-    func dateSortingUsesEffectiveNextChargeDate() throws {
+    @Test("Date sorting follows canonical occurrences instead of persisted anchors")
+    func dateSortingUsesCanonicalNextChargeDate() throws {
         let fixture = try preferences()
         defer { fixture.cleanUp() }
-        let calendar = Calendar(identifier: .gregorian)
-        let annualStoredDate = try #require(calendar.date(byAdding: .day, value: -20, to: .now))
-        let weeklyStoredDate = try #require(calendar.date(byAdding: .day, value: -10, to: .now))
-        let annual = item(
-            title: "Annual",
-            amount: 1_200,
-            currencyCode: "RUB",
-            cycle: .annual,
-            nextChargeDate: annualStoredDate
-        )
-        let weekly = item(
-            title: "Weekly",
-            amount: 100,
-            currencyCode: "RUB",
-            cycle: .weekly,
-            nextChargeDate: weeklyStoredDate
-        )
-        let vm = viewModel(
-            items: [annual, weekly],
-            preferences: fixture.repository,
-            provider: RecordingExchangeRateProvider(responses: [])
-        )
-
+        let today = try CivilDate(year: 2026, month: 3, day: 1)
+        let annual = item(title: "Annual", amount: 1_200, currencyCode: "RUB", cycle: .annual,
+            startDate: try scheduleDate(2026, 1, 1), nextChargeDate: try scheduleDate(2026, 1, 1))
+        let weekly = item(title: "Weekly", amount: 100, currencyCode: "RUB", cycle: .weekly,
+            startDate: try scheduleDate(2026, 1, 10), nextChargeDate: try scheduleDate(2026, 1, 10))
+        let vm = try canonicalViewModel(items: [annual, weekly], preferences: fixture.repository, today: today)
         vm.load()
-
         #expect(annual.nextChargeDate < weekly.nextChargeDate)
-        let today = try BillingDatePresentation.today()
-        #expect(try weekly.effectiveNextChargeDate(relativeTo: today) < annual.effectiveNextChargeDate(relativeTo: today))
+        #expect(vm.nextCharges[weekly.id] == .found(try CivilDate(year: 2026, month: 3, day: 7)))
+        #expect(vm.nextCharges[annual.id] == .found(try CivilDate(year: 2027, month: 1, day: 1)))
         #expect(vm.filteredItems.map(\.title) == ["Weekly", "Annual"])
+    }
+
+    private func scheduleDate(_ year: Int, _ month: Int, _ day: Int) throws -> Date {
+        try BillingCivilDay.canonicalDate(for: CivilDate(year: year, month: month, day: day))
+    }
+
+    private func canonicalViewModel(
+        items: [RecurringItem], preferences: UserPreferencesRepository, today: CivilDate,
+        zone: TimeZone = .gmt
+    ) throws -> LibraryViewModel {
+        let repository = InMemoryRecurringItemRepository(items: items)
+        let now = try BillingDatePresentation.pickerCarrier(for: today, in: zone)
+        return LibraryViewModel(
+            getLibraryItems: GetLibraryItems(repository: repository),
+            deleteRecurringItem: DeleteRecurringItem(repository: repository), preferences: preferences,
+            now: { now }, timeZone: { zone }
+        )
+    }
+
+    @Test("Library row snapshot obeys canonical boundaries and preserves the anchor", arguments: [
+        "jan31", "jan30", "leapClamp", "leapRecovery", "finite", "endToday", "exhausted", "futureStart",
+        "paused", "cancelled", "archived", "archivedAt", "trialValid", "trialAmbiguous",
+        "today", "futureAnchor", "distantAnchor", "overdue", "failed"
+    ])
+    func canonicalRowScenarios(_ scenario: String) throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        var today = try CivilDate(year: 2026, month: 3, day: 1)
+        var source = item(title: scenario, amount: 124, currencyCode: "RUB",
+            startDate: try scheduleDate(2026, 1, 1), nextChargeDate: try scheduleDate(2026, 1, 31))
+        var expected: LibraryViewModel.NextCharge = .found(try CivilDate(year: 2026, month: 3, day: 31))
+        switch scenario {
+        case "jan30":
+            source.nextChargeDate = try scheduleDate(2026, 1, 30)
+            expected = .found(try CivilDate(year: 2026, month: 3, day: 30))
+        case "leapClamp", "leapRecovery":
+            source.billingCycle = .annual
+            source.startDate = try scheduleDate(2024, 2, 29)
+            source.nextChargeDate = source.startDate
+            today = try CivilDate(year: scenario == "leapClamp" ? 2025 : 2028, month: 2, day: 1)
+            expected = .found(try CivilDate(year: today.year, month: 2, day: scenario == "leapClamp" ? 28 : 29))
+        case "finite", "endToday", "exhausted":
+            source.startDate = try scheduleDate(2026, 10, 15)
+            source.nextChargeDate = source.startDate
+            source.autoRenew = false
+            source.endDate = try scheduleDate(2026, 11, 15)
+            today = try CivilDate(year: 2026, month: scenario == "finite" ? 10 : 11, day: scenario == "endToday" ? 15 : 21)
+            expected = scenario != "exhausted" ? .found(try CivilDate(year: 2026, month: 11, day: 15)) : .absent
+        case "futureStart":
+            source.startDate = try scheduleDate(2026, 4, 1)
+            expected = .found(try CivilDate(year: 2026, month: 4, day: 30))
+        case "paused", "cancelled", "archived":
+            source.status = scenario == "paused" ? .paused : (scenario == "cancelled" ? .cancelled : .archived)
+            expected = .absent
+        case "archivedAt":
+            source.archivedAt = try scheduleDate(2026, 2, 1)
+            expected = .absent
+        case "trialValid", "trialAmbiguous":
+            source.status = .trial
+            source.trialEndDate = try scheduleDate(2026, 3, 15)
+            if scenario == "trialValid" {
+                source.nextChargeDate = try scheduleDate(2026, 3, 15)
+                expected = .found(try CivilDate(year: 2026, month: 3, day: 15))
+            } else {
+                expected = .unavailable
+            }
+        case "today", "futureAnchor", "distantAnchor":
+            let year = scenario == "distantAnchor" ? 2030 : 2026
+            let day = scenario == "today" ? 1 : 15
+            source.nextChargeDate = try scheduleDate(year, 3, day)
+            source.startDate = source.nextChargeDate
+            expected = .found(try CivilDate(year: year, month: 3, day: day))
+        case "overdue": source.status = .overdue
+        case "failed": source.status = .failed
+        default: break
+        }
+        let original = source
+        let vm = try canonicalViewModel(items: [source], preferences: fixture.repository, today: today)
+        vm.load()
+        #expect(vm.error == nil)
+        #expect(vm.nextCharges[source.id] == expected)
+        #expect(vm.allItems == [original])
+        #expect(vm.sections.flatMap(\.items).contains(original))
+        switch expected {
+        case let .found(day):
+            #expect(try RecurringScheduleProjector().nextScheduledCharge(for: source, onOrAfter: today) == day)
+            #expect(vm.nextChargeLabel(for: source) == (try BillingDatePresentation.string(from: BillingCivilDay.canonicalDate(for: day))))
+            #expect(vm.nextChargeErrors.isEmpty)
+        case .absent:
+            #expect(try RecurringScheduleProjector().nextScheduledCharge(for: source, onOrAfter: today) == nil)
+            #expect(vm.nextChargeLabel(for: source) == String(localized: "library.nextCharge.notScheduled"))
+            #expect(vm.nextChargeErrors.isEmpty)
+        case .unavailable:
+            #expect(vm.nextChargeErrors[source.id] as? RecurringScheduleProjectionError == .monetaryScheduleUnavailable)
+            #expect(vm.nextChargeLabel(for: source) == String(localized: "library.nextCharge.unavailable"))
+        }
+    }
+
+    @Test("Date groups, equal-date title/UUID ties and row labels remain stable across recomputes")
+    func canonicalSortingAndRecovery() throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let lowID = UUID(uuid: (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1))
+        let highID = UUID(uuid: (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2))
+        let low = item(id: lowID, title: "Same", amount: 124, currencyCode: "RUB",
+            startDate: try scheduleDate(2026, 1, 1), nextChargeDate: try scheduleDate(2026, 1, 31))
+        let high = item(id: highID, title: "Same", amount: 124, currencyCode: "RUB",
+            startDate: low.startDate, nextChargeDate: low.nextChargeDate)
+        let earlier = item(title: "Zulu", amount: 124, currencyCode: "RUB",
+            startDate: low.startDate, nextChargeDate: try scheduleDate(2026, 3, 2))
+        let alpha = item(title: "Alpha", amount: 124, currencyCode: "RUB",
+            startDate: low.startDate, nextChargeDate: low.nextChargeDate)
+        var unavailable = item(title: "Error", amount: 124, currencyCode: "RUB", status: .trial,
+            startDate: low.startDate, nextChargeDate: low.nextChargeDate)
+        unavailable.trialEndDate = try scheduleDate(2026, 3, 15)
+        let absent = item(title: "Absent", amount: 124, currencyCode: "RUB", status: .paused,
+            startDate: low.startDate, nextChargeDate: low.nextChargeDate)
+        let repository = InMemoryRecurringItemRepository(items: [absent, high, unavailable, low, alpha, earlier])
+        let instant = try scheduleDate(2026, 3, 1)
+        let vm = LibraryViewModel(getLibraryItems: GetLibraryItems(repository: repository),
+            deleteRecurringItem: DeleteRecurringItem(repository: repository), preferences: fixture.repository,
+            now: { instant }, timeZone: { .gmt })
+        vm.load()
+        let expected = [earlier.id, alpha.id, low.id, high.id, unavailable.id, absent.id]
+        #expect(vm.filteredItems.map(\.id) == expected)
+        #expect(vm.nextChargeLabel(for: unavailable) != vm.nextChargeLabel(for: absent))
+        vm.sortOrder = .name
+        vm.sortOrder = .nextCharge
+        #expect(vm.filteredItems.map(\.id) == expected)
+        #expect(vm.nextCharges[low.id] == vm.nextCharges[high.id])
+        unavailable.nextChargeDate = try scheduleDate(2026, 3, 15)
+        try repository.update(unavailable)
+        vm.load()
+        #expect(vm.nextChargeErrors.isEmpty)
+        #expect(vm.nextCharges[unavailable.id] == .found(try CivilDate(year: 2026, month: 3, day: 15)))
+    }
+
+    @Test("Unavailable and absent groups use deterministic title/UUID ties", arguments: [true, false])
+    func canonicalNonDateTies(_ ambiguous: Bool) throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let today = try CivilDate(year: 2026, month: 3, day: 1)
+        let anchor = try scheduleDate(2026, 1, 31)
+        let status: ItemStatus = ambiguous ? .trial : .paused
+        let low = item(id: UUID(uuid: (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1)),
+            title: "Same", amount: 124, currencyCode: "RUB", status: status,
+            startDate: anchor, nextChargeDate: anchor)
+        let high = item(id: UUID(uuid: (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2)),
+            title: "Same", amount: 124, currencyCode: "RUB", status: status,
+            startDate: anchor, nextChargeDate: anchor)
+        let alpha = item(title: "Alpha", amount: 124, currencyCode: "RUB", status: status,
+            startDate: anchor, nextChargeDate: anchor)
+        let vm = try canonicalViewModel(items: [high, low, alpha], preferences: fixture.repository, today: today)
+        vm.load()
+        #expect(vm.filteredItems.map(\.id) == [alpha.id, low.id, high.id])
+        #expect(vm.nextCharges[low.id] == (ambiguous ? .unavailable : .absent))
+    }
+
+    @Test("Local today in positive and negative timezones produces the same canonical date", arguments: [-43_200, 50_400])
+    func canonicalTimezoneStability(_ seconds: Int) throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        let zone = try #require(TimeZone(secondsFromGMT: seconds))
+        let today = try CivilDate(year: 2026, month: 3, day: 1)
+        let source = item(title: "Month end", amount: 124, currencyCode: "RUB",
+            startDate: try scheduleDate(2026, 1, 1), nextChargeDate: try scheduleDate(2026, 1, 31))
+        let vm = try canonicalViewModel(items: [source], preferences: fixture.repository, today: today, zone: zone)
+        vm.load()
+        #expect(vm.today == today)
+        #expect(vm.nextCharges[source.id] == .found(try CivilDate(year: 2026, month: 3, day: 31)))
     }
 
     @Test("Amount sorting normalizes every supported billing cycle before conversion")

@@ -1,6 +1,18 @@
 {
   "sourceLanguage" : "ru",
   "strings" : {
+    "library.nextCharge.notScheduled" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No scheduled charge" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Нет запланированного списания" } }
+      }
+    },
+    "library.nextCharge.unavailable" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Charge date unavailable" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Дата списания недоступна" } }
+      }
+    },
     "analytics.recurringCost" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Recurring cost" } },
