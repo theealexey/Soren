@@ -72,6 +72,36 @@ struct HomeCurrencyAggregationTests {
         }
     }
 
+    private actor DeferredPlans {
+        private var pending: [Int: CheckedContinuation<MonthlySubscriptionPlan, Never>] = [:]
+        private var started = 0
+        private var waiters: [(Int, CheckedContinuation<Void, Never>)] = []
+
+        func calculate() async -> MonthlySubscriptionPlan {
+            let index = started
+            started += 1
+            return await withCheckedContinuation { continuation in
+                pending[index] = continuation
+                let ready = waiters.filter { $0.0 <= started }
+                waiters.removeAll { $0.0 <= started }
+                ready.forEach { $0.1.resume() }
+            }
+        }
+
+        func waitForCalculations(_ count: Int) async {
+            guard started < count else { return }
+            await withCheckedContinuation { waiters.append((count, $0)) }
+        }
+
+        func pendingIndices() -> Set<Int> { Set(pending.keys) }
+
+        func complete(_ index: Int, with plan: MonthlySubscriptionPlan) -> Bool {
+            guard let continuation = pending.removeValue(forKey: index) else { return false }
+            continuation.resume(returning: plan)
+            return true
+        }
+    }
+
     private actor CurrencyRecorder {
         private var values: [String] = []
         func append(_ value: String) { values.append(value) }
@@ -479,6 +509,46 @@ struct HomeCurrencyAggregationTests {
         await vm.load()
         #expect(vm.isLoaded)
         #expect(!vm.hasError)
+    }
+
+    @Test("A forced replacement publishes while the cancelled initial calculation remains suspended", .timeLimit(.minutes(1)))
+    func cancelledInitialLoadIsSupersededBeforePublication() async throws {
+        let calculations = DeferredPlans()
+        let firstPlan = try plan(amount: 100)
+        let secondPlan = try plan(amount: 200)
+        let (vm, defaults, suite, _) = try viewModel(
+            provider: RecordingRates(.failure(.unavailable)),
+            plan: { _, _, _, _ in await calculations.calculate() }
+        )
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        #expect(!vm.isLoaded)
+        let firstLoad = Task { await vm.load() }
+        await calculations.waitForCalculations(1)
+        #expect(!vm.isLoaded)
+        #expect(await calculations.pendingIndices() == [0])
+        firstLoad.cancel()
+
+        // Matches HomeView's replacement .task for the changed refresh identity.
+        let replacement = Task { await vm.load(forceReload: true) }
+        await calculations.waitForCalculations(2)
+        #expect(await calculations.pendingIndices() == [0, 1])
+        #expect(!vm.isLoaded)
+        #expect(await calculations.complete(1, with: secondPlan))
+        await replacement.value
+        #expect(vm.isLoaded)
+        #expect(!vm.hasError)
+        #expect(digits(vm.monthlyPlan.primary) == "200")
+        #expect(await calculations.pendingIndices() == [0])
+        let winningState = vm.screenState
+
+        #expect(await calculations.complete(0, with: firstPlan))
+        await firstLoad.value
+        #expect(vm.isLoaded)
+        #expect(!vm.hasError)
+        #expect(digits(vm.monthlyPlan.primary) == "200")
+        #expect(vm.screenState == winningState)
+        #expect(await calculations.pendingIndices().isEmpty)
     }
 
     @Test("Stale FX completion cannot overwrite a newer load")

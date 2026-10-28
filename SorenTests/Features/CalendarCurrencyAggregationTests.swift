@@ -196,6 +196,29 @@ struct CalendarCurrencyAggregationTests {
         )
     }
 
+    @Test func temporalReloadPreservesCivilSelectionAndRollsHistoricalMonth() throws {
+        let fixture = try preferences()
+        defer { fixture.cleanUp() }
+        var zone = try #require(TimeZone(identifier: "Pacific/Auckland"))
+        var instant = try #require(ISO8601DateFormatter().date(from: "2026-10-04T12:00:00Z"))
+        let repository = InMemoryRecurringItemRepository(items: [])
+        let vm = CalendarViewModel(repository: repository, preferences: fixture.repository,
+            exchangeRateProvider: StaticExchangeRateProvider(), now: { instant }, timeZone: { zone })
+        vm.load()
+        let selected = try CivilDate(year: 2026, month: 10, day: 20)
+        vm.selectDate(try BillingDatePresentation.pickerCarrier(for: selected, in: zone))
+        zone = try #require(TimeZone(identifier: "America/Los_Angeles"))
+        vm.load(forceReload: true)
+        #expect(try BillingCivilDay.civilDate(containing: vm.selectedDate, in: zone) == selected)
+        #expect(vm.presentationCalendar.timeZone.identifier == zone.identifier)
+        #expect(try BillingCivilDay.civilDate(containing: vm.displayedMonth, in: zone).month == 10)
+        instant = try #require(ISO8601DateFormatter().date(from: "2027-01-02T12:00:00Z"))
+        vm.load(forceReload: true)
+        #expect(try BillingCivilDay.civilDate(containing: vm.selectedDate, in: zone) == CivilDate(year: 2027, month: 1, day: 1))
+        #expect(vm.daysInGrid.contains { $0.isToday })
+        #expect(repository.items.isEmpty)
+    }
+
     @Test("Mixed month and selected day convert before aggregation while rows stay original")
     func mixedMonthAndSelectedDayConvertBeforeAggregation() async throws {
         let fixture = try preferences()

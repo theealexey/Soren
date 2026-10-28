@@ -1,5 +1,8 @@
 import Foundation
+import Combine
+import UIKit
 import SwiftData
+import Synchronization
 import Testing
 @testable import Soren
 
@@ -327,3 +330,237 @@ private final class CivilWiringReconciler: NotificationReconciling {
         return NotificationReconciliationReport(desiredCount: plan.requests.count, removedPendingCount: 0, removedDeliveredCount: 0, addedCount: plan.requests.count, authorizationStatus: .authorized, addFailures: [], planningFailures: plan.failures)
     }
 }
+
+
+@MainActor
+struct TemporalEnvironmentTests {
+    @Test(arguments: [
+        ("2026-10-31T23:59:00Z", "2026-11-01T00:00:00Z", "GMT", "GMT"),
+        ("2026-12-31T23:59:00Z", "2027-01-01T00:00:00Z", "GMT", "GMT"),
+        ("2026-10-28T01:00:00Z", "2026-10-28T01:00:00Z", "GMT", "America/Los_Angeles"),
+        ("2026-10-28T12:00:00Z", "2026-10-28T12:00:00Z", "GMT", "Europe/Moscow"),
+        ("2026-11-01T05:59:00Z", "2026-11-01T06:01:00Z", "America/New_York", "America/New_York")
+    ])
+    func changedContextIsDeduplicated(input: (String, String, String, String)) throws {
+        let parser = ISO8601DateFormatter()
+        var instant = try #require(parser.date(from: input.0))
+        var zone = try #require(TimeZone(identifier: input.2))
+        let store = try SorenModelContainer.inMemory()
+        let state = AppState(openStore: { store }, now: { instant }, runtimeTimeZone: { zone })
+        let container = try #require(state.appContainer)
+        let initial = container.refreshIdentity
+        state.reconcileTemporalEnvironment()
+        #expect(container.refreshIdentity == initial)
+        instant = try #require(parser.date(from: input.1))
+        zone = try #require(TimeZone(identifier: input.3))
+        state.reconcileTemporalEnvironment()
+        #expect(container.temporalRevision == 1)
+        #expect(container.itemsVersion == 0)
+        #expect(state.temporalFingerprint?.day == (try BillingCivilDay.civilDate(containing: instant, in: zone)))
+        for _ in 0..<3 { state.reconcileTemporalEnvironment() }
+        #expect(container.temporalRevision == 1)
+        #expect(try container.repositories.recurringItems.fetchAll().isEmpty)
+    }
+
+    @Test func retainedModelsReloadAtYearBoundaryWithoutWritingAnchors() async throws {
+        let day = try CivilDate(year: 2026, month: 12, day: 31)
+        let clock = Mutex(try BillingCivilDay.canonicalDate(for: day))
+        let now: @Sendable () -> Date = { clock.withLock { $0 } }
+        let store = try SorenModelContainer.inMemory()
+        let state = AppState(openStore: { store }, now: now, runtimeTimeZone: { .gmt })
+        let container = try #require(state.appContainer)
+        let repository = container.repositories.recurringItems
+        var finite = try canonicalTestItem()
+        finite.nextChargeDate = now()
+        finite.startDate = now()
+        finite.endDate = now()
+        finite.autoRenew = false
+        finite.status = .active
+        var trial = RecurringItem(
+            id: UUID(), title: finite.title,
+            providerID: finite.providerID, providerName: finite.providerName,
+            itemType: finite.itemType, category: finite.category,
+            amount: finite.amount, currencyCode: finite.currencyCode, billingCycle: finite.billingCycle,
+            startDate: finite.startDate, nextChargeDate: finite.nextChargeDate,
+            trialEndDate: finite.trialEndDate, autoRenew: finite.autoRenew, endDate: finite.endDate,
+            chargeReminder: finite.chargeReminder, trialReminder: finite.trialReminder,
+            status: finite.status, usageStatus: finite.usageStatus,
+            paymentMethodID: finite.paymentMethodID, note: finite.note, tags: finite.tags,
+            isShared: finite.isShared, isFamilyPlan: finite.isFamilyPlan,
+            bundleID: finite.bundleID, managementURL: finite.managementURL,
+            createdAt: finite.createdAt, updatedAt: finite.updatedAt, archivedAt: finite.archivedAt
+        )
+        trial.status = .trial
+        trial.endDate = nil
+        trial.autoRenew = true
+        trial.trialEndDate = try BillingCivilDay.canonicalDate(for: CivilDate(year: 2027, month: 1, day: 3))
+        try repository.saveAll([finite, trial])
+        let original = try repository.fetchAll()
+        let library = LibraryViewModel(repositories: container.repositories, now: now, timeZone: { .gmt })
+        let analytics = AnalyticsViewModel(getCurrentObligations: GetAnalyticsCurrentObligations(repository: repository),
+            getForecast: GetAnalyticsForecast(repository: repository), now: now, timeZone: { .gmt })
+        let calendar = CalendarViewModel(repository: repository, exchangeRateProvider: StaticExchangeRateProvider(),
+            now: now, calendar: BillingCivilDay.calendar)
+        let home = HomeViewModel(getUpcomingCharges: GetUpcomingCharges(repository: repository),
+            preferences: container.preferences, exchangeRateProvider: StaticExchangeRateProvider(),
+            calculateCurrentMonth: { _, _, _, _ in
+                CurrentMonthSubscriptionPlanSnapshot(
+                    plan: nil, scheduledCharges: [],
+                    statusCounts: SubscriptionStatusCounts(active: 0, trial: 0, paused: 0)
+                )
+            }, now: now, calendar: BillingCivilDay.calendar)
+        library.sortOrder = .name
+        library.load(); analytics.load(); calendar.load(); await home.load()
+        #expect(library.nextCharges[finite.id] == .found(day))
+        #expect(library.nextCharges[trial.id] == .unavailable)
+        let oldIdentity = container.refreshIdentity
+        let oldHomeMonth = home.monthLabel
+        let oldAnalyticsRevision = analytics.aggregationRevision
+        let oldLibraryRevision = library.aggregationRevision
+        clock.withLock { $0 = $0.addingTimeInterval(86_400) }
+        state.reconcileTemporalEnvironment()
+        #expect(container.refreshIdentity != oldIdentity)
+        // The retained views use these existing reload entry points for the new identity.
+        library.load(); analytics.load(forceReload: true); calendar.load(forceReload: true)
+        await home.load(forceReload: true)
+        #expect(library.today == (try CivilDate(year: 2027, month: 1, day: 1)))
+        #expect(library.nextCharges[finite.id] == .absent)
+        #expect(library.nextCharges[trial.id] == .unavailable)
+        #expect(library.nextChargeErrors[trial.id] != nil)
+        #expect(library.sortOrder == .name)
+        #expect(library.aggregationRevision > oldLibraryRevision)
+        #expect(analytics.aggregationRevision > oldAnalyticsRevision)
+        #expect(home.monthLabel != oldHomeMonth)
+        #expect(calendar.daysInGrid.contains { $0.isToday })
+        let stored = try repository.fetchAll()
+        #expect(stored.map(\.nextChargeDate) == original.map(\.nextChargeDate))
+        #expect(stored.map(\.startDate) == original.map(\.startDate))
+        let unchanged = container.refreshIdentity
+        state.reconcileTemporalEnvironment()
+        #expect(container.refreshIdentity == unchanged)
+    }
+
+    @Test("Background temporal signals reconcile on MainActor and deduplicate", .timeLimit(.minutes(1)), arguments: [
+        UIApplication.significantTimeChangeNotification,
+        Notification.Name.NSCalendarDayChanged,
+        Notification.Name.NSSystemTimeZoneDidChange,
+        Notification.Name.NSSystemClockDidChange
+    ])
+    func backgroundTemporalNotificationDelivery(name: Notification.Name) async throws {
+        let center = NotificationCenter()
+        var instant = Date(timeIntervalSince1970: 1_800_000_000)
+        let store = try SorenModelContainer.inMemory()
+        let state = AppState(openStore: { store }, now: { instant }, runtimeTimeZone: { .gmt })
+        let container = try #require(state.appContainer)
+        #expect(container.temporalRevision == 0)
+        let deliveries = AsyncStream<Bool>.makeStream()
+        let subscription = center.publisher(for: name)
+            .receive(on: DispatchQueue.main)
+            .sink { _ in
+                let deliveredOnMain = Thread.isMainThread
+                Task { @MainActor in
+                    state.reconcileTemporalEnvironment()
+                    deliveries.continuation.yield(deliveredOnMain)
+                }
+            }
+        defer {
+            subscription.cancel()
+            deliveries.continuation.finish()
+        }
+        var iterator = deliveries.stream.makeAsyncIterator()
+
+        for expectedRevision in [1, 1, 2] {
+            if expectedRevision != container.temporalRevision {
+                instant = instant.addingTimeInterval(86_400)
+            }
+            let postedInBackground = await withCheckedContinuation { continuation in
+                DispatchQueue.global().async {
+                    let isBackground = !Thread.isMainThread
+                    center.post(name: name, object: nil)
+                    continuation.resume(returning: isBackground)
+                }
+            }
+            #expect(postedInBackground)
+            // Emitted only after the explicit MainActor reconciliation has completed.
+            let deliveredOnMain = await iterator.next()
+            #expect(deliveredOnMain == true)
+            #expect(container.temporalRevision == expectedRevision)
+            #expect(container.itemsVersion == 0)
+            #expect(state.temporalError == nil)
+        }
+    }
+
+    @Test func foregroundSameContextAndInvalidSampleDoNotInvalidate() async throws {
+        var instant = Date(timeIntervalSince1970: 1_800_000_000)
+        let store = try SorenModelContainer.inMemory()
+        let state = AppState(openStore: { store }, now: { instant }, runtimeTimeZone: { .gmt })
+        let container = try #require(state.appContainer)
+        let baseline = state.temporalFingerprint
+        for _ in 0..<2 {
+            state.sceneActivityChanged(isActive: true)
+            await container.notificationRefreshCoordinator.refreshTask?.value
+        }
+        #expect(container.temporalRevision == 0)
+        instant = Date(timeIntervalSince1970: .nan)
+        state.reconcileTemporalEnvironment()
+        #expect(state.temporalError != nil)
+        #expect(state.temporalFingerprint == baseline)
+        #expect(container.temporalRevision == 0)
+        instant = Date(timeIntervalSince1970: 1_800_086_400)
+        state.reconcileTemporalEnvironment()
+        #expect(state.temporalError == nil)
+        #expect(container.temporalRevision == 1)
+        state.prepare()
+        #expect(state.appContainer !== container)
+        #expect(state.appContainer?.temporalRevision == 0)
+        #expect(state.temporalFingerprint?.day == (try BillingCivilDay.civilDate(containing: instant, in: .gmt)))
+    }
+}
+
+
+#if DEBUG
+struct DebugHomeClockPolicyTests {
+    @Test func subscriptionsDefaultRemainsFrozen() throws {
+        let arguments = ["--subscriptions-scenario"]
+        let runtime = Date(timeIntervalSince1970: 1_800_000_000)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(identifier: "America/Los_Angeles"))
+        #expect(DebugHomeScenario.requested(in: arguments) == .subscriptions)
+        #expect(DebugHomeScenario.homeDate(in: arguments, runtimeInstant: runtime) == DebugHomeScenario.subscriptions.referenceDate)
+        let selected = DebugHomeScenario.homeCalendar(in: arguments, runtimeCalendar: calendar)
+        #expect(selected == DebugHomeScenario.subscriptions.calendar)
+        #expect(try BillingCivilDay.civilDate(containing: DebugHomeScenario.homeDate(in: arguments, runtimeInstant: runtime), in: selected.timeZone) == CivilDate(year: 2026, month: 8, day: 13))
+    }
+
+    @Test func optInUsesEachRuntimeSampleAndRuntimeCalendar() throws {
+        let arguments = ["--subscriptions-scenario", "--qa05-live-clock"]
+        let first = Date(timeIntervalSince1970: 1_800_000_000)
+        let second = first.addingTimeInterval(86_400)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(identifier: "America/Los_Angeles"))
+        #expect(DebugHomeScenario.requested(in: arguments) == .subscriptions)
+        #expect(DebugHomeScenario.homeDate(in: arguments, runtimeInstant: first) == first)
+        #expect(DebugHomeScenario.homeDate(in: arguments, runtimeInstant: second) == second)
+        #expect(DebugHomeScenario.homeCalendar(in: arguments, runtimeCalendar: calendar) == calendar)
+        calendar.timeZone = try #require(TimeZone(identifier: "Pacific/Auckland"))
+        #expect(DebugHomeScenario.homeCalendar(in: arguments, runtimeCalendar: calendar) == calendar)
+    }
+
+    @Test func bareOverrideDoesNotActivateScenario() {
+        let arguments = ["--qa05-live-clock"]
+        let runtime = Date(timeIntervalSince1970: 1_800_000_000)
+        #expect(DebugHomeScenario.requested(in: arguments) == nil)
+        #expect(DebugHomeScenario.homeDate(in: arguments, runtimeInstant: runtime) == runtime)
+        #expect(DebugHomeScenario.homeCalendar(in: arguments, runtimeCalendar: BillingCivilDay.calendar) == BillingCivilDay.calendar)
+    }
+
+    @Test(arguments: ["--home-scenario-annual", "--home-scenario-attention", "--home-scenario-dense-week", "--home-scenario-empty", "--home-scenario-partial-remaining"])
+    func otherScenariosIgnoreOverride(argument: String) throws {
+        let arguments = [argument, "--subscriptions-scenario", "--qa05-live-clock"]
+        let scenario = try #require(DebugHomeScenario.requested(in: [argument]))
+        #expect(DebugHomeScenario.requested(in: arguments) == scenario)
+        #expect(DebugHomeScenario.homeDate(in: arguments, runtimeInstant: .distantFuture) == scenario.referenceDate)
+        #expect(DebugHomeScenario.homeCalendar(in: arguments, runtimeCalendar: BillingCivilDay.calendar) == scenario.calendar)
+    }
+}
+#endif

@@ -4,7 +4,6 @@ import SwiftUI
 struct CalendarView: View {
     @Environment(AppContainer.self) private var container
     @Environment(\.navigateToItem) private var navigateToItem
-    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var viewModel: CalendarViewModel?
     @ScaledMetric(relativeTo: .headline) private var headingSize = 17.0
@@ -20,17 +19,8 @@ struct CalendarView: View {
             }
         }
         .background(SoftClubColor.canvas.ignoresSafeArea())
-        .task {
-            guard viewModel == nil else { return }
-            let vm = container.makeCalendarViewModel()
-            viewModel = vm
-            vm.load()
-        }
-        .onChange(of: container.itemsVersion) { _, _ in
-            viewModel?.load(forceReload: true)
-        }
-        .onChange(of: scenePhase) { _, phase in
-            guard phase == .active, viewModel?.isLoaded == true else { return }
+        .task(id: container.refreshIdentity) {
+            if viewModel == nil { viewModel = container.makeCalendarViewModel() }
             viewModel?.load(forceReload: true)
         }
     }

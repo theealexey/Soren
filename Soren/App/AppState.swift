@@ -20,6 +20,41 @@ final class AppState {
     private let makeAppContainer: (ModelContainer, RepositoryContainer) -> AppContainer
     private let migrationTimeZone: TimeZone
     private var sceneIsActive = false
+    private let now: () -> Date
+    private let runtimeTimeZone: () -> TimeZone
+    private(set) var temporalError: Error?
+    private(set) var temporalFingerprint: TemporalFingerprint?
+
+    struct TemporalFingerprint: Equatable {
+        let day: CivilDate
+        let timeZoneIdentifier: String
+        let secondsFromGMT: Int
+    }
+
+    /// Signals are hints; only a changed, successfully sampled context invalidates UI.
+    func reconcileTemporalEnvironment() {
+        guard let appContainer else { return }
+        do {
+            let instant = now()
+            let sourceZone = runtimeTimeZone()
+            let identifier = sourceZone.identifier
+            guard let zone = TimeZone(identifier: identifier) else {
+                throw BillingCivilDayError.invalidInstant(instant)
+            }
+            let fingerprint = TemporalFingerprint(
+                day: try BillingCivilDay.civilDate(containing: instant, in: zone),
+                timeZoneIdentifier: identifier,
+                secondsFromGMT: zone.secondsFromGMT(for: instant)
+            )
+            temporalError = nil
+            guard fingerprint != temporalFingerprint else { return }
+            let hadBaseline = temporalFingerprint != nil
+            temporalFingerprint = fingerprint
+            if hadBaseline { appContainer.invalidateTemporalContext() }
+        } catch {
+            temporalError = error
+        }
+    }
 
     /// Single source of truth for the app's color scheme preference.
     /// Changes are persisted to UserDefaults immediately (no debounce needed).
@@ -32,6 +67,8 @@ final class AppState {
     init(
         openStore: @escaping () throws -> ModelContainer = { try SorenModelContainer.production() },
         interpretationTimeZone: TimeZone = .current,
+        now: @escaping () -> Date = { .now },
+        runtimeTimeZone: @escaping () -> TimeZone = { .current },
         bootstrap: @escaping (ModelContainer, TimeZone) throws -> Void = {
             try LegacyBillingDateProvenanceBootstrap().execute(container: $0, interpretationTimeZone: $1)
         },
@@ -40,6 +77,8 @@ final class AppState {
             AppContainer(modelContext: $0.mainContext, repositories: $1)
         }
     ) {
+        self.now = now
+        self.runtimeTimeZone = runtimeTimeZone
         self.openStore = openStore
         self.bootstrap = bootstrap
         self.validate = validate
@@ -70,6 +109,7 @@ final class AppState {
                 try validate(repositories)
                 self.appContainer = appContainer
                 preparationState = .ready
+                reconcileTemporalEnvironment()
                 return
             } catch {
                 preparationError = error
@@ -87,6 +127,8 @@ final class AppState {
         preparationState = .preparing
         preparationError = nil
         appContainer = nil
+        temporalFingerprint = nil
+        temporalError = nil
         if modelContainer == nil {
             do { modelContainer = try openStore() }
             catch {
@@ -103,6 +145,7 @@ final class AppState {
             let readyContainer = makeAppContainer(container, repositories)
             appContainer = readyContainer
             preparationState = .ready
+            reconcileTemporalEnvironment()
             if sceneIsActive { readyContainer.notificationRefreshCoordinator.didBecomeActive() }
         } catch {
             preparationError = error
@@ -113,6 +156,7 @@ final class AppState {
     func sceneActivityChanged(isActive: Bool) {
         sceneIsActive = isActive
         if isActive, preparationState == .ready {
+            reconcileTemporalEnvironment()
             appContainer?.notificationRefreshCoordinator.didBecomeActive()
         }
     }

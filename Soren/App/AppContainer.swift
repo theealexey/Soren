@@ -24,6 +24,20 @@ final class AppContainer {
     /// Incremented whenever recurring items are mutated.
     /// Views observe this to know when to reload their ViewModels.
     var itemsVersion: Int = 0
+    private(set) var temporalRevision: Int = 0
+
+    struct RefreshIdentity: Equatable {
+        let itemsVersion: Int
+        let temporalRevision: Int
+    }
+
+    var refreshIdentity: RefreshIdentity {
+        RefreshIdentity(itemsVersion: itemsVersion, temporalRevision: temporalRevision)
+    }
+
+    func invalidateTemporalContext() {
+        temporalRevision += 1
+    }
 
     init(modelContext: ModelContext, repositories: RepositoryContainer? = nil) {
         let prefs      = UserPreferencesRepository()

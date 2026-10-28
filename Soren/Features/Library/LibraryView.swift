@@ -27,13 +27,8 @@ struct LibraryView: View {
         .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
         .toolbar { libraryToolbar }
         .tint(SoftClubColor.textPrimary)
-        .task {
-            guard viewModel == nil else { return }
-            let vm = container.makeLibraryViewModel()
-            viewModel = vm
-            vm.load()
-        }
-        .onChange(of: container.itemsVersion) { _, _ in
+        .task(id: container.refreshIdentity) {
+            if viewModel == nil { viewModel = container.makeLibraryViewModel() }
             viewModel?.load()
         }
         .alert(

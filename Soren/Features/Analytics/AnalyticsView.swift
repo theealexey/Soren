@@ -33,13 +33,8 @@ struct AnalyticsView: View {
             }
         }
         .background(SoftClubColor.canvas)
-        .task {
-            guard viewModel == nil else { return }
-            let vm = container.makeAnalyticsViewModel()
-            viewModel = vm
-            vm.load()
-        }
-        .onChange(of: container.itemsVersion) { _, _ in
+        .task(id: container.refreshIdentity) {
+            if viewModel == nil { viewModel = container.makeAnalyticsViewModel() }
             viewModel?.load(forceReload: true)
         }
     }

@@ -20,7 +20,7 @@ struct HomeView: View {
                 LoadingStateView()
             }
         }
-        .task(id: container.itemsVersion) {
+        .task(id: container.refreshIdentity) {
             let viewModel: HomeViewModel
             if let existing = self.viewModel {
                 viewModel = existing
@@ -29,7 +29,7 @@ struct HomeView: View {
                 self.viewModel = created
                 viewModel = created
             }
-            await viewModel.load(forceReload: viewModel.isLoaded)
+            await viewModel.load(forceReload: true)
         }
     }
 

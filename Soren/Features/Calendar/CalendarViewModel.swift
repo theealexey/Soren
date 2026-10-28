@@ -88,7 +88,8 @@ final class CalendarViewModel {
 
     private let getSchedule: GetCalendarSchedule
     private let now: () -> Date
-    private let calendar: Calendar
+    private var calendar: Calendar
+    private let timeZone: () -> TimeZone
     private var scheduleMonetaryCompleteness = RecurringScheduleProjection.MonetaryCompleteness.complete
     private let preferences: UserPreferencesRepository
     private let aggregateRecurringSpend: AggregateRecurringSpendUseCase
@@ -107,12 +108,14 @@ final class CalendarViewModel {
         aggregateRecurringSpend: AggregateRecurringSpendUseCase = AggregateRecurringSpendUseCase(),
         exchangeRateProvider: Provider,
         now: @escaping () -> Date = { .now },
-        calendar: Calendar = CalendarViewModel.cal
+        calendar: Calendar = CalendarViewModel.cal,
+        timeZone: (() -> TimeZone)? = nil
     ) {
         self.getSchedule = GetCalendarSchedule(repository: repository)
         self.now = now
+        self.timeZone = timeZone ?? { calendar.timeZone }
         var presentationCalendar = Calendar(identifier: .gregorian)
-        presentationCalendar.timeZone = calendar.timeZone
+        presentationCalendar.timeZone = self.timeZone()
         presentationCalendar.locale = PresentationLocale.current
         presentationCalendar.firstWeekday = 2
         self.calendar = presentationCalendar
@@ -204,6 +207,15 @@ final class CalendarViewModel {
         exchangeRateSnapshot = nil
         error = nil
         do {
+            let displayedDay = try BillingCivilDay.civilDate(containing: displayedMonth, in: calendar.timeZone)
+            let selectedDay = try BillingCivilDay.civilDate(containing: selectedDate, in: calendar.timeZone)
+            var refreshedCalendar = calendar
+            refreshedCalendar.timeZone = timeZone()
+            let refreshedMonth = try BillingDatePresentation.pickerCarrier(for: displayedDay, in: refreshedCalendar.timeZone)
+            let refreshedSelection = try BillingDatePresentation.pickerCarrier(for: selectedDay, in: refreshedCalendar.timeZone)
+            calendar = refreshedCalendar
+            displayedMonth = calendar.startOfDay(for: refreshedMonth)
+            selectedDate = calendar.startOfDay(for: refreshedSelection)
             let today = try BillingCivilDay.civilDate(containing: now(), in: calendar.timeZone)
             var month = try BillingCivilDay.civilDate(containing: displayedMonth, in: calendar.timeZone)
             if month.year < today.year || (month.year == today.year && month.month < today.month) {

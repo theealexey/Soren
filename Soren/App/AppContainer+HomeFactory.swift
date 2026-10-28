@@ -36,15 +36,13 @@ extension AppContainer {
         }
 
         #if DEBUG
-        let runtimeScenario = DebugHomeScenario.requested(
-            in: ProcessInfo.processInfo.arguments
-        )
+        let arguments = ProcessInfo.processInfo.arguments
         let now: @Sendable () -> Date = {
-            runtimeScenario?.referenceDate ?? .now
+            DebugHomeScenario.homeDate(in: arguments, runtimeInstant: .now)
         }
         var productionCalendar = Calendar(identifier: .gregorian)
         productionCalendar.timeZone = .autoupdatingCurrent
-        let calendar = runtimeScenario?.calendar ?? productionCalendar
+        let calendar = DebugHomeScenario.homeCalendar(in: arguments, runtimeCalendar: productionCalendar)
         #else
         let now: @Sendable () -> Date = { .now }
         var calendar = Calendar(identifier: .gregorian)
@@ -112,6 +110,21 @@ enum DebugHomeScenario: String, Sendable {
         if arguments.contains("--home-scenario-partial-remaining") { return .partialRemaining }
         if arguments.contains("--subscriptions-scenario") { return .subscriptions }
         return nil
+    }
+
+    /// Only the subscriptions QA opt-in shares the live clock used by the other tabs.
+    private static func homeClockScenario(in arguments: [String]) -> Self? {
+        let scenario = requested(in: arguments)
+        if scenario == .subscriptions, arguments.contains("--qa05-live-clock") { return nil }
+        return scenario
+    }
+
+    static func homeDate(in arguments: [String], runtimeInstant: Date) -> Date {
+        homeClockScenario(in: arguments)?.referenceDate ?? runtimeInstant
+    }
+
+    static func homeCalendar(in arguments: [String], runtimeCalendar: Calendar) -> Calendar {
+        homeClockScenario(in: arguments)?.calendar ?? runtimeCalendar
     }
 
     var calendar: Calendar {

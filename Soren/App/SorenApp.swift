@@ -31,6 +31,30 @@ struct SorenApp: App {
                 }
             }
             .preferredColorScheme(appState.appearanceMode.colorScheme)
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)
+                .receive(on: DispatchQueue.main)) { _ in
+                Task { @MainActor in
+                    appState.reconcileTemporalEnvironment()
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)
+                .receive(on: DispatchQueue.main)) { _ in
+                Task { @MainActor in
+                    appState.reconcileTemporalEnvironment()
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .NSSystemTimeZoneDidChange)
+                .receive(on: DispatchQueue.main)) { _ in
+                Task { @MainActor in
+                    appState.reconcileTemporalEnvironment()
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .NSSystemClockDidChange)
+                .receive(on: DispatchQueue.main)) { _ in
+                Task { @MainActor in
+                    appState.reconcileTemporalEnvironment()
+                }
+            }
         }
         .onChange(of: scenePhase) { _, phase in
             appState.sceneActivityChanged(isActive: phase == .active)

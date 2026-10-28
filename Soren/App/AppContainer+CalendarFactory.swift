@@ -10,7 +10,8 @@ extension AppContainer {
             repository: repositories.recurringItems,
             preferences: preferences,
             aggregateRecurringSpend: AggregateRecurringSpendUseCase(),
-            exchangeRateProvider: exchangeRateProvider
+            exchangeRateProvider: exchangeRateProvider,
+            timeZone: { .current }
         )
     }
 }
