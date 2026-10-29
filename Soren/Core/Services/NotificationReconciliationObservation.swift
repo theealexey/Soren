@@ -38,6 +38,10 @@ final class NotificationReconciliationObservation {
     private(set) var authorizationStatus: NotificationAuthorizationStatus = .unknown
     private(set) var latestRecord: NotificationReconciliationRecord?
     private(set) var revision = 0
+    private(set) var capacityOmittedCount = 0
+    private(set) var deliveredDecisionSuppressedCount = 0
+    private(set) var missingPendingCount = 0
+    private(set) var pendingBudgetExceededCount = 0
 
     func record(
         outcome: NotificationRefreshOutcome,
@@ -47,6 +51,10 @@ final class NotificationReconciliationObservation {
     ) {
         switch outcome {
         case .reconciled(let report):
+            capacityOmittedCount = report.capacityOmittedIdentifiers.count
+            deliveredDecisionSuppressedCount = report.deliveredDecisionSuppressedIdentifiers.count
+            missingPendingCount = report.missingPendingIdentifiers.count
+            pendingBudgetExceededCount = report.pendingBudgetExceededCount
             authorizationStatus = report.authorizationStatus
             let category: NotificationReconciliationFailureCategory?
             switch (!report.addFailures.isEmpty, !report.planningFailures.isEmpty) {
@@ -69,6 +77,10 @@ final class NotificationReconciliationObservation {
                 failureCategory: category
             )
         case .repositoryFetchFailed:
+            capacityOmittedCount = 0
+            deliveredDecisionSuppressedCount = 0
+            missingPendingCount = 0
+            pendingBudgetExceededCount = 0
             latestRecord = NotificationReconciliationRecord(
                 startedAt: startedAt,
                 completedAt: completedAt,

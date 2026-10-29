@@ -399,10 +399,10 @@ final class ItemDetailsViewModel {
         lastNotificationOutcome = outcome
         switch outcome {
         case .reconciled(let report):
-            if report.desiredCount > 0 && (report.authorizationStatus == .denied || report.authorizationStatus == .notDetermined) {
+            let requiresScheduling = report.desiredCount > report.deliveredDecisionSuppressedIdentifiers.count
+            if requiresScheduling && (report.authorizationStatus == .denied || report.authorizationStatus == .notDetermined) {
                 reminderIssue = .permission
-            } else if !report.addFailures.isEmpty || !report.planningFailures.isEmpty ||
-                        (report.desiredCount > 0 && !report.authorizationStatus.permitsScheduling) {
+            } else if report.hasSchedulingIssues {
                 reminderIssue = .reconciliation
             } else {
                 reminderIssue = nil

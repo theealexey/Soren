@@ -161,3 +161,24 @@ struct NotificationRequestCopyTests {
         #expect(!request.body.localizedCaseInsensitiveContains("tomorrow"))
     }
 }
+
+extension NotificationRequestCopyTests {
+    @Test("Decision copy preserves approved absolute wording and long title", arguments: ["ru_RU", "en_US"])
+    func decisionCopy(localeID: String) throws {
+        let notificationPlanner = try planner(locale: localeID)
+        var value = try item()
+        value.chargeReminder = .never
+        value.title = String(repeating: "Long subscription «Name» %@ — ", count: 20)
+        value.renewalDecisionDeadline = try CivilDate(year: 2026, month: 8, day: 12)
+        value.renewalDecisionReminderEnabled = true
+        let request = try #require(notificationPlanner.plan(items: [value], now: try date(2026, 8, 1)).requests.first)
+        let russian = localeID.hasPrefix("ru")
+        #expect(request.title == (russian ? "Решение об отмене" : "Cancellation decision"))
+        #expect(request.body.hasPrefix(russian ? "Ваш срок решения — " : "Your decision deadline is "))
+        #expect(request.body.hasSuffix(russian ? "Решите, отменять ли «\(value.title)»." : "Decide whether to cancel “\(value.title)”."))
+        #expect(request.body.contains("2026") && request.body.contains("12"))
+        #expect(!request.body.contains("notification.renewalDecision") && !request.body.contains("%1$@"))
+        #expect(!request.body.localizedCaseInsensitiveContains("today") && !request.body.localizedCaseInsensitiveContains("tomorrow"))
+        #expect(request.body.contains(value.title))
+    }
+}

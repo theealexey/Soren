@@ -318,3 +318,245 @@ struct NotificationRefreshCoordinatorTests {
         #expect(center.pending == ["other.feature.pending"])
     }
 }
+
+@MainActor
+struct RenewalNotificationReconciliationTests {
+    private func request(_ index: Int, kind: NotificationRequestKind = .charge,
+                         fire: Date? = nil) -> PlannedNotificationRequest {
+        let key = "20300101"
+        let fireDate = fire ?? Date(timeIntervalSince1970: 1_893_488_400 + Double(index) * 60)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .gmt
+        return PlannedNotificationRequest(
+            id: String(format: "soren.v2.%@.item%03d.%@.0", kind.rawValue, index, key),
+            itemID: UUID(), kind: kind,
+            occurrenceDate: Date(timeIntervalSince1970: 1_893_456_000), occurrenceLocalDateKey: key,
+            reminderOffsetDays: 0, fireDate: fireDate,
+            trigger: NotificationTriggerPlan(year: 2030, month: 1, day: 1,
+                hour: calendar.component(.hour, from: fireDate), minute: calendar.component(.minute, from: fireDate),
+                timeZoneIdentifier: "GMT", repeats: false),
+            title: "Synthetic", body: "Synthetic decision")
+    }
+
+    private func plan(_ requests: [PlannedNotificationRequest]) -> NotificationRequestPlan {
+        NotificationRequestPlan(requests: requests, failures: [])
+    }
+
+    @Test("Capacity selects nearest requests before add, independently of input order", arguments: [0, 60, 61, 96], [false, true])
+    func nearestSelection(count: Int, reversed: Bool) async {
+        let requests = (0..<count).map { request($0, kind: $0.isMultiple(of: 2) ? .charge : .renewalDecision) }
+        let center = FakeNotificationCenterClient()
+        let report = await NotificationReconciler(center: center).reconcile(plan: plan(reversed ? Array(requests.reversed()) : requests))
+        let expected = Array(requests.prefix(60))
+        #expect(center.addAttempts == expected.map(\.id))
+        #expect(center.pending == Set(expected.map(\.id)))
+        #expect(report.desiredCount == count && report.addedCount == min(count, 60))
+        #expect(report.capacityOmittedIdentifiers == requests.dropFirst(expected.count).map(\.id))
+        #expect(report.addFailures.isEmpty && report.missingPendingIdentifiers.isEmpty)
+        #expect(report.pendingCountAfterReconciliation == expected.count)
+        #expect(report.hasSchedulingIssues == (count > 60))
+        #expect(center.pendingReadCount == 2)
+    }
+
+    @Test("Same-time capacity uses trial, charge, decision then stable ID")
+    func equalTimePriority() async {
+        let sameTime = Date(timeIntervalSince1970: 1_893_488_400)
+        let trials = (0..<25).map { request($0, kind: .trial, fire: sameTime) }
+        let charges = (0..<25).map { request($0, kind: .charge, fire: sameTime) }
+        let decisions = (0..<25).map { request($0, kind: .renewalDecision, fire: sameTime) }
+        let source = Array((decisions + charges + trials).reversed())
+        let center = FakeNotificationCenterClient()
+        let report = await NotificationReconciler(center: center).reconcile(plan: plan(source))
+        #expect(center.addAttempts == (trials + charges + Array(decisions.prefix(10))).map(\.id))
+        #expect(report.capacityOmittedIdentifiers == decisions.dropFirst(10).map(\.id))
+        #expect(report.hasSchedulingIssues)
+    }
+
+    @Test("Non-owned pending requests consume slots and are never removed", arguments: [5, 60, 65])
+    func competingPending(count: Int) async {
+        let other = Set((0..<count).map { "other.feature.\($0)" })
+        let old = "soren.v2.renewalDecision.old.20300101.0"
+        let center = FakeNotificationCenterClient(pending: other.union([old]))
+        let requests = (0..<60).map { request($0) }
+        let available = max(0, 60 - count)
+        let report = await NotificationReconciler(center: center).reconcile(plan: plan(requests))
+        #expect(center.pending == other.union(requests.prefix(available).map(\.id)))
+        #expect(center.removedPending == [old])
+        #expect(center.addAttempts.count == available)
+        #expect(report.capacityOmittedIdentifiers == requests.dropFirst(available).map(\.id))
+        #expect(report.pendingBudgetExceededCount == max(0, count - 60))
+    }
+
+    @Test("Capacity, add rejection and silent retention loss are separate facts")
+    func retentionIsVerified() async {
+        let requests = (0..<61).map { request($0) }
+        let center = FakeNotificationCenterClient()
+        center.rejectedIDs = [requests[1].id]
+        center.silentlyDroppedIDs = [requests[2].id]
+        let failure = NotificationPlanningFailure.invalidDate(itemID: requests[0].itemID)
+        let report = await NotificationReconciler(center: center).reconcile(plan: NotificationRequestPlan(requests: requests, failures: [failure]))
+        #expect(report.desiredCount == 61 && report.addedCount == 59)
+        #expect(report.capacityOmittedIdentifiers == [requests[60].id])
+        #expect(report.addFailures == [.addFailed(identifier: requests[1].id)])
+        #expect(report.missingPendingIdentifiers == [requests[1].id, requests[2].id])
+        #expect(report.planningFailures == [failure])
+        #expect(report.pendingCountAfterReconciliation == 58 && report.hasSchedulingIssues)
+        #expect(!center.addAttempts.contains(requests[60].id))
+    }
+
+    @Test("Concurrent foreign additions are reported without deleting them")
+    func concurrentForeignOverflow() async {
+        let center = FakeNotificationCenterClient()
+        center.pendingAddedDuringNextAdd = ["other.concurrent"]
+        let report = await NotificationReconciler(center: center).reconcile(plan: plan((0..<60).map { request($0) }))
+        #expect(report.pendingCountAfterReconciliation == 61 && report.pendingBudgetExceededCount == 1)
+        #expect(report.hasSchedulingIssues && center.pending.contains("other.concurrent"))
+        #expect(!center.removedPending.contains("other.concurrent"))
+    }
+
+    @Test("Permission outcomes retain configuration and never prompt", arguments: [
+        NotificationAuthorizationStatus.denied, .notDetermined, .unknown, .provisional, .ephemeral
+    ])
+    func permissions(status: NotificationAuthorizationStatus) async {
+        let center = FakeNotificationCenterClient(status: status)
+        let desired = request(0, kind: .renewalDecision)
+        let report = await NotificationReconciler(center: center).reconcile(plan: plan([desired]))
+        #expect(report.authorizationStatus == status && report.desiredCount == 1)
+        #expect(report.addedCount == (status.permitsScheduling ? 1 : 0))
+        #expect(report.hasSchedulingIssues == !status.permitsScheduling)
+        #expect(center.authorizationRequestCount == 0)
+        #expect(report.missingPendingIdentifiers.isEmpty)
+    }
+
+    @Test("Exact delivered decision namespace is preserved, other owned history is cleaned")
+    func deliveredOwnership() async {
+        let decision = request(0, kind: .renewalDecision)
+        let charge = request(0), trial = request(0, kind: .trial)
+        let preserved = Set([decision.id, "other.delivered"])
+        let cleaned = Set([charge.id, trial.id, "soren.charge.legacy", "soren.trial.legacy", "soren.v2.renewalDecisionExtra.old"])
+        let center = FakeNotificationCenterClient(pending: [decision.id, "other.pending"], delivered: preserved.union(cleaned))
+        let report = await NotificationReconciler(center: center).reconcile(plan: plan([decision, charge, trial]))
+        #expect(center.delivered == preserved)
+        #expect(Set(center.removedDelivered) == cleaned)
+        #expect(center.pending == [charge.id, trial.id, "other.pending"])
+        #expect(center.addAttempts == [trial.id, charge.id])
+        #expect(report.deliveredDecisionSuppressedIdentifiers == [decision.id])
+        #expect(report.removedDeliveredCount == cleaned.count && report.desiredCount == 3)
+        #expect(report.addedCount == 2 && !report.hasSchedulingIssues)
+    }
+
+    @Test("Delivered decision consumes no slot and is not re-added on repeated plans")
+    func deliveredDoesNotConsumeBudget() async {
+        let decision = request(0, kind: .renewalDecision)
+        let requests = (1...60).map { request($0) }
+        let center = FakeNotificationCenterClient(delivered: [decision.id])
+        let reconciler = NotificationReconciler(center: center)
+        for _ in 0..<2 {
+            let report = await reconciler.reconcile(plan: plan([decision] + requests))
+            #expect(report.desiredCount == 61 && report.addedCount == 60)
+            #expect(report.capacityOmittedIdentifiers.isEmpty)
+            #expect(report.deliveredDecisionSuppressedIdentifiers == [decision.id])
+            #expect(!report.hasSchedulingIssues)
+        }
+        #expect(center.delivered == [decision.id] && !center.addAttempts.contains(decision.id))
+        #expect(center.pending.count == 60)
+    }
+
+    @Test("Rapid decision changes and delete converge after a suspended add", arguments: [false, true])
+    func newestDecisionPlanWins(deleteLatest: Bool) async {
+        let first = request(0, kind: .renewalDecision), changed = request(1, kind: .renewalDecision)
+        let center = FakeNotificationCenterClient()
+        center.suspendNextAdd()
+        let reconciler = NotificationReconciler(center: center)
+        let firstTask = Task { @MainActor in await reconciler.reconcile(plan: plan([first])) }
+        await center.waitUntilAddIsSuspended()
+        let submitted = NotificationTestGate()
+        let latestTask = Task { @MainActor in
+            submitted.signal()
+            return await reconciler.reconcile(plan: plan(deleteLatest ? [] : [changed]))
+        }
+        await submitted.wait()
+        center.resumeSuspendedAdd()
+        _ = await firstTask.value
+        let result = await latestTask.value
+        #expect(center.pending == Set(deleteLatest ? [] : [changed.id]))
+        #expect(result.desiredCount == (deleteLatest ? 0 : 1))
+        #expect(result.capacityOmittedIdentifiers.isEmpty && result.missingPendingIdentifiers.isEmpty)
+        #expect(!result.hasSchedulingIssues)
+    }
+}
+
+extension RenewalNotificationReconciliationTests {
+    @Test("Authoritative updates remove stale pending decision requests but retain delivered history", arguments: [
+        "change", "disable", "clear", "pause", "resume", "archive", "cancel", "delete"
+    ])
+    func persistedDecisionChanges(action: String) async throws {
+        let fixture = try InMemoryPersistenceFixture()
+        var value = try canonicalTestItem()
+        value.chargeReminder = .never
+        value.status = action == "resume" ? .paused : .active
+        value.renewalDecisionDeadline = try CivilDate(year: 2026, month: 8, day: 12)
+        value.renewalDecisionReminderEnabled = true
+        try fixture.recurringItems.save(value)
+        let prefix = "soren.v2.renewalDecision.\(value.id.uuidString.lowercased())."
+        let history = prefix + "20260810.0", originalPending = prefix + "20260812.0"
+        let center = FakeNotificationCenterClient(delivered: [history])
+        let now = try canonicalTestDay(1)
+        let coordinator = NotificationRefreshCoordinator(repository: fixture.recurringItems,
+            reconciler: NotificationReconciler(center: center), timeZone: { .gmt }, now: { now })
+        _ = await coordinator.reconcileCurrentState()
+        #expect(center.pending == [originalPending])
+        var changed = value
+        switch action {
+        case "change": changed.renewalDecisionDeadline = try CivilDate(year: 2026, month: 8, day: 15)
+        case "disable": changed.renewalDecisionReminderEnabled = false
+        case "clear": changed.renewalDecisionDeadline = nil; changed.renewalDecisionReminderEnabled = false
+        case "pause": changed.status = .paused
+        case "resume": changed.status = .active
+        case "archive": changed.status = .archived
+        case "cancel": changed.status = .cancelled
+        default: break
+        }
+        if action == "delete" {
+            _ = try await DeleteRecurringItem(repository: fixture.recurringItems, notificationCoordinator: coordinator).execute(id: value.id)
+            #expect(try fixture.recurringItems.fetch(id: value.id) == nil)
+        } else {
+            _ = try await UpdateRecurringItem(repository: fixture.recurringItems, notificationCoordinator: coordinator).execute(changed)
+            let stored = try #require(try fixture.recurringItems.fetch(id: value.id))
+            #expect(stored.renewalDecisionDeadline == changed.renewalDecisionDeadline)
+            #expect(stored.renewalDecisionReminderEnabled == changed.renewalDecisionReminderEnabled)
+        }
+        let expected: Set<String>
+        switch action {
+        case "change": expected = [prefix + "20260815.0"]
+        case "pause", "resume": expected = [originalPending]
+        default: expected = []
+        }
+        #expect(center.pending == expected)
+        #expect(center.delivered == [history] && !center.removedDelivered.contains(history))
+        #expect(center.removedPending.contains(originalPending))
+    }
+
+    @Test("Permission cannot disable a persisted decision preference", arguments: [
+        NotificationAuthorizationStatus.denied, .notDetermined
+    ])
+    func persistedPermissionPreference(status: NotificationAuthorizationStatus) async throws {
+        let fixture = try InMemoryPersistenceFixture()
+        var value = try canonicalTestItem()
+        value.chargeReminder = .never
+        value.renewalDecisionDeadline = try CivilDate(year: 2026, month: 8, day: 12)
+        value.renewalDecisionReminderEnabled = true
+        let center = FakeNotificationCenterClient(status: status)
+        let now = try canonicalTestDay(1)
+        let coordinator = NotificationRefreshCoordinator(repository: fixture.recurringItems,
+            reconciler: NotificationReconciler(center: center), timeZone: { .gmt }, now: { now })
+        let saved = try await SaveRecurringItem(repository: fixture.recurringItems, notificationCoordinator: coordinator).execute(value)
+        guard case .reconciled(let report) = saved.notificationOutcome else { Issue.record("Missing reconciliation report"); return }
+        #expect(report.desiredCount == 1 && report.addedCount == 0 && report.hasSchedulingIssues)
+        #expect(try fixture.recurringItems.fetch(id: value.id) == saved.item)
+        center.status = .authorized
+        _ = await coordinator.reconcileCurrentState(source: .other)
+        #expect(center.pending.count == 1 && center.authorizationRequestCount == 0)
+        #expect(try fixture.recurringItems.fetch(id: value.id) == saved.item)
+    }
+}

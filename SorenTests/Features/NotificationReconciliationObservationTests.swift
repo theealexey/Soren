@@ -60,3 +60,24 @@ struct NotificationReconciliationObservationTests {
         #expect(observation.latestRecord?.planningFailureCount == 0)
     }
 }
+
+extension NotificationReconciliationObservationTests {
+    @Test("Capacity and retention counts remain observable independently of add/planning failures")
+    func schedulingCounts() {
+        let observation = NotificationReconciliationObservation()
+        let report = NotificationReconciliationReport(desiredCount: 64, removedPendingCount: 0, removedDeliveredCount: 0,
+            addedCount: 59, authorizationStatus: .authorized, addFailures: [], planningFailures: [],
+            capacityOmittedIdentifiers: ["omitted1", "omitted2"], deliveredDecisionSuppressedIdentifiers: ["delivered"],
+            missingPendingIdentifiers: ["missing"], pendingCountAfterReconciliation: 61, pendingBudgetExceededCount: 1)
+        #expect(report.hasSchedulingIssues)
+        observation.record(outcome: .reconciled(report), source: .foreground, startedAt: .distantPast, completedAt: .distantFuture)
+        #expect(observation.capacityOmittedCount == 2 && observation.deliveredDecisionSuppressedCount == 1)
+        #expect(observation.missingPendingCount == 1 && observation.pendingBudgetExceededCount == 1)
+        #expect(observation.latestRecord?.desiredCount == 64 && observation.latestRecord?.addedCount == 59)
+        observation.record(outcome: .superseded, source: .other, startedAt: .distantPast, completedAt: .distantFuture)
+        #expect(observation.capacityOmittedCount == 2)
+        observation.record(outcome: .repositoryFetchFailed, source: .other, startedAt: .distantPast, completedAt: .distantFuture)
+        #expect(observation.capacityOmittedCount == 0 && observation.deliveredDecisionSuppressedCount == 0)
+        #expect(observation.missingPendingCount == 0 && observation.pendingBudgetExceededCount == 0)
+    }
+}

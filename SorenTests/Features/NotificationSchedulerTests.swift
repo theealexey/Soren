@@ -550,3 +550,150 @@ struct ChargeReminderOptionTests {
     @Test("unknown charge reminder raw value remains unavailable")
     func unknownRawValueIsNil() { #expect(ChargeReminderOption(rawValue: "futureOption") == nil) }
 }
+
+extension NotificationRequestPlannerTests {
+    private func decisionItem(day: Int = 12) throws -> RecurringItem {
+        var value = try item(date: date(2026, 8, 20), chargeReminder: .never)
+        value.renewalDecisionDeadline = try CivilDate(year: 2026, month: 8, day: day)
+        value.renewalDecisionReminderEnabled = true
+        return value
+    }
+
+    @Test("Decision requires both an explicit date and enabled preference", arguments: [false, true], [false, true])
+    func decisionOptIn(hasDate: Bool, enabled: Bool) throws {
+        var value = try decisionItem()
+        if !hasDate { value.renewalDecisionDeadline = nil }
+        value.renewalDecisionReminderEnabled = enabled
+        let plan = planner.plan(items: [value], now: try date(2026, 8, 1))
+        #expect(plan.requests.count == (hasDate && enabled ? 1 : 0))
+        #expect(plan.failures.isEmpty)
+    }
+
+    @Test("Decision is one absolute date at local 09:00 with a stable zero-offset ID")
+    func decisionRequestContract() throws {
+        let value = try decisionItem()
+        let plan = planner.plan(items: [value], now: try date(2026, 8, 1))
+        let request = try #require(plan.requests.first)
+        #expect(plan.requests.count == 1 && request.kind == .renewalDecision)
+        #expect(request.occurrenceDate == (try canonical(date(2026, 8, 12))))
+        #expect(request.occurrenceLocalDateKey == "20260812" && request.reminderOffsetDays == 0)
+        #expect(request.id == "soren.v2.renewalDecision.\(value.id.uuidString.lowercased()).20260812.0")
+        #expect(request.fireDate == (try date(2026, 8, 12, 9)))
+        #expect(request.trigger == NotificationTriggerPlan(year: 2026, month: 8, day: 12, hour: 9,
+            minute: 0, timeZoneIdentifier: calendar.timeZone.identifier, repeats: false))
+        #expect(planner.plan(items: [value], now: try date(2026, 8, 1)) == plan)
+    }
+
+    @Test("Missed decision never rolls to tomorrow or a later cycle", arguments: [-1, 0, 1])
+    func decisionExactBoundary(seconds: Int) throws {
+        let value = try decisionItem()
+        let fire = try date(2026, 8, 12, 9)
+        let plan = planner.plan(items: [value], now: fire.addingTimeInterval(Double(seconds)))
+        #expect(plan.requests.count == (seconds < 0 ? 1 : 0))
+        #expect(plan.failures.isEmpty)
+        #expect(planner.plan(items: [value], now: try date(2026, 8, 13, 8)).requests.isEmpty)
+        let originalDeadline = try CivilDate(year: 2026, month: 8, day: 12)
+        #expect(value.renewalDecisionReminderEnabled && value.renewalDecisionDeadline == originalDeadline)
+    }
+
+    @Test("Decision lifecycle is independent of Free reminder eligibility", arguments: ItemStatus.allCases, [false, true])
+    func decisionLifecycle(status: ItemStatus, archived: Bool) throws {
+        var value = try decisionItem()
+        value.status = status
+        value.archivedAt = archived ? try date(2026, 8, 1) : nil
+        let plan = planner.plan(items: [value], now: try date(2026, 8, 1))
+        let eligible = !archived && status != .cancelled && status != .archived
+        #expect(plan.requests.count == (eligible ? 1 : 0))
+        #expect(plan.failures.isEmpty)
+    }
+
+    @Test("Decision honors finite civil bounds and fails closed", arguments: ["expired", "missing", "malformed", "afterEnd", "onEnd", "beforeEnd"])
+    func decisionFiniteBounds(scenario: String) throws {
+        var value = try decisionItem()
+        value.autoRenew = false
+        value.startDate = try canonical(date(2026, 8, 1)); value.nextChargeDate = value.startDate
+        switch scenario {
+        case "expired": value.endDate = try canonical(date(2026, 8, 11))
+        case "missing": value.endDate = nil
+        case "malformed": value.endDate = try canonical(date(2026, 8, 15)).addingTimeInterval(1)
+        case "afterEnd":
+            value.endDate = try canonical(date(2026, 8, 13))
+            value.renewalDecisionDeadline = try CivilDate(year: 2026, month: 8, day: 14)
+        case "onEnd": value.endDate = try canonical(date(2026, 8, 12))
+        default: value.endDate = try canonical(date(2026, 8, 15))
+        }
+        let plan = planner.plan(items: [value], now: try date(2026, 8, 12, 8))
+        #expect(plan.requests.count == (["onEnd", "beforeEnd"].contains(scenario) ? 1 : 0))
+        #expect(plan.failures == (["missing", "malformed"].contains(scenario) ? [.invalidDate(itemID: value.id)] : []))
+    }
+
+    @Test("Decision does not depend on charge projection or trial monetary availability", arguments: [false, true])
+    func decisionSurvivesProjectionFailure(ambiguousTrial: Bool) throws {
+        var value = try decisionItem()
+        value.startDate = try canonical(date(2026, 8, 1))
+        value.chargeReminder = .sameDay
+        if ambiguousTrial {
+            value.status = .trial
+            value.trialEndDate = try canonical(date(2026, 8, 12))
+            value.trialReminder = .sameDay
+        } else { value.billingCycle = .custom(days: 0) }
+        let plan = planner.plan(items: [value], now: try date(2026, 8, 1))
+        #expect(plan.requests.filter { $0.kind == .renewalDecision }.count == 1)
+        #expect(plan.failures.contains(.projectionFailed(itemID: value.id, reason: .monetaryScheduleUnavailable)))
+        if ambiguousTrial { #expect(plan.requests.filter { $0.kind == .trial }.count == 1) }
+    }
+
+    @Test("Decision adds a third kind without changing any Free request field")
+    func decisionPreservesFreeRequests() throws {
+        var value = try item(date: date(2026, 8, 12), chargeReminder: .sameDay,
+            trialEndDate: date(2026, 8, 12), trialReminder: .sameDay)
+        let now = try date(2026, 8, 1)
+        let baseline = planner.plan(items: [value], now: now)
+        value.renewalDecisionDeadline = try CivilDate(year: 2026, month: 8, day: 12)
+        value.renewalDecisionReminderEnabled = true
+        let extended = planner.plan(items: [value], now: now)
+        #expect(baseline.requests.count == 2 && extended.requests.count == 3)
+        #expect(extended.requests.filter { $0.kind != .renewalDecision } == baseline.requests)
+        #expect(Set(extended.requests.map(\.id)).count == 3)
+        #expect(Set(extended.requests.map(\.fireDate)).count == 1)
+        #expect(extended.failures == baseline.failures)
+    }
+
+    @Test("Decision local 09:00 preserves civil components across zones and DST", arguments: [
+        ("America/New_York", 2026, 3, 8), ("America/New_York", 2026, 11, 1),
+        ("Europe/Berlin", 2026, 3, 29), ("Pacific/Kiritimati", 2026, 3, 8)
+    ])
+    func decisionZones(_ zoneID: String, _ year: Int, _ month: Int, _ day: Int) throws {
+        var local = Calendar(identifier: .gregorian)
+        local.timeZone = try #require(TimeZone(identifier: zoneID))
+        var value = try decisionItem()
+        value.renewalDecisionDeadline = try CivilDate(year: year, month: month, day: day)
+        let now = try #require(local.date(from: DateComponents(year: year, month: month, day: day, hour: 8)))
+        let plan = NotificationRequestPlanner(calendar: local, locale: Locale(identifier: "en_US")).plan(items: [value], now: now)
+        let request = try #require(plan.requests.first)
+        let actual = local.dateComponents([.year, .month, .day, .hour, .minute], from: request.fireDate)
+        #expect(actual.year == year && actual.month == month && actual.day == day)
+        #expect(actual.hour == 9 && actual.minute == 0)
+        #expect(request.trigger.timeZoneIdentifier == zoneID)
+    }
+
+    @Test("Decision cannot normalize a nonexistent local civil day")
+    func decisionSkippedLocalDay() throws {
+        var local = Calendar(identifier: .gregorian)
+        local.timeZone = try #require(TimeZone(identifier: "Pacific/Apia"))
+        var value = try decisionItem()
+        value.renewalDecisionDeadline = try CivilDate(year: 2011, month: 12, day: 30)
+        let now = try #require(local.date(from: DateComponents(year: 2011, month: 12, day: 29, hour: 12)))
+        let plan = NotificationRequestPlanner(calendar: local, locale: Locale(identifier: "en_US")).plan(items: [value], now: now)
+        #expect(plan.requests.isEmpty)
+        #expect(plan.failures == [.invalidDate(itemID: value.id)])
+    }
+
+    @Test("Decision invalid clock fails closed")
+    func decisionInvalidClock() throws {
+        let value = try decisionItem()
+        let plan = planner.plan(items: [value], now: Date(timeIntervalSinceReferenceDate: .nan))
+        #expect(plan.requests.isEmpty)
+        #expect(plan.failures == [.invalidDate(itemID: value.id)])
+    }
+}

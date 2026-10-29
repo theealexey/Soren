@@ -53,6 +53,10 @@ final class FakeNotificationCenterClient: NotificationCenterClient {
     var pending: Set<String>
     var delivered: Set<String>
     var rejectedIDs: Set<String> = []
+    var silentlyDroppedIDs: Set<String> = []
+    var pendingAddedDuringNextAdd: Set<String> = []
+    private(set) var addAttempts: [String] = []
+    private(set) var pendingReadCount = 0
     private(set) var added: [PlannedNotificationRequest] = []
     private(set) var authorizationRequestCount = 0
     private(set) var removedPending: [String] = []
@@ -107,10 +111,14 @@ final class FakeNotificationCenterClient: NotificationCenterClient {
         return status
     }
 
-    func pendingRequestIdentifiers() async -> [String] { Array(pending).sorted() }
+    func pendingRequestIdentifiers() async -> [String] {
+        pendingReadCount += 1
+        return Array(pending).sorted()
+    }
     func deliveredNotificationIdentifiers() async -> [String] { Array(delivered).sorted() }
 
     func add(_ request: PlannedNotificationRequest) async throws {
+        addAttempts.append(request.id)
         if suspendsNextAdd {
             suspendsNextAdd = false
             didSuspendAdd = true
@@ -125,7 +133,9 @@ final class FakeNotificationCenterClient: NotificationCenterClient {
         }
 
         if rejectedIDs.contains(request.id) { throw AddError.rejected }
-        pending.insert(request.id)
+        if !silentlyDroppedIDs.contains(request.id) { pending.insert(request.id) }
+        pending.formUnion(pendingAddedDuringNextAdd)
+        pendingAddedDuringNextAdd.removeAll()
         added.append(request)
     }
 

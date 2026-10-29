@@ -3,6 +3,7 @@ import Foundation
 enum NotificationRequestKind: String, Sendable, Equatable {
     case charge
     case trial
+    case renewalDecision
 }
 
 struct NotificationTriggerPlan: Sendable, Equatable {
@@ -67,6 +68,9 @@ struct NotificationRequestPlanner {
             if isEligible(item, at: now), let trial = planTrial(for: item, now: now) {
                 requests.append(trial)
             }
+            if let decision = planRenewalDecision(for: item, now: now, failures: &failures) {
+                requests.append(decision)
+            }
         }
 
         return NotificationRequestPlan(requests: requests, failures: failures)
@@ -125,6 +129,39 @@ struct NotificationRequestPlanner {
         ).flatMap { $0.fireDate > now ? $0 : nil }
     }
 
+    private func planRenewalDecision(
+        for item: RecurringItem,
+        now: Date,
+        failures: inout [NotificationPlanningFailure]
+    ) -> PlannedNotificationRequest? {
+        guard item.renewalDecisionReminderEnabled, let deadline = item.renewalDecisionDeadline else { return nil }
+        do {
+            let today = try BillingCivilDay.civilDate(containing: now, in: calendar.timeZone)
+            guard deadline >= today, try isDecisionEligible(item, deadline: deadline, today: today) else { return nil }
+            let occurrence = try BillingCivilDay.canonicalDate(for: deadline)
+            guard let request = makeRequest(item: item, kind: .renewalDecision, occurrence: occurrence, offsetDays: 0) else {
+                failures.append(.invalidDate(itemID: item.id))
+                return nil
+            }
+            return request.fireDate > now ? request : nil
+        } catch {
+            failures.append(.invalidDate(itemID: item.id))
+            return nil
+        }
+    }
+
+    private func isDecisionEligible(_ item: RecurringItem, deadline: CivilDate, today: CivilDate) throws -> Bool {
+        guard item.archivedAt == nil else { return false }
+        switch item.status {
+        case .cancelled, .archived: return false
+        case .active, .dueSoon, .dueToday, .overdue, .failed, .trial, .paused: break
+        }
+        guard !item.autoRenew else { return true }
+        guard let endDate = item.endDate else { throw BillingCivilDayError.arithmeticFailed }
+        let end = try BillingCivilDay.civilDate(fromCanonicalDate: endDate)
+        return today <= end && deadline <= end
+    }
+
     private func makeRequest(
         item: RecurringItem,
         kind: NotificationRequestKind,
@@ -149,6 +186,12 @@ struct NotificationRequestPlanner {
             )
         else {
             return nil
+        }
+
+        if kind == .renewalDecision {
+            let local = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
+            guard local.year == occurrenceDay.year, local.month == occurrenceDay.month,
+                  local.day == occurrenceDay.day, local.hour == 9, local.minute == 0 else { return nil }
         }
 
         let occurrenceKey = String(format: "%04d%02d%02d", locale: Locale(identifier: "en_US_POSIX"),
@@ -207,6 +250,22 @@ struct NotificationRequestPlanner {
                     locale: locale
                 ),
                 body: date
+            )
+        case .renewalDecision:
+            return PlannedNotificationRequest(
+                id: identifier,
+                itemID: item.id,
+                kind: kind,
+                occurrenceDate: occurrence,
+                occurrenceLocalDateKey: occurrenceKey,
+                reminderOffsetDays: offsetDays,
+                fireDate: fireDate,
+                trigger: trigger,
+                title: String(localized: "notification.renewalDecision.title", bundle: bundle, locale: locale),
+                body: String(
+                    format: String(localized: "notification.renewalDecision.body", bundle: bundle, locale: locale),
+                    locale: locale, date, item.title
+                )
             )
         }
     }

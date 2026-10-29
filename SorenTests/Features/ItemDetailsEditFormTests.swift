@@ -803,3 +803,117 @@ private final class DetailsActionRepository: RecurringItemRepository {
     func saveAll(_ items: [RecurringItem]) throws { stored = items.first }
     func deleteAll() throws { stored = nil }
 }
+
+extension ItemDetailsActionFailureTests {
+    @Test("Scheduling-only issues warn after persistence and notification-only retries never repeat the mutation", arguments: ["capacity", "missing"], [
+        ItemDetailsViewModel.ActionIntent.save, .pause, .archive, .delete
+    ])
+    func schedulingOutcomeRetry(issue: String, intent: ItemDetailsViewModel.ActionIntent) async throws {
+        let source = try item()
+        let repository = DetailsActionRepository(source)
+        let notifications = DetailsActionNotifications()
+        let identifier = "soren.v2.renewalDecision.item.20261112.0"
+        let report = NotificationReconciliationReport(desiredCount: 1, removedPendingCount: 0,
+            removedDeliveredCount: 0, addedCount: issue == "missing" ? 1 : 0,
+            authorizationStatus: .authorized, addFailures: [], planningFailures: [],
+            capacityOmittedIdentifiers: issue == "capacity" ? [identifier] : [],
+            missingPendingIdentifiers: issue == "missing" ? [identifier] : [], pendingCountAfterReconciliation: 0)
+        notifications.outcome = .reconciled(report)
+        let vm = model(source, repository: repository, coordinator: notifications)
+        if intent == .save { vm.startEditing(); vm.editTitle = "Persisted edit" }
+        #expect(try await vm.perform(intent))
+        let persisted = repository.stored
+        let published = vm.item
+        #expect(vm.reminderIssue == .reconciliation && vm.isReminderAlertPresented && vm.canRetryReminders)
+        #expect(vm.actionFailure == nil && !vm.isPerformingAction)
+        #expect(repository.updateCalls == (intent == .delete ? 0 : 1))
+        #expect(repository.deleteCalls == (intent == .delete ? 1 : 0))
+        switch intent {
+        case .save:
+            #expect(vm.item.title == "Persisted edit" && !vm.isEditing)
+            vm.editSheetDidDismiss()
+            #expect(vm.canPresentDetailsAlert)
+        case .pause: #expect(vm.item.status == .paused)
+        case .archive: #expect(vm.item.status == .archived && vm.item.archivedAt != nil)
+        case .delete: #expect(persisted == nil && vm.hasPersistedDeletion && !vm.isDeleted && vm.preventsDismissal)
+        case .resume: Issue.record("Unexpected test intent")
+        }
+        #expect(await vm.retryReminders())
+        #expect(vm.reminderIssue == .reconciliation && vm.isReminderAlertPresented)
+        #expect(repository.stored == persisted && vm.item == published && !vm.isDeleted)
+        notifications.outcome = .reconciled(.init(desiredCount: 1, removedPendingCount: 0,
+            removedDeliveredCount: 0, addedCount: 1, authorizationStatus: .authorized,
+            addFailures: [], planningFailures: [], pendingCountAfterReconciliation: 1))
+        #expect(await vm.retryReminders())
+        #expect(vm.reminderIssue == nil && !vm.isReminderAlertPresented && !vm.isPerformingAction)
+        #expect(repository.stored == persisted && vm.item == published)
+        #expect(repository.updateCalls + repository.deleteCalls == 1)
+        #expect(notifications.sources == [intent == .delete ? .delete : .update, .other, .other])
+        #expect(vm.isDeleted == (intent == .delete))
+    }
+
+    @Test("Delivered-only suppression never creates a warning, permission depends on remaining demand", arguments: [
+        NotificationAuthorizationStatus.authorized, .denied, .notDetermined, .unknown
+    ], [false, true])
+    func deliveredSuppressionPermission(status: NotificationAuthorizationStatus, remainingDemand: Bool) async throws {
+        let source = try item()
+        let repository = DetailsActionRepository(source)
+        let notifications = DetailsActionNotifications()
+        notifications.outcome = .reconciled(.init(desiredCount: remainingDemand ? 2 : 1,
+            removedPendingCount: 0, removedDeliveredCount: 0,
+            addedCount: remainingDemand && status.permitsScheduling ? 1 : 0,
+            authorizationStatus: status, addFailures: [], planningFailures: [],
+            deliveredDecisionSuppressedIdentifiers: ["soren.v2.renewalDecision.delivered.20261112.0"]))
+        let vm = model(source, repository: repository, coordinator: notifications)
+        #expect(try await vm.delete())
+        let expected: ItemDetailsViewModel.ReminderIssue?
+        if !remainingDemand || status.permitsScheduling { expected = nil }
+        else if status == .denied || status == .notDetermined { expected = .permission }
+        else { expected = .reconciliation }
+        #expect(vm.reminderIssue == expected && vm.isReminderAlertPresented == (expected != nil))
+        #expect(vm.actionFailure == nil && repository.stored == nil && vm.hasPersistedDeletion)
+        #expect(vm.isDeleted == (expected == nil) && vm.preventsDismissal == (expected != nil))
+        #expect(repository.deleteCalls == 1 && repository.updateCalls == 0)
+        #expect(notifications.sources == [.delete])
+    }
+
+    @Test("Existing add and planning failures still produce reconciliation warnings", arguments: [false, true])
+    func existingReportFailures(planning: Bool) async throws {
+        let source = try item()
+        let repository = DetailsActionRepository(source)
+        let notifications = DetailsActionNotifications()
+        notifications.outcome = .reconciled(.init(desiredCount: planning ? 0 : 1, removedPendingCount: 0,
+            removedDeliveredCount: 0, addedCount: 0, authorizationStatus: .authorized,
+            addFailures: planning ? [] : [.addFailed(identifier: "another-item")],
+            planningFailures: planning ? [.invalidDate(itemID: source.id)] : []))
+        let vm = model(source, repository: repository, coordinator: notifications)
+        #expect(try await vm.perform(.pause))
+        #expect(vm.reminderIssue == .reconciliation && vm.isReminderAlertPresented && vm.canRetryReminders)
+        #expect(vm.actionFailure == nil && vm.item.status == .paused)
+        #expect(repository.updateCalls == 1 && repository.deleteCalls == 0)
+    }
+
+    @Test("Notification-only retry preserves configured decision data and exposes retention facts")
+    func decisionNotificationOnlyRetry() async throws {
+        var source = try item()
+        source.renewalDecisionDeadline = try CivilDate(year: 2026, month: 11, day: 12)
+        source.renewalDecisionReminderEnabled = true
+        let repository = DetailsActionRepository(source)
+        let notifications = DetailsActionNotifications()
+        notifications.outcome = .repositoryFetchFailed
+        let vm = model(source, repository: repository, coordinator: notifications)
+        #expect(try await vm.perform(.pause))
+        let persisted = try #require(repository.stored)
+        #expect(vm.canRetryReminders && repository.updateCalls == 1)
+        notifications.outcome = .reconciled(NotificationReconciliationReport(desiredCount: 1, removedPendingCount: 0,
+            removedDeliveredCount: 0, addedCount: 1, authorizationStatus: .authorized, addFailures: [], planningFailures: [],
+            missingPendingIdentifiers: ["soren.v2.renewalDecision.missing.20261112.0"], pendingCountAfterReconciliation: 0))
+        #expect(await vm.retryReminders())
+        #expect(repository.stored == persisted && repository.updateCalls == 1 && repository.deleteCalls == 0)
+        #expect(repository.stored?.renewalDecisionDeadline == source.renewalDecisionDeadline)
+        #expect(repository.stored?.renewalDecisionReminderEnabled == true)
+        guard case .reconciled(let report) = vm.lastNotificationOutcome else { Issue.record("Missing retry report"); return }
+        #expect(report.hasSchedulingIssues && report.missingPendingIdentifiers.count == 1)
+        #expect(notifications.sources == [.update, .other])
+    }
+}

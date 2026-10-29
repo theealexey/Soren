@@ -564,3 +564,37 @@ struct DebugHomeClockPolicyTests {
     }
 }
 #endif
+
+extension CivilDateNotificationRefreshTests {
+    @Test("Decision reconciliation resolves current timezone without changing the deadline identity")
+    func decisionCurrentZoneIsResolved() async throws {
+        let container = try SorenModelContainer.inMemory()
+        let repositories = RepositoryContainer(context: container.mainContext)
+        var item = try canonicalTestItem()
+        item.chargeReminder = .never
+        item.renewalDecisionDeadline = try CivilDate(year: 2026, month: 8, day: 15)
+        item.renewalDecisionReminderEnabled = true
+        try repositories.recurringItems.save(item)
+        let original = try #require(try repositories.recurringItems.fetch(id: item.id))
+        let reconciler = CivilWiringReconciler()
+        let instant = try canonicalTestDay(1)
+        var zone = try #require(TimeZone(identifier: "Europe/Stockholm"))
+        let coordinator = NotificationRefreshCoordinator(repository: repositories.recurringItems, reconciler: reconciler,
+            timeZone: { zone }, now: { instant })
+        _ = await coordinator.reconcileCurrentState()
+        zone = try #require(TimeZone(identifier: "America/Los_Angeles"))
+        coordinator.didBecomeActive()
+        let refresh = try #require(coordinator.refreshTask)
+        await refresh.value
+        let first = try #require(reconciler.plans.first?.requests.first)
+        let second = try #require(reconciler.plans.last?.requests.first)
+        #expect(first.kind == .renewalDecision && second.kind == .renewalDecision)
+        #expect(first.id == second.id && first.occurrenceDate == second.occurrenceDate)
+        #expect(first.fireDate != second.fireDate && second.trigger.timeZoneIdentifier == zone.identifier)
+        var calendar = Calendar(identifier: .gregorian); calendar.timeZone = zone
+        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: second.fireDate)
+        #expect(components.year == 2026 && components.month == 8 && components.day == 15)
+        #expect(components.hour == 9 && components.minute == 0)
+        #expect(try repositories.recurringItems.fetch(id: item.id) == original)
+    }
+}
