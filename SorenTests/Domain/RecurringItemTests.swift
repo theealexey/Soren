@@ -233,3 +233,36 @@ private extension RecurringItem {
         )
     }
 }
+
+extension RecurringItemTests {
+    @Test("Renewal decision defaults are opt-in")
+    func renewalDecisionDefaults() throws {
+        let item = try canonicalTestItem()
+        #expect(item.renewalDecisionDeadline == nil)
+        #expect(!item.renewalDecisionReminderEnabled)
+        try item.validateRenewalDecision()
+    }
+
+    @Test("Decision day is independent, may be past, and survives value copies", arguments: [2020, 2026, 2027])
+    func renewalDecisionValueSemantics(year: Int) throws {
+        var source = try canonicalTestItem()
+        source.trialEndDate = source.nextChargeDate
+        var copy = source
+        copy.renewalDecisionDeadline = try CivilDate(year: year, month: 3, day: 29)
+        copy.renewalDecisionReminderEnabled = true
+        try copy.validateRenewalDecision()
+        #expect(source.renewalDecisionDeadline == nil)
+        #expect(copy.nextChargeDate == source.nextChargeDate && copy.startDate == source.startDate)
+        #expect(copy.trialEndDate == source.trialEndDate && copy.autoRenew == source.autoRenew)
+        #expect(copy.status == source.status && copy.endDate == source.endDate)
+        var edited = copy
+        edited.note = "An ordinary edit"
+        #expect(edited.renewalDecisionDeadline == copy.renewalDecisionDeadline)
+        #expect(edited.renewalDecisionReminderEnabled)
+        #expect(Set([copy, edited]).count == 2)
+        copy.renewalDecisionDeadline = nil
+        #expect(throws: RecurringItem.RenewalDecisionValidationError.reminderRequiresDeadline) {
+            try copy.validateRenewalDecision()
+        }
+    }
+}

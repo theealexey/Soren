@@ -131,6 +131,8 @@ struct SwiftDataLegacyStoreCompatibilityTests {
         let models = try fetchVerifiedLegacyModels(from: context)
 
         for model in models {
+            #expect(model.renewalDecisionDeadline == nil)
+            #expect(model.renewalDecisionReminderEnabled == nil)
             let expectedMetadata = expectedMetadataByID[model.id] ?? .legacy
             #expect(BillingDateMetadata(model) == expectedMetadata)
         }

@@ -30,6 +30,7 @@ struct UpdateRecurringItem {
         var normalized = normalize(item)
         try validate(normalized)
         try item.validateCanonicalBillingDates()
+        try item.validateRenewalDecision()
         normalized.updatedAt = .now
         try repository.update(normalized)
         let outcome = await notificationCoordinator?.reconcileCurrentState(source: .update)

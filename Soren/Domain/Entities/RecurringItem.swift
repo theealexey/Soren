@@ -45,6 +45,10 @@ struct RecurringItem: Identifiable, Hashable, Sendable {
     /// Required when `autoRenew == false`; always `nil` when `autoRenew == true` (enforced at save boundary).
     var endDate: Date?
 
+    /// User-entered decision day; independent of billing and lifecycle dates.
+    var renewalDecisionDeadline: CivilDate?
+    var renewalDecisionReminderEnabled: Bool
+
     // MARK: - Notifications
 
     /// Per-subscription charge reminder timing chosen by the user.
@@ -98,6 +102,8 @@ struct RecurringItem: Identifiable, Hashable, Sendable {
         trialEndDate: Date? = nil,
         autoRenew: Bool = true,
         endDate: Date? = nil,
+        renewalDecisionDeadline: CivilDate? = nil,
+        renewalDecisionReminderEnabled: Bool = false,
         chargeReminder: ChargeReminderOption = .threeDaysBefore,
         trialReminder: TrialReminderOption = .never,
         status: ItemStatus = .active,
@@ -127,6 +133,8 @@ struct RecurringItem: Identifiable, Hashable, Sendable {
         self.trialEndDate = trialEndDate
         self.autoRenew = autoRenew
         self.endDate = endDate
+        self.renewalDecisionDeadline = renewalDecisionDeadline
+        self.renewalDecisionReminderEnabled = renewalDecisionReminderEnabled
         self.chargeReminder = chargeReminder
         self.trialReminder = trialReminder
         self.status = status
@@ -147,6 +155,16 @@ struct RecurringItem: Identifiable, Hashable, Sendable {
 // MARK: - Explicit canonical civil-day API
 
 extension RecurringItem {
+    enum RenewalDecisionValidationError: Error, Equatable {
+        case reminderRequiresDeadline
+    }
+
+    func validateRenewalDecision() throws {
+        if renewalDecisionReminderEnabled && renewalDecisionDeadline == nil {
+            throw RenewalDecisionValidationError.reminderRequiresDeadline
+        }
+    }
+
     func validateCanonicalBillingDates() throws {
         let fields: [(RecurringItemBillingDateValidationError.Field, Date?)] = [
             (.startDate, startDate), (.nextChargeDate, nextChargeDate),

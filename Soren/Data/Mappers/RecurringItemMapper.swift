@@ -12,7 +12,8 @@ enum RecurringItemMapper {
 
     static func toDomain(_ sd: SDRecurringItem) throws -> RecurringItem {
         let dates = try decodedBillingDates(sd)
-        return RecurringItem(
+        let deadline = try sd.renewalDecisionDeadline.map(CivilDateStorageCodec().decodeCanonical)
+        let item = RecurringItem(
             id: sd.id,
             title: sd.title,
             providerID: sd.providerID,
@@ -27,6 +28,8 @@ enum RecurringItemMapper {
             trialEndDate: dates.trialEndDate,
             autoRenew: sd.autoRenew ?? true,   // nil = legacy record → treat as auto-renewing
             endDate: dates.endDate,
+            renewalDecisionDeadline: deadline,
+            renewalDecisionReminderEnabled: sd.renewalDecisionReminderEnabled ?? false,
             chargeReminder: sd.chargeReminderRaw.flatMap(ChargeReminderOption.init) ?? .threeDaysBefore,
             trialReminder: sd.trialReminderRaw.flatMap(TrialReminderOption.init) ?? .never,
             status: ItemStatus(rawValue: sd.statusRaw) ?? .active,
@@ -42,12 +45,15 @@ enum RecurringItemMapper {
             updatedAt: sd.updatedAt,
             archivedAt: sd.archivedAt
         )
+        try item.validateRenewalDecision()
+        return item
     }
 
     // MARK: - Domain → SD (new)
 
     static func toSD(_ domain: RecurringItem) throws -> SDRecurringItem {
         let dates = try preparedBillingDates(domain)
+        let renewal = try preparedRenewalDecision(domain)
         let sd = SDRecurringItem(
             id: domain.id,
             title: domain.title,
@@ -78,6 +84,8 @@ enum RecurringItemMapper {
             updatedAt: domain.updatedAt,
             archivedAt: domain.archivedAt
         )
+        sd.renewalDecisionDeadline = renewal.deadline
+        sd.renewalDecisionReminderEnabled = renewal.reminderEnabled
         sd.billingDateEncodingVersion = RecurringItemBillingDateAdapter.canonicalEncodingVersion
         return sd
     }
@@ -90,7 +98,11 @@ enum RecurringItemMapper {
         // Prove the persisted tuple is readable, then prepare the entire replacement
         // before the first managed mutation. Metadata, not date equality, chooses decoding.
         _ = try decodedBillingDates(sd)
+        _ = try sd.renewalDecisionDeadline.map(CivilDateStorageCodec().decodeCanonical)
         let dates = try preparedBillingDates(domain)
+        let renewal = try preparedRenewalDecision(domain)
+        sd.renewalDecisionDeadline = renewal.deadline
+        sd.renewalDecisionReminderEnabled = renewal.reminderEnabled
         sd.title = domain.title
         sd.providerID = domain.providerID
         sd.providerName = domain.providerName
@@ -119,6 +131,11 @@ enum RecurringItemMapper {
         sd.archivedAt = domain.archivedAt
         sd.billingDateEncodingVersion = RecurringItemBillingDateAdapter.canonicalEncodingVersion
         // Existing legacy interpretation policy remains intact after conversion.
+    }
+
+    private static func preparedRenewalDecision(_ domain: RecurringItem) throws -> (deadline: Date?, reminderEnabled: Bool) {
+        try domain.validateRenewalDecision()
+        return (try domain.renewalDecisionDeadline.map(CivilDateStorageCodec().encode), domain.renewalDecisionReminderEnabled)
     }
 
     private static func decodedBillingDates(_ sd: SDRecurringItem) throws -> RecurringItemBillingDateAdapter.Dates {

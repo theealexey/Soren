@@ -32,6 +32,7 @@ struct SaveRecurringItem {
         let normalized = normalize(item)
         try validate(normalized)
         try item.validateCanonicalBillingDates()
+        try item.validateRenewalDecision()
         try repository.save(normalized)
         let outcome = await notificationCoordinator?.reconcileCurrentState(source: .create)
         return SaveRecurringItemResult(item: normalized, notificationOutcome: outcome)

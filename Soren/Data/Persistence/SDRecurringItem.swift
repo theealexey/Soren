@@ -32,6 +32,9 @@ final class SDRecurringItem {
     var currencyCode: String
     var billingCycleRaw: String   // encoded as JSON string for custom(days:) support
 
+    var renewalDecisionDeadline: Date? = nil
+    var renewalDecisionReminderEnabled: Bool? = nil
+
     // MARK: - Dates
 
     var startDate: Date

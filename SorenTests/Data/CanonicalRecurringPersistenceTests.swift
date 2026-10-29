@@ -470,3 +470,194 @@ private final class CanonicalWriteSpy: RecurringItemRepository {
     func saveAll(_ items: [RecurringItem]) throws { writes += 1 }
     func deleteAll() throws { }
 }
+
+@MainActor
+struct RenewalDecisionPersistenceTests {
+    private func decision() throws -> CivilDate { try CivilDate(year: 2026, month: 3, day: 29) }
+
+    @Test("Both Use Cases reject orphaned reminders before injected repository writes", arguments: [false, true])
+    func rejectsBeforeWrite(update: Bool) async throws {
+        let spy = CanonicalWriteSpy()
+        var item = try canonicalTestItem()
+        item.renewalDecisionReminderEnabled = true
+        await #expect(throws: RecurringItem.RenewalDecisionValidationError.reminderRequiresDeadline) {
+            if update { _ = try await UpdateRecurringItem(repository: spy).execute(item) }
+            else { _ = try await SaveRecurringItem(repository: spy).execute(item) }
+        }
+        #expect(spy.writes == 0)
+    }
+
+    @Test("Nullable storage defaults and valid opt-in values round-trip", arguments: [0, 1, 2])
+    func mapperRoundTrip(mode: Int) throws {
+        var item = try canonicalTestItem()
+        if mode > 0 { item.renewalDecisionDeadline = try decision() }
+        item.renewalDecisionReminderEnabled = mode == 2
+        item.status = .archived; item.archivedAt = Date(timeIntervalSince1970: 100.25)
+        let row = try RecurringItemMapper.toSD(item)
+        #expect(try RecurringItemMapper.toDomain(row) == item)
+        if mode == 0 {
+            row.renewalDecisionReminderEnabled = nil
+            #expect(try RecurringItemMapper.toDomain(row) == item)
+        }
+        var changed = item; changed.note = "Ordinary update"
+        try RecurringItemMapper.update(row, from: changed)
+        #expect(try RecurringItemMapper.toDomain(row) == changed)
+        changed.renewalDecisionDeadline = nil; changed.renewalDecisionReminderEnabled = false
+        try RecurringItemMapper.update(row, from: changed)
+        #expect(row.renewalDecisionDeadline == nil && row.renewalDecisionReminderEnabled == false)
+        #expect(try RecurringItemMapper.toDomain(row) == changed)
+    }
+
+    @Test("Malformed persisted date and orphaned stored reminder throw without coercion", arguments: [false, true])
+    func malformedStoredValue(orphan: Bool) throws {
+        let row = try RecurringItemMapper.toSD(canonicalTestItem())
+        if orphan {
+            row.renewalDecisionReminderEnabled = true
+            #expect(throws: RecurringItem.RenewalDecisionValidationError.reminderRequiresDeadline) { try RecurringItemMapper.toDomain(row) }
+        } else {
+            row.renewalDecisionDeadline = try CivilDateStorageCodec().encode(decision()).addingTimeInterval(1)
+            #expect(throws: CivilDateStorageCodecError.self) { try RecurringItemMapper.toDomain(row) }
+        }
+    }
+
+    @Test("Preparation failures cannot partially mutate existing managed fields")
+    func preparationIsAtomic() throws {
+        var item = try canonicalTestItem(); item.renewalDecisionDeadline = try decision()
+        let row = try RecurringItemMapper.toSD(item)
+        let oldDeadline = row.renewalDecisionDeadline
+        var bad = item; bad.title = "Must not publish"; bad.renewalDecisionDeadline = nil; bad.renewalDecisionReminderEnabled = true
+        #expect(throws: RecurringItem.RenewalDecisionValidationError.self) { try RecurringItemMapper.update(row, from: bad) }
+        #expect(try RecurringItemMapper.toDomain(row) == item)
+        bad = item; bad.title = "Must not publish"; bad.startDate = bad.startDate.addingTimeInterval(1)
+        #expect(throws: RecurringItemBillingDateAdapterError.self) { try RecurringItemMapper.update(row, from: bad) }
+        #expect(row.renewalDecisionDeadline == oldDeadline && row.title == item.title)
+        row.renewalDecisionDeadline = oldDeadline?.addingTimeInterval(1)
+        #expect(throws: CivilDateStorageCodecError.self) { try RecurringItemMapper.update(row, from: item) }
+        #expect(row.renewalDecisionDeadline == oldDeadline?.addingTimeInterval(1))
+    }
+
+    @Test("New civil date ignores legacy interpretation policy, including DST", arguments: ["America/Los_Angeles", "Pacific/Kiritimati", "Europe/Stockholm"])
+    func civilStorageIndependence(zoneID: String) throws {
+        let row = try legacyTestRow()
+        let raw = [row.startDate, row.nextChargeDate, row.trialEndDate, row.endDate]
+        row.legacyBillingDateInterpretationTimeZoneIdentifier = zoneID
+        row.renewalDecisionDeadline = try CivilDateStorageCodec().encode(decision())
+        row.renewalDecisionReminderEnabled = true
+        let value = try RecurringItemMapper.toDomain(row)
+        #expect(value.renewalDecisionDeadline == (try decision()))
+        #expect(value.renewalDecisionReminderEnabled)
+        #expect(row.billingDateEncodingVersion == nil && row.legacyBillingDateInterpretationTimeZoneIdentifier == zoneID)
+        #expect([row.startDate, row.nextChargeDate, row.trialEndDate, row.endDate] == raw)
+        var cal = Calendar(identifier: .gregorian); cal.timeZone = try #require(TimeZone(identifier: zoneID))
+        let carrier = try #require(cal.date(from: DateComponents(year: 2026, month: 3, day: 29, hour: 12)))
+        let civil = try BillingCivilDay.civilDate(containing: carrier, in: cal.timeZone)
+        #expect(civil == value.renewalDecisionDeadline)
+        if zoneID == "Europe/Stockholm" {
+            let before = try #require(cal.date(from: DateComponents(year: 2026, month: 3, day: 28, hour: 12)))
+            #expect(cal.timeZone.secondsFromGMT(for: carrier) - cal.timeZone.secondsFromGMT(for: before) == 3600)
+        }
+    }
+
+    @Test("Save/update commit failure rolls back Renewal Control", arguments: [false, true])
+    func rollback(update: Bool) throws {
+        let item = try canonicalTestItem()
+        let container = try seededContainer(update ? [RecurringItemMapper.toSD(item)] : [])
+        let repository = SwiftDataRecurringItemRepository(container: container) { _ in throw CanonicalTestSaveFailure.failed }
+        var changed = item; changed.renewalDecisionDeadline = try decision(); changed.renewalDecisionReminderEnabled = true
+        #expect(throws: CanonicalTestSaveFailure.failed) {
+            if update { try repository.update(changed) } else { try repository.save(changed) }
+        }
+        let fresh = SwiftDataRecurringItemRepository(container: container)
+        #expect(try fresh.fetch(id: item.id) == (update ? item : nil))
+    }
+
+    @Test("Renewal Control does not participate in recurrence or monetary forecast")
+    func scheduleUnchanged() throws {
+        let item = try canonicalTestItem()
+        var changed = item; changed.renewalDecisionDeadline = try decision(); changed.renewalDecisionReminderEnabled = true
+        let a = SwiftDataRecurringItemRepository(container: try seededContainer([RecurringItemMapper.toSD(item)]))
+        let b = SwiftDataRecurringItemRepository(container: try seededContainer([RecurringItemMapper.toSD(changed)]))
+        let today = try CivilDate(year: 2026, month: 8, day: 15)
+        #expect(try GetAnalyticsForecast(repository: a).execute(today: today) == GetAnalyticsForecast(repository: b).execute(today: today))
+        let lower = try canonicalTestDay(1), upper = try BillingCivilDay.canonicalDate(for: CivilDate(year: 2027, month: 8, day: 1))
+        #expect(try RecurringScheduleProjector().project(item, in: lower..<upper, asOf: lower, calendar: BillingCivilDay.calendar) == RecurringScheduleProjector().project(changed, in: lower..<upper, asOf: lower, calendar: BillingCivilDay.calendar))
+    }
+
+    @Test("Disk reopen preserves new values, old fields and nonempty relationships")
+    func diskRoundTrip() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { do { try FileManager.default.removeItem(at: directory) } catch { Issue.record("Temporary cleanup failed: \(error)") } }
+        let url = directory.appendingPathComponent("default.store")
+        var item = try canonicalTestItem(); item.renewalDecisionDeadline = try decision(); item.renewalDecisionReminderEnabled = true
+        item.status = .archived; item.archivedAt = Date(timeIntervalSince1970: 12345.25)
+        try autoreleasepool {
+            let container = try disk(url); let context = ModelContext(container); context.autosaveEnabled = false
+            let row = try RecurringItemMapper.toSD(item); context.insert(row)
+            let payment = SDPaymentRecord(id: UUID(), itemID: item.id, amountValue: 100, currencyCode: "RUB", paymentDate: item.startDate, statusRaw: "pending", paymentMethodID: nil, note: "Persistence fixture")
+            context.insert(payment); payment.item = row
+            let trigger = String(decoding: try JSONEncoder().encode(ReminderRule.Trigger.daysBefore(3)), as: UTF8.self)
+            let rule = SDReminderRule(id: UUID(), recurringItemID: item.id, triggerRaw: trigger, isEnabled: true)
+            context.insert(rule); rule.item = row
+            try context.save()
+        }
+        try inspectDisk(url, expected: item)
+        var cleared = item; cleared.renewalDecisionDeadline = nil; cleared.renewalDecisionReminderEnabled = false
+        try autoreleasepool { try SwiftDataRecurringItemRepository(container: disk(url)).update(cleared) }
+        try inspectDisk(url, expected: cleared)
+    }
+
+    private func disk(_ url: URL) throws -> ModelContainer {
+        let config = ModelConfiguration(schema: SorenModelContainer.schema, url: url, allowsSave: true, cloudKitDatabase: .none)
+        return try ModelContainer(for: SorenModelContainer.schema, configurations: config)
+    }
+    private func inspectDisk(_ url: URL, expected: RecurringItem) throws {
+        try autoreleasepool {
+            let container = try disk(url)
+            #expect(try SwiftDataRecurringItemRepository(container: container).fetchAll() == [expected])
+            let context = ModelContext(container)
+            let row = try #require(context.fetch(FetchDescriptor<SDRecurringItem>()).first)
+            #expect(row.payments.count == 1 && row.reminders.count == 1)
+            #expect(row.payments.first?.item?.id == expected.id && row.reminders.first?.item?.id == expected.id)
+            #expect(row.payments.first?.amountValue == 100 && row.reminders.first?.isEnabled == true)
+        }
+    }
+}
+
+extension RenewalDecisionPersistenceTests {
+    @Test("Invalid stored Renewal Control blocks validation, not destructive recovery", arguments: [false, true])
+    func invalidStoredRowBlocksSafely(orphan: Bool) throws {
+        let row = try RecurringItemMapper.toSD(canonicalTestItem())
+        if orphan { row.renewalDecisionReminderEnabled = true }
+        else { row.renewalDecisionDeadline = row.startDate.addingTimeInterval(1) }
+        let container = try seededContainer([row])
+        let state = AppState(openStore: { container }, interpretationTimeZone: .gmt)
+        #expect(state.preparationState == .civilDateBlocked)
+        #expect(state.appContainer == nil && state.preparationError != nil)
+        #expect(try ModelContext(container).fetchCount(FetchDescriptor<SDRecurringItem>()) == 1)
+    }
+}
+
+extension RenewalDecisionPersistenceTests {
+    @Test("Use Cases preserve independent decision days before and after the charge", arguments: [2020, 2027])
+    func validUseCaseDates(year: Int) async throws {
+        let spy = CanonicalWriteSpy()
+        var item = try canonicalTestItem()
+        item.trialEndDate = item.nextChargeDate
+        item.renewalDecisionDeadline = try CivilDate(year: year, month: 3, day: 29)
+        item.renewalDecisionReminderEnabled = true
+        let saved = try await SaveRecurringItem(repository: spy).execute(item).item
+        let updated = try await UpdateRecurringItem(repository: spy).execute(saved).item
+        #expect(spy.writes == 2)
+        #expect(updated.renewalDecisionDeadline == item.renewalDecisionDeadline && updated.renewalDecisionReminderEnabled)
+        #expect(updated.nextChargeDate == item.nextChargeDate && updated.trialEndDate == item.trialEndDate)
+    }
+    @Test("Legacy metadata does not manufacture Renewal Control defaults")
+    func legacyDefaults() throws {
+        let row = try legacyTestRow()
+        row.renewalDecisionReminderEnabled = nil
+        let value = try RecurringItemMapper.toDomain(row)
+        #expect(value.renewalDecisionDeadline == nil && !value.renewalDecisionReminderEnabled)
+        #expect(row.billingDateEncodingVersion == nil && row.legacyBillingDateInterpretationTimeZoneIdentifier == "Europe/Stockholm")
+    }
+}
