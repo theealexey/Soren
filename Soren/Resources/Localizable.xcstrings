@@ -1,6 +1,90 @@
 {
   "sourceLanguage" : "ru",
   "strings" : {
+    "itemDetails.action.saveFailed" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn’t save changes." } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Не удалось сохранить изменения." } }
+      }
+    },
+    "itemDetails.action.deleteFailed" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn’t delete the subscription." } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Не удалось удалить подписку." } }
+      }
+    },
+    "itemDetails.action.pauseFailed" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn’t pause the subscription." } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Не удалось приостановить подписку." } }
+      }
+    },
+    "itemDetails.action.resumeFailed" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn’t resume the subscription." } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Не удалось возобновить подписку." } }
+      }
+    },
+    "itemDetails.action.archiveFailed" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn’t archive the subscription." } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Не удалось архивировать подписку." } }
+      }
+    },
+    "itemDetails.action.missing" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The subscription is no longer available." } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Подписка больше недоступна." } }
+      }
+    },
+    "itemDetails.action.invalidInput" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Check the subscription’s settings and dates." } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Проверьте параметры и даты подписки." } }
+      }
+    },
+    "itemDetails.action.correct" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Edit" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Исправить" } }
+      }
+    },
+    "itemDetails.action.continue" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Continue" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Продолжить" } }
+      }
+    },
+    "itemDetails.reminders.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reminders" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Напоминания" } }
+      }
+    },
+    "itemDetails.reminders.saved" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Changes were saved, but there was a problem updating reminders." } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Изменения сохранены, но при обновлении напоминаний возникла проблема." } }
+      }
+    },
+    "itemDetails.reminders.deleted" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The subscription was deleted, but there was a problem updating reminders." } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Подписка удалена, но при обновлении напоминаний возникла проблема." } }
+      }
+    },
+    "itemDetails.reminders.permission" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reminders aren’t permitted in your device settings." } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Напоминания не разрешены в настройках устройства." } }
+      }
+    },
+    "itemDetails.reminders.retry" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Retry updating" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Повторить обновление" } }
+      }
+    },
     "library.nextCharge.notScheduled" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "No scheduled charge" } },

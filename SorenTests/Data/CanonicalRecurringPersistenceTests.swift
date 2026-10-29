@@ -121,6 +121,31 @@ struct CanonicalRecurringMapperTests {
 
 @MainActor
 struct CanonicalRecurringRepositoryTests {
+    @Test("Failed update/delete commits roll back and can be retried", arguments: [false, true])
+    func failedActionCommitRollsBack(delete: Bool) throws {
+        let original = try canonicalTestItem()
+        let container = try seededContainer([RecurringItemMapper.toSD(original)])
+        var fails = true
+        let repository = SwiftDataRecurringItemRepository(container: container) { context in
+            if fails { throw CanonicalTestSaveFailure.failed }
+            try context.save()
+        }
+        var changed = original
+        changed.title = "Retained edit"
+        #expect(throws: CanonicalTestSaveFailure.failed) {
+            if delete { try repository.delete(id: original.id) }
+            else { try repository.update(changed) }
+        }
+        #expect(try repository.fetch(id: original.id) == original)
+        let fresh = SwiftDataRecurringItemRepository(container: container)
+        #expect(try fresh.fetch(id: original.id) == original)
+        fails = false
+        if delete { try repository.delete(id: original.id) }
+        else { try repository.update(changed) }
+        let after = try SwiftDataRecurringItemRepository(container: container).fetch(id: original.id)
+        #expect(after == (delete ? nil : changed))
+    }
+
     @Test func mixedReadsUseCanonicalOrdering() throws {
         let legacy = try legacyTestRow()
         let canonical = try RecurringItemMapper.toSD(canonicalTestItem())

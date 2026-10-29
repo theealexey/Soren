@@ -6,7 +6,6 @@ import SwiftUI
 /// Binds to edit fields in ItemDetailsViewModel.
 struct ItemEditFormView: View {
     @Bindable var viewModel: ItemDetailsViewModel
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         Form {
@@ -28,6 +27,7 @@ struct ItemEditFormView: View {
                 trialReminder: $viewModel.editTrialReminder,
                 showsTrialReminder: viewModel.item.trialEndDate != nil
             )
+            .disabled(viewModel.isPerformingAction)
         }
         .scrollContentBackground(.hidden)
         .background(ColorTokens.background)
@@ -38,6 +38,7 @@ struct ItemEditFormView: View {
                 Button(String(localized: "Отмена")) {
                     viewModel.cancelEditing()
                 }
+                .disabled(viewModel.isPerformingAction)
             }
 
             ToolbarItem(placement: .confirmationAction) {
@@ -45,10 +46,28 @@ struct ItemEditFormView: View {
                     saveAndDismiss()
                 }
                 .fontWeight(.semibold)
-                .disabled(!viewModel.canSave)
+                .disabled(!viewModel.canSave || viewModel.isPerformingAction)
             }
         }
         .interactiveDismissDisabled()
+        .alert(
+            viewModel.actionFailure?.intent.failureTitle ?? String(localized: "itemDetails.action.saveFailed"),
+            isPresented: Binding(
+                get: { viewModel.actionFailure != nil },
+                set: { if !$0 { viewModel.dismissActionFailure() } }
+            ),
+            presenting: viewModel.actionFailure
+        ) { failure in
+            if failure.canRetry {
+                Button(String(localized: "Повторить")) { saveAndDismiss() }
+            }
+            Button(failure.kind == .invalidInput
+                ? String(localized: "itemDetails.action.correct") : String(localized: "ОК"), role: .cancel) {
+                viewModel.dismissActionFailure()
+            }
+        } message: { failure in
+            Text(failure.message)
+        }
         .onAppear {
             viewModel.refreshReportingCurrency()
         }
@@ -82,9 +101,7 @@ struct ItemEditFormView: View {
     private func saveAndDismiss() {
         Task {
             do {
-                try await viewModel.saveChanges()
-                HapticEngine.success()
-                dismiss()
+                if try await viewModel.saveChanges() { HapticEngine.success() }
             } catch {
                 HapticEngine.error()
             }

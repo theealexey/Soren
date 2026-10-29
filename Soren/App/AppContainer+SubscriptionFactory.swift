@@ -28,6 +28,7 @@ extension AppContainer {
                 notificationCoordinator: notificationRefreshCoordinator
             ),
             currencyEstimateService: makeCurrencyEstimateService(),
+            notificationCoordinator: notificationRefreshCoordinator,
             preferences: preferences
         )
     }

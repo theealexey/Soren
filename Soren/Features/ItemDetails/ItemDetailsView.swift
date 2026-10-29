@@ -5,7 +5,13 @@ import SwiftUI
 /// Full details screen for a recurring item.
 /// Shows financial info, dates, classification, notes, and quick actions.
 struct ItemDetailsView: View {
-    @Bindable var viewModel: ItemDetailsViewModel
+    // The factory supplies an initial model. Retain it for this sheet's lifetime,
+    // including nested Edit presentation and asynchronous action completion.
+    @State private var viewModel: ItemDetailsViewModel
+
+    init(viewModel: ItemDetailsViewModel) {
+        _viewModel = State(initialValue: viewModel)
+    }
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -46,9 +52,11 @@ struct ItemDetailsView: View {
                         .font(Typography.bodyMedium)
                         .foregroundStyle(ColorTokens.accent)
                 }
+                .disabled(viewModel.mutationsDisabled)
             }
         }
-        .sheet(isPresented: $viewModel.isEditing) {
+        .interactiveDismissDisabled(viewModel.preventsDismissal)
+        .sheet(isPresented: $viewModel.isEditing, onDismiss: viewModel.editSheetDidDismiss) {
             NavigationStack {
                 ItemEditFormView(viewModel: viewModel)
             }
@@ -60,6 +68,32 @@ struct ItemDetailsView: View {
             Button("Отменить", role: .cancel) { }
         } message: {
             Text("«\(viewModel.item.title)» будет удалена без возможности восстановления.")
+        }
+        .alert(
+            viewModel.actionFailure?.intent.failureTitle ?? String(localized: "itemDetails.reminders.title"),
+            isPresented: detailsAlertBinding
+        ) {
+            if let failure = viewModel.actionFailure {
+                if failure.canRetry {
+                    Button(String(localized: "Повторить")) { run(failure.intent) }
+                }
+                Button(failure.kind == .invalidInput
+                    ? String(localized: "itemDetails.action.correct") : String(localized: "ОК"), role: .cancel) {
+                    viewModel.dismissActionFailure()
+                }
+            } else {
+                if viewModel.canRetryReminders {
+                    Button(String(localized: "itemDetails.reminders.retry")) {
+                        Task { await viewModel.retryReminders() }
+                    }
+                }
+                Button(viewModel.hasPersistedDeletion
+                    ? String(localized: "itemDetails.action.continue") : String(localized: "ОК")) {
+                    viewModel.acknowledgeReminderIssue()
+                }
+            }
+        } message: {
+            Text(viewModel.actionFailure?.message ?? viewModel.reminderMessage)
         }
         .onChange(of: viewModel.isDeleted) { _, deleted in
             if deleted { dismiss() }
@@ -318,18 +352,15 @@ struct ItemDetailsView: View {
                 viewModel.startEditing()
             }
 
-            actionButton(
-                title: viewModel.item.status == .paused
-                    ? String(localized: "Возобновить")
-                    : String(localized: "Приостановить"),
-                icon: viewModel.item.status == .paused ? "play.fill" : "pause.fill",
-                color: ColorTokens.warning
-            ) {
-                Task {
-                    do {
-                        try await viewModel.togglePause()
-                        HapticEngine.selection()
-                    } catch { HapticEngine.error() }
+            if let intent = viewModel.pauseResumeIntent {
+                actionButton(
+                    title: intent == .resume
+                        ? String(localized: "Возобновить")
+                        : String(localized: "Приостановить"),
+                    icon: intent == .resume ? "play.fill" : "pause.fill",
+                    color: ColorTokens.warning
+                ) {
+                    run(intent)
                 }
             }
 
@@ -339,12 +370,7 @@ struct ItemDetailsView: View {
                     icon: "archivebox",
                     color: ColorTokens.textSecondary
                 ) {
-                    Task {
-                        do {
-                            try await viewModel.archive()
-                            HapticEngine.selection()
-                        } catch { HapticEngine.error() }
-                    }
+                    run(.archive)
                 }
             }
 
@@ -357,6 +383,7 @@ struct ItemDetailsView: View {
             }
         }
         .padding(.top, Spacing.sm)
+        .disabled(viewModel.mutationsDisabled)
     }
 
     // MARK: - Helpers
@@ -413,11 +440,30 @@ struct ItemDetailsView: View {
         .buttonStyle(.plain)
     }
 
-    private func deleteAndDismiss() {
+    private var detailsAlertBinding: Binding<Bool> {
+        Binding(
+            get: {
+                viewModel.canPresentDetailsAlert &&
+                    (viewModel.actionFailure != nil || viewModel.isReminderAlertPresented)
+            },
+            set: { presented in
+                if !presented {
+                    viewModel.dismissActionFailure()
+                    viewModel.dismissReminderAlert()
+                }
+            }
+        )
+    }
+
+    private func deleteAndDismiss() { run(.delete) }
+
+    private func run(_ intent: ItemDetailsViewModel.ActionIntent) {
         Task {
             do {
-                try await viewModel.delete()
-                HapticEngine.success()
+                if try await viewModel.perform(intent) {
+                    if intent == .delete { HapticEngine.success() }
+                    else { HapticEngine.selection() }
+                }
             } catch {
                 HapticEngine.error()
             }

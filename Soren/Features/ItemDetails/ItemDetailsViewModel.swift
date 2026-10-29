@@ -39,6 +39,79 @@ final class ItemDetailsViewModel {
     var showDeleteConfirmation = false
     private(set) var isDeleted = false
 
+    enum ActionIntent: Equatable, CaseIterable {
+        case save, pause, resume, archive, delete
+
+        var failureTitle: String {
+            switch self {
+            case .save: String(localized: "itemDetails.action.saveFailed")
+            case .pause: String(localized: "itemDetails.action.pauseFailed")
+            case .resume: String(localized: "itemDetails.action.resumeFailed")
+            case .archive: String(localized: "itemDetails.action.archiveFailed")
+            case .delete: String(localized: "itemDetails.action.deleteFailed")
+            }
+        }
+    }
+
+    struct ActionFailure {
+        enum Kind: Equatable { case invalidInput, missingRecord, persistence }
+        let intent: ActionIntent
+        let kind: Kind
+        let message: String
+        let underlyingError: Error
+        var canRetry: Bool { kind == .persistence }
+    }
+
+    enum ReminderIssue: Equatable { case reconciliation, permission }
+    private(set) var isPerformingAction = false
+    private(set) var actionFailure: ActionFailure?
+    private(set) var reminderIssue: ReminderIssue?
+    private(set) var isReminderAlertPresented = false
+    private(set) var lastNotificationOutcome: NotificationRefreshOutcome?
+    private(set) var hasPersistedDeletion = false
+    private(set) var isEditSheetTransitionPending = false
+
+    /// Shared by visible controls and execution, including retained failure retries.
+    var pauseResumeIntent: ActionIntent? {
+        guard item.archivedAt == nil, let today,
+              (try? item.isExpired(on: today)) == false else { return nil }
+        switch item.status {
+        case .active, .dueSoon, .dueToday, .overdue, .trial, .failed:
+            return .pause
+        case .paused:
+            return .resume
+        case .archived, .cancelled:
+            return nil
+        }
+    }
+
+    var mutationsDisabled: Bool { isPerformingAction || hasPersistedDeletion || reminderIssue != nil }
+    var preventsDismissal: Bool { isPerformingAction || (hasPersistedDeletion && !isDeleted) }
+    var canRetryReminders: Bool { reminderIssue == .reconciliation && notificationCoordinator != nil }
+    var canPresentDetailsAlert: Bool { !isEditing && !isEditSheetTransitionPending }
+    var reminderMessage: String {
+        let result = hasPersistedDeletion
+            ? String(localized: "itemDetails.reminders.deleted")
+            : String(localized: "itemDetails.reminders.saved")
+        if reminderIssue == .permission {
+            return result + "\n\n" + String(localized: "itemDetails.reminders.permission")
+        }
+        return result
+    }
+
+    func dismissActionFailure() { actionFailure = nil }
+
+    func dismissReminderAlert() { isReminderAlertPresented = false }
+
+    func acknowledgeReminderIssue() {
+        guard !isPerformingAction else { return }
+        reminderIssue = nil
+        isReminderAlertPresented = false
+        if hasPersistedDeletion { isDeleted = true }
+    }
+
+    func editSheetDidDismiss() { isEditSheetTransitionPending = false }
+
     // MARK: - Edit Form Fields
 
     var editTitle = ""
@@ -97,6 +170,7 @@ final class ItemDetailsViewModel {
     // MARK: - Dependencies
 
     private let updateRecurringItem: UpdateRecurringItem
+    private let notificationCoordinator: (any NotificationStateReconciling)?
     private let deleteRecurringItem: DeleteRecurringItem
     private let currencyEstimateService: CurrencyEstimateService
     private let preferences: UserPreferencesRepository
@@ -118,6 +192,7 @@ final class ItemDetailsViewModel {
         timeZone: @escaping () -> TimeZone = { .current }
     ) {
         self.item = item
+        self.notificationCoordinator = notificationCoordinator
         self.updateRecurringItem = UpdateRecurringItem(
             repository: repositories.recurringItems,
             notificationCoordinator: notificationCoordinator
@@ -143,11 +218,13 @@ final class ItemDetailsViewModel {
         updateRecurringItem: UpdateRecurringItem,
         deleteRecurringItem: DeleteRecurringItem,
         currencyEstimateService: CurrencyEstimateService,
+        notificationCoordinator: (any NotificationStateReconciling)? = nil,
         preferences: UserPreferencesRepository,
         now: @escaping () -> Date = { .now },
         timeZone: @escaping () -> TimeZone = { .current }
     ) {
         self.item = item
+        self.notificationCoordinator = notificationCoordinator
         self.updateRecurringItem = updateRecurringItem
         self.deleteRecurringItem = deleteRecurringItem
         self.currencyEstimateService = currencyEstimateService
@@ -195,6 +272,9 @@ final class ItemDetailsViewModel {
     // MARK: - Edit Actions
 
     func startEditing() {
+        guard !mutationsDisabled else { return }
+        actionFailure = nil
+        isEditSheetTransitionPending = true
         dateInputError = nil
         editTitle = item.title
         editAmountText = item.amount.description   // locale-independent decimal string
@@ -233,11 +313,131 @@ final class ItemDetailsViewModel {
     }
 
     func cancelEditing() {
+        guard !isPerformingAction else { return }
+        actionFailure = nil
         cancelCurrencyEstimate()
         isEditing = false
     }
 
-    func saveChanges() async throws {
+    @discardableResult
+    func saveChanges() async throws -> Bool { try await perform(.save) }
+
+    @discardableResult
+    func togglePause() async throws -> Bool {
+        try await perform(item.status == .paused ? .resume : .pause)
+    }
+
+    @discardableResult
+    func archive() async throws -> Bool { try await perform(.archive) }
+
+    @discardableResult
+    func delete() async throws -> Bool { try await perform(.delete) }
+
+    /// MainActor owns the gate through persistence, reconciliation and publication.
+    /// A rejected duplicate returns false, so callers cannot emit success feedback.
+    @discardableResult
+    func perform(_ intent: ActionIntent) async throws -> Bool {
+        guard !mutationsDisabled, !isDeleted, !Task.isCancelled else { return false }
+        if intent == .pause || intent == .resume {
+            guard pauseResumeIntent == intent else { return false }
+        }
+        isPerformingAction = true
+        actionFailure = nil
+        defer { isPerformingAction = false }
+        do {
+            let outcome: NotificationRefreshOutcome?
+            if intent == .delete {
+                outcome = try await deleteRecurringItem.execute(id: item.id)
+                hasPersistedDeletion = true
+            } else {
+                var updated = intent == .save ? try editedItem() : item
+                switch intent {
+                case .pause: updated.status = .paused
+                case .resume: updated.status = .active
+                case .archive:
+                    updated.status = .archived
+                    updated.archivedAt = now()
+                case .save, .delete: break
+                }
+                let result = try await updateRecurringItem.execute(updated)
+                item = result.item
+                outcome = result.notificationOutcome
+            }
+            // Cancellation is not rollback: publish a completed persisted mutation.
+            receiveNotificationOutcome(outcome)
+            if intent == .save {
+                cancelCurrencyEstimate()
+                isEditing = false
+            }
+            if hasPersistedDeletion && reminderIssue == nil { isDeleted = true }
+            return true
+        } catch {
+            actionFailure = failure(for: error, intent: intent)
+            throw error
+        }
+    }
+
+    @discardableResult
+    func retryFailedAction() async throws -> Bool {
+        guard let failure = actionFailure, failure.canRetry else { return false }
+        return try await perform(failure.intent)
+    }
+
+    @discardableResult
+    func retryReminders() async -> Bool {
+        guard !isPerformingAction, canRetryReminders, let notificationCoordinator else { return false }
+        isPerformingAction = true
+        defer { isPerformingAction = false }
+        isReminderAlertPresented = false
+        let outcome = await notificationCoordinator.reconcileCurrentState(source: .other)
+        receiveNotificationOutcome(outcome)
+        if hasPersistedDeletion && reminderIssue == nil { isDeleted = true }
+        return true
+    }
+
+    private func receiveNotificationOutcome(_ outcome: NotificationRefreshOutcome?) {
+        lastNotificationOutcome = outcome
+        switch outcome {
+        case .reconciled(let report):
+            if report.desiredCount > 0 && (report.authorizationStatus == .denied || report.authorizationStatus == .notDetermined) {
+                reminderIssue = .permission
+            } else if !report.addFailures.isEmpty || !report.planningFailures.isEmpty ||
+                        (report.desiredCount > 0 && !report.authorizationStatus.permitsScheduling) {
+                reminderIssue = .reconciliation
+            } else {
+                reminderIssue = nil
+            }
+        case .repositoryFetchFailed:
+            reminderIssue = .reconciliation
+        case .superseded, nil:
+            // No confirmed failure or scheduling success; retain the actual outcome.
+            // During retry keep an existing unresolved warning until acknowledged.
+            break
+        }
+        isReminderAlertPresented = reminderIssue != nil
+    }
+
+    private func failure(for error: Error, intent: ActionIntent) -> ActionFailure {
+        let kind: ActionFailure.Kind
+        let message: String
+        if let validation = error as? UpdateRecurringItem.ValidationError {
+            kind = .invalidInput
+            message = ValidationErrorFormatter.localizedMessage(for: validation)
+        } else if let repository = error as? RepositoryError, case .notFound = repository {
+            kind = .missingRecord
+            message = String(localized: "itemDetails.action.missing")
+        } else if error is BillingCycle.ValidationError || error is BillingCivilDayError ||
+                    error is RecurringItemBillingDateValidationError || error is RecurringItemBillingDateAdapterError {
+            kind = .invalidInput
+            message = String(localized: "itemDetails.action.invalidInput")
+        } else {
+            kind = .persistence
+            message = intent.failureTitle
+        }
+        return ActionFailure(intent: intent, kind: kind, message: message, underlyingError: error)
+    }
+
+    private func editedItem() throws -> RecurringItem {
         if let dateInputError { throw dateInputError }
         guard let editStartDate, let editNextChargeDate else { throw BillingCivilDayError.arithmeticFailed }
         guard let amount = Decimal(string: editAmountText.replacingOccurrences(of: ",", with: ".")) else {
@@ -260,32 +460,7 @@ final class ItemDetailsViewModel {
         updated.note = editNote
         updated.usageStatus = editUsageStatus
 
-        // Use the returned copy — it carries the updatedAt stamp set by the use case.
-        // Notification work is a complete reconciliation after persistence.
-        item = try await updateRecurringItem.execute(updated).item
-        cancelCurrencyEstimate()
-        isEditing = false
-    }
-
-    // MARK: - Status Actions
-
-    func togglePause() async throws {
-        var updated = item
-        updated.status = item.status == .paused ? .active : .paused
-        // Eligibility is evaluated from the complete persisted state.
-        item = try await updateRecurringItem.execute(updated).item
-    }
-
-    func archive() async throws {
-        var updated = item
-        updated.status = .archived
-        updated.archivedAt = .now
-        item = try await updateRecurringItem.execute(updated).item
-    }
-
-    func delete() async throws {
-        _ = try await deleteRecurringItem.execute(id: item.id)
-        isDeleted = true
+        return updated
     }
 
     // MARK: - Derived Currency Estimate
